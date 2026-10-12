@@ -39,7 +39,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
   - Accept: all slots reset deterministically; inactive slots emit no OAM or collision.
 - [x] `M1-PLY-02` Implement fixed-point acceleration, diagonal normalization, friction, and clamps.
   - Accept: P1 moves eight directions, stops, and cannot cross court/player bounds.
-- [ ] `M1-PLY-03` Render P1 as one 32×32 placeholder object and one 8×8 shadow.
+- [x] `M1-PLY-03` Render P1 as one 32×32 placeholder object and one 8×8 shadow.
   - Accept: both remain stable at every court edge and after 5 minutes of movement.
 - [x] `M1-PLY-04` Implement idle/run animation metadata and horizontal flip.
   - Accept: no mirrored graphics are stored; facing changes via OAM attributes.

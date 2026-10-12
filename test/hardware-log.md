@@ -102,3 +102,19 @@ No M1 hardware run has been recorded yet.
   during gameplay, appears when Start pauses the game, and disappears when
   Start resumes it. Closed `M1-BOOT-05` and `M1-COURT-04`.
 
+### 2026-10-12 — MesenCE M1 movement acceptance
+
+- ROM: `0.1.0-release-1c8112b-dirty-ecd69676`.
+- User completed a fresh restart and manually confirmed the court, movement
+  bounds, facing, and pause behavior remained correct.
+- Automated MesenCE test runner supplied continuous input for 18,000 frames
+  (five minutes at the 60 Hz target), dividing the run evenly across the four
+  cardinal and four diagonal directions.
+- Result: PASS. MesenCE reached all 18,000 frames and exited with status 0;
+  there was no crash or hang. Combined with the manual boundary review, this
+  closes `M1-PLY-03`.
+- Diagnostic note: MesenCE reported startup reads in the compiler scratch
+  register area (`$00000A–$000013` and `$00003D–$000040`). No visual corruption
+  or behavioral failure was observed; revisit if clean-build determinism or a
+  second emulator exposes a related symptom.
+
