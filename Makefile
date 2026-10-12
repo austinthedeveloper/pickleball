@@ -46,8 +46,11 @@ hardware-test:
 
 profile: assets
 	@$(MAKE) --no-print-directory cleanBuildRes CONFIG=$(CONFIG) PVSNESLIB_DEBUG=$(PVSNESLIB_DEBUG)
+	@rm -f $(ROMNAME).sfc $(ROMNAME).sym $(ROMNAME).symfull
 	@$(MAKE) --no-print-directory $(ROMNAME).sfc CONFIG=$(CONFIG) PVSNESLIB_DEBUG=$(PVSNESLIB_DEBUG)
 	@mkdir -p build/$(CONFIG)
+	@rm -f build/$(CONFIG)/pickleball-*.sfc \
+		build/$(CONFIG)/pickleball-*.sym build/$(CONFIG)/pickleball-*.map
 	@cp $(ROMNAME).sfc build/$(CONFIG)/$(ROMNAME).sfc
 	@cp $(ROMNAME).sym build/$(CONFIG)/$(ROMNAME).sym
 	@cp $(ROMNAME).symfull build/$(CONFIG)/$(ROMNAME).map
@@ -75,6 +78,8 @@ clean: cleanBuildRes cleanRom cleanLogs
 
 dist: release
 	@mkdir -p dist
+	@rm -f dist/pickleball-*.sfc dist/pickleball-*.sym dist/pickleball-*.map \
+		dist/pickleball-*.sha256 dist/pickleball-*-build.txt
 	@cp build/release/$(RELEASE_ROM).sfc dist/$(RELEASE_ROM).sfc
 	@cp build/release/$(RELEASE_ROM).sym dist/$(RELEASE_ROM).sym
 	@cp build/release/$(RELEASE_ROM).map dist/$(RELEASE_ROM).map

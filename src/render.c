@@ -1,4 +1,5 @@
 #include <snes.h>
+#include "court.h"
 #include "input.h"
 #include "player.h"
 #include "render.h"
@@ -10,6 +11,7 @@
 #define OBJ_TILES_ADDR 0x4000
 #define PLAYER_OAM_ID 0
 #define SHADOW_OAM_ID 4
+#define HUD_TILE_PRIORITY 0x2000
 
 extern char court_tiles, court_tiles_end;
 extern char court_map, court_map_end;
@@ -39,16 +41,19 @@ static void hud_put_text(u8 x, u8 y, const char *text)
             character -= ('a' - 'A');
         if (character < 32 || character > 127)
             character = '?';
-        hud_buffer[(u16)y * 32 + x] = character - 32;
+        hud_buffer[(u16)y * 32 + x] = (character - 32) | HUD_TILE_PRIORITY;
         ++x;
     }
 }
 
 static void hud_put_u16_3(u8 x, u8 y, u16 value)
 {
-    hud_buffer[(u16)y * 32 + x] = ('0' - 32) + ((value / 100) % 10);
-    hud_buffer[(u16)y * 32 + x + 1] = ('0' - 32) + ((value / 10) % 10);
-    hud_buffer[(u16)y * 32 + x + 2] = ('0' - 32) + (value % 10);
+    hud_buffer[(u16)y * 32 + x] =
+        (('0' - 32) + ((value / 100) % 10)) | HUD_TILE_PRIORITY;
+    hud_buffer[(u16)y * 32 + x + 1] =
+        (('0' - 32) + ((value / 10) % 10)) | HUD_TILE_PRIORITY;
+    hud_buffer[(u16)y * 32 + x + 2] =
+        (('0' - 32) + (value % 10)) | HUD_TILE_PRIORITY;
 }
 
 static void hud_put_hex4(u8 x, u8 y, u16 value)
@@ -58,7 +63,7 @@ static void hud_put_hex4(u8 x, u8 y, u16 value)
     u8 character;
     for (shift = 12; shift < 16; shift -= 4) {
         character = digits[(value >> shift) & 15];
-        hud_buffer[(u16)y * 32 + x] = character - 32;
+        hud_buffer[(u16)y * 32 + x] = (character - 32) | HUD_TILE_PRIORITY;
         ++x;
         if (shift == 0)
             break;
@@ -88,6 +93,8 @@ void render_initialize(void)
         0, OBJ_TILES_ADDR, OBJ_SIZE8_L32);
 
     setMode(BG_MODE1, BG3_MODE1_PRIORITY_HIGH);
+    bgSetEnable(0);
+    bgSetEnable(2);
     bgSetDisable(1);
     hud_clear();
     render_prepare_players();
@@ -119,10 +126,12 @@ void render_prepare_players(void)
     animation = &g_player_animations[player->animation];
     tile = animation->tile_base[player->animation_frame];
 
-    oamSet(PLAYER_OAM_ID, x - 16, y - 24, 3,
+    oamSet(PLAYER_OAM_ID, x - PLAYER_BODY_HALF_WIDTH,
+        y - PLAYER_BODY_TOP_OFFSET, 3,
         player->facing_left, 0, tile, 0);
     oamSetEx(PLAYER_OAM_ID, OBJ_LARGE, OBJ_SHOW);
-    oamSet(SHADOW_OAM_ID, x - 4, y + 5, 2, 0, 0, 8, 0);
+    oamSet(SHADOW_OAM_ID, x - PLAYER_SHADOW_HALF_WIDTH,
+        y + PLAYER_SHADOW_Y_OFFSET, 2, 0, 0, 8, 0);
     oamSetEx(SHADOW_OAM_ID, OBJ_SMALL, OBJ_SHOW);
 }
 

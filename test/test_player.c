@@ -77,6 +77,20 @@ static void test_all_clamps(void)
     assert(g_players[0].y_fp == TO_FP(PLAYER_CLAMP_MAX_Y));
 }
 
+static void test_anchor_bounds_match_court(void)
+{
+    assert(PLAYER_CLAMP_MIN_X - PLAYER_BODY_HALF_WIDTH ==
+        COURT_BASELINE_LEFT - PLAYER_LEFT_RUNOFF);
+    assert(PLAYER_CLAMP_MIN_X - PLAYER_BODY_HALF_WIDTH >= 0);
+    assert(PLAYER_CLAMP_MAX_X + PLAYER_BODY_HALF_WIDTH == COURT_NET_X);
+    assert(PLAYER_CLAMP_MIN_Y + PLAYER_BODY_BOTTOM_OFFSET ==
+        COURT_SIDELINE_TOP);
+    assert(PLAYER_CLAMP_MAX_Y + PLAYER_BODY_BOTTOM_OFFSET ==
+        COURT_SIDELINE_BOTTOM + PLAYER_BOTTOM_RUNOFF);
+    assert(PLAYER_BOTTOM_RUNOFF == 11);
+    assert(PLAYER_LEFT_RUNOFF == 22);
+}
+
 static void test_input_edges(void)
 {
     PadSnapshot snapshot = {0, 0, 0};
@@ -115,6 +129,7 @@ int main(void)
     test_diagonal_normalization();
     test_sign_change_and_friction();
     test_all_clamps();
+    test_anchor_bounds_match_court();
     test_input_edges();
     test_twenty_pause_toggles();
     puts("player host checks passed");

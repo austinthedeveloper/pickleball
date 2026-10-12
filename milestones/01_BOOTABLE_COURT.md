@@ -11,7 +11,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
   - Accept: a second shell/session can identify the exact version and expected environment variable without oral instructions.
 - [x] `M1-BOOT-03` Add `debug`, `release`, `hardware-test`, `check`, `clean`, and `dist` build outcomes.
   - Accept: clean build emits named ROM(s), map/symbol output, checksum text, and no warnings.
-- [ ] `M1-BOOT-04` Implement boot, forced-blank initialization, main loop, VBlank sync, and screen enable.
+- [x] `M1-BOOT-04` Implement boot, forced-blank initialization, main loop, VBlank sync, and screen enable.
   - Accept: 100 resets in an emulator reach the same valid screen; no uninitialized visual garbage appears.
 - [ ] `M1-BOOT-05` Add build ID/configuration to hardware-test screen.
   - Accept: tester can identify the exact ROM from an on-screen value.
@@ -41,7 +41,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
   - Accept: P1 moves eight directions, stops, and cannot cross court/player bounds.
 - [ ] `M1-PLY-03` Render P1 as one 32×32 placeholder object and one 8×8 shadow.
   - Accept: both remain stable at every court edge and after 5 minutes of movement.
-- [ ] `M1-PLY-04` Implement idle/run animation metadata and horizontal flip.
+- [x] `M1-PLY-04` Implement idle/run animation metadata and horizontal flip.
   - Accept: no mirrored graphics are stored; facing changes via OAM attributes.
 - [x] `M1-STATE-01` Implement pause/unpause on Start.
   - Accept: positions and timers do not change while paused; 20 toggles work.
