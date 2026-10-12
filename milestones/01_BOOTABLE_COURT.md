@@ -13,7 +13,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
   - Accept: clean build emits named ROM(s), map/symbol output, checksum text, and no warnings.
 - [x] `M1-BOOT-04` Implement boot, forced-blank initialization, main loop, VBlank sync, and screen enable.
   - Accept: 100 resets in an emulator reach the same valid screen; no uninitialized visual garbage appears.
-- [ ] `M1-BOOT-05` Add build ID/configuration to hardware-test screen.
+- [x] `M1-BOOT-05` Add build ID/configuration to hardware-test screen.
   - Accept: tester can identify the exact ROM from an on-screen value.
 
 ## Court and rendering
@@ -24,7 +24,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
   - Accept: all required pickleball lines are visible and match court constants within one pixel/tile design tolerance.
 - [x] `M1-COURT-03` Load static background assets during initialization.
   - Accept: no gameplay-frame bulk VRAM upload is needed to keep the court visible.
-- [ ] `M1-COURT-04` Add BG3 debug text/markers without gameplay objects.
+- [x] `M1-COURT-04` Add BG3 debug text/markers without gameplay objects.
   - Accept: build ID, player coordinates, and pause state can be displayed in debug/hardware-test builds.
 - [x] `M1-COURT-05` Record initial VRAM map and actual asset byte sizes.
   - Accept: regions do not overlap and total fits the plan.

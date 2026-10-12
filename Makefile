@@ -2,7 +2,11 @@ PVSNESLIB_HOME ?= ../pvsneslib
 CONFIG ?= debug
 VERSION_NAME := 0.1.0
 BUILD_ID ?= $(shell id=$$(git rev-parse --short HEAD 2>/dev/null || echo dev); \
-	if test -n "$$(git status --porcelain 2>/dev/null)"; then echo "$$id-dirty"; else echo "$$id"; fi)
+	if test -n "$$(git status --porcelain 2>/dev/null)"; then \
+		fingerprint=$$({ git diff --binary HEAD; git status --porcelain; } | \
+			shasum -a 256 | cut -c1-8); \
+		echo "$$id-dirty-$$fingerprint"; \
+	else echo "$$id"; fi)
 ROMNAME := pickleball-$(VERSION_NAME)-$(CONFIG)-$(BUILD_ID)
 RELEASE_ROM := pickleball-$(VERSION_NAME)-release-$(BUILD_ID)
 ROMTITLE := PICKLEBALL 94 M1

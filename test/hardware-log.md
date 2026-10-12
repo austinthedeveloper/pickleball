@@ -70,3 +70,35 @@ No M1 hardware run has been recorded yet.
 - The full 22-pixel left runoff remains available, while the player's visible
   left edge now stops at screen X=2 and cannot wrap.
 
+### 2026-10-12 — hardware-test HUD build verification
+
+- Clean commit build produced `0.1.0-HW-1c8112b` in the hardware-test ROM.
+- ROM inspection confirms the exact build/configuration string and `PAUSED`
+  label are embedded; renderer code places build ID, live P1 coordinates, and
+  pause state on BG3 only in debug/hardware-test configurations.
+- `M1-BOOT-05` and `M1-COURT-04` implementation acceptance is complete.
+- Visual HUD readability and live-value behavior remain in the manual smoke
+  checklist below; they are not prerequisites for rebuilding the ROM.
+
+### 2026-10-12 — missing pause/HUD text retest
+
+- User confirmed pause logic works but reported no visible words.
+- Reopened `M1-BOOT-05` and `M1-COURT-04` pending visual confirmation.
+- Release builds now display `PAUSED`; diagnostic builds additionally display
+  build ID and live P1 coordinates.
+- BG3 setup now follows the explicit PVSnesLib Mode 1 pattern: set BG1/BG3 map
+  pointers, load their tiles, and copy both maps while the screen is blank.
+- Retest found `PAUSED` remained visible after gameplay resumed. The renderer
+  now consumes the authoritative game pause state directly, and clears BG3
+  with explicit priority-marked space tiles so stale text is overwritten.
+- A subsequent retest reported no pause text in either state. Dirty build IDs
+  now include a source-diff fingerprint so each changed ROM has a unique name
+  and cannot be confused with an emulator-cached build at the same path.
+- Final release-path attempt stores a static `PAUSED` map in BG3 and toggles
+  the entire BG3 layer with pause state. This avoids runtime text-map clearing
+  and per-frame HUD DMA in release builds. If this fails visual retest, retain
+  it as an open M1 HUD defect and continue other milestone work.
+- PASS: user tested `0.1.0-release-1c8112b-dirty-ecd69676`. `PAUSED` is hidden
+  during gameplay, appears when Start pauses the game, and disappears when
+  Start resumes it. Closed `M1-BOOT-05` and `M1-COURT-04`.
+

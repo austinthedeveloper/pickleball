@@ -15,10 +15,9 @@ int main(void)
         input_capture_frame();
         game_update_top_level(g_player_intents);
         players_update(g_player_intents, g_game_state.paused);
-        render_set_paused(g_game_state.paused);
         render_prepare_players();
         WaitForVBlank();
-        render_commit_hud();
+        render_commit_hud(g_game_state.paused);
     }
 
     return 0;

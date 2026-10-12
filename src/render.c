@@ -23,13 +23,12 @@ extern char player_tiles, player_tiles_end;
 extern char player_palette, player_palette_end;
 
 static u16 hud_buffer[32 * 4];
-static u8 paused_state;
 
 static void hud_clear(void)
 {
     u16 i;
     for (i = 0; i < 32 * 4; ++i)
-        hud_buffer[i] = 0;
+        hud_buffer[i] = HUD_TILE_PRIORITY;
 }
 
 static void hud_put_text(u8 x, u8 y, const char *text)
@@ -76,17 +75,19 @@ void render_initialize(void)
     oamInit();
     oamClear(0, 0);
 
+    bgSetMapPtr(0, BG1_MAP_ADDR, SC_32x32);
+    bgSetMapPtr(2, BG3_MAP_ADDR, SC_32x32);
+
     bgInitTileSet(0, &court_tiles, &court_palette, 1,
         (&court_tiles_end - &court_tiles),
         (&court_palette_end - &court_palette), BG_16COLORS, BG1_TILES_ADDR);
-    bgInitMapSet(0, &court_map, (&court_map_end - &court_map),
-        SC_32x32, BG1_MAP_ADDR);
 
     bgInitTileSet(2, &hud_tiles, &hud_palette, 0,
         (&hud_tiles_end - &hud_tiles),
         (&hud_palette_end - &hud_palette), BG_4COLORS, BG3_TILES_ADDR);
-    bgInitMapSet(2, &hud_map, (&hud_map_end - &hud_map),
-        SC_32x32, BG3_MAP_ADDR);
+
+    dmaCopyVram(&court_map, BG1_MAP_ADDR, (&court_map_end - &court_map));
+    dmaCopyVram(&hud_map, BG3_MAP_ADDR, (&hud_map_end - &hud_map));
 
     oamInitGfxSet(&player_tiles, (&player_tiles_end - &player_tiles),
         &player_palette, (&player_palette_end - &player_palette),
@@ -94,17 +95,20 @@ void render_initialize(void)
 
     setMode(BG_MODE1, BG3_MODE1_PRIORITY_HIGH);
     bgSetEnable(0);
+#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
     bgSetEnable(2);
+#else
+    bgSetDisable(2);
+#endif
     bgSetDisable(1);
     hud_clear();
+#if !defined(BUILD_DEBUG) && !defined(BUILD_HARDWARE_TEST)
+    hud_put_text(13, 1, "PAUSED");
+    dmaCopyVram((u8 *)hud_buffer, BG3_MAP_ADDR, sizeof(hud_buffer));
+#endif
     render_prepare_players();
-    render_commit_hud();
+    render_commit_hud(0);
     setScreenOn();
-}
-
-void render_set_paused(u8 paused)
-{
-    paused_state = paused;
 }
 
 void render_prepare_players(void)
@@ -135,7 +139,7 @@ void render_prepare_players(void)
     oamSetEx(SHADOW_OAM_ID, OBJ_SMALL, OBJ_SHOW);
 }
 
-void render_commit_hud(void)
+void render_commit_hud(u8 paused)
 {
 #if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
     hud_clear();
@@ -144,8 +148,6 @@ void render_commit_hud(void)
     hud_put_u16_3(4, 1, (u16)FROM_FP(g_players[0].x_fp));
     hud_put_text(7, 1, ",");
     hud_put_u16_3(8, 1, (u16)FROM_FP(g_players[0].y_fp));
-    if (paused_state)
-        hud_put_text(13, 1, "PAUSED");
 #ifdef BUILD_DEBUG
     hud_put_text(1, 2, "H");
     hud_put_hex4(2, 2, g_pad_snapshots[0].held);
@@ -154,7 +156,14 @@ void render_commit_hud(void)
     hud_put_text(15, 2, "R");
     hud_put_hex4(16, 2, g_pad_snapshots[0].released);
 #endif
+    if (paused)
+        hud_put_text(13, 1, "PAUSED");
     dmaCopyVram((u8 *)hud_buffer, BG3_MAP_ADDR, sizeof(hud_buffer));
+#else
+    if (paused)
+        bgSetEnable(2);
+    else
+        bgSetDisable(2);
 #endif
 }
 
