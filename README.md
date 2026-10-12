@@ -45,6 +45,25 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 
 Every implementation task lives on exactly one milestone sheet. Mark a task `[x]` in the same commit that satisfies its acceptance check. Do not mark parent exit criteria complete until every required child task and test is complete.
 
+## Build the M1 ROM
+
+The repository now contains the M1 bootable-court implementation. With the
+pinned PVSnesLib 4.6.0 sibling install shown in `toolchain/README.md`:
+
+```sh
+make check
+make debug
+make release
+make hardware-test
+make dist
+```
+
+Debug and hardware-test builds show the build ID, P1 coordinates, and pause
+state on BG3. Use the D-pad to move P1 and Start to pause. Build artifacts are
+written below `build/`; the canonical ROM to load in an emulator or flash cart
+is the release `.sfc` below `dist/`. Root-level ROM files are temporary
+PVSnesLib linker outputs and are ignored by Git.
+
 ## POC success test
 
 The POC is complete when a new player can power on a real NTSC SNES, move, serve, sustain a rally against the CPU, see an unambiguous fault and score, finish a first-to-five match, and rematch without resetting. No sprite dropout, lockup, input loss, or steadily worsening frame time may appear during a 15-minute hardware session.
