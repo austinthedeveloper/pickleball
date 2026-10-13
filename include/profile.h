@@ -4,7 +4,7 @@
 #include "game_types.h"
 
 /* Scanline profiler; marks compile away unless BUILD_PROFILE is defined. */
-enum { PROFILE_STAGES = 8 };
+enum { PROFILE_STAGES = 12 };
 
 #ifdef BUILD_PROFILE
 void profile_mark(u8 stage);

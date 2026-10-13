@@ -1,5 +1,6 @@
 #include <string.h>
 #include "ai.h"
+#include "profile.h"
 #include "collision.h"
 #include "court.h"
 #include "game.h"
@@ -108,6 +109,12 @@ static u8 ai_swing_connects(const Player *player)
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
     if (dx > 64 || dx < -64)
         return 0;
+    /* Contact needs a bounced ball; skip the lookahead while the bounce is
+     * still beyond the swing window (the common case, and the costly one). */
+    if (g_ball.bounce_count == 0 &&
+        g_ai.predicted_steps > g_ai.plan_age + PLAYER_WINDUP_FRAMES +
+            PLAYER_ACTIVE_FRAMES)
+        return 0;
     probe = g_ball;
     for (step = 1; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
             ++step) {
@@ -178,12 +185,24 @@ static void ai_plan_intercept(const Player *player)
 }
 
 static void ai_think(u8 player_index, PlayerIntent *intent);
+static PlayerIntent s_held_intent[MAX_PLAYERS];
+
+/* Attract demo budget: the demo P1 thinks every other frame and repeats its
+ * last movement in between (the one-shot swing press is not repeated). */
+void ai_hold_intent(u8 player_index, PlayerIntent *intent)
+{
+    *intent = s_held_intent[player_index];
+    intent->hit_pressed = 0;
+}
 
 void ai_update(u8 player_index, PlayerIntent *intent)
 {
     memcpy(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
+    PROFILE_MARK(8);
     ai_think(player_index, intent);
+    PROFILE_MARK(11);
     memcpy(&g_ai_slots[player_index], &g_ai, sizeof(g_ai));
+    s_held_intent[player_index] = *intent;
 }
 
 static void ai_think(u8 player_index, PlayerIntent *intent)
@@ -229,6 +248,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         return;
     }
 
+    PROFILE_MARK(9);
     if (ball_incoming(player) && g_ai.incoming_frames < 255)
         ++g_ai.incoming_frames;
     else if (!ball_incoming(player))
@@ -249,7 +269,11 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         if (key != g_ai.plan_key || g_ball.bounce_count > 0) {
             ai_plan_intercept(player);
             g_ai.plan_key = key;
+            g_ai.plan_age = 0;
+        } else if (g_ai.plan_age < 255) {
+            ++g_ai.plan_age;
         }
+        PROFILE_MARK(10);
         if (!player_is_swinging(player) && ai_swing_connects(player)) {
             intent->hit_pressed = 1;
             ++g_ai.shot_counter;

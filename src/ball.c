@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ball.h"
 #include "court.h"
 #include "player.h"
@@ -66,6 +67,11 @@ u8 ball_net_crossing_height(fx previous_x_fp, fx previous_z_fp,
     return 1;
 }
 
+/* Static scratch copy: 816-tcc reaches static fields with one long access,
+ * where each pointer dereference costs several stack loads. The AI calls
+ * this up to seven times a frame. */
+static Ball s_b;
+
 u8 ball_simulate_step(Ball *ball)
 {
     u8 events = BALL_EVENT_NONE;
@@ -74,52 +80,51 @@ u8 ball_simulate_step(Ball *ball)
     fx crossing_height;
     s16 impact_vz;
 
-    if (!ball->active)
+    if (!ball->active || ball->rally_state != BALL_RALLY_LIVE)
         return BALL_EVENT_NONE;
-    if (ball->rally_state != BALL_RALLY_LIVE)
-        return BALL_EVENT_NONE;
+    memcpy(&s_b, ball, sizeof(Ball));
 
-    if (ball->z_fp == 0) {
-        if (ball->vz_fp <= 0) {
-            ball->vx_fp = 0;
-            ball->vy_fp = 0;
-            ball->vz_fp = 0;
-            return BALL_EVENT_NONE;
-        }
+    if (s_b.z_fp == 0 && s_b.vz_fp <= 0) {
+        s_b.vx_fp = 0;
+        s_b.vy_fp = 0;
+        s_b.vz_fp = 0;
+        memcpy(ball, &s_b, sizeof(Ball));
+        return BALL_EVENT_NONE;
     }
 
-    previous_x = ball->x_fp;
-    previous_z = ball->z_fp;
-    ball->x_fp += ball->vx_fp;
-    ball->y_fp += ball->vy_fp;
-    ball->z_fp += ball->vz_fp;
-    ball->vz_fp += BALL_GRAVITY_FP;
+    previous_x = s_b.x_fp;
+    previous_z = s_b.z_fp;
+    s_b.x_fp += s_b.vx_fp;
+    s_b.y_fp += s_b.vy_fp;
+    s_b.z_fp += s_b.vz_fp;
+    s_b.vz_fp += BALL_GRAVITY_FP;
 
-    if (ball_net_crossing_height(previous_x, previous_z,
-            ball->x_fp, ball->z_fp, &crossing_height)) {
+    /* Only frames that cross the net plane pay for the swept test. */
+    if ((previous_x < TO_FP(COURT_NET_X)) != (s_b.x_fp < TO_FP(COURT_NET_X)) &&
+        ball_net_crossing_height(previous_x, previous_z,
+            s_b.x_fp, s_b.z_fp, &crossing_height)) {
         if (crossing_height < TO_FP(COURT_NET_HEIGHT))
             events |= BALL_EVENT_NET_FAULT;
     }
 
-    if (previous_z > 0) {
-        if (ball->z_fp <= 0) {
-            impact_vz = ball->vz_fp - BALL_GRAVITY_FP;
-            ball->z_fp = 0;
-            ball->vx_fp = ball_retain(ball->vx_fp, BALL_BOUNCE_PLANAR_256);
-            ball->vy_fp = ball_retain(ball->vy_fp, BALL_BOUNCE_PLANAR_256);
-            ball->vz_fp = -ball_retain(impact_vz, BALL_BOUNCE_VERTICAL_256);
-            ++ball->bounce_count;
-            events |= BALL_EVENT_BOUNCE;
-            if (!court_contains_ground_fp(ball->x_fp, ball->y_fp))
-                events |= BALL_EVENT_OUT;
-            if (ball->vz_fp <= BALL_MIN_BOUNCE_VZ_FP) {
-                ball->vx_fp = 0;
-                ball->vy_fp = 0;
-                ball->vz_fp = 0;
-            }
+    if (previous_z > 0 && s_b.z_fp <= 0) {
+        impact_vz = s_b.vz_fp - BALL_GRAVITY_FP;
+        s_b.z_fp = 0;
+        s_b.vx_fp = ball_retain(s_b.vx_fp, BALL_BOUNCE_PLANAR_256);
+        s_b.vy_fp = ball_retain(s_b.vy_fp, BALL_BOUNCE_PLANAR_256);
+        s_b.vz_fp = -ball_retain(impact_vz, BALL_BOUNCE_VERTICAL_256);
+        ++s_b.bounce_count;
+        events |= BALL_EVENT_BOUNCE;
+        if (!court_contains_ground_fp(s_b.x_fp, s_b.y_fp))
+            events |= BALL_EVENT_OUT;
+        if (s_b.vz_fp <= BALL_MIN_BOUNCE_VZ_FP) {
+            s_b.vx_fp = 0;
+            s_b.vy_fp = 0;
+            s_b.vz_fp = 0;
         }
     }
 
+    memcpy(ball, &s_b, sizeof(Ball));
     return events;
 }
 

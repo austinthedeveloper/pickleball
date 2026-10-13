@@ -27,6 +27,7 @@ typedef struct {
     s16 predicted_land_x;
     s16 predicted_land_y;
     u8 predicted_steps;
+    u8 plan_age;          /* frames since predicted_steps was computed */
     u8 shot_counter;
     u8 plan_key;
     /* Difficulty: frames an incoming ball is ignored before reacting. */
@@ -48,5 +49,7 @@ void ai_initialize(void);
 u8 ai_predict_landing(const Ball *ball, s16 *land_x, s16 *land_y);
 /* Writes the CPU player's PlayerIntent for this frame. */
 void ai_update(u8 player_index, PlayerIntent *intent);
+/* Repeats the previous ai_update movement without a new swing press. */
+void ai_hold_intent(u8 player_index, PlayerIntent *intent);
 
 #endif

@@ -8,6 +8,7 @@
 #include "serve.h"
 
 GameState g_game_state;
+u8 g_attract;
 
 void game_set_phase(u8 phase)
 {
@@ -55,6 +56,19 @@ void game_new_match(void)
     g_players[2].active = 1;
     g_ai_slots[2].late_period = AI_LATE_SHOT_PERIOD;
     game_begin_serve(0);
+}
+
+void game_start_attract(void)
+{
+    game_new_match();
+    g_attract = 1;
+    g_ai_slots[0].late_period = GAME_ATTRACT_LATE_PERIOD;
+}
+
+void game_start_match(void)
+{
+    game_new_match();
+    g_attract = 0;
 }
 
 static void game_on_contact(u8 player_index)
@@ -126,6 +140,11 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
         g_players[i].pose = g_players[i].team == g_game_state.match_winner ?
             PLAYER_POSE_CHEER : PLAYER_POSE_NONE;
     }
+    if (g_attract) {
+        if (g_game_state.phase_timer >= GAME_ATTRACT_RESULT_FRAMES)
+            game_start_attract();
+        return;
+    }
     if (g_game_state.phase_timer >= GAME_POINT_RESULT_MIN_FRAMES &&
         intents[0].hit_pressed)
         game_new_match();
@@ -134,7 +153,7 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 void game_update(const PlayerIntent intents[MAX_PLAYERS])
 {
     ++g_game_state.frame_count;
-    if (intents[0].pause_pressed)
+    if (intents[0].pause_pressed && !g_attract)
         g_game_state.paused = !g_game_state.paused;
     if (g_game_state.paused)
         return;

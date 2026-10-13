@@ -56,26 +56,42 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
     intent->pause_pressed = may_pause && (pad->pressed & PAD_START) != 0;
 }
 
+/* Constant indices: 816-tcc multiplies for variable struct-array indexing,
+ * and this runs every frame. */
+#define SNAPSHOT(n) \
+    do { \
+        u16 now = raw[n]; \
+        u16 before = g_pad_snapshots[n].held; \
+        g_pad_snapshots[n].held = now; \
+        g_pad_snapshots[n].pressed = now & (u16)~before; \
+        g_pad_snapshots[n].released = before & (u16)~now; \
+    } while (0)
+
+#define MAP_PLAYER(i) \
+    do { \
+        if (g_input_owners[i] == INPUT_OWNER_HUMAN && \
+                g_input_pad_for_player[i] != INPUT_NO_PAD) { \
+            build_intent(&g_player_intents[i], \
+                &g_pad_snapshots[g_input_pad_for_player[i]], (i) == 0); \
+        } else { \
+            g_player_intents[i].move_x = 0; \
+            g_player_intents[i].move_y = 0; \
+            g_player_intents[i].aim_x = 0; \
+            g_player_intents[i].aim_y = 0; \
+            g_player_intents[i].hit_pressed = 0; \
+            g_player_intents[i].pause_pressed = 0; \
+        } \
+    } while (0)
+
 void input_map_frame(const u16 raw[MAX_PADS])
 {
-    u8 i;
-    u8 pad;
-    PlayerIntent *intent;
-
-    for (i = 0; i < MAX_PADS; ++i)
-        input_update_snapshot(&g_pad_snapshots[i], raw[i]);
-    intent = g_player_intents;
-    for (i = 0; i < MAX_PLAYERS; ++i, ++intent) {
-        pad = g_input_pad_for_player[i];
-        if (g_input_owners[i] == INPUT_OWNER_HUMAN && pad != INPUT_NO_PAD) {
-            build_intent(intent, &g_pad_snapshots[pad], i == 0);
-        } else {
-            intent->move_x = 0;
-            intent->move_y = 0;
-            intent->aim_x = 0;
-            intent->aim_y = 0;
-            intent->hit_pressed = 0;
-            intent->pause_pressed = 0;
-        }
-    }
+    SNAPSHOT(0);
+    SNAPSHOT(1);
+    SNAPSHOT(2);
+    SNAPSHOT(3);
+    SNAPSHOT(4);
+    MAP_PLAYER(0);
+    MAP_PLAYER(1);
+    MAP_PLAYER(2);
+    MAP_PLAYER(3);
 }

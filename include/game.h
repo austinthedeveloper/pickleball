@@ -60,9 +60,20 @@ typedef struct {
 } GameState;
 
 extern GameState g_game_state;
+/* Nonzero while the attract demo (CPU vs CPU behind the title) runs. */
+extern u8 g_attract;
+
+enum {
+    GAME_ATTRACT_RESULT_FRAMES = 150,
+    GAME_ATTRACT_LATE_PERIOD = 5
+};
 
 void game_initialize(void);
 void game_new_match(void);
+/* ATTRACT_READY: demo match with slot 0 driven by the AI. */
+void game_start_attract(void);
+/* Leaves attract and starts a human match. */
+void game_start_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 

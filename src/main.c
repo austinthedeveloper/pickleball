@@ -63,7 +63,8 @@ int main(void)
         while (1)
             ;
 #endif
-    game_new_match();
+    g_attract = 0;
+    game_start_attract();
     render_initialize();
     g_overrun_frames = 0;
     g_loop_count = 0;
@@ -86,6 +87,20 @@ int main(void)
             render_stress_toggle();
         if (!render_stress_active()) {
 #endif
+        if (g_attract) {
+            /* Title: any Start/B press begins a human match. */
+            if (g_pad_snapshots[0].pressed & (PAD_START | PAD_B)) {
+                game_start_match();
+                /* Consume the press: it must not also pause or swing. */
+                g_player_intents[0].pause_pressed = 0;
+                g_player_intents[0].hit_pressed = 0;
+            }
+            else if (g_loop_count & 1)
+                ai_update(0, &g_player_intents[0]);
+            else
+                ai_hold_intent(0, &g_player_intents[0]);
+            PROFILE_MARK(6);
+        }
         ai_update(2, &g_player_intents[2]);
         PROFILE_MARK(0);
         game_update(g_player_intents);

@@ -20,6 +20,7 @@
 #define BANNER_ROW 24
 #define CENTER_BIG_ROW 8
 #define CENTER_PANEL_ROW 11
+#define TITLE_ROW 7
 
 extern char court_tiles, court_tiles_end;
 extern char court_map, court_map_end;
@@ -106,16 +107,18 @@ extern void oam_write(void);
 #define OBJ_ATTR(palette, hflip) \
     ((OBJ_PRIORITY << 4) | ((palette) << 1) | ((hflip) << 6))
 
-static void obj_put(u8 id, s16 x, s16 y, u16 tile, u8 attr, u8 large)
-{
-    oam_in_id = id;
-    oam_in_x = x;
-    oam_in_y = y;
-    oam_in_tile = tile;
-    oam_in_attr = attr;
-    oam_in_large = large;
-    oam_write();
-}
+/* A macro, not a function: 816-tcc's six stack arguments cost more than the
+ * OAM write itself. */
+#define obj_put(id, x, y, tile, attr, large) \
+    do { \
+        oam_in_id = (id); \
+        oam_in_x = (x); \
+        oam_in_y = (y); \
+        oam_in_tile = (tile); \
+        oam_in_attr = (attr); \
+        oam_in_large = (large); \
+        oam_write(); \
+    } while (0)
 
 static void obj_hide(u8 id)
 {
@@ -333,9 +336,16 @@ static void hud_center_prompt(u8 row, u8 palette, const char *text)
     }
 }
 
+#define HUD_KEY_TITLE 0x40
+#define HUD_KEY_TITLE_BLINK 0x41
+
 static u8 hud_scene_key(void)
 {
     u8 phase = g_game_state.phase;
+
+    if (g_attract)
+        return (g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
+            HUD_KEY_TITLE;
 
     if (g_game_state.paused)
         return 0x80;
@@ -353,6 +363,21 @@ static void hud_draw_scene(u8 key)
 {
     u8 winner = g_game_state.point_winner;
 
+    if (key == HUD_KEY_TITLE || key == HUD_KEY_TITLE_BLINK) {
+        /* Only the prompt blinks; the logo is drawn once. */
+        if (!s_hud_valid ||
+            (s_hud_scene != HUD_KEY_TITLE && s_hud_scene != HUD_KEY_TITLE_BLINK)) {
+            hud_clear_rows(CENTER_BIG_ROW - 2, 9);
+            hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
+            hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
+        }
+        hud_clear_rows(BANNER_ROW - 1, 4);
+        if (key == HUD_KEY_TITLE)
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
+        return;
+    }
+    if (s_hud_scene == HUD_KEY_TITLE || s_hud_scene == HUD_KEY_TITLE_BLINK)
+        hud_clear_rows(CENTER_BIG_ROW - 2, 9);
     hud_clear_rows(CENTER_BIG_ROW, 7);
     hud_clear_rows(BANNER_ROW - 1, 4);
 
