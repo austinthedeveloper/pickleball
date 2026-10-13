@@ -1,3 +1,4 @@
+#include "audio_events.h"
 #include "ball.h"
 #include "collision.h"
 #include "court.h"
@@ -200,6 +201,9 @@ static void practice_end_feed(u8 good)
         ++g_practice.streak;
     if (g_practice.streak > g_practice.best)
         g_practice.best = g_practice.streak;
+    /* The crowd notices every fifth return in a row (ADR-029). */
+    if (good && g_practice.streak % 5 == 0)
+        audio_crowd(g_practice.streak >= 20 ? 13 : 9);
     g_ball.active = 0;
     g_ball.rally_state = BALL_RALLY_INACTIVE;
     g_practice.state = PRACTICE_WAIT;
@@ -236,6 +240,9 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
     }
     if (!(events & BALL_EVENT_BOUNCE))
         return;
+    /* Bounces sound like a match's (ADR-029). */
+    events_emit(EVENT_BOUNCE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+        g_ball.bounce_count);
     if (g_practice.state == PRACTICE_RETURN) {
         /* The return's first bounce: in on the machine's side is good. */
         practice_end_feed(!(events & BALL_EVENT_OUT) &&

@@ -4,6 +4,7 @@
 #include "ai.h"
 #include "game.h"
 #include "match.h"
+#include "audio_events.h"
 #include "options.h"
 #include "rules.h"
 #include "save.h"
@@ -68,29 +69,37 @@ static void test_editor(void)
 {
     u8 points = 4;          /* invalid */
     u8 difficulty = 7;      /* invalid */
+    u8 sound = 9;           /* invalid */
 
-    options_edit_begin(&points, &difficulty);
+    options_edit_begin(&points, &difficulty, &sound);
+    assert(sound == AUDIO_ALL);
     assert(points == OPTIONS_POINTS_DEFAULT);
     assert(difficulty == DIFFICULTY_MEDIUM);
-    options_edit_input(&points, &difficulty, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
     assert(points == 7);
-    options_edit_input(&points, &difficulty, PAD_LEFT);
-    options_edit_input(&points, &difficulty, PAD_LEFT);
-    options_edit_input(&points, &difficulty, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
     assert(points == 21);                       /* wraps */
-    options_edit_input(&points, &difficulty, PAD_DOWN);
-    options_edit_input(&points, &difficulty, PAD_RIGHT);
-    options_edit_input(&points, &difficulty, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, PAD_DOWN);
+    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
     assert(difficulty == DIFFICULTY_KID);       /* wraps */
-    assert(options_edit_changed(points, difficulty));
-    assert(options_edit_input(&points, &difficulty, PAD_Y) ==
+    assert(options_edit_changed(points, difficulty, sound));
+    assert(options_edit_input(&points, &difficulty, &sound, PAD_Y) ==
         OPTIONS_EDIT_CANCEL);
     assert(points == 5 && difficulty == DIFFICULTY_MEDIUM);
-    options_edit_input(&points, &difficulty, PAD_UP);
-    options_edit_input(&points, &difficulty, PAD_RIGHT);
-    assert(options_edit_input(&points, &difficulty, PAD_B) ==
+    /* Rows wrap through SOUND: Up from POINTS. */
+    options_edit_input(&points, &difficulty, &sound, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, PAD_UP);
+    assert(g_options_edit.row == OPTIONS_ROW_SOUND);
+    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
+    assert(sound == AUDIO_OFF);
+    options_edit_input(&points, &difficulty, &sound, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
+    assert(options_edit_input(&points, &difficulty, &sound, PAD_B) ==
         OPTIONS_EDIT_DONE);
-    assert(options_edit_changed(points, difficulty));
+    assert(options_edit_changed(points, difficulty, sound));
 }
 
 static void test_select_and_styles(void)

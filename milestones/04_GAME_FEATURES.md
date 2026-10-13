@@ -73,10 +73,13 @@ counts the simulation's events (SERVE, HIT with the shot type, BOUNCE,
 FAULT, POINT) for the tests. A sound driver replaces its body without
 touching the simulation.
 
-- [ ] `M4-AUDIO-01` Sound driver and effects: paddle hits (standard, drive, and soft sound different), bounces, the net, the serve, and fault and point stings.
+- [x] `M4-AUDIO-01` Sound driver and effects: paddle hits (standard, drive, and soft sound different), bounces, the net, the serve, and fault and point stings.
   - Accept: an ADR picks the driver (PVSnesLib's SNESMOD, or a small custom SPC700 sound-effect player) and the ARAM budget (64 KiB: driver, BRR samples, echo buffer). Effects play from `audio_on_event` with no frame overruns (the main CPU only sends commands). The ROM cost of BRR samples is recorded. Effects are tested on hardware.
-- [ ] `M4-AUDIO-02` Crowd: light applause after points, louder for long rallies and match point, a cheer on the match result, and maybe a quiet murmur loop.
+  - Verified: [ADR-029](../docs/decisions/ADR-029-sound-effects.md), `test/test_audio.c`, MesenCE voice probe. Hardware listening is `M4-AUDIO-04`.
+- [x] `M4-AUDIO-02` Crowd: light applause after points, louder for long rallies and match point, a cheer on the match result, and maybe a quiet murmur loop.
   - Accept: rally length (already tracked for records) scales the reaction; a crowd volume or off option on the OPTIONS page.
+  - Verified: ADR-029 (applause scales with the rally, loudest on the match point; OPTIONS SOUND: ALL / NO CROWD / OFF). The cheer and murmur loop are left for later.
+- [ ] `M4-AUDIO-04` Listen on real hardware (levels and mix through a TV), and tune the effects (`make sfx-preview` writes WAVs).
 - [ ] `M4-AUDIO-03` Music for the title and menus (optional).
 
 ## Play modifiers

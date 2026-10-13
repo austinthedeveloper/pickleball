@@ -4,13 +4,40 @@
 #include "game_types.h"
 
 /*
- * Audio seam (docs/02 src/audio_events). The POC has no audio (ADR-009):
- * events are only counted so tests can see that the hooks fire. A sound
- * driver replaces audio_on_event later without touching the simulation.
+ * Sound effects (docs/decisions/ADR-029-sound-effects.md). The simulation
+ * emits events; this module turns them into SNESMOD effects (hits pitched
+ * by shot type and panned by the ball, bounces, the net, the whistle for a
+ * fault, and the crowd for a point). Host tests see the counts and the
+ * last effect instead of the sound CPU.
  */
 extern u16 g_audio_event_counts[6];
 
+/* Sound option (SaveSettings.sound): everything, no crowd, or nothing. */
+enum { AUDIO_ALL = 0, AUDIO_NO_CROWD = 1, AUDIO_OFF = 2, AUDIO_SETTINGS = 3 };
+
+/* The last effect asked for (host tests; on the SNES too, for probes). */
+typedef struct {
+    u8 sfx;             /* SFX_* or 0xff for none yet */
+    u8 pitch;
+    u8 volume;          /* 0..15 */
+    u8 pan;             /* 0 left .. 15 right */
+    u16 played;         /* effects started since boot */
+} AudioLast;
+
+extern AudioLast g_audio_last;
+
+/* Boots the sound CPU and loads the effects (a few frames; boot only). */
 void audio_events_initialize(void);
-void audio_on_event(u8 kind, u8 detail);
+/* A simulation event at court x (events.h kinds). */
+void audio_on_event(u8 kind, s16 x, u8 detail);
+/* Menus: SFX_BLIP, SFX_CONFIRM, or SFX_BACK, centred. */
+void audio_ui(u8 sfx);
+/* The crowd at a volume (practice streaks), unless the crowd is off. */
+void audio_crowd(u8 volume);
+/* Once a frame, after the frame's work: hands queued effects to the sound
+ * CPU when the frame has time left (or after a few frames). */
+void audio_update(void);
+/* Display name of a sound setting. */
+const char *audio_setting_name(u8 setting);
 
 #endif

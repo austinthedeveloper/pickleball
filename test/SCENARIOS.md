@@ -41,6 +41,8 @@ sources the ROM uses).
 | PRA-01 | `test_practice.c: test_feeds_land`: every shot x target lands in on P1's side where asked; unreturned feeds reset the streak (ADR-028) | PASS |
 | PRA-02 | `test_practice.c`: streaks build (bot, KID assist), best saved on leaving, Start exits | PASS |
 | PRA-03 | `test/smoke/practice.timeline`: page, Player Select, session, exit | PASS (MesenCE smoke) |
+| AUD-01 | `test_audio.c`: event to effect, pitch by shot, pan, crowd by rally, NO CROWD / OFF, attract silent (ADR-029) | PASS |
+| AUD-02 | MesenCE SPC700 voice probe: voices sound for menus, practice, and the golden match | PASS (MesenCE) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

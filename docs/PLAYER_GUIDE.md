@@ -36,6 +36,8 @@ OPTIONS difficulty. Start returns to the title.
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.
 
+**SOUND** is ALL, NO CROWD (effects without the applause), or OFF.
+
 B or Start keeps your choices (they're saved); Y puts back what you had.
 
 ## Opponents

@@ -16,7 +16,7 @@ Status: **Implementation baseline**
 | BG3 | 2bpp HUD and debug text |
 | Objects | Object size selection 8×8 small / 32×32 large |
 | Input | Auto-read pads through PVSnesLib; Multitap detection isolated behind input API |
-| Audio | Event API stub only through M3 |
+| Audio | SNESMOD sound effects from the event API (ADR-029); no music yet |
 
 Pin an exact PVSnesLib release or commit in `toolchain/README.md` and CI/container configuration. Never silently build against “latest.”
 
@@ -58,7 +58,7 @@ No gameplay mutation occurs from rendering functions.
 | `src/hud.c/.h` | Score, state banners, debug overlay |
 | `src/events.c/.h` | Simulation → presentation event seam (serve, hit, bounce, fault, point) |
 | `src/fx.c/.h` | Event-driven presentation effects (contact spark) |
-| `src/audio_events.c/.h` | No-op POC audio consumer; counts events for tests |
+| `src/audio_events.c/.h` | Sound effects from events (SNESMOD, ADR-029); counts events and the last effect for tests |
 | `src/debug.c/.h` | Assertions, counters, visualization flags |
 
 Keep module globals private. Pass compact structures or IDs; do not allocate dynamically.

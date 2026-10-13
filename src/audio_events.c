@@ -1,17 +1,172 @@
 #include "audio_events.h"
+#include "events.h"
+#include "game.h"
+#include "input.h"
+#include "match.h"
+#include "profile.h"
+#include "save.h"
+#include "sfx.h"
+
+#ifndef HOST_TEST
+#include "soundbank.h"
+extern char SOUNDBANK__;
+#endif
 
 u16 g_audio_event_counts[6];
+AudioLast g_audio_last;
+/* Shots in the current point (serve included), for the crowd. */
+static u8 s_rally_shots;
+/* Effects asked for but not yet handed to the sound CPU, and frames that
+ * skipped handing them over. */
+static u8 s_pending;
+static u8 s_skipped;
+
+/* spcProcess hands queued commands over and waits for the sound CPU to
+ * take each one: 60-110 scanlines. It runs only when the frame's work has
+ * ended this early, or after this many frames of waiting. */
+#define AUDIO_PROCESS_SCANLINE 130
+#define AUDIO_PROCESS_MAX_SKIPS 3
 
 void audio_events_initialize(void)
 {
     u8 i;
+
     for (i = 0; i < 6; ++i)
         g_audio_event_counts[i] = 0;
+    g_audio_last.sfx = 0xff;
+    g_audio_last.played = 0;
+    s_rally_shots = 0;
+    s_pending = 0;
+    s_skipped = 0;
+#ifndef HOST_TEST
+    spcBoot();
+    spcSetBank(&SOUNDBANK__);
+    spcStop();
+    for (i = 0; i < SFX_COUNT; ++i)
+        spcLoadEffect(i);
+#endif
 }
 
-void audio_on_event(u8 kind, u8 detail)
+const char *audio_setting_name(u8 setting)
 {
-    (void)detail;
+    static const char *const names[AUDIO_SETTINGS] = {
+        "ALL", "NO CROWD", "OFF"
+    };
+    return names[setting < AUDIO_SETTINGS ? setting : AUDIO_ALL];
+}
+
+static u8 audio_setting(void)
+{
+    return g_save.settings.sound < AUDIO_SETTINGS ? g_save.settings.sound :
+        AUDIO_ALL;
+}
+
+static void audio_play(u8 sfx, u8 pitch, u8 volume, u8 pan)
+{
+    if (audio_setting() == AUDIO_OFF)
+        return;
+    g_audio_last.sfx = sfx;
+    g_audio_last.pitch = pitch;
+    g_audio_last.volume = volume;
+    g_audio_last.pan = pan;
+    ++g_audio_last.played;
+    s_pending = 1;
+#ifndef HOST_TEST
+    spcEffect(pitch, sfx, (u8)((volume << 4) | pan));
+#endif
+}
+
+/* Court x (0-255) to pan 0-15. */
+static u8 audio_pan(s16 x)
+{
+    if (x < 0)
+        return 0;
+    if (x > 255)
+        return 15;
+    return (u8)(x >> 4);
+}
+
+void audio_crowd(u8 volume)
+{
+    if (audio_setting() == AUDIO_NO_CROWD)
+        return;
+    audio_play(SFX_APPLAUSE, SFX_PITCH, volume, 8);
+}
+
+/* The crowd's reaction: louder for longer rallies, loudest for the point
+ * that wins the match. */
+static u8 audio_applause_volume(u8 winner)
+{
+    if (g_game_state.team_score[winner & 1] >= g_match_config.points_to_win)
+        return 15;
+    if (s_rally_shots >= 10)
+        return 13;
+    if (s_rally_shots >= 6)
+        return 10;
+    if (s_rally_shots >= 3)
+        return 8;
+    return 6;
+}
+
+void audio_on_event(u8 kind, s16 x, u8 detail)
+{
     if (kind < 6)
         ++g_audio_event_counts[kind];
+    if (kind == EVENT_SERVE)
+        s_rally_shots = 0;
+    if (kind == EVENT_SERVE || kind == EVENT_HIT)
+        ++s_rally_shots;
+    /* The attract demo plays silently; the title has menu sounds only. */
+    if (g_attract)
+        return;
+    switch (kind) {
+    case EVENT_SERVE:
+        audio_play(SFX_HIT, SFX_PITCH, 12, audio_pan(x));
+        break;
+    case EVENT_HIT:
+        /* detail: hitter | ShotType << 4. Drives are sharper, soft shots
+         * duller. */
+        if ((detail >> 4) == SHOT_DRIVE)
+            audio_play(SFX_HIT, SFX_PITCH + 1, 14, audio_pan(x));
+        else if ((detail >> 4) == SHOT_SOFT)
+            audio_play(SFX_HIT, SFX_PITCH - 1, 11, audio_pan(x));
+        else
+            audio_play(SFX_HIT, SFX_PITCH, 13, audio_pan(x));
+        break;
+    case EVENT_BOUNCE:
+        audio_play(SFX_BOUNCE, SFX_PITCH, detail <= 1 ? 10 : 6, audio_pan(x));
+        break;
+    case EVENT_FAULT:
+        if (detail == GAME_FAULT_NET)
+            audio_play(SFX_NET, SFX_PITCH, 12, audio_pan(x));
+        else
+            audio_play(SFX_WHISTLE, SFX_PITCH, 10, 8);
+        break;
+    case EVENT_POINT:
+        audio_crowd(audio_applause_volume(detail));
+        break;
+    default:
+        break;
+    }
+}
+
+void audio_ui(u8 sfx)
+{
+    audio_play(sfx, SFX_PITCH, 10, 8);
+}
+
+void audio_update(void)
+{
+    if (!s_pending)
+        return;
+#ifndef HOST_TEST
+    if (profile_scanline() > AUDIO_PROCESS_SCANLINE &&
+            s_skipped < AUDIO_PROCESS_MAX_SKIPS) {
+        ++s_skipped;
+        return;
+    }
+    spcProcess();
+#endif
+    s_pending = 0;
+    s_skipped = 0;
 }

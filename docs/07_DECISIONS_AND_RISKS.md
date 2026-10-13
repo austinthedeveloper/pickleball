@@ -14,7 +14,7 @@ Status: **Living record**
 | ADR-006 | 12.4 fixed-point deterministic simulation in s16 (amended from 8.8 on 2026-10-12) | Sufficient court range and 1/16 px precision without floating point; 816-tcc's 32-bit code cost ~30% of the frame | Overflow/range tests fail |
 | ADR-007 | Arcade rally scoring, first to 5 | Short POC loop and easier validation | Vertical slice rules pass begins |
 | ADR-008 | P1 human vs P3 CPU entity slots | Exercises future doubles layout now | Never; IDs are stable |
-| ADR-009 | No audio requirement through M3 | Gameplay and hardware proof first | Immediately after POC certification |
+| ADR-009 | No audio requirement through M3 | Gameplay and hardware proof first | Immediately after POC certification. *Superseded for effects by ADR-029.* |
 | [ADR-010](10_MOCKUP_DECISIONS.md#adr-010--palette-decoupled-from-player-slot) | Palette is per-player data, decoupled from slot | Keeps every mockup valid; Player Select needs it | — |
 | [ADR-011](10_MOCKUP_DECISIONS.md#adr-011--perspective-court-with-world-to-screen-projection) | Perspective court: rules in world space, rendering projects | Matches the mockups without changing any rule or test | — |
 | [ADR-012](10_MOCKUP_DECISIONS.md#adr-012--depth-sorted-player-bodies-in-oam) | Player bodies depth-sorted in OAM each frame | Teammates overlap in doubles | — |

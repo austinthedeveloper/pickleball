@@ -1,3 +1,4 @@
+#include "audio_events.h"
 #include "input.h"
 #include "options.h"
 #include "player.h"
@@ -78,37 +79,50 @@ u8 options_ball_moves(u8 difficulty, u8 tick)
     return 1;
 }
 
-void options_edit_begin(u8 *points, u8 *difficulty)
+void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound)
 {
     *points = options_points(*points);
     *difficulty = options_difficulty(*difficulty);
+    if (*sound >= AUDIO_SETTINGS)
+        *sound = AUDIO_ALL;
     g_options_edit.row = OPTIONS_ROW_POINTS;
     g_options_edit.original_points = *points;
     g_options_edit.original_difficulty = *difficulty;
+    g_options_edit.original_sound = *sound;
 }
 
-u8 options_edit_changed(u8 points, u8 difficulty)
+u8 options_edit_changed(u8 points, u8 difficulty, u8 sound)
 {
     return points != g_options_edit.original_points ||
-        difficulty != g_options_edit.original_difficulty;
+        difficulty != g_options_edit.original_difficulty ||
+        sound != g_options_edit.original_sound;
 }
 
-u8 options_edit_input(u8 *points, u8 *difficulty, u16 pressed)
+u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u16 pressed)
 {
     u8 index;
+    u8 row = g_options_edit.row;
     u8 left = (pressed & PAD_LEFT) != 0;
 
     if (pressed & PAD_Y) {
         *points = g_options_edit.original_points;
         *difficulty = g_options_edit.original_difficulty;
+        *sound = g_options_edit.original_sound;
         return OPTIONS_EDIT_CANCEL;
     }
     if (pressed & (PAD_B | PAD_START))
         return OPTIONS_EDIT_DONE;
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_options_edit.row ^= 1;        /* two rows: both directions wrap */
+    if (pressed & PAD_UP)
+        g_options_edit.row = row ? row - 1 : OPTIONS_ROWS - 1;
+    else if (pressed & PAD_DOWN)
+        g_options_edit.row = row == OPTIONS_ROWS - 1 ? 0 : row + 1;
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (g_options_edit.row == OPTIONS_ROW_POINTS) {
+        if (row == OPTIONS_ROW_SOUND) {
+            if (left)
+                *sound = *sound ? *sound - 1 : AUDIO_SETTINGS - 1;
+            else
+                *sound = *sound + 1 >= AUDIO_SETTINGS ? 0 : *sound + 1;
+        } else if (row == OPTIONS_ROW_POINTS) {
             index = points_index(*points);
             if (left)
                 index = index ? index - 1 : OPTIONS_POINT_CHOICES - 1;

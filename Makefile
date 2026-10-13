@@ -21,6 +21,12 @@ SRAMSIZE := 01
 
 export ROMNAME ROMTITLE FASTROM
 
+# Sound effects (ADR-029): tools/assetgen/sfx.py writes sfx.it; smconv turns
+# it into a SNESMOD soundbank in its own ROM bank (7, the last).
+AUDIOFILES := assets/generated/sfx.it
+export SOUNDBANK := assets/generated/soundbank
+SMCONVFLAGS := -s -o $(SOUNDBANK) -b 7
+
 CONFIG_TAG := $(CONFIG)
 ifeq ($(CONFIG),debug)
 CONFIG_TAG := DBG
@@ -46,7 +52,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare sfx-preview
 
 all: debug
 
@@ -84,7 +90,7 @@ HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/input_state.c src/match.c src/options.c src/player.c src/projection.c \
 	src/practice.c src/rules.c src/save.c src/select.c src/serve.c \
 	src/story.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice audio
 
 host-check: assets
 	@mkdir -p build/host
@@ -109,6 +115,10 @@ stats: assets
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
 	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY)
+
+# The sound effects as WAV files in build/sfx/, to listen to (ADR-029).
+sfx-preview:
+	@python3 tools/sfx_preview.py
 
 # Golden emulator trace (docs/REFACTOR_PLAN.md R0): record before a
 # refactor, compare after; simulation state must stay identical.

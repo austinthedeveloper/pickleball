@@ -53,7 +53,7 @@ static u16 s_painted_ground[COURT_GROUND_COLORS];
  * reaches ~200 scanlines on its heavy frames), but at most a few frames. */
 static u8 s_ground_pending;
 static u8 s_ground_waits;
-#define RENDER_RECOLOR_SCANLINE_LIMIT 150
+#define RENDER_RECOLOR_SCANLINE_LIMIT 110
 #define RENDER_RECOLOR_MAX_WAITS 3
 static u8 s_ground_dirty;
 /* Venue on screen (ADR-024). */

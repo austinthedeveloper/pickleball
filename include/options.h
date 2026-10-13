@@ -41,21 +41,24 @@ void options_apply_difficulty(AiStyle *style, u8 difficulty);
 u8 options_ball_moves(u8 difficulty, u8 tick);
 
 /* Options page editor (like the court page, ADR-022). */
-enum { OPTIONS_ROW_POINTS = 0, OPTIONS_ROW_DIFFICULTY = 1, OPTIONS_ROWS = 2 };
+enum { OPTIONS_ROW_POINTS = 0, OPTIONS_ROW_DIFFICULTY = 1,
+       OPTIONS_ROW_SOUND = 2, OPTIONS_ROWS = 3 };
 enum { OPTIONS_EDIT_STAY = 0, OPTIONS_EDIT_DONE = 1, OPTIONS_EDIT_CANCEL = 2 };
 
 typedef struct {
     u8 row;
     u8 original_points;
     u8 original_difficulty;
+    u8 original_sound;
 } OptionsEdit;
 
 extern OptionsEdit g_options_edit;
 
-/* Opens the editor on the saved values (made valid in place). */
-void options_edit_begin(u8 *points, u8 *difficulty);
+/* Opens the editor on the saved values (made valid in place); sound is an
+ * AUDIO_* setting (ADR-029). */
+void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound);
 /* Up/Down rows, Left/Right values (wrapping), B or Start keeps, Y cancels. */
-u8 options_edit_input(u8 *points, u8 *difficulty, u16 pressed);
-u8 options_edit_changed(u8 points, u8 difficulty);
+u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u16 pressed);
+u8 options_edit_changed(u8 points, u8 difficulty, u8 sound);
 
 #endif

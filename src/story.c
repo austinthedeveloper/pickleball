@@ -5,6 +5,12 @@
 
 StoryState g_story;
 
+void story_initialize(void)
+{
+    g_story.card = STORY_CARD_NONE;
+    g_story.timer = 0;
+}
+
 void story_begin_intro(void)
 {
     g_story.timer = 0;

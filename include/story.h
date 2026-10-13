@@ -22,6 +22,9 @@ typedef struct {
 
 extern StoryState g_story;
 
+/* No card. Call at boot: RAM is not cleared at power-on, and a stray card
+ * value would freeze the attract demo under an invisible card. */
+void story_initialize(void);
 /* Shows the intro card when the match has a ladder opponent. */
 void story_begin_intro(void);
 /* One frame of 1P's newly pressed buttons; B, A, or Start ends the card

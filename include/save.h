@@ -39,7 +39,7 @@ typedef struct {
     u8 points;                  /* points to win (ADR-025) */
     u8 difficulty;              /* Difficulty (ADR-025) */
     u8 practice[3];             /* shot, target, rate (ADR-028) */
-    u8 reserved;
+    u8 sound;                   /* AUDIO_* (ADR-029); 0 ALL in older saves */
 } SaveSettings;
 
 typedef struct {

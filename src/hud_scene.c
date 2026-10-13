@@ -9,6 +9,7 @@
 #include "render.h"
 #include "render_internal.h"
 #include "court_style.h"
+#include "audio_events.h"
 #include "options.h"
 #include "practice.h"
 #include "save.h"
@@ -51,7 +52,7 @@
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
-#define OPTIONS_PAGE_ROWS 4         /* header, gap, points, difficulty */
+#define OPTIONS_PAGE_ROWS 5         /* header, gap, points, difficulty, sound */
 #define PRACTICE_PAGE_ROWS 7        /* header, gap, 3 rows, gap, best */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
@@ -581,6 +582,8 @@ static u8 hud_options_value(u8 index)
 {
     if (index == OPTIONS_ROW_POINTS)
         return g_save.settings.points;
+    if (index == OPTIONS_ROW_SOUND)
+        return g_save.settings.sound;
     return g_save.settings.difficulty;
 }
 
@@ -596,6 +599,9 @@ static void hud_options_row(u8 index)
         points[1] = value >= 10 ? (char)('0' + value % 10) : 0;
         points[2] = 0;
         hud_setting_row(COURT_FIRST_ROW, "POINTS", points, cursor);
+    } else if (index == OPTIONS_ROW_SOUND) {
+        hud_setting_row(COURT_FIRST_ROW + 2, "SOUND",
+            audio_setting_name(value), cursor);
     } else {
         hud_setting_row(COURT_FIRST_ROW + 1, "DIFFICULTY",
             options_difficulty_name(value), cursor);
@@ -611,6 +617,7 @@ static u8 hud_options_draw_part(u8 part)
             OPTIONS_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
         s_options_row_drawn[0] = 0xff;
         s_options_row_drawn[1] = 0xff;
+        s_options_row_drawn[2] = 0xff;
         return 0;
     }
     if (part == 1) {

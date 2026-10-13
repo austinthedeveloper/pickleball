@@ -9,6 +9,7 @@
 #include "match.h"
 #include "options.h"
 #include "practice.h"
+#include "sfx.h"
 #include "player.h"
 #include "profile.h"
 #include "render.h"
@@ -22,6 +23,17 @@ static u8 s_scene;
 static u8 s_open_select;
 /* Player Select is open on the way to practice (ADR-028). */
 static u8 s_practice_pending;
+
+/* Menu sounds (ADR-029): Y goes back, a choice confirms, a move blips. */
+static void ui_sounds(u16 pressed)
+{
+    if (pressed & PAD_Y)
+        audio_ui(SFX_BACK);
+    else if (pressed & (PAD_START | PAD_B | PAD_A))
+        audio_ui(SFX_CONFIRM);
+    else if (pressed & (PAD_UP | PAD_DOWN | PAD_LEFT | PAD_RIGHT))
+        audio_ui(SFX_BLIP);
+}
 
 /* Records page (ADR-021): Start, B, or Y closes it; holding L+R and
  * pressing X erases the records (court colours stay). */
@@ -66,13 +78,14 @@ static void update_title_options(u16 pressed)
 {
     SaveSettings *settings = &g_save.settings;
     u8 result = options_edit_input(&settings->points, &settings->difficulty,
-        pressed);
+        &settings->sound, pressed);
 
     if (result == OPTIONS_EDIT_STAY)
         return;
     g_title_page = TITLE_PAGE_MENU;
     if (result == OPTIONS_EDIT_DONE &&
-            options_edit_changed(settings->points, settings->difficulty))
+            options_edit_changed(settings->points, settings->difficulty,
+                settings->sound))
         save_write();
 }
 
@@ -101,6 +114,8 @@ static void update_title(void)
 {
     u16 pressed = g_pad_snapshots[0].pressed;
 
+    ui_sounds(pressed | (g_pad_snapshots[1].pressed & PAD_START));
+
     if (g_title_page == TITLE_PAGE_RECORDS)
         update_title_records(pressed);
     else if (g_title_page == TITLE_PAGE_COURT)
@@ -126,7 +141,7 @@ static void update_title(void)
                 g_title_page = TITLE_PAGE_PRACTICE;
             } else if (g_title_mode == TITLE_OPTIONS) {
                 options_edit_begin(&g_save.settings.points,
-                    &g_save.settings.difficulty);
+                    &g_save.settings.difficulty, &g_save.settings.sound);
                 g_title_page = TITLE_PAGE_OPTIONS;
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,
@@ -201,10 +216,13 @@ static void update_controllers(void)
 /* One Player Select frame: 1P reads port 1, 2P port 2. */
 static void update_select(void)
 {
-    u8 result = select_input(g_pad_snapshots[g_select.current].pressed);
+    u16 pressed = g_pad_snapshots[g_select.current].pressed;
+    u8 result = select_input(pressed);
 
+    ui_sounds(pressed);
     if (result == SELECT_STAY) {
         render_select_prepare();
+        audio_update();
         WaitForVBlank();
         render_select_commit();
         return;
@@ -232,6 +250,7 @@ int main(void)
     input_initialize();
     audio_events_initialize();
     save_initialize();
+    story_initialize();
     match_config_defaults();
 #ifdef BUILD_DEBUG
     /* ADR-010: every active player has a unique palette. */
@@ -284,9 +303,13 @@ int main(void)
              * closes it is the card's too: the serve buffers presses, so the
              * closing B would otherwise serve. */
             if (g_story.card != STORY_CARD_NONE) {
-                story_update(g_pad_snapshots[0].pressed);
+                if (!story_update(g_pad_snapshots[0].pressed))
+                    audio_ui(SFX_CONFIRM);
             } else {
                 update_controllers();
+                /* Pause, unpause, or back to the title. */
+                if (!g_attract && g_player_intents[0].pause_pressed)
+                    audio_ui(SFX_BLIP);
                 game_update(g_player_intents);
             }
             PROFILE_MARK(1);
@@ -301,6 +324,9 @@ int main(void)
         render_prepare();
         PROFILE_MARK(7);
         profile_work_done();
+        /* Queued sound effects go to the sound CPU if there is time left
+         * before VBlank (ADR-029). */
+        audio_update();
         WaitForVBlank();
         render_commit();
         profile_frame_end();

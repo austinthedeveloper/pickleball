@@ -44,6 +44,7 @@ from assetgen.court_colors import court_colors_header  # noqa: E402
 from assetgen.opponents import opponents_header  # noqa: E402
 from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
+from assetgen.sfx import sfx_assets  # noqa: E402
 from assetgen.select import portrait_assets, scene_assets  # noqa: E402
 
 
@@ -105,6 +106,9 @@ def generated_files():
         "portrait_f.map": portrait_f,
     }
     files.update(venue_files)
+    sfx_it, sfx_header, sfx_seconds = sfx_assets()
+    files["sfx.it"] = sfx_it
+    files["sfx.h"] = sfx_header.encode()
     budget = {"court_tiles": court_tiles, "ground_tiles": ground_tiles, "hud_tiles": hud_tiles,
               "obj_tiles": obj_tiles, "select_tiles": select_tiles,
               "portrait_tiles": portrait_tiles}
