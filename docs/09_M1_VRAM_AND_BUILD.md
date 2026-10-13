@@ -67,6 +67,8 @@ toward the PPU's 32-object range-over limit.
 
 ## ROM
 
-LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, no SRAM;
+LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, cartridge
+type `$02` with 2 KiB battery SRAM at `$70:0000` (two 24-byte save copies at
+offsets 0 and 1024; ADR-021);
 internal checksum and complement sum to
 `0xffff`. `make dist` records the full ROM SHA-256 in the distribution report.

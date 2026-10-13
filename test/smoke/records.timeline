@@ -1,0 +1,18 @@
+# Title menu and records page (ADR-021): Down twice to RECORDS, open it,
+# close with B, reopen, erase with L+R+X, close with Start.
+70 71 down
+shot 80
+90 91 down
+shot 100
+110 111 start
+shot 130
+150 151 b
+shot 170
+190 191 start
+200 240 l,r
+215 216 x
+shot 250
+270 271 start
+shot 290
+300 301 up
+shot 310

@@ -126,6 +126,10 @@ no-volley-anywhere.
 
 ## Battery save (SRAM)
 
+**Started:** [ADR-021](decisions/ADR-021-battery-save.md) adds the SRAM, the
+save block, and records (no initials entry yet). The notes below are the
+original idea.
+
 Add battery-backed save RAM so the game can remember things after power-off.
 Today the cart has none (ADR-017: "no SRAM").
 

@@ -20,6 +20,9 @@
 #define PAD_LEFT 0x0200
 #define PAD_RIGHT 0x0100
 #define PAD_A 0x0080
+#define PAD_X 0x0040
+#define PAD_L 0x0020
+#define PAD_R 0x0010
 
 /* Shot types (docs/decisions/ADR-019-shots.md): B, A, Y. */
 typedef enum {

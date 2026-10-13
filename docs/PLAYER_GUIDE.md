@@ -4,9 +4,21 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 (doubles), on a single outdoor court. A second player can join on
 controller 2. First to 5 points wins.
 
-On the title screen, Up/Down chooses **SINGLES** or **DOUBLES**. Pressing
-Start on controller 2 adds a second player (`2P JOINED!`); press it again to
-leave. Start or B on controller 1 opens Player Select.
+On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, or
+**RECORDS**. Pressing Start on controller 2 adds a second player
+(`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
+Player Select (or the records page).
+
+## Records
+
+The cartridge saves your records against the CPU: wins and losses for
+singles and doubles, your current and best win streak, shutouts (wins where
+the CPU scored nothing), and the longest rally (shots in one point, the serve
+included; 2P matches count for this one too). They update at the end of each
+match.
+
+On the records page, Start, B, or Y goes back. To erase every record, hold
+L and R and press X. There is no confirmation.
 
 ## Player Select
 

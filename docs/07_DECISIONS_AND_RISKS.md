@@ -44,7 +44,7 @@ Status: **Living record**
 
 ### ADR-017 — FastROM
 
-**Decision.** Build LoROM FastROM: header map mode `$30`, code linked at banks `$80+`, and `MEMSEL` set by the PVSnesLib FastROM runtime. The ROM is still a plain cartridge with no enhancement chip and no SRAM.
+**Decision.** Build LoROM FastROM: header map mode `$30`, code linked at banks `$80+`, and `MEMSEL` set by the PVSnesLib FastROM runtime. The ROM is still a plain cartridge with no enhancement chip and no SRAM. *Amended 2026-10-13 by [ADR-021](decisions/ADR-021-battery-save.md):* the cart has 2 KiB of battery-backed SRAM for records.
 
 **Real-hardware requirement.** Every SNES and Super Famicom console supports FastROM access; it is a standard memory speed. The cartridge must have 120 ns or faster ROM. Common flash carts (FXPak/SD2SNES, EverDrive) and fast EPROM or flash reproduction boards meet this. A 150–200 ns EPROM board does not, and would crash or corrupt on real hardware even though emulators run it. Record the cartridge type in `test/hardware-log.md` for every hardware run.
 
@@ -67,6 +67,6 @@ Deferred means “do not accidentally implement inside M1–M3.” Write a new d
 - Final title and character theme.
 - Whether the court is indoor, outdoor, or fantastical.
 - Music engine/content.
-- Save data and long-term modes.
+- Long-term modes. (Save data: [ADR-021](decisions/ADR-021-battery-save.md).)
 - PAL release plan.
 - Physical cartridge manufacturing.

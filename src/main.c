@@ -9,6 +9,7 @@
 #include "player.h"
 #include "profile.h"
 #include "render.h"
+#include "save.h"
 #include "select.h"
 
 /* The court (title, attract, match) or Player Select (ADR-020). */
@@ -16,25 +17,48 @@ enum { SCENE_MATCH = 0, SCENE_SELECT = 1 };
 static u8 s_scene;
 static u8 s_open_select;
 
-/* Title: Up/Down picks singles or doubles, Start on pad 2 toggles 2P, and
- * Start/B opens Player Select. */
+/* Records page (ADR-021): Start, B, or Y closes it; holding L+R and
+ * pressing X erases the save. */
+static void update_title_records(u16 pressed)
+{
+    if ((g_pad_snapshots[0].held & (PAD_L | PAD_R)) == (PAD_L | PAD_R) &&
+            (pressed & PAD_X)) {
+        save_clear();
+        hud_scene_refresh_title();
+    } else if (pressed & (PAD_START | PAD_B | PAD_Y)) {
+        g_title_records = 0;
+    }
+}
+
+/* Title: Up/Down picks singles, doubles, or records, Start on pad 2 toggles
+ * 2P, and Start/B opens Player Select (or the records page). */
 static void update_title(void)
 {
     u16 pressed = g_pad_snapshots[0].pressed;
 
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_title_mode ^= 1;
-    if (g_pad_snapshots[1].pressed & PAD_START)
-        g_title_2p ^= 1;
-    if (pressed & (PAD_START | PAD_B)) {
-        select_begin(g_title_mode ? MATCH_DOUBLES : MATCH_SINGLES,
-            g_title_2p ? 2 : 1);
-        s_open_select = 1;
-    } else if (g_loop_count & 1) {
-        ai_update(0, &g_player_intents[0]);
-    } else {
-        ai_hold_intent(0, &g_player_intents[0]);
+    if (g_title_records) {
+        update_title_records(pressed);
+        pressed = 0;
     }
+    if (pressed & PAD_UP)
+        g_title_mode = g_title_mode ? g_title_mode - 1 : TITLE_RECORDS;
+    if (pressed & PAD_DOWN)
+        g_title_mode = g_title_mode == TITLE_RECORDS ? 0 : g_title_mode + 1;
+    if (!g_title_records && (g_pad_snapshots[1].pressed & PAD_START))
+        g_title_2p ^= 1;
+    if ((pressed & (PAD_START | PAD_B)) && g_title_mode == TITLE_RECORDS) {
+        g_title_records = 1;
+    } else if (pressed & (PAD_START | PAD_B)) {
+        select_begin(g_title_mode == TITLE_DOUBLES ? MATCH_DOUBLES :
+            MATCH_SINGLES, g_title_2p ? 2 : 1);
+        s_open_select = 1;
+    }
+    if (s_open_select)
+        return;
+    if (g_loop_count & 1)
+        ai_update(0, &g_player_intents[0]);
+    else
+        ai_hold_intent(0, &g_player_intents[0]);
 }
 
 /*
@@ -101,6 +125,7 @@ int main(void)
 {
     input_initialize();
     audio_events_initialize();
+    save_initialize();
     match_config_defaults();
 #ifdef BUILD_DEBUG
     /* ADR-010: every active player has a unique palette. */
@@ -111,7 +136,8 @@ int main(void)
     /* Before the first render: the debug overlay reads the counters. */
     profile_initialize();
     g_attract = 0;
-    g_title_mode = 0;
+    g_title_mode = TITLE_SINGLES;
+    g_title_records = 0;
     g_title_2p = 0;
     s_scene = SCENE_MATCH;
     s_open_select = 0;

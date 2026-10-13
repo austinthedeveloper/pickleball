@@ -21,6 +21,9 @@ sources the ROM uses).
 | PROJ-01..03 | `test_projection.c` and `tools/court_projection.py` | PASS |
 | PROJ-04 | `tools/generate_assets.py` line check, plus a failing fixture in `tools/test_asset_validation.py` | PASS |
 | PROJ-05 | Emulator visual check: the ball shadow lands on painted lines | PASS (MesenCE smoke) |
+| SAV-01 | `test_save.c`: blank SRAM formats, newer copy wins, torn copy falls back, version resets, sequence wraps (ADR-021) | PASS |
+| SAV-02 | `test_save.c: test_records`, `test_game_hooks`: record rules, once per human match, never in attract | PASS |
+| SAV-03 | `test/smoke/records.timeline`: records page, erase, persistence across MesenCE runs (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate
 

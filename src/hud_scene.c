@@ -8,6 +8,7 @@
 #include "profile.h"
 #include "render.h"
 #include "render_internal.h"
+#include "save.h"
 
 /*
  * Score panels and scene overlays (title, serve prompt, point and match
@@ -33,20 +34,38 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES / DOUBLES */
+#define TITLE_MENU_ROW 12           /* SINGLES / DOUBLES / RECORDS */
 #define TITLE_MENU_COL 12
+#define TITLE_2P_ROW 16
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
+#define TITLE_AREA_ROWS 10          /* menu or records: rows 12-21 */
+#define RECORDS_COL 4               /* the records box: columns 4-27 */
+#define RECORDS_WIDTH 24
+#define RECORDS_ROWS 9
+#define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
-static u8 s_hud_scene;
+static u16 s_hud_scene;
 static u8 s_hud_valid;
 static u8 s_sub_panel;             /* 0 none, 1 ARCADE RULES, 2 MATCH POINT */
 
-/* Title menu choice (0 singles, 1 doubles) and 2P join; owned by main.c's
- * title input. */
+/* Title menu choice (TITLE_*), the records page, and 2P join; owned by
+ * main.c's title input. */
 u8 g_title_mode;
+u8 g_title_records;
 u8 g_title_2p;
+/*
+ * Title area (rows 12-21: the menu or the records page), drawn a part per
+ * idle frame by hud_title_area_update, apart from the staged scene steps so
+ * the prompt blink never interrupts it. s_title_view is the view on screen
+ * or being drawn (hud_title_view), HUD_TITLE_CLEARED after a clear, or
+ * HUD_TITLE_UNKNOWN; s_title_part is the next part to draw.
+ */
+static u8 s_title_view;
+static u8 s_title_part;
+#define HUD_TITLE_CLEARED 0xfe
+#define HUD_TITLE_UNKNOWN 0xff
 
 /* Score-panel labels: at most 4 characters before the score digits. */
 static const char *const s_palette_names[PAL_COUNT] = {
@@ -80,6 +99,12 @@ void hud_scene_invalidate(void)
     /* No previous scene: the staged redraw starts from scratch (a title
      * logo is redrawn, not assumed to be on screen). */
     s_hud_scene = 0xff;
+    s_title_view = HUD_TITLE_UNKNOWN;
+}
+
+void hud_scene_refresh_title(void)
+{
+    s_title_view = HUD_TITLE_UNKNOWN;
 }
 
 static const char *fault_word(u8 fault)
@@ -154,8 +179,8 @@ static void hud_draw_scores(void)
  * results); these special keys sit above that range.
  */
 #define HUD_KEY_PAUSED 0x80
-#define HUD_KEY_TITLE 0x40
-#define HUD_KEY_TITLE_BLINK 0x41
+#define HUD_KEY_TITLE 0x100
+#define HUD_KEY_TITLE_BLINK 0x101
 
 /* Doubles shows ARCADE RULES under DOUBLES; either mode shows MATCH POINT
  * when a team is one point from winning (the doubles mockup). */
@@ -204,13 +229,13 @@ static const char *hud_match_winner_text(void)
     return g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS";
 }
 
-static u8 hud_scene_key(void)
+static u16 hud_scene_key(void)
 {
     u8 phase = g_game_state.phase;
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
-            HUD_KEY_TITLE) | (g_title_mode << 1) | (g_title_2p << 2);
+            HUD_KEY_TITLE) | (g_title_records << 1);
 
     if (g_game_state.paused)
         return HUD_KEY_PAUSED;
@@ -224,8 +249,10 @@ static u8 hud_scene_key(void)
     return phase;
 }
 
-/* Title keys: 0x40 | blink (bit 0) | menu choice (bit 1) | 2P (bit 2). */
-#define HUD_IS_TITLE(k) (((k) & 0xF0) == HUD_KEY_TITLE)
+/* Title keys: 0x100 | blink (bit 0) | records page (bit 1, for its prompt).
+ * Bit 8 keeps them apart from phase keys: a kitchen fault point for P1 is
+ * 0x44. The menu choice and 2P are drawn by hud_title_area_update. */
+#define HUD_IS_TITLE(k) (((k) & HUD_KEY_TITLE) != 0)
 
 /*
  * Scene overlays are drawn in three steps on consecutive frames (clear, big
@@ -236,47 +263,190 @@ enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
        HUD_STEP_DONE = 3 };
 
 static u8 s_scene_step;
-static u8 s_prev_scene;
+static u16 s_prev_scene;
 
-static void hud_scene_step(u8 key, u8 step)
+/* Four digits, right-aligned; leading zeros are spaces, which the font
+ * draws as dark cells like the box. Records saturate at SAVE_COUNTER_MAX.
+ * No 816-tcc division. */
+static void hud_count(u8 col, u8 row, u16 value)
+{
+    static const u16 powers[3] = { 1000, 100, 10 };
+    char text[5];
+    u8 i;
+    u8 leading = 1;
+
+    for (i = 0; i < 3; ++i) {
+        text[i] = '0';
+        while (value >= powers[i]) {
+            value -= powers[i];
+            ++text[i];
+        }
+        if (leading && text[i] == '0')
+            text[i] = ' ';
+        else
+            leading = 0;
+    }
+    text[3] = (char)('0' + value);
+    text[4] = 0;
+    hud_text(col, row, HUD_PAL_WHITE, text);
+}
+
+/* " LONGEST RALLY        nnnn " */
+static void hud_record_line(u8 row, const char *label, u16 value)
+{
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
+    hud_count(RECORDS_COUNT_COL, row, value);
+}
+
+/* " SINGLES  W nnnn  L nnnn " */
+static void hud_record_mode_line(u8 row, const char *label, u8 mode)
+{
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
+    hud_text(RECORDS_COUNT_COL - 9, row, HUD_PAL_YELLOW, "W");
+    hud_count(RECORDS_COUNT_COL - 7, row, g_save.records.wins[mode]);
+    hud_text(RECORDS_COUNT_COL - 2, row, HUD_PAL_YELLOW, "L");
+    hud_count(RECORDS_COUNT_COL, row, g_save.records.losses[mode]);
+}
+
+static void hud_title_menu(u8 view)
+{
+    static const char *const items[3] = {
+        "  SINGLES ", "  DOUBLES ", "  RECORDS "
+    };
+    u8 i;
+
+    for (i = 0; i < 3; ++i)
+        hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + i,
+            i == view ? HUD_PAL_YELLOW : HUD_PAL_WHITE, items[i]);
+    hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + view,
+        hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
+}
+
+/* Title view for the area: the menu choice and 2P (bits 0-2), or the
+ * records page. */
+#define HUD_TITLE_VIEW_RECORDS 0x80
+
+static u8 hud_title_view(void)
+{
+    if (g_title_records)
+        return HUD_TITLE_VIEW_RECORDS;
+    return g_title_mode | (g_title_2p << 2);
+}
+
+/* One part of the area; returns nonzero when the view is complete. One
+ * row per part: the title demo leaves little frame time. */
+static u8 hud_title_draw_part(u8 view, u8 part)
+{
+    if (view != HUD_TITLE_VIEW_RECORDS) {
+        if (part == 0) {
+            hud_title_menu(view & 3);
+            return 0;
+        }
+        /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
+        hud_text(TITLE_2P_COL, TITLE_2P_ROW,
+            g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
+            g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
+        return 1;
+    }
+    switch (part) {
+    case 0:
+        /* The font's space is a dark cell: a solid box over the court. */
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH, RECORDS_ROWS,
+            hud_entry(' ', HUD_PAL_WHITE));
+        return 0;
+    case 1:
+        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "RECORDS");
+        return 0;
+    case 2:
+        hud_record_mode_line(TITLE_MENU_ROW + 2, "SINGLES", MATCH_SINGLES);
+        return 0;
+    case 3:
+        hud_record_mode_line(TITLE_MENU_ROW + 3, "DOUBLES", MATCH_DOUBLES);
+        return 0;
+    case 4:
+        hud_record_line(TITLE_MENU_ROW + 5, "WIN STREAK",
+            g_save.records.streak);
+        return 0;
+    case 5:
+        hud_record_line(TITLE_MENU_ROW + 6, "BEST STREAK",
+            g_save.records.best_streak);
+        return 0;
+    case 6:
+        hud_record_line(TITLE_MENU_ROW + 7, "SHUTOUTS",
+            g_save.records.shutouts);
+        return 0;
+    default:
+        hud_record_line(TITLE_MENU_ROW + 8, "LONGEST RALLY",
+            g_save.records.longest_rally);
+        return 1;
+    }
+}
+
+/* Idle frames on the title: clear the area when the view changed, then
+ * draw it a part per frame. */
+static void hud_title_area_update(void)
+{
+    u8 view = hud_title_view();
+
+    if (s_title_view == view) {
+        if (s_title_part == 0xff)
+            return;
+        if (hud_title_draw_part(view, s_title_part))
+            s_title_part = 0xff;
+        else
+            ++s_title_part;
+        return;
+    }
+    if (s_title_view != HUD_TITLE_CLEARED)
+        hud_clear_rows(TITLE_MENU_ROW, TITLE_AREA_ROWS);
+    s_title_view = view;
+    s_title_part = 0;
+}
+
+/*
+ * Title steps: CLEAR wipes the match overlays (coming from a match), BIG
+ * draws the logo, and PROMPT the blinking prompt. Only the prompt blinks;
+ * the logo stays.
+ */
+static void hud_title_step(u16 key, u8 step, u8 from_title)
+{
+    switch (step) {
+    case HUD_STEP_CLEAR:
+        if (!from_title) {
+            hud_clear_rows(CENTER_BIG_ROW - 2, 6 + TITLE_AREA_ROWS);
+            s_title_view = HUD_TITLE_CLEARED;
+        }
+        break;
+    case HUD_STEP_BIG:
+        if (!from_title) {
+            hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
+            hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
+        }
+        break;
+    case HUD_STEP_PROMPT:
+        hud_clear_rows(BANNER_ROW - 1, 4);
+        if (!(key & 1))
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+                (key & 2) ? "@ BACK" : "PRESS START");
+        break;
+    default:
+        break;
+    }
+}
+
+static void hud_scene_step(u16 key, u8 step)
 {
     u8 winner = g_game_state.point_winner;
     u8 from_title = HUD_IS_TITLE(s_prev_scene);
 
     if (HUD_IS_TITLE(key)) {
-        if (step == HUD_STEP_CLEAR && !from_title)
-            hud_clear_rows(CENTER_BIG_ROW - 2, 10);
-        else if (step == HUD_STEP_BIG && !from_title) {
-            hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
-            hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
-        } else if (step == HUD_STEP_PROMPT) {
-            /* Only the prompt blinks; the logo stays. */
-            hud_clear_rows(BANNER_ROW - 1, 4);
-            if (!(key & 1))
-                hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
-            /* The menu redraws only when entering the title or when the
-             * choice changes, not on every prompt blink. */
-            if (!from_title || ((key ^ s_prev_scene) & 6)) {
-                hud_text(TITLE_MENU_COL, TITLE_MENU_ROW,
-                    g_title_mode ? HUD_PAL_WHITE : HUD_PAL_YELLOW,
-                    "  SINGLES ");
-                hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + 1,
-                    g_title_mode ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
-                    "  DOUBLES ");
-                hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + g_title_mode,
-                    hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
-                /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
-                hud_text(TITLE_2P_COL, TITLE_MENU_ROW + 3,
-                    g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
-                    g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
-            }
-        }
+        hud_title_step(key, step, from_title);
         return;
     }
 
     if (step == HUD_STEP_CLEAR) {
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 10 : 7);
+            from_title ? 6 + TITLE_AREA_ROWS : 7);
         hud_clear_rows(BANNER_ROW - 1, 4);
         return;
     }
@@ -317,7 +487,7 @@ static void hud_scene_step(u8 key, u8 step)
 
 void hud_scene_update(void)
 {
-    u8 key;
+    u16 key;
 
     /* Spread big redraws over frames: a score change and a scene change on
      * the same frame (every point) would overrun 816-tcc's budget. */
@@ -341,9 +511,12 @@ void hud_scene_update(void)
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
         ++s_scene_step;
-    } else if (!busy && hud_sub_panel_wanted() != s_sub_panel) {
+    } else if (!busy) {
         /* Only on otherwise idle frames: keeps each frame to one redraw. */
-        hud_draw_sub_panel(hud_sub_panel_wanted());
+        if (HUD_IS_TITLE(key))
+            hud_title_area_update();
+        else if (hud_sub_panel_wanted() != s_sub_panel)
+            hud_draw_sub_panel(hud_sub_panel_wanted());
     }
     s_hud_valid = 1;
 
@@ -360,4 +533,5 @@ void hud_scene_initialize(void)
     s_hud_scene = 0xff;
     s_scene_step = HUD_STEP_DONE;
     s_prev_scene = 0xff;
+    s_title_view = HUD_TITLE_UNKNOWN;
 }

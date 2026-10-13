@@ -8,7 +8,7 @@ Status: **Implementation baseline**
 |---|---|
 | Console | Unmodified NTSC SNES/Super Famicom |
 | Toolchain | PVSnesLib, pinned release, C with optional isolated 65C816 assembly |
-| ROM | LoROM FastROM (map mode $30, 120 ns ROM; ADR-017), no enhancement chip, no SRAM in POC |
+| ROM | LoROM FastROM (map mode $30, 120 ns ROM; ADR-017), no enhancement chip, 2 KiB battery SRAM for records (ADR-021) |
 | Video | 256×224, Mode 1, non-interlaced |
 | Timing | Fixed 60 Hz simulation target; one VBlank-synchronized presentation per frame |
 | BG1 | 4bpp court tiles and markings |

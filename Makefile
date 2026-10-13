@@ -15,6 +15,10 @@ ROMTITLE := PICKLEBALL 94
 # the PVSnesLib FastROM runtime. Cartridges need 120 ns (or faster) ROM.
 FASTROM := 1
 
+# Battery-backed save RAM (ADR-021): ROM + RAM + battery, 2 KiB SRAM.
+CARTRIDGETYPE := 02
+SRAMSIZE := 01
+
 export ROMNAME ROMTITLE FASTROM
 
 CONFIG_TAG := $(CONFIG)
@@ -76,8 +80,9 @@ asset-check: assets
 
 HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/court.c src/events.c src/fx.c src/game.c src/input_state.c src/match.c \
-	src/player.c src/projection.c src/rules.c src/select.c src/serve.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select
+	src/player.c src/projection.c src/rules.c src/save.c src/select.c \
+	src/serve.c
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save
 
 host-check: assets
 	@mkdir -p build/host

@@ -10,6 +10,7 @@
 #include "player.h"
 #include "profile.h"
 #include "rules.h"
+#include "save.h"
 #include "serve.h"
 
 GameState g_game_state;
@@ -17,6 +18,9 @@ u8 g_attract;
 u8 g_match_config_changed;
 /* Mode of the next attract demo; boot starts with singles. */
 u8 g_demo_mode;
+/* shot_serial at the serve: a point's rally length is the difference.
+ * Outside g_game_state, which golden traces compare byte for byte. */
+static u8 s_rally_start;
 
 void game_set_phase(u8 phase)
 {
@@ -50,6 +54,7 @@ static void game_begin_serve(u8 serving_team)
     for (i = 0; i < MAX_PLAYERS; ++i, ++player)
         player->pose = PLAYER_POSE_NONE;
     serve_setup(serving_team);
+    s_rally_start = g_game_state.shot_serial;
     game_set_phase(GAME_PHASE_SERVE_SETUP);
 }
 
@@ -172,6 +177,9 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
 
     game_freeze_players(winner);
 
+    /* First frame of the result (the timer counts from 1 here). */
+    if (g_game_state.phase_timer == 1 && !g_attract)
+        save_record_rally((u8)(g_game_state.shot_serial - s_rally_start));
     if (g_game_state.phase_timer < GAME_POINT_RESULT_MIN_FRAMES)
         return;
     if (g_game_state.phase_timer < GAME_POINT_RESULT_FRAMES &&
@@ -181,6 +189,11 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     if (g_game_state.team_score[winner] >= GAME_POINTS_TO_WIN) {
         g_game_state.match_winner = winner;
         game_set_phase(GAME_PHASE_MATCH_RESULT);
+        /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match. */
+        if (!g_attract)
+            save_record_match(g_match_config.mode,
+                !g_match_config.human[2], winner == 0,
+                g_game_state.team_score[1]);
         return;
     }
     game_begin_serve(winner);

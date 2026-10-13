@@ -7,11 +7,18 @@
 void hud_scene_initialize(void);
 /* Forces a full redraw on the next update (after a full-screen overlay). */
 void hud_scene_invalidate(void);
+/* Redraws the title menu or records page (after the records change). */
+void hud_scene_refresh_title(void);
 /* Call once per frame before VBlank; touches only WRAM. */
 void hud_scene_update(void);
 
-/* Title menu choice: 0 singles, 1 doubles; 2P joined (set by main.c). */
+/* Title menu entries (g_title_mode). */
+enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_RECORDS = 2 };
+
+/* Title menu choice, the records page open, and 2P joined (set by
+ * main.c). */
 extern u8 g_title_mode;
+extern u8 g_title_records;
 extern u8 g_title_2p;
 
 #endif

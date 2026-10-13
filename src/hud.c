@@ -47,6 +47,26 @@ void hud_clear_rows(u8 first_row, u8 count)
     hud_mark(first_row + count - 1);
 }
 
+void hud_fill_box(u8 col, u8 row, u8 width, u8 rows, u16 entry)
+{
+    u8 last = row + rows;
+
+    for (; row < last; ++row) {
+#ifdef HOST_TEST
+        u8 i;
+
+        for (i = 0; i < width; ++i)
+            g_hud_map[(u16)row * 32 + col + i] = entry;
+#else
+        hud_fill_index = (u16)row * 32 + col;
+        hud_fill_count = width;
+        hud_fill_value = entry;
+        hud_fill();
+#endif
+        hud_mark(row);
+    }
+}
+
 void hud_tile(u8 col, u8 row, u16 entry)
 {
     g_hud_map[(u16)row * 32 + col] = entry;
