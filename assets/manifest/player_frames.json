@@ -1,0 +1,103 @@
+{
+  "frame_size": [
+    32,
+    32
+  ],
+  "foot_row": 29,
+  "frames": {
+    "idle0": {
+      "slot": 0,
+      "accessory": [
+        5,
+        5
+      ]
+    },
+    "idle1": {
+      "slot": 1,
+      "accessory": [
+        5,
+        6
+      ]
+    },
+    "run0": {
+      "slot": 2,
+      "accessory": [
+        5,
+        6
+      ]
+    },
+    "run1": {
+      "slot": 3,
+      "accessory": [
+        5,
+        7
+      ]
+    },
+    "run2": {
+      "slot": 4,
+      "accessory": [
+        5,
+        6
+      ]
+    },
+    "run3": {
+      "slot": 5,
+      "accessory": [
+        5,
+        7
+      ]
+    },
+    "windup": {
+      "slot": 6,
+      "accessory": [
+        4,
+        6
+      ]
+    },
+    "swing": {
+      "slot": 7,
+      "accessory": [
+        6,
+        5
+      ]
+    },
+    "follow": {
+      "slot": 8,
+      "accessory": [
+        6,
+        5
+      ]
+    },
+    "toss": {
+      "slot": 9,
+      "accessory": [
+        5,
+        5
+      ]
+    },
+    "cheer": {
+      "slot": 10,
+      "accessory": [
+        4,
+        8
+      ]
+    }
+  },
+  "objects": {
+    "ball": 0,
+    "ball_shadow": 1,
+    "player_shadow": 2,
+    "spark": 3,
+    "spark_small": 4,
+    "ponytail": 5,
+    "select_corner": 6
+  },
+  "palettes": [
+    "blue",
+    "red",
+    "green",
+    "gold"
+  ],
+  "palette_contract": "v2 (docs/10_MOCKUP_DECISIONS.md ADR-013); parts in assets/source/palettes",
+  "accessory_doc": "ADR-014: per-frame top-left of the 8x8 ponytail in frame pixels (facing right); mirrored as 24 - x when flipped"
+}

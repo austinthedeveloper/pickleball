@@ -1,0 +1,17 @@
+# Player Select (ADR-020), 1P only (the headless runner drives port 1
+# only; 2P is covered by test/test_select.c). Female, gold, red paddle.
+70 71 start
+shot 110
+120 121 up
+130 131 right
+shot 140
+140 141 down
+150 151 left
+shot 160
+160 161 down
+170 171 right
+180 181 right
+shot 190
+200 201 b
+shot 240
+shot 300

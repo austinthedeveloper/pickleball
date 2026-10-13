@@ -1,0 +1,35 @@
+# M2 smoke: B leaves the title, B serves, CPU returns; P1 swings back.
+20 21 b
+60 61 start  # confirm Player Select (ADR-020)
+120 121 b
+shot 140
+shot 152
+shot 164
+shot 176
+shot 188
+shot 200
+shot 212
+shot 224
+shot 236
+shot 248
+shot 260
+shot 272
+shot 284
+shot 296
+shot 308
+shot 320
+shot 332
+shot 344
+shot 356
+shot 368
+shot 380
+210 211 b
+228 229 b
+246 247 b
+264 265 b
+282 283 b
+300 301 b
+318 319 b
+336 337 b
+354 355 b
+372 373 b

@@ -1,0 +1,72 @@
+# VRAM, CGRAM, OAM, and Build Record
+
+Originally the M1 record; updated 2026-10-12 for the M2 art and the
+[mockup decisions](10_MOCKUP_DECISIONS.md). PVSnesLib APIs express VRAM
+addresses in words; byte ranges make overlap checks explicit. Static assets
+are uploaded once during forced blank.
+
+## VRAM
+
+| Region | Word address | Reserved byte range | Actual bytes |
+|---|---:|---:|---:|
+| BG1 scene map | `0x0000` | `0x0000–0x07ff` | 2,048 |
+| BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
+| BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | 20,000 (625 tiles) |
+| BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
+| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 6,656 (208 tiles) |
+
+Player Select (ADR-020) replaces the court while it is open and reuses the
+BG3 and OBJ regions:
+
+| Region | Word address | Byte range | Actual bytes |
+|---|---:|---:|---:|
+| BG1 select map | `0x0000` | `0x0000–0x07ff` | 2,048 |
+| BG2 portrait maps (male, female) | `0x0800`, `0x0c00` | `0x1000–0x1fff` | 4,096 |
+| BG1 select tiles | `0x1000` | `0x2000–0x6dbf` | 19,904 (622 tiles; budget 768) |
+| BG2 portrait tiles | `0x4000` | `0x8000–0x8ddf` | 3,552 (111 tiles; budget 256) |
+
+CGRAM during select: BG palettes 1–6 select art, 7 portrait (composed from
+palette parts), OBJ 0–3 thumbnails, 4–6 cursors and the taken silhouette;
+colour math is off. Leaving the screen reloads the court tiles, map, and
+palettes in forced blank.
+
+Regions do not overlap. `assets/generated/sizes.json` records every generated
+file's size, hash, and the tile counts above on each build.
+
+**BG1 budget.** ADR-016 (amended 2026-10-12) allows 28 KiB (896 tiles). The
+scene uses 625. 896 tiles is the most one screen can use, so this region
+cannot overflow.
+
+## CGRAM
+
+| Entries | Use |
+|---:|---|
+| 0–15 | BG3 HUD palettes 0–3 (ADR-016): 0 neutral, 1 title gold / B button, 2 left-team label, 3 right-team label. Palettes 2–3 are rewritten from the match config. |
+| 16–31 | Unused (BG3 palettes 4–7 / BG 4bpp palette 1) |
+| 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. |
+| 128–255 | OBJ palettes; the layout depends on the match mode (ADR-018). In singles, OBJ 0–1 are the slot 0 and slot 2 players, 2 is the ball and spark, 3 the hit flash, and 4 the shadow (black, colour math). In doubles, OBJ 0–3 are players by slot, 4 the ball, 5 the flash, and 6 the opaque shadow, with colour math off. |
+
+Shadows use colour math: `CGWSEL = $02` (add subscreen), `CGADSUB = $50`
+(half, OBJ). BG1 is also on the subscreen, so a black OBJ-palette-4 pixel
+renders as the court at half brightness. Only OBJ palettes 4–7 take part in
+colour math.
+
+**Doubles.** Only OBJ palettes 0–3 are exempt from colour math, and four
+players need all four, so doubles turns colour math off and draws opaque
+dark shadows (ADR-018). Singles keeps translucent shadows.
+
+## OAM
+
+Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball, 1 ball shadow, 2–5 bodies
+sorted nearest-first, 6–9 shadows by slot (one 8×8 each), 10 spark, 11 debug
+landing marker (debug builds), 14–17 accessories (unused in the POC),
+18–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
+high-table X bit for negative x and parks hidden objects as small objects at
+y = 240. That is below every evaluated line, so they never show and never count
+toward the PPU's 32-object range-over limit.
+
+## ROM
+
+LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, no SRAM;
+internal checksum and complement sum to
+`0xffff`. `make dist` records the full ROM SHA-256 in the distribution report.

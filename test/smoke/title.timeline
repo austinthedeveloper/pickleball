@@ -1,0 +1,8 @@
+# Attract demo behind the title, then Start begins a human match.
+shot 40
+shot 200
+shot 420
+shot 700
+720 721 start
+760 761 start  # confirm Player Select (ADR-020)
+shot 820

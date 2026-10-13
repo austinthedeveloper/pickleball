@@ -54,10 +54,10 @@ Lines count as in. Use inclusive comparisons consistently.
 
 ## Visual/OAM stress scene
 
-Debug scene places four 32×32 player objects, four shadows, ball, ball shadow, and four impact objects on overlapping scanlines. It must:
+Debug scene places four 32×32 player objects, four shadows, four 8×8 accessories, ball, ball shadow, and four impact objects on overlapping scanlines. It must:
 
 - display all planned objects without dropout;
-- report the planned 26-sliver row budget in its source comment/test note;
+- report the planned 30-sliver row budget in its source comment/test note;
 - cycle all four player palettes;
 - flip players left/right;
 - animate every frame slot;

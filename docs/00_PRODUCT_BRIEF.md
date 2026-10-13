@@ -14,7 +14,7 @@ Change rule: update this page before accepting work that expands the POC.
 
 ## Camera and court
 
-The entire court is visible at once. Court length runs left-to-right; the net is a vertical divider at screen center. The view is a shallow top-down/three-quarter presentation, not a scrolling side view. Players move freely inside their own half. Ball height is shown by separating the ball from a ground shadow.
+The entire court is visible at once. Court length runs left-to-right; the net is a vertical divider at screen center. The view is a shallow top-down/three-quarter presentation, not a scrolling side view. Players move freely inside their own half. Ball height is shown by separating the ball from a ground shadow. The court is drawn in fixed perspective; rules are evaluated in rectangular world space ([ADR-011](10_MOCKUP_DECISIONS.md#adr-011--perspective-court-with-world-to-screen-projection)).
 
 The court must show:
 

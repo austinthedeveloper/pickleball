@@ -12,7 +12,7 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 
 - NTSC, 256×224, 60 Hz target.
 - Real unmodified SNES/Super Famicom compatibility.
-- Standard cartridge hardware only: no enhancement chip and no mandatory SRAM.
+- Standard cartridge hardware only: no enhancement chip and no mandatory SRAM. FastROM (120 ns ROM) is required; see ADR-017.
 - PVSnesLib with C first and assembly only after profiling proves a need.
 - One human on the left versus one CPU player on the right.
 - Static court with recognizable pickleball lines.
@@ -35,7 +35,8 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 4. [Sprite and Asset Pipeline](docs/03_SPRITE_ASSET_PIPELINE.md)
 5. [Input and Multitap Plan](docs/04_INPUT_MULTITAP_PLAN.md)
 6. [Repository Bootstrap](docs/06_REPO_BOOTSTRAP.md)
-7. [Master Checklist](milestones/00_MASTER_CHECKLIST.md)
+7. [Mockup Conflict Decisions](docs/10_MOCKUP_DECISIONS.md)
+8. [Master Checklist](milestones/00_MASTER_CHECKLIST.md)
 
 ## Milestone sheets
 
@@ -44,6 +45,31 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 - [M3 — Complete Hardware POC](milestones/03_POC_HARDWARE_BUILD.md)
 
 Every implementation task lives on exactly one milestone sheet. Mark a task `[x]` in the same commit that satisfies its acceptance check. Do not mark parent exit criteria complete until every required child task and test is complete.
+
+## Build and play
+
+With the pinned PVSnesLib 4.6.0 sibling install described in `toolchain/README.md`:
+
+```sh
+make check          # host tests, asset validation fixtures, PROJ checks
+make release        # build/release/pickleball-0.3.0-release-<id>.sfc
+make debug          # adds the debug overlay, landing marker, and stress scene
+make dist           # dist/: ROM, SHA-256, build report, player guide, hardware log
+make repro          # two clean builds must produce identical hashes
+make smoke SMOKE=m2 # headless MesenCE run of test/smoke/m2.timeline
+make release PROFILE=1  # per-stage scanline profiler (see include/profile.h)
+```
+
+The ROM boots into a CPU-vs-CPU demo (alternating singles and doubles) behind
+the title; Up/Down picks SINGLES or DOUBLES and Start begins the match.
+Controls and rules are in [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md). In
+debug and hardware-test builds, pausing shows the build ID and Multitap
+status, and Select opens the OBJ stress scene. Build artifacts are written
+below `build/`; the canonical ROM is the release `.sfc` in `dist/`.
+
+Art sources live in `assets/source/` as indexed PNGs plus palette part files.
+`tools/art/` holds the authoring scripts that created them (Pillow required);
+normal builds need only the Python standard library.
 
 ## POC success test
 

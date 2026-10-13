@@ -1,6 +1,7 @@
 .DS_Store
 *.asm
 !/data.asm
+!/src/asm/*.asm
 *.obj
 *.ps
 *.dbg
