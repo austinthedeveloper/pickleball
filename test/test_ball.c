@@ -27,10 +27,10 @@ static void test_deterministic_flight(void)
     ball_initialize();
     first = g_ball;
     second = g_ball;
-    first.vx_fp = 700;
-    first.vy_fp = -311;
-    second.vx_fp = 700;
-    second.vy_fp = -311;
+    first.vx_fp = 44;
+    first.vy_fp = -19;
+    second.vx_fp = 44;
+    second.vy_fp = -19;
 
     for (frame = 0; frame < 240; ++frame) {
         assert(ball_simulate_step(&first) == ball_simulate_step(&second));
@@ -48,15 +48,15 @@ static void test_position_and_gravity_order(void)
     ball.x_fp = TO_FP(10);
     ball.y_fp = TO_FP(20);
     ball.z_fp = TO_FP(3);
-    ball.vx_fp = 64;
-    ball.vy_fp = -32;
-    ball.vz_fp = 128;
+    ball.vx_fp = 4;
+    ball.vy_fp = -2;
+    ball.vz_fp = 8;
 
     assert(ball_simulate_step(&ball) == 0);
-    assert(ball.x_fp == TO_FP(10) + 64);
-    assert(ball.y_fp == TO_FP(20) - 32);
-    assert(ball.z_fp == TO_FP(3) + 128);
-    assert(ball.vz_fp == 128 + BALL_GRAVITY_FP);
+    assert(ball.x_fp == TO_FP(10) + 4);
+    assert(ball.y_fp == TO_FP(20) - 2);
+    assert(ball.z_fp == TO_FP(3) + 8);
+    assert(ball.vz_fp == 8 + BALL_GRAVITY_FP);
 }
 
 static void test_single_bounce_event(void)
@@ -68,16 +68,17 @@ static void test_single_bounce_event(void)
     ball.rally_state = BALL_RALLY_LIVE;
     ball.x_fp = TO_FP(COURT_NET_X - 16);
     ball.y_fp = TO_FP(COURT_CENTERLINE_Y);
-    ball.z_fp = 32;
+    ball.z_fp = 2;
     ball.vx_fp = 100;
     ball.vy_fp = -100;
-    ball.vz_fp = -256;
+    ball.vz_fp = -64;
 
     assert(ball_simulate_step(&ball) == BALL_EVENT_BOUNCE);
     assert(ball.z_fp == 0);
     assert(ball.vx_fp == 92);
     assert(ball.vy_fp == -92);
-    assert(ball.vz_fp == 140);
+    /* 64 * 141 / 256 = 35.25: 55% vertical retention. */
+    assert(ball.vz_fp == 35);
     assert(ball.bounce_count == 1);
 
     assert(ball_simulate_step(&ball) == 0);
@@ -86,9 +87,9 @@ static void test_single_bounce_event(void)
 
 static void test_swept_net_height_boundaries(void)
 {
-    s32 height;
-    s32 net = TO_FP(COURT_NET_X);
-    s32 threshold = TO_FP(COURT_NET_HEIGHT);
+    fx height;
+    fx net = TO_FP(COURT_NET_X);
+    fx threshold = TO_FP(COURT_NET_HEIGHT);
 
     assert(ball_net_crossing_height(net - 256, threshold + 1,
         net + 256, threshold + 1, &height) == 1);
@@ -127,7 +128,7 @@ static void test_net_fault_event(void)
     assert((ball_simulate_step(&ball) & BALL_EVENT_NET_FAULT) == 0);
 }
 
-static u8 ground_event_at(s32 x_fp, s32 y_fp)
+static u8 ground_event_at(fx x_fp, fx y_fp)
 {
     Ball ball;
 
@@ -143,10 +144,10 @@ static u8 ground_event_at(s32 x_fp, s32 y_fp)
 
 static void test_inclusive_court_boundaries(void)
 {
-    s32 left = TO_FP(COURT_BASELINE_LEFT);
-    s32 right = TO_FP(COURT_BASELINE_RIGHT);
-    s32 top = TO_FP(COURT_SIDELINE_TOP);
-    s32 bottom = TO_FP(COURT_SIDELINE_BOTTOM);
+    fx left = TO_FP(COURT_BASELINE_LEFT);
+    fx right = TO_FP(COURT_BASELINE_RIGHT);
+    fx top = TO_FP(COURT_SIDELINE_TOP);
+    fx bottom = TO_FP(COURT_SIDELINE_BOTTOM);
     u8 events;
 
     events = ground_event_at(left, top);
@@ -204,8 +205,8 @@ static void test_fast_ball_eventually_settles(void)
     ball.rally_state = BALL_RALLY_LIVE;
     ball.x_fp = TO_FP(64);
     ball.y_fp = TO_FP(112);
-    ball.vx_fp = 704;
-    ball.vz_fp = 640;
+    ball.vx_fp = 44;
+    ball.vz_fp = 40;
     for (frame = 0; frame < 600; ++frame) {
         ball_simulate_step(&ball);
         if (ball.z_fp == 0 && ball.vz_fp == 0)
@@ -230,8 +231,8 @@ static void test_standard_shot_has_meaningful_first_flight(void)
     ball.rally_state = BALL_RALLY_LIVE;
     ball.x_fp = TO_FP(64);
     ball.y_fp = TO_FP(COURT_CENTERLINE_Y);
-    ball.vx_fp = 704;
-    ball.vz_fp = 640;
+    ball.vx_fp = 44;
+    ball.vz_fp = 40;
 
     for (frame = 0; frame < 60; ++frame) {
         events = ball_simulate_step(&ball);
@@ -240,7 +241,7 @@ static void test_standard_shot_has_meaningful_first_flight(void)
     }
 
     assert(frame == 27);
-    assert(ball.x_fp == TO_FP(64) + 19712);
+    assert(ball.x_fp == TO_FP(64) + 44 * 28);
     assert(ball.x_fp > TO_FP(64 + 70));
     assert(ball.bounce_count == 1);
 }

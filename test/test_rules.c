@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "player.h"
 #include "rules.h"
+#include "court.h"
 #include "serve.h"
 
 static void reset_live_fixture(void)
@@ -13,9 +14,11 @@ static void reset_live_fixture(void)
     g_game_state.phase = GAME_PHASE_LIVE;
     g_ball.rally_state = BALL_RALLY_LIVE;
     g_ball.last_hitter = 0;
-    g_ball.vx_fp = 500;
-    g_ball.vy_fp = 100;
-    g_ball.vz_fp = 200;
+    g_ball.vx_fp = 31;
+    g_ball.vy_fp = 6;
+    g_ball.vz_fp = 12;
+    g_ball.x_fp = TO_FP(200);
+    g_ball.bounce_count = 1;
 }
 
 static void assert_stopped_with_winner(u8 winner, u8 fault)
@@ -41,7 +44,7 @@ static void test_net_penalizes_last_hitter(void)
 static void test_out_penalizes_last_hitter(void)
 {
     reset_live_fixture();
-    rules_process_ball_events(BALL_EVENT_OUT);
+    rules_process_ball_events(BALL_EVENT_BOUNCE | BALL_EVENT_OUT);
     assert_stopped_with_winner(1, GAME_FAULT_OUT);
 }
 
@@ -58,11 +61,30 @@ static void test_second_bounce_penalizes_court_team(void)
     rules_process_ball_events(BALL_EVENT_BOUNCE);
     assert_stopped_with_winner(0, GAME_FAULT_SECOND_BOUNCE);
 
+    /* Landing on the hitter's own side is a lost rally for the hitter. */
     reset_live_fixture();
     g_ball.x_fp = TO_FP(56);
-    g_ball.bounce_count = 2;
     rules_process_ball_events(BALL_EVENT_BOUNCE);
-    assert_stopped_with_winner(1, GAME_FAULT_SECOND_BOUNCE);
+    assert_stopped_with_winner(1, GAME_FAULT_OUT);
+
+    /* A legal first bounce that rolls out is the receiver's second bounce. */
+    reset_live_fixture();
+    rules_process_ball_events(BALL_EVENT_BOUNCE);
+    g_ball.x_fp = TO_FP(COURT_BASELINE_RIGHT + 10);
+    g_ball.bounce_count = 2;
+    rules_process_ball_events(BALL_EVENT_BOUNCE | BALL_EVENT_OUT);
+    assert_stopped_with_winner(0, GAME_FAULT_SECOND_BOUNCE);
+}
+
+static void test_dead_ball_ends_rally(void)
+{
+    reset_live_fixture();
+    g_ball.z_fp = 0;
+    g_ball.vx_fp = 0;
+    g_ball.vy_fp = 0;
+    g_ball.vz_fp = 0;
+    rules_process_ball_events(BALL_EVENT_NONE);
+    assert_stopped_with_winner(0, GAME_FAULT_SECOND_BOUNCE);
 }
 
 static void test_serve_fault_resolves_point(void)
@@ -77,8 +99,8 @@ static void test_serve_fault_resolves_point(void)
 static void test_resolution_is_idempotent(void)
 {
     reset_live_fixture();
-    rules_process_ball_events(BALL_EVENT_OUT);
-    rules_process_ball_events(BALL_EVENT_OUT);
+    rules_process_ball_events(BALL_EVENT_BOUNCE | BALL_EVENT_OUT);
+    rules_process_ball_events(BALL_EVENT_BOUNCE | BALL_EVENT_OUT);
     assert(g_game_state.team_score[1] == 1);
 }
 
@@ -131,6 +153,7 @@ int main(void)
     test_net_penalizes_last_hitter();
     test_out_penalizes_last_hitter();
     test_second_bounce_penalizes_court_team();
+    test_dead_ball_ends_rally();
     test_serve_fault_resolves_point();
     test_resolution_is_idempotent();
     test_legal_required_bounce_sequence();

@@ -27,25 +27,39 @@ void input_initialize(void)
     g_input_owners[2] = INPUT_OWNER_CPU;
 }
 
+/* Constant indices throughout: 816-tcc turns variable array indexing into a
+ * multiply call, and this runs every frame. */
+#define CAPTURE_PAD(n) \
+    do { \
+        u16 current = padsCurrent(n); \
+        u16 previous = g_pad_snapshots[n].held; \
+        g_pad_snapshots[n].held = current; \
+        g_pad_snapshots[n].pressed = current & (u16)~previous; \
+        g_pad_snapshots[n].released = previous & (u16)~current; \
+        g_player_intents[n].move_x = 0; \
+        g_player_intents[n].move_y = 0; \
+        g_player_intents[n].hit_pressed = 0; \
+        g_player_intents[n].pause_pressed = 0; \
+    } while (0)
+
 void input_capture_frame(void)
 {
-    u8 i;
-    u16 current;
+    u16 held;
 
-    for (i = 0; i < MAX_HUMAN_PADS; ++i) {
-        current = padsCurrent(i);
-        input_update_snapshot(&g_pad_snapshots[i], current);
-        clear_intent(&g_player_intents[i]);
-    }
+    CAPTURE_PAD(0);
+    CAPTURE_PAD(1);
+    CAPTURE_PAD(2);
+    CAPTURE_PAD(3);
 
-    if (g_pad_snapshots[0].held & KEY_LEFT)
+    held = g_pad_snapshots[0].held;
+    if (held & KEY_LEFT)
         g_player_intents[0].move_x = -1;
-    else if (g_pad_snapshots[0].held & KEY_RIGHT)
+    else if (held & KEY_RIGHT)
         g_player_intents[0].move_x = 1;
 
-    if (g_pad_snapshots[0].held & KEY_UP)
+    if (held & KEY_UP)
         g_player_intents[0].move_y = -1;
-    else if (g_pad_snapshots[0].held & KEY_DOWN)
+    else if (held & KEY_DOWN)
         g_player_intents[0].move_y = 1;
 
     g_player_intents[0].hit_pressed =
@@ -53,4 +67,3 @@ void input_capture_frame(void)
     g_player_intents[0].pause_pressed =
         (g_pad_snapshots[0].pressed & KEY_START) != 0;
 }
-

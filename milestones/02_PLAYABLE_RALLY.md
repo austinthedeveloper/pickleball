@@ -28,24 +28,24 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
   - Accept: net, out, and second bounce identify one winner and stop live simulation.
 - [x] `M2-RULE-02` Implement required serve bounce and required return bounce.
   - Accept: RUL-01 and RUL-02 pass; debug HUD exposes remaining required bounce state.
-- [ ] `M2-AI-01` Activate P3 as CPU through `PlayerIntent`.
+- [x] `M2-AI-01` Activate P3 as CPU through `PlayerIntent`.
   - Accept: human and CPU movement share the same player update path.
-- [ ] `M2-AI-02` Add capped landing prediction and readable recovery position.
+- [x] `M2-AI-02` Add capped landing prediction and readable recovery position.
   - Accept: prediction loop caps at 60 steps; CPU does not cross bounds or hang.
-- [ ] `M2-AI-03` Add windup-aware CPU swing decision.
+- [x] `M2-AI-03` Add windup-aware CPU swing decision.
   - Accept: CPU returns a standard center-lane fixture at least 8 of 10 times with no physics cheating.
 
 ## Presentation and asset contract
 
-- [ ] `M2-ASSET-01` Add manifest-driven player frame and palette metadata.
+- [x] `M2-ASSET-01` Add manifest-driven player frame and palette metadata.
   - Accept: code uses named frame offsets; invalid frame dimension/order fails asset validation.
-- [ ] `M2-ASSET-02` Replace geometry with temporary but contract-correct indexed player/ball/shadow art.
+- [x] `M2-ASSET-02` Replace geometry with temporary but contract-correct indexed player/ball/shadow art.
   - Accept: 32×32/8×8 dimensions, index-0 transparency, fixed anchors, and horizontal flip all pass review.
-- [ ] `M2-ASSET-03` Prove P1/P3 palette reuse.
+- [x] `M2-ASSET-03` Prove P1/P3 palette reuse.
   - Accept: two different visible player palettes reference byte-identical player tiles.
-- [ ] `M2-FX-01` Add hit stop, contact flash, and point/fault banner.
+- [x] `M2-FX-01` Add hit stop, contact flash, and point/fault banner.
   - Accept: state remains deterministic; each cause is legible without audio.
-- [ ] `M2-HUD-01` Display score placeholder and `ARCADE RULES` label.
+- [x] `M2-HUD-01` Display score placeholder and `ARCADE RULES` label.
   - Accept: point result is understandable to a new tester.
 
 ## Verification
@@ -53,6 +53,7 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 - [ ] `M2-TEST-01` Automate PHY-01..05, HIT-01..02, and RUL-01..03 fixtures.
   - Accept: all pass from a clean `check` run or deterministic debug harness.
 - [ ] `M2-TEST-02` Add frame-overrun latch and exercise worst normal rally.
+  - Progress: latch (`g_overrun_frames`, shown in the debug HUD) and `make release PROFILE=1` scanline profiler exist; rare spikes on hit/HUD-redraw frames remain.
   - Accept: latch remains clear for two complete emulator matches.
 - [ ] `M2-TEST-03` Run two-emulator rally smoke and one real-hardware rally session.
   - Accept: five points total are played without crash, corruption, stuck input, or sprite dropout.

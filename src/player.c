@@ -1,168 +1,181 @@
+#include <string.h>
 #include "court.h"
 #include "player.h"
 
-#define PLAYER_ACCEL_FP 24
-#define PLAYER_DIAGONAL_ACCEL_FP 17
-#define PLAYER_MAX_SPEED_FP 384
-#define PLAYER_DIAGONAL_MAX_FP 271
-#define PLAYER_FRICTION_FP 20
-
 Player g_players[MAX_PLAYERS];
 
-const PlayerAnimation g_player_animations[2] = {
-    {{0, 0}, 1, 12},
-    {{0, 4}, 2, 8}
-};
-
-static s16 approach_zero(s16 value)
+s16 player_diagonal_limit(s16 limit)
 {
-    if (value > PLAYER_FRICTION_FP)
-        return value - PLAYER_FRICTION_FP;
-    if (value < -PLAYER_FRICTION_FP)
-        return value + PLAYER_FRICTION_FP;
-    return 0;
+    return (s16)((limit * 181) >> 8);
 }
 
-static s16 clamp_velocity(s16 value, s16 limit)
-{
-    if (value > limit)
-        return limit;
-    if (value < -limit)
-        return -limit;
-    return value;
-}
-
-static u8 player_is_swinging(const Player *player)
+u8 player_is_swinging(const Player *player)
 {
     return player->state == PLAYER_STATE_WINDUP ||
         player->state == PLAYER_STATE_ACTIVE ||
         player->state == PLAYER_STATE_RECOVERY;
 }
 
-static void player_advance_swing(Player *player)
+void player_place(Player *player, s16 x, s16 y)
 {
-    if (--player->state_frames_remaining != 0)
-        return;
-
-    if (player->state == PLAYER_STATE_WINDUP) {
-        player->state = PLAYER_STATE_ACTIVE;
-        player->state_frames_remaining = PLAYER_ACTIVE_FRAMES;
-    } else if (player->state == PLAYER_STATE_ACTIVE) {
-        player->state = PLAYER_STATE_RECOVERY;
-        player->state_frames_remaining = PLAYER_RECOVERY_FRAMES;
-    } else {
-        player->state = PLAYER_STATE_IDLE;
-    }
+    player->x_fp = TO_FP(x);
+    player->y_fp = TO_FP(y);
+    player->vx_fp = 0;
+    player->vy_fp = 0;
+    player->state = PLAYER_STATE_IDLE;
+    player->state_frames_remaining = 0;
+    player->contact_consumed = 1;
+    player->animation_frame = 0;
+    player->animation_timer = 0;
 }
 
 void players_initialize(void)
 {
     u8 i;
+    Player *player;
+
     for (i = 0; i < MAX_PLAYERS; ++i) {
-        g_players[i].active = 0;
-        g_players[i].team = (i < 2) ? 0 : 1;
-        g_players[i].logical_input_slot = i;
-        g_players[i].cpu_controlled = (i == 2);
-        g_players[i].x_fp = 0;
-        g_players[i].y_fp = 0;
-        g_players[i].vx_fp = 0;
-        g_players[i].vy_fp = 0;
-        g_players[i].facing_left = 0;
-        g_players[i].animation = PLAYER_ANIM_IDLE;
-        g_players[i].animation_frame = 0;
-        g_players[i].animation_timer = 0;
-        g_players[i].state = PLAYER_STATE_IDLE;
-        g_players[i].state_frames_remaining = 0;
-        g_players[i].contact_consumed = 1;
+        player = &g_players[i];
+        player->active = 0;
+        player->team = (i < 2) ? 0 : 1;
+        player->logical_input_slot = i;
+        player->cpu_controlled = (i == 2);
+        player->max_speed_fp = player->cpu_controlled ?
+            PLAYER_CPU_MAX_SPEED_FP : PLAYER_MAX_SPEED_FP;
+        player->facing_left = player->team;
+        player->frozen = 0;
+        player->pose = PLAYER_POSE_NONE;
+        player->palette = player->team;
+        player->flash_timer = 0;
+        player_place(player, 0, 0);
     }
 
     g_players[0].active = 1;
-    g_players[0].x_fp = TO_FP(PLAYER_SPAWN_X);
-    g_players[0].y_fp = TO_FP(PLAYER_SPAWN_Y);
+    player_place(&g_players[0], PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
+}
+
+/* Static scratch copy: one long access per field instead of pointer
+ * dereferences, which 816-tcc compiles very expensively. */
+static Player s_p;
+
+#define APPROACH_ZERO(v) \
+    ((v) > PLAYER_FRICTION_FP ? (v) - PLAYER_FRICTION_FP : \
+     (v) < -PLAYER_FRICTION_FP ? (v) + PLAYER_FRICTION_FP : 0)
+
+static void player_step(const PlayerIntent *intent)
+{
+    s16 accel;
+    s16 limit;
+    s16 move_x;
+    s16 move_y;
+    u8 hit;
+    u8 was_moving;
+    u8 moving;
+    u8 cel_frames;
+    fx next;
+
+    if (s_p.flash_timer)
+        --s_p.flash_timer;
+
+    move_x = intent->move_x;
+    move_y = intent->move_y;
+    hit = intent->hit_pressed;
+    if (s_p.frozen) {
+        move_x = 0;
+        move_y = 0;
+        hit = 0;
+    }
+    was_moving = s_p.state == PLAYER_STATE_MOVE;
+
+    if (s_p.state >= PLAYER_STATE_WINDUP) {
+        if (--s_p.state_frames_remaining == 0) {
+            if (s_p.state == PLAYER_STATE_WINDUP) {
+                s_p.state = PLAYER_STATE_ACTIVE;
+                s_p.state_frames_remaining = PLAYER_ACTIVE_FRAMES;
+            } else if (s_p.state == PLAYER_STATE_ACTIVE) {
+                s_p.state = PLAYER_STATE_RECOVERY;
+                s_p.state_frames_remaining = PLAYER_RECOVERY_FRAMES;
+            } else {
+                s_p.state = PLAYER_STATE_IDLE;
+            }
+        }
+    } else if (hit) {
+        s_p.state = PLAYER_STATE_WINDUP;
+        s_p.state_frames_remaining = PLAYER_WINDUP_FRAMES;
+        s_p.contact_consumed = 0;
+    } else {
+        s_p.state = (move_x || move_y) ? PLAYER_STATE_MOVE : PLAYER_STATE_IDLE;
+    }
+
+    limit = s_p.state >= PLAYER_STATE_WINDUP ?
+        PLAYER_SWING_MAX_SPEED_FP : s_p.max_speed_fp;
+    accel = PLAYER_ACCEL_FP;
+    if (move_x && move_y) {
+        accel = PLAYER_DIAGONAL_ACCEL_FP;
+        limit = player_diagonal_limit(limit);
+    }
+
+    if (move_x > 0)
+        s_p.vx_fp += accel;
+    else if (move_x < 0)
+        s_p.vx_fp -= accel;
+    else
+        s_p.vx_fp = APPROACH_ZERO(s_p.vx_fp);
+    if (move_y > 0)
+        s_p.vy_fp += accel;
+    else if (move_y < 0)
+        s_p.vy_fp -= accel;
+    else
+        s_p.vy_fp = APPROACH_ZERO(s_p.vy_fp);
+
+    if (s_p.vx_fp > limit)
+        s_p.vx_fp = limit;
+    else if (s_p.vx_fp < -limit)
+        s_p.vx_fp = -limit;
+    if (s_p.vy_fp > limit)
+        s_p.vy_fp = limit;
+    else if (s_p.vy_fp < -limit)
+        s_p.vy_fp = -limit;
+
+    next = s_p.x_fp + s_p.vx_fp;
+    s_p.x_fp = court_clamp_x_fp(next, s_p.team);
+    if (s_p.x_fp != next)
+        s_p.vx_fp = 0;
+    next = s_p.y_fp + s_p.vy_fp;
+    s_p.y_fp = court_clamp_y_fp(next);
+    if (s_p.y_fp != next)
+        s_p.vy_fp = 0;
+
+    /* Players always square up to the net; flips come from OAM. */
+    s_p.facing_left = s_p.team;
+
+    moving = s_p.state == PLAYER_STATE_MOVE;
+    if (moving != was_moving) {
+        s_p.animation_frame = 0;
+        s_p.animation_timer = 0;
+    }
+    cel_frames = moving ? PLAYER_RUN_CEL_FRAMES : PLAYER_IDLE_CEL_FRAMES;
+    if (++s_p.animation_timer >= cel_frames) {
+        s_p.animation_timer = 0;
+        if (++s_p.animation_frame >= (moving ? 4 : 2))
+            s_p.animation_frame = 0;
+    }
 }
 
 void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
 {
     u8 i;
-    s16 accel;
-    s16 limit;
     Player *player;
-    const PlayerIntent *intent;
-    const PlayerAnimation *animation;
 
     if (paused)
         return;
 
-    for (i = 0; i < MAX_PLAYERS; ++i) {
-        player = &g_players[i];
+    player = g_players;
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
         if (!player->active)
             continue;
-
-        intent = &intents[player->logical_input_slot];
-
-        if (player_is_swinging(player)) {
-            player_advance_swing(player);
-        } else if (intent->hit_pressed) {
-            player->state = PLAYER_STATE_WINDUP;
-            player->state_frames_remaining = PLAYER_WINDUP_FRAMES;
-            player->contact_consumed = 0;
-        } else {
-            player->state = (intent->move_x || intent->move_y) ?
-                PLAYER_STATE_MOVE : PLAYER_STATE_IDLE;
-        }
-
-        if (intent->move_x && intent->move_y) {
-            accel = PLAYER_DIAGONAL_ACCEL_FP;
-            limit = PLAYER_DIAGONAL_MAX_FP;
-        } else {
-            accel = PLAYER_ACCEL_FP;
-            limit = PLAYER_MAX_SPEED_FP;
-        }
-
-        if (player_is_swinging(player)) {
-            if (intent->move_x && intent->move_y)
-                limit = PLAYER_SWING_DIAGONAL_MAX_FP;
-            else
-                limit = PLAYER_SWING_MAX_SPEED_FP;
-        }
-
-        if (intent->move_x)
-            player->vx_fp += intent->move_x * accel;
-        else
-            player->vx_fp = approach_zero(player->vx_fp);
-
-        if (intent->move_y)
-            player->vy_fp += intent->move_y * accel;
-        else
-            player->vy_fp = approach_zero(player->vy_fp);
-
-        player->vx_fp = clamp_velocity(player->vx_fp, limit);
-        player->vy_fp = clamp_velocity(player->vy_fp, limit);
-        player->x_fp = court_clamp_x_fp(player->x_fp + player->vx_fp);
-        player->y_fp = court_clamp_y_fp(player->y_fp + player->vy_fp);
-
-        if (player->x_fp == TO_FP(PLAYER_CLAMP_MIN_X) ||
-            player->x_fp == TO_FP(PLAYER_CLAMP_MAX_X))
-            player->vx_fp = 0;
-        if (player->y_fp == TO_FP(PLAYER_CLAMP_MIN_Y) ||
-            player->y_fp == TO_FP(PLAYER_CLAMP_MAX_Y))
-            player->vy_fp = 0;
-
-        if (intent->move_x < 0)
-            player->facing_left = 1;
-        else if (intent->move_x > 0)
-            player->facing_left = 0;
-
-        player->animation = (intent->move_x || intent->move_y) ?
-            PLAYER_ANIM_RUN : PLAYER_ANIM_IDLE;
-        animation = &g_player_animations[player->animation];
-        ++player->animation_timer;
-        if (player->animation_timer >= animation->frame_delay) {
-            player->animation_timer = 0;
-            ++player->animation_frame;
-            if (player->animation_frame >= animation->frame_count)
-                player->animation_frame = 0;
-        }
+        memcpy(&s_p, player, sizeof(Player));
+        player_step(&intents[s_p.logical_input_slot]);
+        memcpy(player, &s_p, sizeof(Player));
     }
 }
-

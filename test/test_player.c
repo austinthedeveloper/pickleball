@@ -43,8 +43,8 @@ static void test_diagonal_normalization(void)
     intents[0].move_x = 1;
     intents[0].move_y = 1;
     players_update(intents, 0);
-    assert(g_players[0].vx_fp == 17);
-    assert(g_players[0].vy_fp == 17);
+    assert(g_players[0].vx_fp == PLAYER_DIAGONAL_ACCEL_FP);
+    assert(g_players[0].vy_fp == PLAYER_DIAGONAL_ACCEL_FP);
 }
 
 static void test_sign_change_and_friction(void)
@@ -80,16 +80,20 @@ static void test_all_clamps(void)
 
 static void test_anchor_bounds_match_court(void)
 {
-    assert(PLAYER_CLAMP_MIN_X - PLAYER_BODY_HALF_WIDTH ==
-        COURT_BASELINE_LEFT - PLAYER_LEFT_RUNOFF);
-    assert(PLAYER_CLAMP_MIN_X - PLAYER_BODY_HALF_WIDTH >= 0);
-    assert(PLAYER_CLAMP_MAX_X + PLAYER_BODY_HALF_WIDTH == COURT_NET_X);
-    assert(PLAYER_CLAMP_MIN_Y + PLAYER_BODY_BOTTOM_OFFSET ==
-        COURT_SIDELINE_TOP);
-    assert(PLAYER_CLAMP_MAX_Y + PLAYER_BODY_BOTTOM_OFFSET ==
-        COURT_SIDELINE_BOTTOM + PLAYER_BOTTOM_RUNOFF);
-    assert(PLAYER_BOTTOM_RUNOFF == 11);
-    assert(PLAYER_LEFT_RUNOFF == 22);
+    /* Left half: behind the baseline runoff up to the net gap. */
+    assert(PLAYER_CLAMP_MIN_X == COURT_BASELINE_LEFT - PLAYER_RUNOFF_BACK);
+    assert(PLAYER_CLAMP_MIN_X >= 0);
+    assert(PLAYER_CLAMP_MAX_X + PLAYER_NET_GAP == COURT_NET_X);
+    /* Right half mirrors the left around the net. */
+    assert(PLAYER_RIGHT_CLAMP_MIN_X - COURT_NET_X ==
+        COURT_NET_X - PLAYER_CLAMP_MAX_X);
+    assert(PLAYER_RIGHT_CLAMP_MAX_X - COURT_BASELINE_RIGHT ==
+        COURT_BASELINE_LEFT - PLAYER_CLAMP_MIN_X);
+    assert(PLAYER_RIGHT_CLAMP_MAX_X <= 255);
+    /* Feet may step just outside the sidelines but never off the sand. */
+    assert(PLAYER_CLAMP_MIN_Y < COURT_SIDELINE_TOP);
+    assert(PLAYER_CLAMP_MAX_Y > COURT_SIDELINE_BOTTOM);
+    assert(PLAYER_CLAMP_MAX_Y - PLAYER_SPRITE_FOOT_Y > 0);
 }
 
 static void test_input_edges(void)
@@ -117,7 +121,7 @@ static void test_twenty_pause_toggles(void)
     game_initialize();
     for (i = 0; i < 20; ++i) {
         intents[0].pause_pressed = 1;
-        game_update_top_level(intents);
+        game_update(intents);
         assert(g_game_state.paused == ((i + 1) & 1));
     }
     assert(g_game_state.paused == 0);
@@ -155,7 +159,7 @@ static void test_swing_state_durations(void)
 static void test_swing_movement_penalty(void)
 {
     reset_test();
-    g_players[0].vx_fp = 384;
+    g_players[0].vx_fp = PLAYER_MAX_SPEED_FP;
     intents[0].move_x = 1;
     intents[0].hit_pressed = 1;
     players_update(intents, 0);
@@ -163,14 +167,16 @@ static void test_swing_movement_penalty(void)
     assert(g_players[0].vx_fp == PLAYER_SWING_MAX_SPEED_FP);
 
     reset_test();
-    g_players[0].vx_fp = 271;
-    g_players[0].vy_fp = 271;
+    g_players[0].vx_fp = player_diagonal_limit(PLAYER_MAX_SPEED_FP);
+    g_players[0].vy_fp = player_diagonal_limit(PLAYER_MAX_SPEED_FP);
     intents[0].move_x = 1;
     intents[0].move_y = 1;
     intents[0].hit_pressed = 1;
     players_update(intents, 0);
-    assert(g_players[0].vx_fp == PLAYER_SWING_DIAGONAL_MAX_FP);
-    assert(g_players[0].vy_fp == PLAYER_SWING_DIAGONAL_MAX_FP);
+    assert(g_players[0].vx_fp ==
+        player_diagonal_limit(PLAYER_SWING_MAX_SPEED_FP));
+    assert(g_players[0].vy_fp ==
+        player_diagonal_limit(PLAYER_SWING_MAX_SPEED_FP));
 }
 
 static void test_no_swing_retrigger(void)

@@ -1,0 +1,30 @@
+{
+  "frame_size": [32, 32],
+  "foot_row": 29,
+  "frames": {
+    "idle0": { "slot": 0 },
+    "idle1": { "slot": 1 },
+    "run0": { "slot": 2 },
+    "run1": { "slot": 3 },
+    "run2": { "slot": 4 },
+    "run3": { "slot": 5 },
+    "windup": { "slot": 6 },
+    "swing": { "slot": 7 },
+    "follow": { "slot": 8 },
+    "toss": { "slot": 9 },
+    "cheer": { "slot": 10 }
+  },
+  "objects": {
+    "ball": 0,
+    "ball_shadow": 1,
+    "player_shadow": 2,
+    "spark": 3,
+    "spark_small": 4
+  },
+  "teams": [
+    { "name": "blue", "ramp": [[3, 6, 19], [6, 12, 28], [15, 21, 31]] },
+    { "name": "red", "ramp": [[19, 3, 3], [28, 6, 6], [31, 15, 13]] },
+    { "name": "green", "ramp": [[3, 14, 4], [6, 22, 7], [16, 29, 13]] },
+    { "name": "gold", "ramp": [[22, 14, 1], [29, 21, 3], [31, 28, 12]] }
+  ]
+}

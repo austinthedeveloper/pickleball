@@ -9,7 +9,8 @@ typedef enum {
     GAME_PHASE_SERVE_TOSS = 1,
     GAME_PHASE_LIVE = 2,
     GAME_PHASE_SERVE_FAULT = 3,
-    GAME_PHASE_POINT_RESULT = 4
+    GAME_PHASE_POINT_RESULT = 4,
+    GAME_PHASE_MATCH_RESULT = 5
 } GamePhase;
 
 typedef enum {
@@ -28,20 +29,39 @@ typedef enum {
     GAME_REQUIRED_BOUNCE_RETURN = 2
 } GameRequiredBounce;
 
+enum {
+    GAME_POINTS_TO_WIN = 5,
+    GAME_SERVE_READY_FRAMES = 20,
+    GAME_POINT_RESULT_MIN_FRAMES = 20,
+    GAME_POINT_RESULT_FRAMES = 90,
+    GAME_HIT_STOP_FRAMES = 2,
+    GAME_HIT_FLASH_FRAMES = 2,
+    GAME_SPARK_FRAMES = 10,
+    GAME_NO_TEAM = 0xff
+};
+
 typedef struct {
     u8 paused;
     u8 phase;
-    u8 phase_timer;
+    u16 phase_timer;
     u8 last_fault;
     u8 point_winner;
     u8 team_score[2];
     u8 required_bounce;
+    u8 serving_team;
+    u8 match_winner;
+    u8 hit_stop;
+    u8 spark_timer;
+    s16 spark_x;
+    s16 spark_y;
+    u16 frame_count;
 } GameState;
 
 extern GameState g_game_state;
 
 void game_initialize(void);
-void game_update_top_level(const PlayerIntent intents[MAX_PLAYERS]);
+void game_new_match(void);
+void game_set_phase(u8 phase);
+void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 
 #endif
-

@@ -1,6 +1,6 @@
 #include "collision.h"
 
-static s32 absolute_fp(s32 value)
+static fx absolute_fp(fx value)
 {
     return value < 0 ? -value : value;
 }
@@ -54,11 +54,7 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
     else
         flight_frames = HIT_FLIGHT_FRAMES_NEUTRAL;
 
-    ball->vx_fp = (s16)((TO_FP(target_x) - ball->x_fp) / flight_frames);
-    ball->vy_fp = (s16)((TO_FP(target_y) - ball->y_fp) / flight_frames);
-    ball->vz_fp = (s16)((-ball->z_fp -
-        (s32)BALL_GRAVITY_FP * flight_frames * (flight_frames - 1) / 2) /
-        flight_frames);
+    ball_launch(ball, target_x, target_y, flight_frames);
 }
 
 u8 collision_ball_in_player_reach(const Player *player, const Ball *ball)

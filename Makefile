@@ -24,13 +24,16 @@ ifeq ($(CONFIG),hardware-test)
 CONFIG_TAG := HW
 endif
 
-CFLAGS += -Iinclude -DBUILD_ID_STRING=\"$(VERSION_NAME)-$(CONFIG_TAG)-$(BUILD_ID)\"
+CFLAGS += -Iinclude -Iassets/generated -DBUILD_ID_STRING=\"$(VERSION_NAME)-$(CONFIG_TAG)-$(BUILD_ID)\"
 
 ifeq ($(CONFIG),debug)
 CFLAGS += -DBUILD_DEBUG=1
 endif
 ifeq ($(CONFIG),hardware-test)
 CFLAGS += -DBUILD_HARDWARE_TEST=1
+endif
+ifeq ($(PROFILE),1)
+CFLAGS += -DBUILD_PROFILE=1
 endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
@@ -66,27 +69,17 @@ assets:
 asset-check: assets
 	@python3 tools/generate_assets.py --check
 
-host-check:
+HOST_CORE := src/ai.c src/ball.c src/collision.c src/court.c src/game.c \
+	src/input_state.c src/player.c src/rules.c src/serve.c
+HOST_TESTS := player ball collision serve rules ai
+
+host-check: assets
 	@mkdir -p build/host
-	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
-		test/test_player.c src/court.c src/game.c src/input_state.c src/player.c \
-		-o build/host/test_player
-	@build/host/test_player
-	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
-		test/test_ball.c src/ball.c src/court.c -o build/host/test_ball
-	@build/host/test_ball
-	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
-		test/test_collision.c src/ball.c src/collision.c src/court.c src/player.c \
-		-o build/host/test_collision
-	@build/host/test_collision
-	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
-		test/test_serve.c src/ball.c src/court.c src/game.c src/player.c \
-		src/serve.c -o build/host/test_serve
-	@build/host/test_serve
-	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
-		test/test_rules.c src/ball.c src/court.c src/game.c src/player.c \
-		src/rules.c src/serve.c -o build/host/test_rules
-	@build/host/test_rules
+	@for t in $(HOST_TESTS); do \
+		$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
+			-Iassets/generated test/test_$$t.c $(HOST_CORE) \
+			-o build/host/test_$$t && build/host/test_$$t || exit 1; \
+	done
 
 CC_HOST ?= cc
 check: host-check asset-check

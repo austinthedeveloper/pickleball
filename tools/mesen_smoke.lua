@@ -7,6 +7,8 @@
 --                   and "shot <frame>" lines; '#' starts a comment.
 --   SMOKE_OUT       directory for frame-NNNNN.png screenshots.
 --   SMOKE_FRAMES    total frames to run before exiting (default 600).
+--   SMOKE_PROBES    optional "name=wramhex:size,..." values (size 1 or 2) to
+--                   print on every shot frame, e.g. "frames=27f8:2".
 
 local timeline_path = os.getenv("SMOKE_TIMELINE")
 local out = os.getenv("SMOKE_OUT") or "."
@@ -14,6 +16,27 @@ local total = tonumber(os.getenv("SMOKE_FRAMES") or "600")
 local ranges = {}
 local shots = {}
 local frame = 0
+local probes = {}
+
+for name, addr, size in (os.getenv("SMOKE_PROBES") or ""):gmatch(
+        "([%w_]+)=(%x+):(%d)") do
+    table.insert(probes, { name = name, addr = tonumber(addr, 16),
+        size = tonumber(size) })
+end
+
+local function probeLine()
+    local parts = {}
+    for _, p in ipairs(probes) do
+        local value
+        if p.size == 2 then
+            value = emu.readWord(p.addr, emu.memType.snesWorkRam, false)
+        else
+            value = emu.read(p.addr, emu.memType.snesWorkRam, false)
+        end
+        table.insert(parts, p.name .. "=" .. value)
+    end
+    return table.concat(parts, " ")
+end
 
 if timeline_path then
     for line in io.lines(timeline_path) do
@@ -54,6 +77,9 @@ emu.addEventCallback(function()
 end, emu.eventType.inputPolled)
 
 emu.addEventCallback(function()
+    if shots[frame] and #probes > 0 then
+        print(string.format("frame %d %s", frame, probeLine()))
+    end
     if shots[frame] then
         local file = assert(io.open(
             string.format("%s/frame-%05d.png", out, frame), "wb"))

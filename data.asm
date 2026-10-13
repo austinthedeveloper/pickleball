@@ -16,20 +16,19 @@ court_palette_end:
 hud_tiles:
 .incbin "assets/generated/hud.pic"
 hud_tiles_end:
-hud_map:
-.incbin "assets/generated/hud.map"
-hud_map_end:
 hud_palette:
 .incbin "assets/generated/hud.pal"
 hud_palette_end:
 .ends
 
-.section ".rodata_player" superfree
-player_tiles:
-.incbin "assets/generated/player.pic"
-player_tiles_end:
-player_palette:
+.section ".rodata_obj" superfree
+obj_tiles:
+.incbin "assets/generated/obj.pic"
+obj_tiles_end:
+player_palettes:
 .incbin "assets/generated/player.pal"
-player_palette_end:
+player_palettes_end:
+objects_palette:
+.incbin "assets/generated/objects.pal"
+objects_palette_end:
 .ends
-

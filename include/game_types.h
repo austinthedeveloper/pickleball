@@ -11,5 +11,8 @@ typedef int32_t s32;
 #include <snes.h>
 #endif
 
+/* 12.4 fixed point: positions/velocities in 1/16 pixel units. */
+typedef s16 fx;
+
 #endif
 

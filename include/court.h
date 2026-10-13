@@ -3,39 +3,45 @@
 
 #include "game_types.h"
 
+/*
+ * World coordinates are whole ground pixels: y is the screen row of the
+ * ground point and x is the column at the near (bottom) sideline. Rendering
+ * narrows x toward the far sideline with k(y) = COURT_PERSPECTIVE_BASE + y/2
+ * (see render_project_x); physics, rules, and AI never see the projection.
+ * tools/art/prep_court_scene.py paints the court from these same values.
+ */
 enum {
-    COURT_BASELINE_LEFT = 24,
-    COURT_BASELINE_RIGHT = 232,
-    COURT_SIDELINE_TOP = 40,
-    COURT_SIDELINE_BOTTOM = 200,
+    COURT_BASELINE_LEFT = 16,
+    COURT_BASELINE_RIGHT = 240,
+    COURT_SIDELINE_TOP = 90,
+    COURT_SIDELINE_BOTTOM = 170,
     COURT_NET_X = 128,
-    COURT_KITCHEN_LEFT_X = 88,
-    COURT_KITCHEN_RIGHT_X = 168,
-    COURT_CENTERLINE_Y = 120,
+    COURT_KITCHEN_LEFT_X = 92,
+    COURT_KITCHEN_RIGHT_X = 164,
+    COURT_CENTERLINE_Y = 130,
     COURT_NET_HEIGHT = 12,
+    COURT_PERSPECTIVE_BASE = 171,
 
-    PLAYER_BODY_HALF_WIDTH = 16,
-    PLAYER_BODY_TOP_OFFSET = 24,
-    PLAYER_BODY_BOTTOM_OFFSET = 8,
-    PLAYER_SHADOW_HALF_WIDTH = 4,
-    PLAYER_SHADOW_Y_OFFSET = 5,
-    /* 44 court feet span 160 pixels, so three feet is about 11 pixels. */
-    PLAYER_BOTTOM_RUNOFF = 11,
-    PLAYER_LEFT_RUNOFF = PLAYER_BOTTOM_RUNOFF * 2,
+    /* Player x/y is the ground point between the feet. */
+    PLAYER_SPRITE_HALF_WIDTH = 16,
+    PLAYER_SPRITE_FOOT_Y = 30,
+    PLAYER_RUNOFF_BACK = 12,
+    PLAYER_RUNOFF_SIDE = 10,
+    PLAYER_NET_GAP = 8,
 
-    PLAYER_SPAWN_X = 56,
-    PLAYER_SPAWN_Y = 112,
-    PLAYER_CLAMP_MIN_X = COURT_BASELINE_LEFT + PLAYER_BODY_HALF_WIDTH -
-        PLAYER_LEFT_RUNOFF,
-    PLAYER_CLAMP_MAX_X = COURT_NET_X - PLAYER_BODY_HALF_WIDTH,
-    PLAYER_CLAMP_MIN_Y = COURT_SIDELINE_TOP - PLAYER_BODY_BOTTOM_OFFSET,
-    PLAYER_CLAMP_MAX_Y = COURT_SIDELINE_BOTTOM + PLAYER_BOTTOM_RUNOFF -
-        PLAYER_BODY_BOTTOM_OFFSET
+    PLAYER_SPAWN_X = 40,
+    PLAYER_SPAWN_Y = 150,
+    PLAYER_CLAMP_MIN_X = COURT_BASELINE_LEFT - PLAYER_RUNOFF_BACK,
+    PLAYER_CLAMP_MAX_X = COURT_NET_X - PLAYER_NET_GAP,
+    PLAYER_CLAMP_MIN_Y = COURT_SIDELINE_TOP - PLAYER_RUNOFF_SIDE + 4,
+    PLAYER_CLAMP_MAX_Y = COURT_SIDELINE_BOTTOM + PLAYER_RUNOFF_SIDE,
+    PLAYER_RIGHT_CLAMP_MIN_X = COURT_NET_X + PLAYER_NET_GAP,
+    PLAYER_RIGHT_CLAMP_MAX_X = COURT_BASELINE_RIGHT + PLAYER_RUNOFF_BACK
 };
 
-s32 court_clamp_x_fp(s32 x_fp);
-s32 court_clamp_y_fp(s32 y_fp);
-u8 court_contains_ground_fp(s32 x_fp, s32 y_fp);
+/* Clamp a ground position to the legal half for the given team (0 = left). */
+fx court_clamp_x_fp(fx x_fp, u8 team);
+fx court_clamp_y_fp(fx y_fp);
+u8 court_contains_ground_fp(fx x_fp, fx y_fp);
 
 #endif
-
