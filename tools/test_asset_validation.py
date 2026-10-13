@@ -125,6 +125,16 @@ def opponent_too_fast(spec):
     return spec
 
 
+def venue_unknown_ground(spec):
+    spec["venues"][1]["ground"]["surface"] = "PLAID"
+    return spec
+
+
+def venue_long_name(spec):
+    spec["venues"][1]["name"] = "LAKESIDE PARK"
+    return spec
+
+
 CASES = [
     ("scene must be 256x224", "court_scene.png", crop_scene,
      "court_scene.png must be 256x224"),
@@ -150,6 +160,10 @@ CASES = [
      opponent_default_drift, "!= shipped CPU"),
     ("opponent style range (ADR-023)", "opponents.json", opponent_too_fast,
      "speed 30 outside"),
+    ("venue ground preset (ADR-024)", "venues.json", venue_unknown_ground,
+     "'PLAID' is not a court colour preset"),
+    ("venue name fits the COURT page (ADR-024)", "venues.json",
+     venue_long_name, "1..8 cells"),
 ]
 
 

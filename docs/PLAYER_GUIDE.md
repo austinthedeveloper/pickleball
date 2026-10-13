@@ -21,11 +21,16 @@ ladder starts over. The records page shows your place.
 
 ## Court colours
 
-**COURT** sets the colours of the court surface, the ground around it, and
-the lines. Up/Down picks one, Left/Right changes it, and the court behind
-the menu shows the result straight away. B or Start keeps the colours, which
-are saved for every later match. Y puts back what you had. DEFAULT is the
-original park court.
+**COURT** picks where you play and the colours of the court surface, the
+ground around it, and the lines. Up/Down picks a row, Left/Right changes it,
+and colour changes show on the court behind the menu straight away. B or
+Start keeps your choices, which are saved for every later match; Y puts back
+what you had.
+
+- **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
+  home court. A new venue loads when you leave the page.
+- **DEFAULT** colours are the venue's own: teal on dirt at the park, green on
+  grass by the lake, and teal on brick at sunset.
 
 ## Records
 

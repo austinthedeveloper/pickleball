@@ -1,0 +1,9 @@
+# LAKESIDE (ADR-024): COURT page, VENUE AUTO -> PARK -> LAKESIDE, keep.
+70 71 down
+80 81 down
+100 101 start
+120 121 right
+130 131 right
+shot 145
+150 151 b
+shot 200

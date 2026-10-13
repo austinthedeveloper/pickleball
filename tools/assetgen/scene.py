@@ -1,4 +1,5 @@
 """BG1 court scene: tiles, map, palettes, and the projection checks."""
+import json
 import struct
 import sys
 
@@ -37,21 +38,20 @@ def check_court_lines(rows):
                          "\n  ".join(errors[:10]))
 
 
-def court_assets():
-    width, height, rows, palette = read_png(paths.src / "court_scene.png")
-    if (width, height) != (256, 224):
-        raise AssetError("court_scene.png must be 256x224")
-    tiles, lookup, tilemap = [], {}, []
-    for ty in range(32):
+GROUND_PALETTE = 2      # shared by every venue (court colours, ADR-022)
+VENUE_NAME_CELLS = 8
+
+
+def scene_tiles(name, rows):
+    """Per 8x8 tile of a 256x224 scene: (palette, 4bpp tile bytes, flip
+    variants). Validates the ADR-016 palette rules."""
+    out = []
+    for ty in range(28):
         for tx in range(32):
-            if ty >= 28:
-                tilemap.append(0)
-                continue
             px = block(rows, tx * 8, ty * 8)
             subs = {v // 16 for row in px for v in row}
             if len(subs) != 1:
-                raise AssetError(
-                    f"court_scene.png tile {tx},{ty} mixes palettes {subs}")
+                raise AssetError(f"{name} tile {tx},{ty} mixes palettes {subs}")
             sub = subs.pop()
             if sub == 0:
                 raise AssetError(f"court tile {tx},{ty} uses 4bpp palette 0, "
@@ -62,28 +62,163 @@ def court_assets():
                 raise AssetError(f"court tile {tx},{ty} uses color 0")
             local = [[v % 16 for v in row] for row in px]
             variants = (
-                (local, 0),
-                ([row[::-1] for row in local], 0x4000),
-                (local[::-1], 0x8000),
-                ([row[::-1] for row in local[::-1]], 0xC000),
+                (encode_tile(local, 4), 0),
+                (encode_tile([row[::-1] for row in local], 4), 0x4000),
+                (encode_tile(local[::-1], 4), 0x8000),
+                (encode_tile([row[::-1] for row in local[::-1]], 4), 0xC000),
             )
-            entry = None
-            for candidate, flip in variants:
-                key = encode_tile(candidate, 4)
-                if key in lookup:
-                    entry = lookup[key] | flip
-                    break
-            if entry is None:
-                key = encode_tile(local, 4)
-                lookup[key] = len(tiles)
-                entry = len(tiles)
-                tiles.append(key)
+            out.append((sub, variants))
+    return out
+
+
+class TileSet:
+    """Deduplicated tiles (with flips); entries index from `base`."""
+
+    def __init__(self, base=0):
+        self.base = base
+        self.tiles = []
+        self.lookup = {}
+
+    def entry(self, variants, add=True):
+        for key, flip in variants:
+            if key in self.lookup:
+                return (self.base + self.lookup[key]) | flip
+        if not add:
+            return None
+        key = variants[0][0]
+        self.lookup[key] = len(self.tiles)
+        self.tiles.append(key)
+        return self.base + len(self.tiles) - 1
+
+
+def court_assets():
+    """Venues (ADR-024): shared ground tiles and palette 2, plus each venue's
+    backdrop tiles, map, and palettes 3-7."""
+    from .court_colors import load_court_colors
+    spec = json.loads((paths.src / "venues.json").read_text("utf-8"))
+    venues = spec["venues"]
+    if not 1 <= len(venues) <= 9:
+        raise AssetError("venues.json: 1..9 venues")
+    color_parts = load_court_colors()
+
+    scenes = []
+    for venue in venues:
+        name = venue["name"]
+        if not 1 <= len(name) <= VENUE_NAME_CELLS:
+            raise AssetError(f"venue {name!r}: 1..{VENUE_NAME_CELLS} cells")
+        width, height, rows, palette = read_png(paths.src / venue["scene"])
+        if (width, height) != (256, 224):
+            raise AssetError(f"{venue['scene']} must be 256x224")
+        check_court_lines(rows)
+        scenes.append((venue, rows, palette, scene_tiles(venue["scene"], rows)))
+
+    # The ground palette is shared: every venue paints it identically.
+    first = GROUND_PALETTE * 16
+    base_palette = scenes[0][2]
+    ground_colors = [tuple(base_palette[first + i]) for i in range(16)]
+    for venue, _, palette, _ in scenes[1:]:
+        if [tuple(palette[first + i]) for i in range(16)] != ground_colors:
+            raise AssetError(f"venue {venue['name']}: palette 2 differs from "
+                             f"{venues[0]['scene']} (it is shared)")
+
+    ground = TileSet()
+    for _, _, _, tiles in scenes:
+        for sub, variants in tiles:
+            if sub == GROUND_PALETTE:
+                ground.entry(variants)
+
+    files = {"court.pic": b"".join(ground.tiles),
+             "court.pal": struct.pack("<16H", *[rgb8_to_15(c)
+                                               for c in ground_colors])}
+    most = 0
+    header_rows = []
+    for i, (venue, _, palette, tiles) in enumerate(scenes):
+        own = TileSet(base=len(ground.tiles))
+        tilemap = []
+        for sub, variants in tiles:
+            if sub == GROUND_PALETTE:
+                entry = ground.entry(variants, add=False)
+            else:
+                entry = own.entry(variants)
             tilemap.append(entry | (sub << 10))
-    check_court_lines(rows)
-    if len(tiles) > COURT_TILE_BUDGET:
-        raise AssetError(f"court uses {len(tiles)} tiles > {COURT_TILE_BUDGET}")
-    pal = []
-    for slot in range(32, 128):
-        pal.append(rgb8_to_15(palette[slot]) if slot < len(palette) else 0)
-    return b"".join(tiles), struct.pack("<1024H", *tilemap), \
-        struct.pack("<96H", *pal), len(tiles)
+        total = len(ground.tiles) + len(own.tiles)
+        if total > COURT_TILE_BUDGET:
+            raise AssetError(f"venue {venue['name']} uses {total} tiles > "
+                             f"{COURT_TILE_BUDGET}")
+        most = max(most, total)
+        pal = [rgb8_to_15(palette[slot]) if slot < len(palette) else 0
+               for slot in range(48, 128)]
+        files[f"venue_{i}.pic"] = b"".join(own.tiles)
+        files[f"venue_{i}.map"] = struct.pack(f"<{len(tilemap)}H", *tilemap)
+        files[f"venue_{i}.pal"] = struct.pack("<80H", *pal)
+        defaults = []
+        for part, _, presets in color_parts:
+            names = [n for n, _ in presets]
+            want = venue["ground"][part]
+            if want not in names:
+                raise AssetError(f"venue {venue['name']}: {part} {want!r} is "
+                                 f"not a court colour preset")
+            defaults.append(names.index(want))
+        header_rows.append((venue["name"], defaults,
+                            len(files[f"venue_{i}.pic"]),
+                            len(files[f"venue_{i}.map"])))
+
+    files["venues.h"] = venues_header(header_rows).encode()
+    files["venues.inc"] = venues_include(len(venues)).encode()
+    return files, most, len(ground.tiles)
+
+
+def venues_header(rows):
+    lines = ["/* Generated by tools/generate_assets.py from "
+             "assets/source/venues.json; do not edit. */",
+             "#ifndef VENUES_H", "#define VENUES_H", "",
+             "#include \"game_types.h\"", "#include \"court_colors.h\"", "",
+             f"#define VENUE_COUNT {len(rows)}", "",
+             "/* One venue's BG1 data in ROM (venues.inc). */",
+             "typedef struct {",
+             "    const u8 *tiles;          /* after the shared ground tiles */",
+             "    u16 tiles_size;",
+             "    const u8 *map;            /* 32x28 entries */",
+             "    u16 map_size;",
+             "    const u8 *palettes;       /* BG1 palettes 3-7 */",
+             "} VenueData;", "",
+             "/* The ROM data table refers to venues.inc labels: defined only in",
+             " * the SNES renderer. */",
+             "#ifdef VENUE_DATA_DEFINE"]
+    for i in range(len(rows)):
+        lines.append(f"extern char venue{i}_tiles, venue{i}_map, "
+                     f"venue{i}_palettes;")
+    lines.append("const VenueData g_venue_data[VENUE_COUNT] = {")
+    for i, (_, _, tiles_size, map_size) in enumerate(rows):
+        lines.append(f"    {{ (const u8 *)&venue{i}_tiles, {tiles_size}, "
+                     f"(const u8 *)&venue{i}_map, {map_size}, "
+                     f"(const u8 *)&venue{i}_palettes }},")
+    lines.append("};")
+    lines += ["#else", "extern const VenueData g_venue_data[VENUE_COUNT];",
+              "#endif", "", "#ifdef VENUES_DEFINE"]
+    lines.append("const char *const g_venue_names[VENUE_COUNT] = { " +
+                 ", ".join(f'"{r[0]}"' for r in rows) + " };")
+    lines.append("/* Court colour preset a DEFAULT choice means here. */")
+    lines.append("const u8 g_venue_ground[VENUE_COUNT][COURT_PARTS] = { " +
+                 ", ".join("{ " + ", ".join(map(str, r[1])) + " }"
+                           for r in rows) + " };")
+    lines += ["#else",
+              "extern const char *const g_venue_names[VENUE_COUNT];",
+              "extern const u8 g_venue_ground[VENUE_COUNT][COURT_PARTS];",
+              "#endif", "", "#endif", ""]
+    return "\n".join(lines)
+
+
+def venues_include(count):
+    """One ROM section per venue (each fits a 32 KiB bank)."""
+    lines = ["; Generated by tools/generate_assets.py; do not edit."]
+    for i in range(count):
+        lines += [f".section \".rodata_venue{i}\" superfree",
+                  f"venue{i}_tiles:",
+                  f".incbin \"assets/generated/venue_{i}.pic\"",
+                  f"venue{i}_map:",
+                  f".incbin \"assets/generated/venue_{i}.map\"",
+                  f"venue{i}_palettes:",
+                  f".incbin \"assets/generated/venue_{i}.pal\"",
+                  ".ends", ""]
+    return "\n".join(lines)

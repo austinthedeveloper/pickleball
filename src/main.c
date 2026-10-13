@@ -31,11 +31,13 @@ static void update_title_records(u16 pressed)
     }
 }
 
-/* Court page (ADR-022): changes show on the court behind it at once; B or
- * Start keeps them (and saves), Y puts them back. */
+/* Court page (ADR-022/024): colour changes show on the court behind it at
+ * once; B or Start keeps them (and saves), Y puts them back. A new venue
+ * loads when the page closes. */
 static void update_title_court(u16 pressed)
 {
-    u8 result = court_edit_input(g_save.settings.court, pressed);
+    SaveSettings *settings = &g_save.settings;
+    u8 result = court_edit_input(settings->court, &settings->venue, pressed);
 
     if (g_court_edit.recolor) {
         g_court_edit.recolor = 0;
@@ -43,9 +45,15 @@ static void update_title_court(u16 pressed)
     }
     if (result == COURT_EDIT_STAY)
         return;
-    if (result == COURT_EDIT_DONE && court_edit_changed(g_save.settings.court))
-        save_write();
     g_title_page = TITLE_PAGE_MENU;
+    if (result != COURT_EDIT_DONE ||
+            !court_edit_changed(settings->court, settings->venue))
+        return;
+    save_write();
+    if (settings->venue != g_court_edit.original_venue) {
+        render_open_match();
+        profile_resync();
+    }
 }
 
 /* Title: Up/Down picks an entry, Start on pad 2 toggles 2P, and Start/B
@@ -71,7 +79,8 @@ static void update_title(void)
             if (g_title_mode == TITLE_RECORDS) {
                 g_title_page = TITLE_PAGE_RECORDS;
             } else if (g_title_mode == TITLE_COURT) {
-                court_edit_begin(g_save.settings.court);
+                court_edit_begin(g_save.settings.court,
+                    &g_save.settings.venue);
                 g_title_page = TITLE_PAGE_COURT;
             } else {
                 select_begin(g_title_mode == TITLE_DOUBLES ? MATCH_DOUBLES :

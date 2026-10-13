@@ -9,6 +9,11 @@ limits are in [09_M1_VRAM_AND_BUILD.md](09_M1_VRAM_AND_BUILD.md).
 
 ## Locations
 
+**Started:** [ADR-024](decisions/ADR-024-venues.md) adds three venues (PARK,
+LAKESIDE, SUNSET) built from the inspiration mocks, with shared ground
+tiles, per-venue default ground colours, and home courts for opponents. The
+notes below are the original idea.
+
 A location swaps the **backdrop** (the top of the screen: sky, trees, fence,
 bleachers, sign) and **recolours the ground**. The court geometry, lines, and
 projection stay the same, so gameplay and collision are untouched.

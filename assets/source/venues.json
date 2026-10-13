@@ -1,0 +1,17 @@
+{
+  "comment": "Venues (ADR-024). Each scene is a 256x224 court scene made by tools/art/prep_court_scene.py; the first is the base. Tiles in BG1 palette 2 (the court, lines, net, sand, fence) must be the same in every scene and are shared; each venue has its own backdrop tiles and palettes 3-7. 'ground' names the court colour presets (court_colors.json) a DEFAULT choice means at this venue. Names fit the 8-cell COURT page.",
+  "venues": [
+    {
+      "name": "PARK", "scene": "court_scene.png",
+      "ground": {"surface": "DEFAULT", "surround": "DEFAULT", "lines": "DEFAULT"}
+    },
+    {
+      "name": "LAKESIDE", "scene": "venue_lake.png",
+      "ground": {"surface": "GREEN", "surround": "GRASS", "lines": "WHITE"}
+    },
+    {
+      "name": "SUNSET", "scene": "venue_sunset.png",
+      "ground": {"surface": "DEFAULT", "surround": "BRICK", "lines": "DEFAULT"}
+    }
+  ]
+}

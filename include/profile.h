@@ -22,6 +22,8 @@ extern u16 g_stage_scanline_max[PROFILE_STAGES];
 extern u16 g_stage_scanline_sum[PROFILE_STAGES];
 
 void profile_initialize(void);
+/* The PPU's current scanline (0-261; VBlank from 225). */
+u16 profile_scanline(void);
 /* Top of the main loop. */
 void profile_frame_begin(void);
 void profile_resync(void);

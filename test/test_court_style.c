@@ -3,6 +3,7 @@
 #include <string.h>
 #include "court_style.h"
 #include "input.h"
+#include "opponents.h"
 
 /* ADR-022 court colours: composition, names, and the editor. */
 
@@ -30,7 +31,7 @@ static void test_default_is_painted(void)
     /* DEFAULT presets hold the painted colours of court_scene.png, so the
      * default choice changes nothing. */
     load_painted();
-    court_style_compose(out, painted, choice);
+    court_style_compose(out, painted, choice, 0);
     assert(memcmp(out, painted, sizeof(out)) == 0);
     assert(strcmp(court_style_name(COURT_PART_SURFACE, 0), "DEFAULT") == 0);
 }
@@ -43,7 +44,7 @@ static void test_presets_replace_only_their_part(void)
     u8 i;
     u8 touched[COURT_GROUND_COLORS] = { 0 };
 
-    court_style_compose(out, painted, choice);
+    court_style_compose(out, painted, choice, 0);
     for (i = 0; i < g_court_part_size[COURT_PART_SURFACE]; ++i) {
         touched[entries[i]] = 1;
         assert(out[entries[i]] ==
@@ -59,7 +60,7 @@ static void test_presets_replace_only_their_part(void)
 
     /* Out of range (a corrupted or newer save) counts as DEFAULT. */
     choice[COURT_PART_SURFACE] = 200;
-    court_style_compose(out, painted, choice);
+    court_style_compose(out, painted, choice, 0);
     assert(memcmp(out, painted, sizeof(out)) == 0);
     assert(strcmp(court_style_name(COURT_PART_SURFACE, 200), "DEFAULT") == 0);
 }
@@ -76,45 +77,90 @@ static void test_names_fit(void)
     }
 }
 
+/* ADR-024: DEFAULT means the venue's ground; the venue follows AUTO. */
+static void test_venues(void)
+{
+    u16 out[COURT_GROUND_COLORS];
+    u16 expect[COURT_GROUND_COLORS];
+    u8 choice[COURT_PARTS] = { 0, 0, 0 };
+    u8 venue;
+    u8 o;
+
+    for (venue = 0; venue < VENUE_COUNT; ++venue) {
+        court_style_compose(out, painted, choice, venue);
+        court_style_compose(expect, painted, g_venue_ground[venue], 0);
+        assert(memcmp(out, expect, sizeof(out)) == 0);
+    }
+    /* An explicit choice wins over the venue's ground. */
+    choice[COURT_PART_SURROUND] = 2;
+    court_style_compose(out, painted, choice, VENUE_COUNT - 1);
+    assert(out[g_court_part_entries[COURT_PART_SURROUND][0]] ==
+        g_court_preset_colors[g_court_part_first[COURT_PART_SURROUND] + 2][0]);
+
+    /* AUTO: the opponent's home, else the first venue; a saved venue wins. */
+    assert(court_style_venue(COURT_VENUE_AUTO, OPPONENT_NONE) == 0);
+    for (o = 0; o < OPPONENT_COUNT; ++o) {
+        assert(court_style_venue(COURT_VENUE_AUTO, o) == g_opponent_venue[o]);
+        assert(g_opponent_venue[o] < VENUE_COUNT);
+    }
+    assert(court_style_venue(VENUE_COUNT, 0) == VENUE_COUNT - 1);
+    assert(court_style_venue(VENUE_COUNT + 5, OPPONENT_NONE) == 0);
+    assert(strcmp(court_style_venue_name(COURT_VENUE_AUTO), "AUTO") == 0);
+    assert(strcmp(court_style_venue_name(1), g_venue_names[0]) == 0);
+}
+
 static void test_editor(void)
 {
     u8 choice[COURT_PARTS] = { 0, 9, 1 };   /* surround out of range */
+    u8 venue = 200;                         /* out of range */
     u8 surfaces = g_court_part_count[COURT_PART_SURFACE];
 
-    court_edit_begin(choice);
+    court_edit_begin(choice, &venue);
     assert(choice[COURT_PART_SURROUND] == 0);   /* clamped on open */
-    assert(g_court_edit.row == COURT_PART_SURFACE);
-    assert(!court_edit_changed(choice));
+    assert(venue == COURT_VENUE_AUTO);
+    assert(g_court_edit.row == COURT_ROW_VENUE);
+    assert(!court_edit_changed(choice, venue));
 
-    /* Left wraps to the last preset and asks for a recolour. */
-    assert(court_edit_input(choice, PAD_LEFT) == COURT_EDIT_STAY);
+    /* The venue row: AUTO, then each venue, wrapping; no recolour. */
+    court_edit_input(choice, &venue, PAD_LEFT);
+    assert(venue == VENUE_COUNT);
+    assert(!g_court_edit.recolor);
+    court_edit_input(choice, &venue, PAD_RIGHT);
+    assert(venue == COURT_VENUE_AUTO);
+    court_edit_input(choice, &venue, PAD_RIGHT);
+    assert(venue == 1 && court_edit_changed(choice, venue));
+
+    /* Down to SURFACE: Left wraps to the last preset and recolours. */
+    court_edit_input(choice, &venue, PAD_DOWN);
+    assert(g_court_edit.row == COURT_PART_SURFACE + 1);
+    assert(court_edit_input(choice, &venue, PAD_LEFT) == COURT_EDIT_STAY);
     assert(choice[COURT_PART_SURFACE] == surfaces - 1);
     assert(g_court_edit.recolor);
     g_court_edit.recolor = 0;
-    court_edit_input(choice, PAD_RIGHT);
-    assert(choice[COURT_PART_SURFACE] == 0);
-    court_edit_input(choice, PAD_RIGHT);
+    court_edit_input(choice, &venue, PAD_RIGHT);
+    court_edit_input(choice, &venue, PAD_RIGHT);
     assert(choice[COURT_PART_SURFACE] == 1);
-    assert(court_edit_changed(choice));
 
     /* Rows wrap; Left/Right change only the cursor's row. */
-    court_edit_input(choice, PAD_UP);
-    assert(g_court_edit.row == COURT_PART_LINES);
-    court_edit_input(choice, PAD_RIGHT);
+    court_edit_input(choice, &venue, PAD_UP);
+    court_edit_input(choice, &venue, PAD_UP);
+    assert(g_court_edit.row == COURT_ROWS - 1);
+    court_edit_input(choice, &venue, PAD_RIGHT);
     assert(choice[COURT_PART_LINES] == 2);
-    court_edit_input(choice, PAD_DOWN);
-    assert(g_court_edit.row == COURT_PART_SURFACE);
+    court_edit_input(choice, &venue, PAD_DOWN);
+    assert(g_court_edit.row == COURT_ROW_VENUE);
 
     /* Y puts everything back. */
-    assert(court_edit_input(choice, PAD_Y) == COURT_EDIT_CANCEL);
+    assert(court_edit_input(choice, &venue, PAD_Y) == COURT_EDIT_CANCEL);
     assert(choice[COURT_PART_SURFACE] == 0 && choice[COURT_PART_LINES] == 1);
-    assert(!court_edit_changed(choice));
+    assert(venue == COURT_VENUE_AUTO);
+    assert(!court_edit_changed(choice, venue));
 
     /* B keeps. */
-    court_edit_begin(choice);
-    court_edit_input(choice, PAD_RIGHT);
-    assert(court_edit_input(choice, PAD_B) == COURT_EDIT_DONE);
-    assert(choice[COURT_PART_SURFACE] == 1 && court_edit_changed(choice));
+    court_edit_begin(choice, &venue);
+    court_edit_input(choice, &venue, PAD_RIGHT);
+    assert(court_edit_input(choice, &venue, PAD_B) == COURT_EDIT_DONE);
+    assert(venue == 1 && court_edit_changed(choice, venue));
 }
 
 int main(void)
@@ -122,6 +168,7 @@ int main(void)
     test_default_is_painted();
     test_presets_replace_only_their_part();
     test_names_fit();
+    test_venues();
     test_editor();
     printf("court style host checks passed\n");
     return 0;

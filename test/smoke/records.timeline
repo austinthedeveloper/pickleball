@@ -1,7 +1,9 @@
-# Title menu and records page (ADR-021): Down twice to RECORDS, open it,
-# close with B, reopen, erase with L+R+X, close with Start.
+# Title menu and records page (ADR-021): Down three times to RECORDS (past
+# COURT, ADR-022), open it, close with B, reopen, erase with L+R+X, close
+# with Start.
 70 71 down
 shot 80
+85 86 down
 90 91 down
 shot 100
 110 111 start

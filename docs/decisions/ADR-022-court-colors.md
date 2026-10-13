@@ -23,6 +23,8 @@ their colours.
 
 Each part has a list of named presets in `assets/source/court_colors.json`.
 Preset 0 is **DEFAULT**: the painted colours read from `court_scene.png`.
+*Amended by [ADR-024](ADR-024-venues.md):* DEFAULT now means the venue's
+ground presets (`venues.json`). At PARK, those are the painted colours.
 Each other preset gives one base colour. The generator derives the part's
 other entries by scaling the base by each painted entry's brightness relative
 to the painted base, which keeps the base's hue.

@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Authoring tool: build assets/source/court_scene.png from the level-01 mock.
+"""Authoring tool: build a venue's court scene from a mock (ADR-024).
+
+PARK (the default) writes assets/source/court_scene.png from the level-01
+mock; LAKESIDE and SUNSET write venue_lake.png / venue_sunset.png from the
+level-02 / level-03 mocks. The court, lines, net, and bottom fence are
+painted procedurally and identically for every venue, so their tiles are
+shared (generate_assets.py checks this); only the backdrop and the corner
+bushes come from the mock.
 
 This is NOT part of the normal build. It needs Pillow and numpy and is run by
 hand when the scene art changes. Its output is a committed 256x224 indexed PNG
@@ -15,7 +22,7 @@ Composition:
                    projection as src/render.c.
   * rows 186..223: procedural chain-link fence with the mock's corner bushes.
 
-Usage: python tools/art/prep_court_scene.py [mock.png]
+Usage: python tools/art/prep_court_scene.py [PARK|LAKESIDE|SUNSET]
 """
 import re
 import sys
@@ -25,8 +32,18 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-MOCK = ROOT / "assets" / "inspiration" / "level-01"
-OUT = ROOT / "assets" / "source" / "court_scene.png"
+INSPIRATION = ROOT / "assets" / "inspiration"
+SOURCE = ROOT / "assets" / "source"
+# Venue: mock, output, and the mock's HUD panels (in 256x224 pixels, x0 y0 x1
+# y1) to in-paint; BG3 draws live HUD panels over that area.
+VENUES = {
+    "PARK": (INSPIRATION / "level-01", SOURCE / "court_scene.png",
+             [(11, 11, 69, 30), (75, 10, 181, 30), (187, 11, 245, 30)]),
+    "LAKESIDE": (INSPIRATION / "level-02.png", SOURCE / "venue_lake.png",
+                 [(7, 6, 57, 25), (81, 6, 175, 25), (199, 6, 250, 25)]),
+    "SUNSET": (INSPIRATION / "level-03.png", SOURCE / "venue_sunset.png",
+               [(15, 6, 77, 24), (82, 3, 180, 33), (185, 6, 246, 24)]),
+}
 W, H = 256, 224
 SAND_TOP = 76
 FENCE_TOP = 186
@@ -243,12 +260,15 @@ def quantize_tiles(rgb5, tiles, palettes_count, seed=1):
 
 
 def main():
-    mock_path = Path(sys.argv[1]) if len(sys.argv) > 1 else MOCK
+    venue = sys.argv[1].upper() if len(sys.argv) > 1 else "PARK"
+    if venue not in VENUES:
+        raise SystemExit(f"venue is one of {', '.join(VENUES)}")
+    mock_path, out_path, hud_rects = VENUES[venue]
     c = court_constants()
     mock = Image.open(mock_path).convert("RGB").resize((W, H), Image.BOX)
     rgb = np.asarray(mock).astype(np.float64)
     # The mock's HUD panels and banner are replaced by live BG3 panels.
-    rgb = inpaint(rgb, [(11, 11, 69, 30), (75, 10, 181, 30), (187, 11, 245, 30)])
+    rgb = inpaint(rgb, hud_rects)
     rgb5 = rgb / 255.0 * 31.0
 
     court_idx = paint_court(c)
@@ -304,9 +324,9 @@ def main():
             put((3 + p) * 16 + 1 + i, col)
     img = Image.fromarray(out, mode="P")
     img.putpalette(flat)
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    img.save(OUT, optimize=False)
-    print(f"wrote {OUT.relative_to(ROOT)} "
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_path, optimize=False)
+    print(f"wrote {out_path.relative_to(ROOT)} "
           f"({len(fixed_tiles)} court tiles, {len(free_tiles)} scene tiles)")
 
 

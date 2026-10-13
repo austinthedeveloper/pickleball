@@ -4,6 +4,8 @@
 Inputs (authored, committed):
   assets/source/court_scene.png    256x224 indexed; palette slots 32..127 are
                                    BG palettes 2..7, one sub-palette per tile.
+  assets/source/venues.json        venues (ADR-024): court_scene.png and the
+                                   venue_*.png scenes, one per venue.
   assets/source/player_sprites.png 128x96 indexed, 32x32 frame slots.
   assets/source/objects.png        128x8 indexed, 8x8 small objects.
   assets/manifest/player_frames.json  frame order/names and team palettes.
@@ -13,7 +15,8 @@ Inputs (authored, committed):
   assets/source/select_scene.png   256x224 Player Select BG1 art (palettes 1-6).
   assets/source/select_portraits.png 192x96 BG2 portraits in palette roles.
 
-Outputs (disposable, assets/generated/): court.pic/.map/.pal, hud.pic/.pal,
+Outputs (disposable, assets/generated/): court.pic/.pal (shared ground),
+venue_N.pic/.map/.pal, venues.h, venues.inc, hud.pic/.pal,
 obj.pic, objects.pal, asset_frames.h, hud_tiles.h, palette_parts.h,
 paddle_stats.h, court_colors.h, opponents.h, select.pic/.map/.pal, portrait.pic, portrait_m/_f.map,
 court_projection.h, sizes.json.
@@ -58,7 +61,7 @@ def asm_include(frames_header):
 
 def generated_files():
     manifest = json.loads(paths.manifest.read_text(encoding="utf-8"))
-    court_pic, court_map, court_pal, court_tiles = court_assets()
+    venue_files, court_tiles, ground_tiles = court_assets()
     hud_pic, hud_pal, big_chars, hud_tiles = hud_assets()
     obj_pic, objects_pal, header, obj_tiles = obj_assets(manifest)
     paddle_header, paddle_names = paddle_stats_header()
@@ -81,9 +84,6 @@ def generated_files():
         f"#define HUD_BIG_CHARS \"{big_chars}\"",
         "#endif", ""]
     files = {
-        "court.pic": court_pic,
-        "court.map": court_map,
-        "court.pal": court_pal,
         "hud.pic": hud_pic,
         "hud.pal": hud_pal,
         "obj.pic": obj_pic,
@@ -104,7 +104,8 @@ def generated_files():
         "portrait_m.map": portrait_m,
         "portrait_f.map": portrait_f,
     }
-    budget = {"court_tiles": court_tiles, "hud_tiles": hud_tiles,
+    files.update(venue_files)
+    budget = {"court_tiles": court_tiles, "ground_tiles": ground_tiles, "hud_tiles": hud_tiles,
               "obj_tiles": obj_tiles, "select_tiles": select_tiles,
               "portrait_tiles": portrait_tiles}
     return files, budget

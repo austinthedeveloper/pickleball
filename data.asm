@@ -1,16 +1,17 @@
 .include "hdr.asm"
 
+; The ground every venue shares: BG1 tiles and palette 2 (ADR-024).
 .section ".rodata_court" superfree
 court_tiles:
 .incbin "assets/generated/court.pic"
 court_tiles_end:
-court_map:
-.incbin "assets/generated/court.map"
-court_map_end:
 court_palette:
 .incbin "assets/generated/court.pal"
 court_palette_end:
 .ends
+
+; Each venue's backdrop tiles, map, and palettes 3-7.
+.include "assets/generated/venues.inc"
 
 .section ".rodata_hud" superfree
 hud_tiles:

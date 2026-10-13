@@ -13,7 +13,7 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 2,           /* 2: settings (ADR-022) */
+    SAVE_VERSION = 3,           /* 2: settings (ADR-022); 3: venue */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -31,6 +31,8 @@ typedef struct {
 typedef struct {
     u8 court[COURT_PARTS];      /* court colour preset per part; 0 DEFAULT */
     u8 ladder;                  /* next opponent (ADR-023) */
+    u8 venue;                   /* COURT_VENUE_AUTO or venue + 1 (ADR-024) */
+    u8 reserved;
 } SaveSettings;
 
 typedef struct {

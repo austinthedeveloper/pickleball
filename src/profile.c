@@ -20,7 +20,7 @@ static u16 s_stage_start;
 
 /* Current scanline from the PPU's latched V counter (9 bits). Separate byte
  * reads: 816-tcc mishandles a combined u8 -> u16 expression here. */
-static u16 read_scanline(void)
+u16 profile_scanline(void)
 {
     u8 low;
     u8 high;
@@ -56,13 +56,13 @@ void profile_frame_begin(void)
 {
     ++g_loop_count;
 #ifdef BUILD_PROFILE
-    s_stage_start = read_scanline();
+    s_stage_start = profile_scanline();
 #endif
 }
 
 void profile_work_done(void)
 {
-    g_work_scanline = read_scanline();
+    g_work_scanline = profile_scanline();
     if (g_work_scanline < VISIBLE_SCANLINES &&
         g_work_scanline > g_work_scanline_max)
         g_work_scanline_max = g_work_scanline;
@@ -81,7 +81,7 @@ void profile_frame_end(void)
 /* Records the duration (in scanlines) of the stage ending here. */
 void profile_mark(u8 stage)
 {
-    u16 line = read_scanline();
+    u16 line = profile_scanline();
     u16 used = line >= s_stage_start ? line - s_stage_start :
         line + SCANLINES_PER_FRAME - s_stage_start;
     if (used > g_stage_scanline_max[stage])

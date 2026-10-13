@@ -109,6 +109,8 @@ def opponents_header():
                                      .read_text("utf-8"))
                     for name in paddle_names}
     shared = json.loads((paths.palettes / "shared.json").read_text("utf-8"))
+    venue_names = [v["name"] for v in json.loads(
+        (paths.src / "venues.json").read_text("utf-8"))["venues"]]
     check_style("default_style", spec["default_style"])
     check_default_style(spec["default_style"])
 
@@ -116,8 +118,8 @@ def opponents_header():
     if not 1 <= len(opponents) <= 9:
         raise AssetError("opponents.json: 1..9 opponents (the records page "
                          "shows the rung as one digit)")
-    styles, palettes, variants, paddle_ids, huds, teams, captains = \
-        [], [], [], [], [], [], []
+    styles, palettes, variants, paddle_ids, huds, teams, captains, homes = \
+        [], [], [], [], [], [], [], []
     for opponent in opponents:
         team = opponent["team"]
         if not 1 <= len(team) <= NAME_CELLS or not re.fullmatch(r"[A-Z0-9 ']+", team):
@@ -127,6 +129,10 @@ def opponents_header():
         if len(opponent["hud"]) != 2:
             raise AssetError(f"opponent {team}: two HUD label colours")
         huds.append([color5(team, c) for c in opponent["hud"]])
+        if opponent.get("venue") not in venue_names:
+            raise AssetError(f"opponent {team}: venue is one of "
+                             f"{', '.join(venue_names)}")
+        homes.append(venue_names.index(opponent["venue"]))
         teams.append(team)
         row_styles, row_pals, row_vars, row_paddles = [], [], [], []
         for player in opponent["players"]:
@@ -197,6 +203,9 @@ def opponents_header():
                  ", ".join(f'"{t}"' for t in teams) + " };")
     lines.append("const char *const g_opponent_captain[OPPONENT_COUNT] = { " +
                  ", ".join(f'"{c}"' for c in captains) + " };")
+    lines.append("/* Home court (venue index, ADR-024). */")
+    lines.append("const u8 g_opponent_venue[OPPONENT_COUNT] = { " +
+                 ", ".join(map(str, homes)) + " };")
     lines += ["#else",
               "extern const AiStyle g_ai_default_style;",
               "extern const AiStyle g_opponent_styles[OPPONENT_COUNT][2];",
@@ -206,5 +215,6 @@ def opponents_header():
               "extern const u16 g_opponent_hud[OPPONENT_COUNT][2];",
               "extern const char *const g_opponent_team[OPPONENT_COUNT];",
               "extern const char *const g_opponent_captain[OPPONENT_COUNT];",
+              "extern const u8 g_opponent_venue[OPPONENT_COUNT];",
               "#endif", "", "#endif", ""]
     return "\n".join(lines)

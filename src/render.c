@@ -1,5 +1,6 @@
 #include <snes.h>
 #include <string.h>
+#define VENUE_DATA_DEFINE
 #include "ai.h"
 #include "asset_frames.h"
 #include "ball.h"
@@ -21,8 +22,8 @@
 #include "serve.h"
 
 
+/* The ground every venue shares (ADR-024); venues.h has the rest. */
 extern char court_tiles, court_tiles_end;
-extern char court_map, court_map_end;
 extern char court_palette, court_palette_end;
 extern char hud_tiles, hud_tiles_end;
 extern char hud_palette, hud_palette_end;
@@ -44,6 +45,8 @@ static u8 s_palette_dirty;
 /* BG1 palette 2 with the saved court colours (ADR-022). */
 static u16 s_ground_palette[COURT_GROUND_COLORS];
 static u8 s_ground_dirty;
+/* Venue on screen (ADR-024). */
+static u8 s_venue;
 static u8 s_doubles;
 static u8 s_applied_mode;
 
@@ -185,7 +188,7 @@ void render_reset_bodies(void)
 void render_apply_court_colors(void)
 {
     court_style_compose(s_ground_palette, (const u16 *)&court_palette,
-        g_save.settings.court);
+        g_save.settings.court, s_venue);
     s_ground_dirty = 1;
 }
 
@@ -347,15 +350,22 @@ void render_initialize(void)
 }
 
 /* Court scene into VRAM/CGRAM and the match HUD; forced blank only. Also
- * how the match returns from the Player Select screen. */
+ * how the match returns from the Player Select screen. The venue is the
+ * saved choice, or for AUTO the opponent's home court (ADR-024): shared
+ * ground tiles first, then the venue's tiles, map, and palettes 3-7. */
 static void render_load_court(void)
 {
-    dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR,
-        (u16)(&court_tiles_end - &court_tiles));
-    dmaCopyVram((u8 *)&court_map, RENDER_BG1_MAP_ADDR,
-        (u16)(&court_map_end - &court_map));
-    dmaCopyCGram((u8 *)&court_palette, 32,
-        (u16)(&court_palette_end - &court_palette));
+    u16 ground = (u16)(&court_tiles_end - &court_tiles);
+    const VenueData *venue;
+
+    s_venue = court_style_venue(g_save.settings.venue,
+        g_attract ? OPPONENT_NONE : g_match_config.opponent);
+    venue = &g_venue_data[s_venue];
+    dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
+    dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
+        venue->tiles_size);
+    dmaCopyVram((u8 *)venue->map, RENDER_BG1_MAP_ADDR, venue->map_size);
+    dmaCopyCGram((u8 *)venue->palettes, 48, 160);
     render_apply_court_colors();
     dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
     s_ground_dirty = 0;

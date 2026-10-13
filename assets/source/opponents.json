@@ -1,5 +1,5 @@
 {
-  "comment": "CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
@@ -13,7 +13,7 @@
   },
   "opponents": [
     {
-      "team": "HENDERSON",
+      "team": "HENDERSON", "venue": "PARK",
       "hud": [[31, 17, 4], [22, 10, 2]],
       "players": [
         {
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "team": "SNOWBIRDS",
+      "team": "SNOWBIRDS", "venue": "LAKESIDE",
       "hud": [[29, 18, 22], [20, 10, 14]],
       "players": [
         {
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "team": "GYM BROS",
+      "team": "GYM BROS", "venue": "PARK",
       "hud": [[16, 31, 6], [8, 20, 2]],
       "players": [
         {
@@ -91,7 +91,7 @@
       ]
     },
     {
-      "team": "PIRATES",
+      "team": "PIRATES", "venue": "LAKESIDE",
       "hud": [[28, 10, 8], [16, 4, 4]],
       "players": [
         {
@@ -117,7 +117,7 @@
       ]
     },
     {
-      "team": "GOTH CLUB",
+      "team": "GOTH CLUB", "venue": "SUNSET",
       "hud": [[20, 8, 28], [12, 3, 18]],
       "players": [
         {
@@ -143,7 +143,7 @@
       ]
     },
     {
-      "team": "SURF CREW",
+      "team": "SURF CREW", "venue": "LAKESIDE",
       "hud": [[6, 26, 28], [2, 16, 18]],
       "players": [
         {
@@ -169,7 +169,7 @@
       ]
     },
     {
-      "team": "TWINS",
+      "team": "TWINS", "venue": "SUNSET",
       "hud": [[8, 28, 26], [3, 18, 17]],
       "players": [
         {
@@ -195,7 +195,7 @@
       ]
     },
     {
-      "team": "CHAMPS",
+      "team": "CHAMPS", "venue": "SUNSET",
       "hud": [[31, 25, 6], [22, 15, 2]],
       "players": [
         {

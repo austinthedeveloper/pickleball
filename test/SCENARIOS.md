@@ -29,6 +29,9 @@ sources the ROM uses).
 | OPP-01 | `test_opponents.c`: default style = shipped constants, config/looks/styles, Player Select takes the rung (ADR-023) | PASS |
 | OPP-02 | `test_opponents.c: test_ladder`: advance on a win, stay on a loss, wrap, saved, never in attract | PASS |
 | OPP-03 | `test_opponents.c: test_difficulty_order`: the first rung is beaten clearly more than the last | PASS |
+| VEN-01 | `test_court_style.c: test_venues`, `test_editor`: DEFAULT = venue ground, AUTO = opponent home, VENUE row (ADR-024) | PASS |
+| VEN-02 | Asset build: shared ground palette and tiles, per-venue budget, names, ground presets | PASS |
+| VEN-03 | `test/smoke/venue.timeline`, `lake.timeline`: SUNSET and LAKESIDE chosen on the title, a match at SUNSET | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

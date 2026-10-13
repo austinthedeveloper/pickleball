@@ -9,9 +9,9 @@ are uploaded once during forced blank.
 
 | Region | Word address | Reserved byte range | Actual bytes |
 |---|---:|---:|---:|
-| BG1 scene map | `0x0000` | `0x0000–0x07ff` | 2,048 |
+| BG1 scene map | `0x0000` | `0x0000–0x07ff` | 1,792 (rows 0–27, per venue) |
 | BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
-| BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | 20,000 (625 tiles) |
+| BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 20,896 (653 tiles: 257 shared ground + the venue's own; ADR-024) |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
 | OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 6,656 (208 tiles) |
 
@@ -34,7 +34,7 @@ Regions do not overlap. `assets/generated/sizes.json` records every generated
 file's size, hash, and the tile counts above on each build.
 
 **BG1 budget.** ADR-016 (amended 2026-10-12) allows 28 KiB (896 tiles). The
-scene uses 625. 896 tiles is the most one screen can use, so this region
+largest venue uses 653 (ADR-024). 896 tiles is the most one screen can use, so this region
 cannot overflow.
 
 ## CGRAM
@@ -43,7 +43,7 @@ cannot overflow.
 |---:|---|
 | 0–15 | BG3 HUD palettes 0–3 (ADR-016): 0 neutral, 1 title gold / B button, 2 left-team label, 3 right-team label. Palettes 2–3 are rewritten from the match config. |
 | 16–31 | Unused (BG3 palettes 4–7 / BG 4bpp palette 1) |
-| 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. Palette 2 (the ground) is composed at runtime from the saved court colours (ADR-022). |
+| 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. Palette 2 (the ground) is shared by every venue and composed at runtime from the saved court colours (ADR-022); palettes 3–7 are the venue's (ADR-024). |
 | 128–255 | OBJ palettes; the layout depends on the match mode (ADR-018). In singles, OBJ 0–1 are the slot 0 and slot 2 players, 2 is the ball and spark, 3 the hit flash, and 4 the shadow (black, colour math). In doubles, OBJ 0–3 are players by slot, 4 the ball, 5 the flash, and 6 the opaque shadow, with colour math off. |
 
 Shadows use colour math: `CGWSEL = $02` (add subscreen), `CGADSUB = $50`

@@ -44,7 +44,7 @@
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 10
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
-#define COURT_PAGE_ROWS 5           /* the court box: header, gap, 3 parts */
+#define COURT_PAGE_ROWS 6           /* the court box: header, gap, 4 rows */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
@@ -69,10 +69,15 @@ u8 g_title_2p;
  */
 static u8 s_title_view;
 static u8 s_title_part;
-/* Court page rows on screen: preset | cursor (bit 7); 0xff not drawn. */
-static u8 s_court_row_drawn[COURT_PARTS];
+/* Court page rows on screen: value | cursor (bit 7); 0xff not drawn. */
+static u8 s_court_row_drawn[COURT_ROWS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
+/* Title drawing (staged steps and area parts) waits for a later frame once
+ * the frame's work has reached this scanline: a row or the prompt can cost
+ * 60+ scanlines, VBlank starts at 225, and the attract demo alone reaches
+ * about 200 on its heavy frames. */
+#define HUD_TITLE_SCANLINE_LIMIT 140
 
 /* Score-panel labels: at most 4 characters before the score digits. */
 static const char *const s_palette_names[PAL_COUNT] = {
@@ -383,24 +388,33 @@ static void hud_title_menu(u8 choice, u8 half)
     }
 }
 
-/* One court page row: cursor, part, and "<PRESET  >". */
-static void hud_court_row(u8 part)
+/* A court page row's value: the venue choice, or a part's preset. */
+static u8 hud_court_value(u8 index)
 {
-    static const char *const labels[COURT_PARTS] = {
-        "SURFACE", "SURROUND", "LINES"
+    if (index == COURT_ROW_VENUE)
+        return g_save.settings.venue;
+    return g_save.settings.court[index - 1];
+}
+
+/* One court page row: cursor, label, and "<VALUE   >". */
+static void hud_court_row(u8 index)
+{
+    static const char *const labels[COURT_ROWS] = {
+        "VENUE", "SURFACE", "SURROUND", "LINES"
     };
-    u8 preset = g_save.settings.court[part];
-    u8 cursor = g_court_edit.row == part;
-    const char *name = court_style_name(part, preset);
+    u8 value = hud_court_value(index);
+    u8 cursor = g_court_edit.row == index;
+    const char *name = index == COURT_ROW_VENUE ?
+        court_style_venue_name(value) : court_style_name(index - 1, value);
     char text[11];
     u8 i = 1;
-    u8 row = COURT_FIRST_ROW + part;
+    u8 row = COURT_FIRST_ROW + index;
 
     hud_tile(COURT_LABEL_COL - 1, row, cursor ?
         hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
         hud_entry(' ', HUD_PAL_WHITE));
     hud_text(COURT_LABEL_COL, row, cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
-        labels[part]);
+        labels[index]);
     text[0] = '<';
     while (*name)
         text[i++] = *name++;
@@ -409,7 +423,7 @@ static void hud_court_row(u8 part)
     text[9] = '>';
     text[10] = 0;
     hud_text(COURT_VALUE_COL, row, HUD_PAL_WHITE, text);
-    s_court_row_drawn[part] = preset | (cursor << 7);
+    s_court_row_drawn[index] = value | (cursor << 7);
 }
 
 /* Title views for the area: the menu choice and 2P (bits 0-2), or a page. */
@@ -434,6 +448,7 @@ static u8 hud_court_draw_part(u8 part)
         s_court_row_drawn[0] = 0xff;
         s_court_row_drawn[1] = 0xff;
         s_court_row_drawn[2] = 0xff;
+        s_court_row_drawn[3] = 0xff;
         return 0;
     }
     if (part == 1) {
@@ -441,21 +456,20 @@ static u8 hud_court_draw_part(u8 part)
         return 0;
     }
     hud_court_row(part - 2);
-    return part - 2 == COURT_PARTS - 1;
+    return part - 2 == COURT_ROWS - 1;
 }
 
-/* After the court page is drawn: the first row whose preset or cursor
+/* After the court page is drawn: the first row whose value or cursor
  * changed (Left/Right, Up/Down), one per frame. */
 static void hud_court_refresh(void)
 {
-    u8 part;
+    u8 index;
     u8 want;
 
-    for (part = 0; part < COURT_PARTS; ++part) {
-        want = g_save.settings.court[part] |
-            ((g_court_edit.row == part) << 7);
-        if (s_court_row_drawn[part] != want) {
-            hud_court_row(part);
+    for (index = 0; index < COURT_ROWS; ++index) {
+        want = hud_court_value(index) | ((g_court_edit.row == index) << 7);
+        if (s_court_row_drawn[index] != want) {
+            hud_court_row(index);
             return;
         }
     }
@@ -520,6 +534,9 @@ static u8 hud_title_draw_part(u8 view, u8 part)
 static void hud_title_area_update(void)
 {
     u8 view = hud_title_view();
+
+    if (profile_scanline() > HUD_TITLE_SCANLINE_LIMIT)
+        return;
 
     if (s_title_view == view) {
         if (s_title_part == 0xff) {
@@ -652,7 +669,11 @@ void hud_scene_update(void)
         s_hud_scene = key;
         s_scene_step = HUD_STEP_CLEAR;
     }
-    if (s_scene_step < HUD_STEP_DONE && !busy) {
+    /* Title steps also wait for a lighter frame (the demo runs behind). */
+    if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
+            profile_scanline() > HUD_TITLE_SCANLINE_LIMIT) {
+        busy = 1;
+    } else if (s_scene_step < HUD_STEP_DONE && !busy) {
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
         ++s_scene_step;
