@@ -8,7 +8,8 @@ typedef enum {
     GAME_PHASE_SERVE_SETUP = 0,
     GAME_PHASE_SERVE_TOSS = 1,
     GAME_PHASE_LIVE = 2,
-    GAME_PHASE_SERVE_FAULT = 3
+    GAME_PHASE_SERVE_FAULT = 3,
+    GAME_PHASE_POINT_RESULT = 4
 } GamePhase;
 
 typedef enum {
@@ -16,7 +17,8 @@ typedef enum {
     GAME_FAULT_NET = 1,
     GAME_FAULT_KITCHEN = 2,
     GAME_FAULT_WRONG_BOX = 3,
-    GAME_FAULT_OUT = 4
+    GAME_FAULT_OUT = 4,
+    GAME_FAULT_SECOND_BOUNCE = 5
 } GameFault;
 
 typedef struct {
@@ -24,6 +26,8 @@ typedef struct {
     u8 phase;
     u8 phase_timer;
     u8 last_fault;
+    u8 point_winner;
+    u8 team_score[2];
 } GameState;
 
 extern GameState g_game_state;

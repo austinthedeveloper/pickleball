@@ -8,6 +8,9 @@ void game_initialize(void)
     g_game_state.phase = GAME_PHASE_SERVE_SETUP;
     g_game_state.phase_timer = 0;
     g_game_state.last_fault = GAME_FAULT_NONE;
+    g_game_state.point_winner = 0xff;
+    g_game_state.team_score[0] = 0;
+    g_game_state.team_score[1] = 0;
 }
 
 void game_update_top_level(const PlayerIntent intents[MAX_PLAYERS])

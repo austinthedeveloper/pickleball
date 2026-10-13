@@ -211,3 +211,25 @@ No M1 hardware run has been recorded yet.
   the toss timer and ball height.
 - User acceptance: PASS. Manual review approved the serve setup and launch flow.
 
+### 2026-10-12 — M2 one-point rally resolution
+
+- A single idempotent resolver now converts net, out, serve, and second-bounce
+  faults into one recorded winner and one score increment, then changes to the
+  point-result phase and stops live ball simulation.
+- Net and out penalize the last hitter. A second bounce penalizes the team on
+  the side where it occurs; both left- and right-court cases are covered.
+- Mesen WRAM injections verified net and out award Team 1 after P1's hit, a
+  right-court second bounce awards Team 0, and a left-court second bounce awards
+  Team 1. Every case set inactive rally state and zero velocity; replaying the
+  resolved net event did not increment the score again.
+- Initial manual review found the neutral serve's second bounce occurred beyond
+  the visible right edge, making resolution impossible to judge by eye. The
+  neutral first-bounce target moved from x=200 to x=172, four pixels beyond the
+  kitchen line, so the retained second bounce remains inside the far baseline.
+- An automated Mesen run of the revised trajectory observed the first bounce at
+  x=171.99 and the second at x=231.05 (inside the x=232 baseline). The second
+  bounce changed to the point-result phase, awarded Team 0 once, and stopped the
+  ball with the expected second-bounce fault.
+- User acceptance: PASS. Manual review confirmed that the revised two-bounce
+  trajectory is visibly clear.
+

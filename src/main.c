@@ -5,6 +5,7 @@
 #include "input.h"
 #include "player.h"
 #include "render.h"
+#include "rules.h"
 #include "serve.h"
 
 int main(void)
@@ -31,6 +32,7 @@ int main(void)
                     g_player_intents, MAX_PLAYERS);
             ball_events = ball_update(g_game_state.paused);
             serve_process_ball_events(ball_events);
+            rules_process_ball_events(ball_events);
         }
         render_prepare_players();
         render_prepare_ball();
