@@ -5,14 +5,11 @@
 
 /* BG3 text palettes (see HUD_PALETTES in tools/generate_assets.py). */
 enum {
+    /* Only BG3 palettes 0-3 (CGRAM 0-15) are used (ADR-016). */
     HUD_PAL_WHITE = 0,
-    HUD_PAL_YELLOW = 1,
-    HUD_PAL_BLUE = 2,
-    HUD_PAL_RED = 3,
-    HUD_PAL_BUTTON = 4,
-    HUD_PAL_DIM = 5,
-    HUD_PAL_GREEN = 6,
-    HUD_PAL_GOLD = 7
+    HUD_PAL_YELLOW = 1,       /* title gold; also the red B button */
+    HUD_PAL_TEAM_LEFT = 2,    /* rewritten at match start (ADR-010) */
+    HUD_PAL_TEAM_RIGHT = 3
 };
 
 enum {

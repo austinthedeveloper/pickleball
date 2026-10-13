@@ -9,14 +9,22 @@ Inputs (authored, committed):
   assets/manifest/player_frames.json  frame order/names and team palettes.
 
 Outputs (disposable, assets/generated/): court.pic/.map/.pal, hud.pic/.pal,
-obj.pic, player.pal, objects.pal, asset_frames.h, sizes.json.
+obj.pic, objects.pal, asset_frames.h, hud_tiles.h, palette_parts.h,
+court_projection.h, sizes.json.
+
+Validation (fails the build): tile budgets, frame anchors and palette roles,
+BG1 never using 4bpp palette 0 (ADR-016), and PROJ-01..04 (ADR-011).
 """
 import argparse
 import hashlib
 import json
 import struct
 import zlib
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import court_projection  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "assets" / "source"
@@ -122,6 +130,35 @@ def block(rows, x0, y0, w=8, h=8):
 # BG1 court scene
 # --------------------------------------------------------------------------
 
+LINE_COLORS = {32 + 6, 32 + 7}   # court palette: line, line in shadow
+
+
+def check_court_lines(rows):
+    """PROJ-01..03 on the table and PROJ-04 on the painted art."""
+    c = court_projection.court_constants()
+    table = court_projection.scale_table(c)
+    errors = court_projection.check(table, c)
+    top, bottom = c["COURT_SIDELINE_TOP"], c["COURT_SIDELINE_BOTTOM"]
+    left, right = c["COURT_BASELINE_LEFT"], c["COURT_BASELINE_RIGHT"]
+    for xw in (left, right - 1, c["COURT_KITCHEN_LEFT_X"],
+               c["COURT_KITCHEN_RIGHT_X"] - 1):
+        for y in range(top, bottom + 1):
+            sx = court_projection.project_x(xw, y, table)
+            if rows[y][sx] not in LINE_COLORS:
+                errors.append(f"PROJ-04: line x={xw} missing at row {y} "
+                              f"(screen x {sx})")
+    for y in (top, bottom):
+        for xw in range(left, right + 1, 4):
+            sx = court_projection.project_x(xw, y, table)
+            if abs(sx - c["COURT_NET_X"]) <= 5:
+                continue   # the net posts are painted over the sideline
+            if rows[y][sx] not in LINE_COLORS:
+                errors.append(f"PROJ-04: sideline y={y} missing at x {sx}")
+    if errors:
+        raise AssetError("court projection check failed:\n  " +
+                         "\n  ".join(errors[:10]))
+
+
 def court_assets():
     width, height, rows, palette = read_png(SRC / "court_scene.png")
     if (width, height) != (256, 224):
@@ -138,6 +175,9 @@ def court_assets():
                 raise AssetError(
                     f"court_scene.png tile {tx},{ty} mixes palettes {subs}")
             sub = subs.pop()
+            if sub == 0:
+                raise AssetError(f"court tile {tx},{ty} uses 4bpp palette 0, "
+                                 "which BG3 HUD palettes overlap (ADR-016)")
             if not 2 <= sub <= 7:
                 raise AssetError(f"court tile {tx},{ty} uses palette {sub}")
             if any(v % 16 == 0 for row in px for v in row):
@@ -161,6 +201,7 @@ def court_assets():
                 entry = len(tiles)
                 tiles.append(key)
             tilemap.append(entry | (sub << 10))
+    check_court_lines(rows)
     if len(tiles) > COURT_TILE_BUDGET:
         raise AssetError(f"court uses {len(tiles)} tiles > {COURT_TILE_BUDGET}")
     pal = []
@@ -223,16 +264,14 @@ FONT = {
     "<": ["....##", "...##.", "..##..", ".##...", "..##..", "...##.", "....##"],
 }
 
-# BG3 2bpp color roles: 1 text, 2 border light, 3 panel navy.
+# BG3 2bpp color roles: 1 text, 2 border/bevel, 3 panel navy. Only BG3
+# palettes 0-3 (CGRAM 0-15) are used (ADR-016); 2 and 3 are rewritten at
+# match start with the left/right team colours from the palette parts.
 HUD_PALETTES = [
-    [(31, 31, 31), (21, 22, 26), (1, 3, 7)],    # 0 white text, panel border
-    [(31, 27, 4), (31, 14, 2), (1, 3, 7)],      # 1 yellow, orange bevel
-    [(12, 19, 31), (5, 9, 24), (1, 3, 7)],      # 2 blue
-    [(31, 9, 8), (20, 3, 4), (1, 3, 7)],        # 3 red
-    [(31, 31, 31), (27, 5, 6), (1, 3, 7)],      # 4 B button
-    [(19, 21, 24), (12, 13, 16), (1, 3, 7)],    # 5 dim text
-    [(10, 28, 9), (4, 17, 4), (1, 3, 7)],       # 6 green
-    [(31, 23, 4), (24, 13, 1), (1, 3, 7)],      # 7 gold
+    [(31, 31, 31), (21, 22, 26), (1, 3, 7)],    # 0 neutral text, borders
+    [(31, 27, 4), (28, 8, 4), (1, 3, 7)],       # 1 title gold, red bevel/B
+    [(12, 19, 31), (5, 9, 24), (1, 3, 7)],      # 2 team left (default blue)
+    [(31, 9, 8), (20, 3, 4), (1, 3, 7)],        # 3 team right (default red)
 ]
 
 HUD_TILE_CLEAR = 0
@@ -261,6 +300,7 @@ def hud_assets():
         "........", "........", "........", "nnnnnnnn",
         "gggggggg", "nnnnnnnn", "nnnnnnnn", "nnnnnnnn"], m)
     tiles[HUD_TILE_PANEL_L] = tile_from_strings(["...ngnnn"] * 8, m)
+    # B button for palette 1: red disk (bevel colour), gold letter.
     tiles[HUD_TILE_BUTTON_B] = tile_from_strings([
         "nnggggnn", "nggttggn", "ggtggtgg", "ggtttggg",
         "ggtggtgg", "ggtttggg", "nggggggn", "nnggggnn"], m)
@@ -335,26 +375,56 @@ def hud_assets():
 # OBJ sheet and palettes
 # --------------------------------------------------------------------------
 
-PLAYER_COMMON = {
-    1: (2, 2, 6), 2: (22, 13, 9), 3: (30, 21, 15), 4: (12, 7, 4),
-    8: (21, 22, 25), 9: (31, 31, 31), 10: (7, 5, 4),
-}
+PALETTE_DIR = SRC / "palettes"
 
 
-def player_palette(team):
-    colors = dict(PLAYER_COMMON)
-    colors[5], colors[6], colors[7] = [tuple(c) for c in team]
-    return [0] + [bgr15(*colors.get(i, (0, 0, 0))) for i in range(1, 16)]
+def load_part(name):
+    return json.loads((PALETTE_DIR / f"{name}.json").read_text("utf-8"))
 
 
-def flash_palette():
-    colors = [0]
-    for i in range(1, 16):
-        r, g, b = PLAYER_COMMON.get(i, (20, 20, 20))
-        colors.append(bgr15(31, 31, min(31, 24 + b // 4)) if i != 1
-                      else bgr15(31, 24, 8))
-    return colors
+def palette_parts_header(colors):
+    """Contract v2 parts for runtime composition (ADR-013)."""
+    shared = load_part("shared")
+    skin = load_part("skin_light")
+    lines = ["/* Generated by tools/generate_assets.py from "
+             "assets/source/palettes; do not edit. */",
+             "#ifndef PALETTE_PARTS_H", "#define PALETTE_PARTS_H", "",
+             "#include \"game_types.h\"", ""]
+    for i, name in enumerate(colors):
+        lines.append(f"#define PAL_{name.upper()} {i}")
+    lines += [f"#define PAL_COUNT {len(colors)}", "#define SKIN_COUNT 1",
+              "#define PADDLE_COUNT PAL_COUNT", "",
+              "#ifdef PALETTE_PARTS_DEFINE"]
 
+    def arr(name, rows):
+        body = ",\n    ".join("{ " + ", ".join(str(bgr15(*c)) for c in row)
+                               + " }" for row in rows)
+        return f"const u16 {name}[{len(rows)}][{len(rows[0])}] = {{\n    {body}\n}};"
+    teams = [load_part(f"team_{n}") for n in colors]
+    paddles = [load_part(f"paddle_{n}") for n in colors]
+    lines.append(arr("g_pal_shared", [[shared["outline"], shared["highlight"]]]))
+    lines.append(arr("g_pal_skin", [skin["skin"] + [skin["hair"]]]))
+    lines.append(arr("g_pal_team", [t["shirt"] + t["shorts"] + [t["shoe"]]
+                                    for t in teams]))
+    lines.append(arr("g_pal_paddle", [p["face"] + [p["edge"]] for p in paddles]))
+    lines.append(arr("g_pal_hud", [t["hud"] for t in teams]))
+    flash = [0] + [bgr15(31, 31, 24)] * 15
+    flash[1] = bgr15(31, 24, 8)
+    lines.append("const u16 g_pal_flash[16] = { " +
+                 ", ".join(str(v) for v in flash) + " };")
+    lines += ["#else",
+              "extern const u16 g_pal_shared[1][2];",
+              "extern const u16 g_pal_skin[SKIN_COUNT][4];",
+              "extern const u16 g_pal_team[PAL_COUNT][6];",
+              "extern const u16 g_pal_paddle[PADDLE_COUNT][3];",
+              "extern const u16 g_pal_hud[PAL_COUNT][2];",
+              "extern const u16 g_pal_flash[16];",
+              "#endif", "", "#endif", ""]
+    return "\n".join(lines)
+
+
+# Contract v2: every index 1..15 is a declared role (ADR-013).
+V2_ROLES = set(range(1, 16))
 
 OBJECT_PALETTE = [0, bgr15(6, 6, 2), bgr15(28, 29, 6), bgr15(31, 31, 24),
                   bgr15(0, 0, 0), bgr15(31, 27, 8), bgr15(31, 31, 31)] + [0] * 9
@@ -394,11 +464,14 @@ def obj_assets(manifest):
         tiles.append(encode_tile(block(orows, tx * 8, 0), 4))
     if len(tiles) > OBJ_TILE_BUDGET:
         raise AssetError(f"OBJ uses {len(tiles)} tiles > {OBJ_TILE_BUDGET}")
-    teams = manifest["teams"]
-    player_pal = []
-    for team in teams:
-        player_pal.extend(player_palette(team["ramp"]))
-    player_pal.extend(flash_palette())
+    for name, info in frames.items():
+        slot = info["slot"]
+        x0, y0 = (slot % 4) * 32, (slot // 4) * 32
+        used = {v for row in block(rows, x0, y0, 32, 32) for v in row} - {0}
+        undeclared = used - V2_ROLES
+        if undeclared:
+            raise AssetError(f"frame {name} uses undeclared palette roles "
+                             f"{sorted(undeclared)}")
     obj_pal = OBJECT_PALETTE + SHADOW_PALETTE
     header = ["/* Generated by tools/generate_assets.py; do not edit. */",
               "#ifndef ASSET_FRAMES_H", "#define ASSET_FRAMES_H", ""]
@@ -408,21 +481,17 @@ def obj_assets(manifest):
         header.append(f"#define FRAME_{name.upper()} {tile}")
     for name, index in manifest["objects"].items():
         header.append(f"#define OBJTILE_{name.upper()} {object_base + index}")
-    header.append(f"#define TEAM_PALETTE_COUNT {len(teams)}")
-    header.append(f"#define TEAM_FLASH_PALETTE {len(teams)}")
-    for i, team in enumerate(teams):
-        header.append(f"#define TEAM_{team['name'].upper()} {i}")
     header += ["", "#endif", ""]
-    return b"".join(tiles), struct.pack(f"<{len(player_pal)}H", *player_pal), \
-        struct.pack(f"<{len(obj_pal)}H", *obj_pal), "\n".join(header), \
-        len(tiles)
+    return b"".join(tiles), struct.pack(f"<{len(obj_pal)}H", *obj_pal), \
+        "\n".join(header), len(tiles)
 
 
 def generated_files():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     court_pic, court_map, court_pal, court_tiles = court_assets()
     hud_pic, hud_pal, big_chars, hud_tiles = hud_assets()
-    obj_pic, player_pal, objects_pal, header, obj_tiles = obj_assets(manifest)
+    obj_pic, objects_pal, header, obj_tiles = obj_assets(manifest)
+    projection = court_projection.header(court_projection.scale_table())
     hud_header = [
         "/* Generated by tools/generate_assets.py; do not edit. */",
         "#ifndef HUD_TILES_H", "#define HUD_TILES_H",
@@ -445,10 +514,11 @@ def generated_files():
         "hud.pic": hud_pic,
         "hud.pal": hud_pal,
         "obj.pic": obj_pic,
-        "player.pal": player_pal,
         "objects.pal": objects_pal,
         "asset_frames.h": header.encode(),
         "hud_tiles.h": "\n".join(hud_header).encode(),
+        "palette_parts.h": palette_parts_header(manifest["palettes"]).encode(),
+        "court_projection.h": projection.encode(),
     }
     budget = {"court_tiles": court_tiles, "hud_tiles": hud_tiles,
               "obj_tiles": obj_tiles}

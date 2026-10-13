@@ -48,6 +48,22 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 - [x] `M2-HUD-01` Display score placeholder and `ARCADE RULES` label.
   - Accept: point result is understandable to a new tester.
 
+## Mockup decisions follow-up (docs/10_MOCKUP_DECISIONS.md)
+
+- [x] `M2-PROJ-01` Generator emits `court_projection.h` and rasterizes the court through it.
+  - Accept: PROJ-01..04 run in `make check` (generator plus `test/test_projection.c`).
+- [x] `M2-PROJ-02` Regenerate M1 court art and re-verify M1 court checkboxes.
+  - Accept: M1-COURT-02/05 carry re-verification notes.
+- [x] `M2-PROJ-03` Apply projection to players, ball, shadows, spark, and debug marker.
+  - Accept: all sprite placement goes through `projection_x`.
+- [x] `M2-PAL-01` Palette contract v2, part files, runtime composition.
+  - Accept: frames validated against v2 roles; `test/test_match.c` checks composition.
+- [x] `M2-PAL-02` Match config with POC defaults Blue / Red; HUD team colors from it.
+  - Accept: colors come only from `g_match_config`; debug builds assert uniqueness.
+- [x] `M2-PAL-03` CGRAM palette-0 host check.
+  - Accept: the asset build fails if any BG1 tile uses 4bpp palette 0.
+- [x] `M2-OAM-01` OAM order per the pipeline doc, with nearest-first body sort (ADR-012, landed early) and one 8×8 shadow per player.
+
 ## Verification
 
 - [ ] `M2-TEST-01` Automate PHY-01..05, HIT-01..02, and RUL-01..03 fixtures.

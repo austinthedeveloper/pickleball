@@ -21,12 +21,14 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
 - [x] `M1-COURT-01` Add one authoritative court constants module.
   - Accept: baseline, sideline, net, kitchen, centerline, spawn, and clamp coordinates exist once.
 - [x] `M1-COURT-02` Create placeholder Mode 1 court and HUD palettes/tiles/map.
+  - Re-verified 2026-10-12 after ADR-011: court regenerated through the projection table; PROJ-04 checks every line pixel in `make check`.
   - Accept: all required pickleball lines are visible and match court constants within one pixel/tile design tolerance.
 - [x] `M1-COURT-03` Load static background assets during initialization.
   - Accept: no gameplay-frame bulk VRAM upload is needed to keep the court visible.
 - [x] `M1-COURT-04` Add BG3 debug text/markers without gameplay objects.
   - Accept: build ID, player coordinates, and pause state can be displayed in debug/hardware-test builds.
 - [x] `M1-COURT-05` Record initial VRAM map and actual asset byte sizes.
+  - Re-verified 2026-10-12: `docs/09_M1_VRAM_AND_BUILD.md` updated for the M2 layout.
   - Accept: regions do not overlap and total fits the plan.
 
 ## Player and input

@@ -4,11 +4,12 @@
 #include "game_types.h"
 
 /*
- * World coordinates are whole ground pixels: y is the screen row of the
- * ground point and x is the column at the near (bottom) sideline. Rendering
- * narrows x toward the far sideline with k(y) = COURT_PERSPECTIVE_BASE + y/2
- * (see render_project_x); physics, rules, and AI never see the projection.
- * tools/art/prep_court_scene.py paints the court from these same values.
+ * World coordinates (rules space) are whole ground pixels: y is the screen
+ * row of the ground point and x is the column at the near sideline. Only
+ * presentation projects x through the generated court_projection.h table
+ * (ADR-011); physics, rules, and AI never see the projection.
+ * tools/court_projection.py derives that table from the values below and
+ * tools/art/prep_court_scene.py paints the court through it.
  */
 enum {
     COURT_BASELINE_LEFT = 16,
@@ -20,7 +21,9 @@ enum {
     COURT_KITCHEN_RIGHT_X = 164,
     COURT_CENTERLINE_Y = 130,
     COURT_NET_HEIGHT = 12,
-    COURT_PERSPECTIVE_BASE = 171,
+    /* 8.8 horizontal scale at the far and near sidelines (0.84 .. 1.00). */
+    COURT_PROJ_SCALE_TOP = 216,
+    COURT_PROJ_SCALE_BOTTOM = 256,
 
     /* Player x/y is the ground point between the feet. */
     PLAYER_SPRITE_HALF_WIDTH = 16,

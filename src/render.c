@@ -8,8 +8,10 @@
 #include "hud.h"
 #include "hud_tiles.h"
 #include "input.h"
+#include "match.h"
 #include "player.h"
 #include "profile.h"
+#include "projection.h"
 #include "render.h"
 #include "serve.h"
 
@@ -25,18 +27,14 @@ extern char court_palette, court_palette_end;
 extern char hud_tiles, hud_tiles_end;
 extern char hud_palette, hud_palette_end;
 extern char obj_tiles, obj_tiles_end;
-extern char player_palettes, player_palettes_end;
 extern char objects_palette, objects_palette_end;
 
 static const u16 s_idle_frames[2] = { FRAME_IDLE0, FRAME_IDLE1 };
 static const u16 s_run_frames[4] = {
     FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3
 };
-static const u8 s_team_hud_palette[TEAM_PALETTE_COUNT] = {
-    HUD_PAL_BLUE, HUD_PAL_RED, HUD_PAL_GREEN, HUD_PAL_GOLD
-};
-
-static u8 s_team_color[2] = { TEAM_BLUE, TEAM_RED };
+static u16 s_player_palettes[2][16];
+static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
@@ -47,35 +45,31 @@ static u8 s_hud_valid;
 static u8 s_hud_debug_build_shown;
 #endif
 
-/*
- * 128 + ((x - 128) * k) >> 8 with k = base + y/2, rewritten as
- * d + (d * (k - 256)) >> 8 so the product fits in 16 bits for on-screen y.
- */
-s16 render_project_x(s16 x, s16 y)
+void render_apply_match_config(void)
 {
-    s16 d = x - 128;
-    s16 k = COURT_PERSPECTIVE_BASE + (y >> 1) - 256;
-    return 128 + d + ((d * k) >> 8);
-}
+    u8 team;
 
-void render_set_team_color(u8 team, u8 color)
-{
-    s_team_color[team] = color;
+    match_compose_palette(0, s_player_palettes[0]);
+    match_compose_palette(2, s_player_palettes[1]);
+    for (team = 0; team < 2; ++team) {
+        s_hud_team_colors[team][0] = g_pal_hud[match_team_palette(team)][0];
+        s_hud_team_colors[team][1] = g_pal_hud[match_team_palette(team)][1];
+    }
     s_palette_dirty = 1;
-    s_hud_valid = 0;
 }
 
-u8 render_team_color(u8 team)
+static void render_upload_palettes(void)
 {
-    return s_team_color[team];
-}
+    u8 team;
 
-static void render_upload_team_palettes(void)
-{
-    dmaCopyCGram((u8 *)&player_palettes + (u16)s_team_color[0] * 32,
-        CGRAM_OBJ + RENDER_OBJPAL_TEAM0 * 16, 32);
-    dmaCopyCGram((u8 *)&player_palettes + (u16)s_team_color[1] * 32,
-        CGRAM_OBJ + RENDER_OBJPAL_TEAM1 * 16, 32);
+    dmaCopyCGram((u8 *)s_player_palettes[0],
+        CGRAM_OBJ + RENDER_OBJPAL_PLAYER_A * 16, 32);
+    dmaCopyCGram((u8 *)s_player_palettes[1],
+        CGRAM_OBJ + RENDER_OBJPAL_PLAYER_B * 16, 32);
+    /* BG3 palettes 2/3 colours 1-2 are the team label colours. */
+    for (team = 0; team < 2; ++team)
+        dmaCopyCGram((u8 *)s_hud_team_colors[team],
+            (HUD_PAL_TEAM_LEFT + team) * 4 + 1, 4);
     s_palette_dirty = 0;
 }
 
@@ -145,32 +139,58 @@ static void render_player(const Player *player, u8 body_id, u8 shadow_id)
     if (!s_rp.active) {
         obj_hide(body_id);
         obj_hide(shadow_id);
-        obj_hide(shadow_id + 1);
         return;
     }
     y = FROM_FP(s_rp.y_fp);
-    sx = render_project_x(FROM_FP(s_rp.x_fp), y);
+    sx = projection_x(FROM_FP(s_rp.x_fp), y);
     palette = s_rp.flash_timer ? RENDER_OBJPAL_FLASH : s_rp.palette;
     obj_put(body_id, sx - PLAYER_SPRITE_HALF_WIDTH, y - PLAYER_SPRITE_FOOT_Y,
         player_frame(), OBJ_ATTR(palette, s_rp.facing_left), 1);
-    obj_put(shadow_id, sx - 8, y - 4, OBJTILE_PLAYER_SHADOW,
+    obj_put(shadow_id, sx - 4, y - 4, OBJTILE_PLAYER_SHADOW,
         OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
-    obj_put(shadow_id + 1, sx, y - 4, OBJTILE_PLAYER_SHADOW,
-        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 1), 0);
 }
+
+/*
+ * ADR-012: bodies take OAM 2-5 nearest-first (larger y wins; ties by slot) so
+ * the nearer player draws on top; shadows keep fixed per-slot IDs 6-9.
+ */
+static s16 s_depth[MAX_PLAYERS];
+static u8 s_active_bodies = 0xff;
 
 static void render_players(void)
 {
-    const Player *a = &g_players[0];
-    const Player *b = &g_players[2];
+    u8 order[MAX_PLAYERS];
+    u8 i;
+    u8 j;
+    u8 key;
 
-    /* The player nearer the camera (larger y) gets the higher-priority slot. */
-    if (b->active && (!a->active || b->y_fp > a->y_fp)) {
-        render_player(b, RENDER_OAM_BODY_FRONT, RENDER_OAM_SHADOW_FRONT);
-        render_player(a, RENDER_OAM_BODY_BACK, RENDER_OAM_SHADOW_BACK);
-    } else {
-        render_player(a, RENDER_OAM_BODY_FRONT, RENDER_OAM_SHADOW_FRONT);
-        render_player(b, RENDER_OAM_BODY_BACK, RENDER_OAM_SHADOW_BACK);
+    /* Constant indices: 816-tcc multiplies for every variable g_players[i]. */
+    s_depth[0] = g_players[0].active ? g_players[0].y_fp : -32767;
+    s_depth[1] = g_players[1].active ? g_players[1].y_fp : -32767;
+    s_depth[2] = g_players[2].active ? g_players[2].y_fp : -32767;
+    s_depth[3] = g_players[3].active ? g_players[3].y_fp : -32767;
+    for (i = 0; i < MAX_PLAYERS; ++i) {
+        key = i;
+        j = i;
+        while (j > 0 && s_depth[key] > s_depth[order[j - 1]]) {
+            order[j] = order[j - 1];
+            --j;
+        }
+        order[j] = key;
+    }
+    /* Inactive slots sort last; stop there and only re-hide their objects
+     * when the active count changes. */
+    for (i = 0; i < MAX_PLAYERS && s_depth[order[i]] != -32767; ++i)
+        render_player(&g_players[order[i]], RENDER_OAM_BODIES + i,
+            RENDER_OAM_SHADOWS + order[i]);
+    if (i != s_active_bodies) {
+        s_active_bodies = i;
+        for (j = 0; j < MAX_PLAYERS; ++j) {
+            if (j >= i)
+                obj_hide(RENDER_OAM_BODIES + j);
+            if (s_depth[j] == -32767)
+                obj_hide(RENDER_OAM_SHADOWS + j);
+        }
     }
 }
 
@@ -189,7 +209,7 @@ static void render_ball(void)
     x = FROM_FP(g_ball.x_fp);
     y = FROM_FP(g_ball.y_fp);
     z = FROM_FP(g_ball.z_fp);
-    sx = render_project_x(x, y);
+    sx = projection_x(x, y);
     obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4, OBJTILE_BALL_SHADOW,
         OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
     obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
@@ -201,7 +221,7 @@ static void render_effects(void)
     s16 sx;
 
     if (g_game_state.spark_timer) {
-        sx = render_project_x(g_game_state.spark_x, g_game_state.spark_y);
+        sx = projection_x(g_game_state.spark_x, g_game_state.spark_y);
         obj_put(RENDER_OAM_SPARK, sx - 4,
             g_game_state.spark_y - FROM_FP(g_ball.z_fp) - 4,
             (g_game_state.spark_timer & 2) ? OBJTILE_SPARK :
@@ -213,7 +233,7 @@ static void render_effects(void)
 #ifdef BUILD_DEBUG
     if (g_ai.has_target) {
         obj_put(RENDER_OAM_DEBUG_MARKER,
-            render_project_x(g_ai.predicted_land_x, g_ai.predicted_land_y) - 4,
+            projection_x(g_ai.predicted_land_x, g_ai.predicted_land_y) - 4,
             g_ai.predicted_land_y - 4, OBJTILE_SPARK_SMALL,
             OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
     } else {
@@ -248,7 +268,7 @@ static const char *fault_word(u8 fault)
 
 static u8 team_hud_palette(u8 team)
 {
-    return s_team_hud_palette[s_team_color[team]];
+    return team ? HUD_PAL_TEAM_RIGHT : HUD_PAL_TEAM_LEFT;
 }
 
 static void hud_draw_scores(void)
@@ -289,7 +309,7 @@ static void hud_center_prompt(u8 row, u8 palette, const char *text)
     while (*p) {
         if (*p == '@')
             hud_tile(col + 1 + (u8)(p - text), row + 1,
-                HUD_TILE_BUTTON_B | (HUD_PAL_BUTTON << 10) | 0x2000);
+                HUD_TILE_BUTTON_B | (HUD_PAL_YELLOW << 10) | 0x2000);
         ++p;
     }
 }
@@ -371,7 +391,7 @@ static void hud_draw_debug(void)
     s_debug_line[11] = 'O';
     debug_hex(12, g_overrun_frames);
     s_debug_line[15] = 0;
-    hud_text(0, 0, HUD_PAL_DIM, s_debug_line);
+    hud_text(0, 0, HUD_PAL_WHITE, s_debug_line);
 }
 #endif
 
@@ -394,7 +414,7 @@ static void render_hud(void)
 #if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
     hud_draw_debug();
     if (key == 0x80 && !s_hud_debug_build_shown) {
-        hud_text(0, 27, HUD_PAL_DIM, BUILD_ID_STRING);
+        hud_text(0, 27, HUD_PAL_WHITE, BUILD_ID_STRING);
         s_hud_debug_build_shown = 1;
     } else if (key != 0x80 && s_hud_debug_build_shown) {
         hud_clear_rows(27, 1);
@@ -416,7 +436,7 @@ void render_prepare(void)
 void render_commit(void)
 {
     if (s_palette_dirty)
-        render_upload_team_palettes();
+        render_upload_palettes();
     hud_commit();
 }
 
@@ -446,9 +466,10 @@ void render_initialize(void)
         CGRAM_OBJ + RENDER_OBJPAL_OBJECTS * 16, 32);
     dmaCopyCGram((u8 *)&objects_palette + 32,
         CGRAM_OBJ + RENDER_OBJPAL_SHADOW * 16, 32);
-    dmaCopyCGram((u8 *)&player_palettes + TEAM_FLASH_PALETTE * 32,
-        CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
-    render_upload_team_palettes();
+    dmaCopyCGram((u8 *)g_pal_flash, CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
+    /* Match palettes are composed and uploaded inside this forced blank. */
+    render_apply_match_config();
+    render_upload_palettes();
 
     bgSetGfxPtr(0, RENDER_BG1_TILES_ADDR);
     bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);

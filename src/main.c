@@ -3,6 +3,7 @@
 #include "ball.h"
 #include "game.h"
 #include "input.h"
+#include "match.h"
 #include "player.h"
 #include "render.h"
 #include "profile.h"
@@ -57,6 +58,13 @@ int main(void)
     ball_initialize();
     serve_initialize();
     ai_initialize();
+    match_config_defaults();
+#ifdef BUILD_DEBUG
+    /* ADR-010: every active player has a unique palette. */
+    if (!match_config_palettes_unique())
+        while (1)
+            ;
+#endif
     game_new_match();
     render_initialize();
     g_overrun_frames = 0;

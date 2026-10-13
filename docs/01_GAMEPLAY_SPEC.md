@@ -4,19 +4,21 @@ Status: **POC rules locked**
 
 ## World coordinates (rules space)
 
-Simulation uses signed 8.8 fixed-point values. Whole-pixel court anchors:
+Simulation uses signed 16-bit 12.4 fixed-point values (1/16 px; see ADR-006). Whole-pixel court anchors, defined once in `include/court.h`:
 
 | Element | Value |
 |---|---:|
 | Visible screen | 256×224 |
-| Court left/right baseline | x = 20 / 235 |
+| Court left/right baseline | x = 16 / 240 |
 | Net plane | x = 128 |
-| Left/right kitchen line | x = 84 / 172 |
-| Top/bottom sideline | y = 60 / 195 |
-| Service centerline | y = 128 |
-| Left player legal center | x = 28..78, y = 68..187 |
-| Right player legal center | x = 178..227, y = 68..187 |
+| Left/right kitchen line | x = 92 / 164 |
+| Top (far) / bottom (near) sideline | y = 90 / 170 |
+| Service centerline | y = 130 |
+| Left player legal ground point | x = 4..120, y = 84..180 |
+| Right player legal ground point | x = 136..252, y = 84..180 |
 | Net height | z = 12 px at crossing |
+
+A player's position is the ground point between the feet; the ball's x/y is its ground position.
 
 These are initial tuning values. Constants belong in one court-definition module; background construction, player clamps, serve boxes, line calls, and AI must read from the same definitions.
 
@@ -32,7 +34,7 @@ ball draw = (screen_x, screen_y - z)                        // z unscaled in POC
 shadow    = (screen_x, screen_y)
 ```
 
-- `s` is linear in `y`: 0.84 (215/256) at the far sideline y=60 and 1.00 (256/256) at the near sideline y=195. Rows outside the court extrapolate linearly and clamp at y 0..223.
+- `s` is linear in `y`: 0.84 (216/256) at the far sideline y=90 and 1.00 (256/256) at the near sideline y=170. Rows outside the court extrapolate linearly and clamp to s 0.75..1.10 over y 0..223.
 - The net plane x = 128 maps to screen x = 128 on every row, so the net stays a vertical divider.
 - The asset generator emits the table as `assets/generated/court_projection.h` and rasterizes the court lines through it; the game includes the same header. Both round half up after the shift.
 - Input stays in world space: Up moves along world −y even though that path slants slightly on screen.
@@ -97,7 +99,7 @@ Suggested starting tunables:
 | Standard hit initial vertical speed | 2.5 px/frame |
 | Bounce vertical retention | 0.55 |
 | Bounce planar retention | 0.92 |
-| Hit reach from player center | 22 px x / 18 px y / 18 px z |
+| Hit reach from player ground point | 22 px x / 16 px y / 24 px z |
 
 Use swept crossing tests for net and ground boundaries. Do not rely on exact coordinate equality.
 
@@ -137,7 +139,7 @@ The CPU is intentionally legible, not optimal.
 2. Clamp the target to the CPU half and add a fixed difficulty offset, not random jitter.
 3. Move toward the target with 80% of player maximum speed.
 4. Swing when the ball is approaching and predicted to enter the active reach volume within the windup horizon.
-5. After a hit, recover toward `(206, 128)`.
+5. After a hit, recover toward `(208, 130)`.
 
 In debug builds, show predicted landing as one background marker. The CPU must not read future player input or alter ball physics.
 

@@ -6,23 +6,29 @@ Not part of the normal build (needs Pillow). Outputs, both committed:
                                     with the player palette roles below.
   assets/source/objects.png         128x8, sixteen 8x8 small objects.
 
-Player palette roles (all four team palettes share these indices):
-  0 transparent  1 outline  2 skin shadow  3 skin  4 hair
-  5 team dark    6 team     7 team light   8 white shadow  9 white
-  10 paddle grip 11..15 reserved
+Player palette roles: contract v2 (docs/10_MOCKUP_DECISIONS.md, ADR-013):
+  0 transparent  1 outline  2-4 skin ramp  5-7 shirt/cap  8-9 shorts
+  10 shoe accent 11-13 paddle face dark/light/edge-grip  14 highlight
+  15 hair
+The text art below uses drawing letters; to_roles() maps them to v2 roles.
+Paddle pixels are found as the team-coloured body blobs other than the
+shirt, so the art can keep drawing the paddle with team letters.
 """
 from pathlib import Path
 
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-KEY = {".": 0, "O": 1, "s": 2, "S": 3, "H": 4, "d": 5, "T": 6, "L": 7,
-       "g": 8, "W": 9, "h": 10}
+ROLE = {"O": 1, "s": 2, "S": 3, "d": 5, "T": 6, "L": 7, "g": 8, "W": 9,
+        "h": 13, "H": 15}
+PADDLE = {"d": 11, "T": 12, "L": 12}
+SHOE_ROW = 27   # white pixels at or below this row are shoes (index 10)
 
-# Preview palette (blue team); the build owns the real palettes.
-PREVIEW = [(255, 0, 255), (16, 20, 36), (176, 104, 72), (240, 168, 120),
-           (96, 56, 32), (24, 48, 152), (48, 96, 224), (120, 168, 248),
-           (168, 176, 192), (248, 248, 248), (56, 40, 32)]
+# Preview palette (blue team, contract v2); the build composes real ones.
+PREVIEW = [(255, 0, 255), (16, 16, 48), (176, 104, 72), (240, 168, 120),
+           (248, 208, 160), (24, 48, 152), (48, 96, 224), (120, 168, 248),
+           (168, 176, 200), (248, 248, 248), (240, 240, 240), (32, 56, 160),
+           (72, 120, 240), (56, 40, 32), (255, 255, 255), (96, 56, 32)]
 
 HEAD = [
     "...OOOOO.....",
@@ -224,25 +230,61 @@ CHEER = (10, 4, [
 ])
 
 
+HEAD_TAG = "^"   # suffix marking pixels stamped by the head (cap stays team)
+
+
 def blank():
-    return [[0] * 32 for _ in range(32)]
+    return [["."] * 32 for _ in range(32)]
 
 
-def stamp(grid, rows, x0, y0, opaque_only=True):
+def stamp(grid, rows, x0, y0, tag=""):
     for dy, row in enumerate(rows):
         for dx, ch in enumerate(row):
             if ch == ".":
                 continue
             x, y = x0 + dx, y0 + dy
             if 0 <= x < 32 and 0 <= y < 32:
-                grid[y][x] = KEY[ch]
+                grid[y][x] = ch + tag
+
+
+def to_roles(grid):
+    """Map drawing letters to contract-v2 indices."""
+    team = {(x, y) for y in range(32) for x in range(32)
+            if grid[y][x] in ("d", "T", "L")}
+    blobs = []
+    while team:
+        stack = [team.pop()]
+        blob = set(stack)
+        while stack:
+            x, y = stack.pop()
+            for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if n in team:
+                    team.remove(n)
+                    blob.add(n)
+                    stack.append(n)
+        blobs.append(blob)
+    blobs.sort(key=len, reverse=True)
+    paddle = set().union(*blobs[1:]) if len(blobs) > 1 else set()
+    out = [[0] * 32 for _ in range(32)]
+    for y in range(32):
+        for x in range(32):
+            ch = grid[y][x][0]
+            if ch == ".":
+                continue
+            if (x, y) in paddle:
+                out[y][x] = PADDLE[ch]
+            elif ch == "W" and y >= SHOE_ROW:
+                out[y][x] = 10
+            else:
+                out[y][x] = ROLE[ch]
+    return out
 
 
 def body_frame(spec, bob=0):
     head_x, head_y, rows = spec
     grid = blank()
     stamp(grid, rows, 0, 12 + bob)
-    stamp(grid, HEAD, head_x, head_y + bob)
+    stamp(grid, HEAD, head_x, head_y + bob, HEAD_TAG)
     return grid
 
 
@@ -251,7 +293,7 @@ def run_frame(legs, bob):
     grid = blank()
     stamp(grid, RUN_TORSO, 0, 13 + bob)
     stamp(grid, legs[:8], 0, 22)
-    stamp(grid, HEAD, 10, 4 + bob)
+    stamp(grid, HEAD, 10, 4 + bob, HEAD_TAG)
     return grid
 
 
@@ -261,7 +303,7 @@ def idle_bob():
     grid = blank()
     stamp(grid, rows[10:], 0, 22)
     stamp(grid, rows[:10], 0, 13)
-    stamp(grid, HEAD, head_x, head_y + 1)
+    stamp(grid, HEAD, head_x, head_y + 1, HEAD_TAG)
     return grid
 
 
@@ -302,14 +344,14 @@ OBJECTS = [
         "........",
         "........",
     ],
-    [  # 2 player shadow left half (right half is the h-flip)
+    [  # 2 player shadow: one 8x8 object (one sliver per row, ADR-014 budget)
         "........",
         "........",
-        "....XXXX",
-        "..XXXXXX",
-        ".XXXXXXX",
-        "..XXXXXX",
-        "....XXXX",
+        "..XXXX..",
+        ".XXXXXX.",
+        "XXXXXXXX",
+        ".XXXXXX.",
+        "..XXXX..",
         "........",
     ],
     [  # 3 spark
@@ -353,6 +395,7 @@ def save_indexed(path, pixels, palette):
 def main():
     sheet = [[0] * 128 for _ in range(96)]
     for i, frame in enumerate(FRAMES):
+        frame = to_roles(frame)
         ox, oy = (i % 4) * 32, (i // 4) * 32
         for y in range(32):
             for x in range(32):

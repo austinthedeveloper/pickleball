@@ -53,8 +53,9 @@ ball draw = (screen_x, screen_y - z)                        // z unscaled in POC
 shadow    = (screen_x, screen_y)
 ```
 
-- `s` is linear in `y`: **0.84 (215/256) at the far sideline y=60** and **1.00 (256/256) at the near sideline y=195**. Rows outside the court extrapolate linearly and clamp at y 0..223. The table is 224 entries × 2 bytes (448 bytes of ROM).
-- The resulting court corners are far baseline x ≈ 37 / 218 and near baseline x = 20 / 235. The top/bottom width ratio is about 0.84, which matches the mockups. All corners sit inside an 8 px horizontal overscan margin.
+- `s` is linear in `y`: **0.84 (216/256) at the far sideline y=90** and **1.00 (256/256) at the near sideline y=170**. Rows outside the court extrapolate linearly and clamp to s 0.75..1.10 over y 0..223. The table stores `s - 256` as 224 signed bytes (224 bytes of ROM).
+- The resulting court corners are far baseline x = 34 / 223 and near baseline x = 16 / 240. The top/bottom width ratio is about 0.84, which matches the mockups. All corners sit inside an 8 px horizontal overscan margin.
+- *Amended 2026-10-12:* the endpoints follow the implemented court (`include/court.h`: baselines 16/240, sidelines 90/170), which frames the court like the level-01 mockup. The game evaluates `screen_x` with the exact 16-bit expansion `d + ((d·(s−256) + 128) >> 8)`, `d = world_x − 128`. It equals the 32-bit form above, including round-half-up, and avoids 816-tcc's slow 32-bit multiply.
 - The net plane x = 128 maps to screen x = 128 on every row, so the net stays a vertical divider. Baselines and kitchen lines slant toward it, as in the mockups.
 
 **Single source of truth.** The asset generator computes the table from the court constants and emits it as `assets/generated/court_projection.h`. It then rasterizes the court lines through that same table. The game includes the generated header and never re-derives the formula. Both sides round with one shared rule: round half up after the shift.

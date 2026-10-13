@@ -10,33 +10,36 @@
 #define RENDER_BG3_TILES_ADDR 0x5000
 #define RENDER_OBJ_TILES_ADDR 0x6000
 
-/* OBJ palette slots. Palettes 4..7 take part in shadow color math. */
+/*
+ * OBJ palette slots. Only palettes 0-3 are exempt from colour math, so the
+ * two POC players, objects, and the hit flash fill them; palette 4 is the
+ * colour-math shadow. Doubles needs a new plan here (see docs/09).
+ */
 enum {
-    RENDER_OBJPAL_TEAM0 = 0,
-    RENDER_OBJPAL_TEAM1 = 1,
+    RENDER_OBJPAL_PLAYER_A = 0,   /* slot 0 */
+    RENDER_OBJPAL_PLAYER_B = 1,   /* slot 2 */
     RENDER_OBJPAL_OBJECTS = 2,
     RENDER_OBJPAL_FLASH = 3,
     RENDER_OBJPAL_SHADOW = 4
 };
 
-/* OAM entry indices (multiply by 4 for PVSnesLib byte offsets). */
+/* OAM entry indices (docs/03_SPRITE_ASSET_PIPELINE.md OAM allocation). */
 enum {
-    RENDER_OAM_SPARK = 0,
-    RENDER_OAM_BALL = 1,
-    RENDER_OAM_BODY_FRONT = 2,
-    RENDER_OAM_BODY_BACK = 3,
-    RENDER_OAM_DEBUG_MARKER = 4,
-    RENDER_OAM_BALL_SHADOW = 5,
-    RENDER_OAM_SHADOW_FRONT = 6,
-    RENDER_OAM_SHADOW_BACK = 8,
-    RENDER_OAM_USED = 10
+    RENDER_OAM_BALL = 0,
+    RENDER_OAM_BALL_SHADOW = 1,
+    RENDER_OAM_BODIES = 2,        /* 2-5: sorted nearest-first (ADR-012) */
+    RENDER_OAM_SHADOWS = 6,       /* 6-9: by slot */
+    RENDER_OAM_SPARK = 10,        /* 10-13: impact effects reserve */
+    RENDER_OAM_DEBUG_MARKER = 11,
+    RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ADR-014, unused in the POC */
+    RENDER_OAM_FIRST_HIDDEN = 18
 };
 
 void render_initialize(void);
-s16 render_project_x(s16 x, s16 y);
-/* Team colour (TEAM_BLUE..TEAM_GOLD) shown for the left (0) or right team. */
-void render_set_team_color(u8 team, u8 color);
-u8 render_team_color(u8 team);
+/* Composes player palettes and HUD team colours from g_match_config; the
+ * upload happens in the next render_commit (or immediately in forced blank
+ * during render_initialize). */
+void render_apply_match_config(void);
 /* Builds OAM and HUD buffers; call before WaitForVBlank. */
 void render_prepare(void);
 /* VBlank-only uploads (HUD bands, pending palettes). */

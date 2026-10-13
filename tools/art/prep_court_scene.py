@@ -54,25 +54,19 @@ SAND, SAND_D, SAND_L, GREEN, GREEN_S, LINE, LINE_S, MESH, POST, POST_H, \
     TAPE, SAND_S, FMESH, FMESH_S, EDGE = range(1, 16)
 
 
+sys.path.insert(0, str(ROOT / "tools"))
+import court_projection  # noqa: E402
+
+TABLE = court_projection.scale_table()
+
+
 def court_constants():
-    text = (ROOT / "include" / "court.h").read_text(encoding="utf-8")
-    result = {}
-    for name in ("COURT_BASELINE_LEFT", "COURT_BASELINE_RIGHT",
-                 "COURT_SIDELINE_TOP", "COURT_SIDELINE_BOTTOM", "COURT_NET_X",
-                 "COURT_KITCHEN_LEFT_X", "COURT_KITCHEN_RIGHT_X",
-                 "COURT_CENTERLINE_Y", "COURT_NET_HEIGHT",
-                 "COURT_PERSPECTIVE_BASE"):
-        match = re.search(rf"\b{name}\s*=\s*(\d+)", text)
-        if not match:
-            raise SystemExit(f"missing court constant: {name}")
-        result[name] = int(match.group(1))
-    return result
+    return court_projection.court_constants()
 
 
 def project_x(x, y, c):
-    """Must match render_project_x() in src/render.c."""
-    k = c["COURT_PERSPECTIVE_BASE"] + (y >> 1)
-    return 128 + (((x - 128) * k) >> 8)
+    """Same table and rounding as the game (tools/court_projection.py)."""
+    return court_projection.project_x(x, y, TABLE)
 
 
 def paint_court(c):

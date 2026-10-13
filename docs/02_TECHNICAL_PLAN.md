@@ -73,8 +73,8 @@ Each player has an active flag, team, logical input slot, CPU flag, fixed-point 
 
 ## Fixed-point and arithmetic rules
 
-- Use signed 16-bit 8.8 values for on-court position/velocity where range permits.
-- Promote intermediate multiplies/divides to signed 32-bit.
+- Use signed 16-bit 12.4 values (1/16 px) for position and velocity. Every spec tunable is exact in 12.4, and the 256-px court fits with headroom (ADR-006).
+- Keep per-frame code in 16-bit math. 816-tcc compiles 32-bit arithmetic, pointer dereferences, and variable struct-array indexing very slowly; hot paths copy a struct into a static scratch copy and use constant indices. Profile with `make release PROFILE=1`.
 - Wrap fixed-point helpers in tested macros or inline functions.
 - Avoid floating point and standard-library allocation.
 - Cap predictive simulations and loops with explicit compile-time limits.
