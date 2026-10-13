@@ -66,6 +66,8 @@ typedef struct {
     u8 pose;
     u8 palette;
     u8 flash_timer;
+    u8 shot_type;       /* ShotType latched when the swing starts */
+    u8 reserved;        /* keeps the size even on host and SNES */
 } Player;
 
 extern Player g_players[MAX_PLAYERS];

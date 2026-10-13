@@ -19,6 +19,14 @@
 #define PAD_DOWN 0x0400
 #define PAD_LEFT 0x0200
 #define PAD_RIGHT 0x0100
+#define PAD_A 0x0080
+
+/* Shot types (docs/decisions/ADR-019-shots.md): B, A, Y. */
+typedef enum {
+    SHOT_STANDARD = 0,
+    SHOT_DRIVE = 1,     /* A: faster, flatter */
+    SHOT_SOFT = 2       /* Y: lob, or a dink when aimed away from the net */
+} ShotType;
 
 typedef enum {
     INPUT_OWNER_NONE = 0,
@@ -38,7 +46,8 @@ typedef struct {
     /* Shot direction read at contact; humans aim with the D-pad (= move). */
     s16 aim_x;
     s16 aim_y;
-    u8 hit_pressed;
+    u8 hit_pressed;     /* any swing button (B, A, Y) */
+    u8 shot;            /* ShotType of that swing */
     u8 pause_pressed;
 } PlayerIntent;
 

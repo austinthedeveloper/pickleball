@@ -32,7 +32,21 @@ enum {
     HIT_PACE_NEUTRAL_FP = 44,
     HIT_PACE_SHORT_FP = 40,
     HIT_FLIGHT_MIN_FRAMES = 24,
-    HIT_FLIGHT_MAX_FRAMES = 46
+    HIT_FLIGHT_MAX_FRAMES = 46,
+
+    /* Shot types (ADR-019), in 12.4 pace and flight frames. */
+    HIT_PACE_DRIVE_FP = 60,                 /* 3.75 px/frame */
+    HIT_DRIVE_MIN_FRAMES = 16,
+    HIT_DRIVE_MAX_FRAMES = 30,
+    HIT_DRIVE_STRETCH_WIDE = 26,
+    HIT_DRIVE_STRETCH_LONG = 22,
+    HIT_PACE_LOB_FP = 28,                   /* 1.75 px/frame, high arc */
+    HIT_LOB_MIN_FRAMES = 44,
+    HIT_LOB_MAX_FRAMES = 50,                /* apex ~58 px; < AI horizon */
+    HIT_PACE_DINK_FP = 24,                  /* 1.5 px/frame */
+    /* A dink lands inside the opponent's kitchen. */
+    HIT_TARGET_DINK_RIGHT = COURT_NET_X + 18,
+    HIT_TARGET_DINK_LEFT = COURT_MIRROR_X(HIT_TARGET_DINK_RIGHT)
 };
 
 u8 collision_ball_in_player_reach(const Player *player, const Ball *ball);

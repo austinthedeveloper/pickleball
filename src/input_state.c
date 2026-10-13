@@ -59,7 +59,13 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
         intent->move_y = 1;
     intent->aim_x = intent->move_x;
     intent->aim_y = intent->move_y;
-    intent->hit_pressed = (pad->pressed & PAD_B) != 0;
+    intent->hit_pressed = (pad->pressed & (PAD_B | PAD_A | PAD_Y)) != 0;
+    if (pad->pressed & PAD_A)
+        intent->shot = SHOT_DRIVE;
+    else if (pad->pressed & PAD_Y)
+        intent->shot = SHOT_SOFT;
+    else
+        intent->shot = SHOT_STANDARD;
     /* Pause is arbitrated centrally; only P1 pauses in the POC. */
     intent->pause_pressed = may_pause && (pad->pressed & PAD_START) != 0;
 }
@@ -87,6 +93,7 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
             g_player_intents[i].aim_x = 0; \
             g_player_intents[i].aim_y = 0; \
             g_player_intents[i].hit_pressed = 0; \
+            g_player_intents[i].shot = SHOT_STANDARD; \
             g_player_intents[i].pause_pressed = 0; \
         } \
     } while (0)

@@ -11,7 +11,7 @@
 typedef enum {
     EVENT_NONE = 0,
     EVENT_SERVE = 1,    /* serve contact; detail = server slot */
-    EVENT_HIT = 2,      /* rally contact; detail = hitter slot */
+    EVENT_HIT = 2,      /* rally contact; detail = slot | ShotType << 4 */
     EVENT_BOUNCE = 3,   /* ground contact; detail = bounce count */
     EVENT_FAULT = 4,    /* net/out/kitchen/box/volley; detail = GameFault */
     EVENT_POINT = 5     /* point awarded; detail = winning team */

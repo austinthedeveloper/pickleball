@@ -127,7 +127,7 @@ static void game_on_contact(u8 player_index)
     player->flash_timer = GAME_HIT_FLASH_FRAMES;
     g_game_state.hit_stop = GAME_HIT_STOP_FRAMES;
     events_emit(EVENT_HIT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
-        player_index);
+        player_index | (player->shot_type << 4));
 }
 
 static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])

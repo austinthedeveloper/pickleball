@@ -226,8 +226,9 @@ static void render_effects(void)
         sx = projection_x(g_fx.spark_x, g_fx.spark_y);
         obj_put(RENDER_OAM_SPARK, sx - 4,
             g_fx.spark_y - FROM_FP(g_ball.z_fp) - 4,
-            (g_fx.spark_timer & 2) ? OBJTILE_SPARK :
-            OBJTILE_SPARK_SMALL, OBJ_ATTR(g_objpal_objects, 0), 0);
+            (g_fx.spark_style == FX_SPARK_BIG ||
+             (g_fx.spark_style == FX_SPARK_ALTERNATE &&
+              (g_fx.spark_timer & 2))) ? OBJTILE_SPARK : OBJTILE_SPARK_SMALL, OBJ_ATTR(g_objpal_objects, 0), 0);
     } else {
         render_obj_hide(RENDER_OAM_SPARK);
     }

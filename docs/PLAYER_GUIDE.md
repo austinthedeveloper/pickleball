@@ -11,7 +11,9 @@ begins the match.
 | Button | Action |
 |---|---|
 | D-pad | Move. At contact, it also aims the shot. |
-| B | Swing. When you're holding the ball, B serves. |
+| B | Standard swing. When you're holding the ball, B (or A/Y) serves. |
+| A | Drive: a faster, flatter shot. Mistimed drives spray wider. |
+| Y | Lob: a slow, high shot deep over an opponent at the net. With the D-pad away from the net, it's a dink that lands softly in the opponent's kitchen. |
 | Start | Start a match from the title; pause and unpause during play. |
 | Select | Debug and hardware-test ROMs only: OBJ stress scene. |
 

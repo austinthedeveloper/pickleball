@@ -18,7 +18,13 @@ enum {
     AI_SERVE_DELAY_FRAMES = 50,
     /* Difficulty: every Nth return the CPU is deliberately late and takes a
      * stretched last-chance contact, which sprays the ball (no randomness). */
-    AI_LATE_SHOT_PERIOD = 8,
+    AI_LATE_SHOT_PERIOD = 7,
+    /* Shot choice (ADR-019): put-away drive on a ball at least this high
+     * within this distance of the net; lob when an opponent is this close to
+     * the net. */
+    AI_PUTAWAY_Z = 14,
+    AI_PUTAWAY_NET_DISTANCE = 48,
+    AI_LOB_NET_DISTANCE = 44,
     /* Look ahead windup + first active frame when deciding to swing. */
     AI_SWING_LOOKAHEAD = PLAYER_WINDUP_FRAMES + 1
 };
@@ -40,6 +46,8 @@ typedef struct {
     u8 returns;
     u8 late_this_ball;
     u8 seen_shot;
+    u8 planned_shot;      /* ShotType chosen at the swing press (ADR-019) */
+    s16 planned_depth;    /* +1 deep, 0 neutral, -1 short */
 } AiState;
 
 /* Working copy for the controller being updated (and the debug marker);

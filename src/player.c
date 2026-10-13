@@ -57,6 +57,8 @@ void players_initialize(void)
         player->pose = PLAYER_POSE_NONE;
         player->palette = player->team;
         player->flash_timer = 0;
+        player->shot_type = SHOT_STANDARD;
+        player->reserved = 0;
         player_place(player, 0, 0);
     }
 
@@ -113,6 +115,7 @@ static void player_step(const PlayerIntent *intent)
         s_p.state = PLAYER_STATE_WINDUP;
         s_p.state_frames_remaining = PLAYER_WINDUP_FRAMES;
         s_p.contact_consumed = 0;
+        s_p.shot_type = intent->shot;
     } else {
         s_p.state = (move_x || move_y) ? PLAYER_STATE_MOVE : PLAYER_STATE_IDLE;
     }

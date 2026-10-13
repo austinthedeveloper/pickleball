@@ -88,23 +88,59 @@ static u8 ai_owns_y(s16 y)
     return (y < COURT_CENTERLINE_Y) == match_slot_lane_top(s_slot);
 }
 
-/* Aim: away from the opponent's y, mostly deep, a drop shot every 4th. */
+static s16 abs_s16(s16 value)
+{
+    return value < 0 ? -value : value;
+}
+
+/* Nonzero when an active opponent stands within `distance` of the net. */
+static u8 ai_opponent_at_net(u8 team, s16 distance)
+{
+    const Player *a = &g_players[team ? 0 : 2];
+    const Player *b = a + 1;
+
+    if (a->active && abs_s16(FROM_FP(a->x_fp) - COURT_NET_X) < distance)
+        return 1;
+    return b->active && abs_s16(FROM_FP(b->x_fp) - COURT_NET_X) < distance;
+}
+
+/*
+ * Shot choice at the swing press (ADR-019), deterministic: put-away drive
+ * on a high ball near the net, lob over an opponent at the net, a dink as
+ * every 4th shot, otherwise a standard shot that alternates deep and
+ * neutral. contact_z is the ball height at contact.
+ */
+static void ai_plan_shot(const Player *player, fx contact_z)
+{
+    u8 n = g_ai.shot_counter;
+    s16 to_net = abs_s16(FROM_FP(player->x_fp) - COURT_NET_X);
+
+    if (contact_z >= TO_FP(AI_PUTAWAY_Z) && to_net < AI_PUTAWAY_NET_DISTANCE) {
+        g_ai.planned_shot = SHOT_DRIVE;
+        g_ai.planned_depth = 0;
+    } else if (ai_opponent_at_net(player->team, AI_LOB_NET_DISTANCE)) {
+        g_ai.planned_shot = SHOT_SOFT;
+        g_ai.planned_depth = 1;
+    } else if ((n & 3) == 3) {
+        g_ai.planned_shot = SHOT_SOFT;
+        g_ai.planned_depth = -1;
+    } else {
+        g_ai.planned_shot = SHOT_STANDARD;
+        g_ai.planned_depth = (n & 1) ? 1 : 0;
+    }
+}
+
+/* Aim: away from the opponent's y, depth from the planned shot. */
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
-    /* First active player on the other team (slots 0-1 left, 2-3 right). */
     const Player *opponent = &g_players[player->team ? 0 : 2];
 
+    /* First active player on the other team (slots 0-1 left, 2-3 right). */
     if (!opponent->active)
         ++opponent;
-    s16 toward_opponent = court_toward_net(player->team);
-
     intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
-    if ((g_ai.shot_counter & 3) == 3)
-        intent->aim_x = -toward_opponent;
-    else if (g_ai.shot_counter & 1)
-        intent->aim_x = toward_opponent;
-    else
-        intent->aim_x = 0;
+    intent->aim_x = g_ai.planned_depth * court_toward_net(player->team);
+    intent->shot = g_ai.planned_shot;
 }
 
 /*
@@ -164,6 +200,7 @@ void ai_probe_step(void)
     }
 }
 
+static fx s_contact_z;   /* ball height at the planned contact */
 static fx s_reach_x;
 static fx s_reach_y;
 
@@ -216,6 +253,7 @@ static u8 ai_swing_connects(const Player *player)
             continue;
         /* This frame would be the contact. Let every incoming ball bounce
          * once first (legal and readable), and never reach over the net. */
+        s_contact_z = g_probe.z;
         if (g_probe.bounces == 0 ||
             !court_x_on_side(g_probe.x, player->team))
             return 0;
@@ -329,6 +367,13 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         g_game_state.phase == GAME_PHASE_SERVE_TOSS) {
         if (g_serve_state.server_index != player_index)
             return;
+        /* Serves keep the original depth pattern: a short serve every 4th,
+         * otherwise alternating deep and neutral. */
+        g_ai.planned_shot = SHOT_STANDARD;
+        if ((g_ai.shot_counter & 3) == 3)
+            g_ai.planned_depth = -1;
+        else
+            g_ai.planned_depth = (g_ai.shot_counter & 1) ? 1 : 0;
         ai_choose_aim(player, intent);
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_game_state.phase_timer >= AI_SERVE_DELAY_FRAMES) {
@@ -378,6 +423,8 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         }
         PROFILE_MARK(10);
         if (!player_is_swinging(player) && ai_swing_connects(player)) {
+            ai_plan_shot(player, s_contact_z);
+            ai_choose_aim(player, intent);
             intent->hit_pressed = 1;
             ++g_ai.shot_counter;
             return;

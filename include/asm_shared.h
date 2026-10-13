@@ -9,7 +9,7 @@
  */
 
 /* Player struct layout (include/player.h). */
-#define ASM_PLAYER_SIZE 24
+#define ASM_PLAYER_SIZE 26
 #define ASM_PLAYER_ACTIVE 0
 #define ASM_PLAYER_X 4
 #define ASM_PLAYER_Y 6

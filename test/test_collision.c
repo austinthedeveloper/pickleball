@@ -146,6 +146,66 @@ static void test_directional_target_lanes(void)
     assert_lands_near(HIT_TARGET_SHORT_RIGHT, HIT_TARGET_LANE_CENTER);
 }
 
+/* Hits the fixture ball with a shot type and aim; returns flight frames to
+ * the first bounce and the highest z reached. */
+static u8 fly_shot(u8 team, u8 shot, s16 aim_x, fx *apex)
+{
+    u8 frames = 0;
+
+    reset_fixture();
+    /* Mid-court, where lobs and drives differ most from a standard shot. */
+    players[0].x_fp = TO_FP(team ? 146 : 110);
+    ball.x_fp = players[0].x_fp;
+    players[0].team = team;
+    players[0].shot_type = shot;
+    players[0].state = PLAYER_STATE_ACTIVE;
+    intents[0].aim_x = aim_x;
+    assert(collision_resolve_player_hits(&ball, players, intents,
+        MAX_PLAYERS) == 1);
+    *apex = 0;
+    while (!(ball_simulate_step(&ball) & BALL_EVENT_BOUNCE)) {
+        if (ball.z_fp > *apex)
+            *apex = ball.z_fp;
+        ++frames;
+        assert(frames < 80);
+    }
+    return frames;
+}
+
+/* ADR-019 shot types from a sweet-spot contact. */
+static void test_shot_types(void)
+{
+    fx standard_apex;
+    fx apex;
+    u8 standard;
+    u8 frames;
+
+    standard = fly_shot(0, SHOT_STANDARD, 1, &standard_apex);
+    assert(standard + 1 < HIT_FLIGHT_MAX_FRAMES);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) < TO_FP(3));
+
+    /* Drive: same deep target, sooner and flatter. */
+    frames = fly_shot(0, SHOT_DRIVE, 1, &apex);
+    assert(frames < standard && apex < standard_apex);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) < TO_FP(3));
+
+    /* Lob: deep and well above the standard arc. */
+    frames = fly_shot(0, SHOT_SOFT, 1, &apex);
+    assert(frames + 1 >= HIT_LOB_MIN_FRAMES);
+    assert(apex > standard_apex + TO_FP(10));
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) < TO_FP(3));
+
+    /* Dink: aimed away from the net, lands inside the opponent's kitchen. */
+    fly_shot(0, SHOT_SOFT, -1, &apex);
+    assert(ball.x_fp > TO_FP(COURT_NET_X));
+    assert(ball.x_fp < TO_FP(COURT_KITCHEN_RIGHT_X));
+
+    /* The right team mirrors: a dink lands in the left kitchen. */
+    fly_shot(1, SHOT_SOFT, 1, &apex);
+    assert(ball.x_fp < TO_FP(COURT_NET_X));
+    assert(ball.x_fp > TO_FP(COURT_KITCHEN_LEFT_X));
+}
+
 static void test_new_swing_restores_contact(void)
 {
     PlayerIntent intents[MAX_PLAYERS];
@@ -166,6 +226,7 @@ int main(void)
     test_active_overlap_contacts_once();
     test_team_direction_and_live_ball_requirement();
     test_directional_target_lanes();
+    test_shot_types();
     test_new_swing_restores_contact();
     puts("collision host checks passed");
     return 0;

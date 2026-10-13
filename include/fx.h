@@ -12,8 +12,15 @@ enum {
     FX_SPARK_LEAD_X = 10
 };
 
+enum {
+    FX_SPARK_ALTERNATE = 0,     /* standard: big and small frames */
+    FX_SPARK_BIG = 1,           /* drive */
+    FX_SPARK_SMALL = 2          /* lob / dink */
+};
+
 typedef struct {
     u8 spark_timer;
+    u8 spark_style;
     s16 spark_x;
     s16 spark_y;
 } Fx;

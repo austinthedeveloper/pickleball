@@ -46,8 +46,8 @@ shadow    = (screen_x, screen_y)
 |---|---|---|
 | D-pad | Move on the court plane; diagonals normalized approximately | Same |
 | B | Context hit; serve when holding the ball | Standard hit |
-| Y | Reserved; ignored in release POC | Lob/soft shot candidate |
-| A | Reserved; ignored in release POC | Power/drive candidate |
+| Y | Soft shot: lob, or dink when aimed away from the net (ADR-019) | Same |
+| A | Drive: faster, flatter shot (ADR-019) | Same; paddle POWER scales it (ADR-015) |
 | Start | Pause/unpause | Same |
 | Select | Toggles diagnostics in debug builds only | Same |
 
@@ -143,8 +143,8 @@ The CPU is intentionally legible, not optimal.
 2. Aim to meet the ball near the top of its first bounce, standing 10 px behind the contact point. The CPU always lets the ball bounce once.
 3. Move toward the target with 80% of player maximum speed.
 4. Swing when a swing pressed now would make its first contact inside the sweet box during the active frames, or as a last chance before the ball leaves reach. Once committed, plant the feet.
-5. Difficulty is a fixed offset, not random jitter. On every 8th incoming shot (`AI_LATE_SHOT_PERIOD`) the CPU is deliberately late and takes a stretched last-chance contact.
-6. Aim away from the opponent's half of the court: mostly deep, a drop shot every 4th shot.
+5. Difficulty is a fixed offset, not random jitter. On every 7th incoming shot (`AI_LATE_SHOT_PERIOD`) the CPU is deliberately late and takes a stretched last-chance contact.
+6. Aim away from the opponent's half of the court. Shot choice follows ADR-019: a put-away drive on a high ball near the net, a lob over a net player, a dink every 4th shot, otherwise standard shots alternating deep and neutral.
 7. After a hit, recover toward `(208, 130)`.
 
 Measured with host simulations (`test/test_match_flow.c`): a stand-in player that mistimes every 2nd shot wins 1 of 20 matches, and one that mistimes every 10th shot wins 19 of 20. Simulated matches last 45–85 s. Human novice matches still decide the final tuning.

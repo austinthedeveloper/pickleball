@@ -33,10 +33,10 @@ GOLDEN_FRAMES = 4200
 # (identical to the host's sizeof); each run checks them against .sym gaps.
 GOLDEN_STATE = [
     ("game", "g_game_state", 16),
-    ("players", "g_players", 96),
+    ("players", "g_players", 104),
     ("ball", "g_ball", 18),
     ("serve", "g_serve_state", 10),
-    ("ai", "g_ai_slots", 80),
+    ("ai", "g_ai_slots", 96),
 ]
 # Frames before initialization hold MesenCE's randomized power-on RAM.
 GOLDEN_SKIP_FRAMES = 2
