@@ -66,6 +66,12 @@ per effect, plus one empty pattern), and `sfx.h` with the indices.
   anyway, so an effect is at most a few frames late.
 - The COURT page recolour waits for scanline 110 (it was 150), so it and a
   row redraw don't share a busy frame.
+- *Amended (late whistle and applause):* one `spcProcess` call can leave
+  commands queued. A fault plays the whistle and the point's applause on
+  the same frame, and the second used to wait for the next sound (often the
+  next point's serve). `spcProcess` now keeps running for 6 frames after
+  the last effect. In MesenCE, both voices start within 3–6 frames of the
+  request.
 - Results: zero overruns on idle, records, court, venue, options,
   practice, golden, the doubles match, and the 3,000-frame title.
 

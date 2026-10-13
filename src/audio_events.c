@@ -16,10 +16,14 @@ u16 g_audio_event_counts[6];
 AudioLast g_audio_last;
 /* Shots in the current point (serve included), for the crowd. */
 static u8 s_rally_shots;
-/* Effects asked for but not yet handed to the sound CPU, and frames that
- * skipped handing them over. */
+/* Frames left to keep handing queued effects to the sound CPU, and frames
+ * that skipped it. One spcProcess call can leave commands queued (two
+ * effects on one frame: a fault's whistle and the point's applause), so it
+ * keeps running for a few frames after the last effect; otherwise the
+ * second effect waited for the next sound, often the next point's serve. */
 static u8 s_pending;
 static u8 s_skipped;
+#define AUDIO_PROCESS_FRAMES 6
 
 /* spcProcess hands queued commands over and waits for the sound CPU to
  * take each one: 60-110 scanlines. It runs only when the frame's work has
@@ -70,7 +74,7 @@ static void audio_play(u8 sfx, u8 pitch, u8 volume, u8 pan)
     g_audio_last.volume = volume;
     g_audio_last.pan = pan;
     ++g_audio_last.played;
-    s_pending = 1;
+    s_pending = AUDIO_PROCESS_FRAMES;
 #ifndef HOST_TEST
     spcEffect(pitch, sfx, (u8)((volume << 4) | pan));
 #endif
@@ -167,6 +171,6 @@ void audio_update(void)
     }
     spcProcess();
 #endif
-    s_pending = 0;
+    --s_pending;
     s_skipped = 0;
 }
