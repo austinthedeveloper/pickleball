@@ -67,6 +67,33 @@ outer area; maybe the lines), and the choice is used for later matches.
 - **Remembering it across power-off needs battery save** (below). Without it,
   the choice lasts until the console is turned off.
 
+### Two-tone court: a separate kitchen colour
+
+Real courts are usually two-toned, with the kitchen (non-volley zone) in a
+colour that stands out. Today the kitchen is painted with the same palette
+entry as the rest of the court (entry 4, plus 5/15 for the net shadow), so it
+can't be coloured on its own.
+
+- **Art:** `tools/art/prep_court_scene.py` paints the kitchen rectangles (net
+  to the kitchen lines, `COURT_KITCHEN_LEFT_X`/`RIGHT_X` in `court.h`) with
+  their own entries: kitchen, and kitchen in net shadow. The net shadow falls
+  inside the kitchen, so both are needed. Palette 2 has two entries no ground
+  pixel uses today (7, "line in shadow", and 12, "sand in shadow"). Entry 7
+  is in the PROJ-04 line set, so take 12 and one more, or repurpose 7 and
+  update `LINE_COLORS`. The kitchen boundary adds a few unique ground tiles,
+  well within the 896-tile budget.
+- **Colours:** a fourth court colour part, KITCHEN (ADR-022). Its presets
+  include SAME (follow the surface) and contrasting tones, for example a
+  lighter or darker shade of the surface, BLUE on GREEN, or GREEN on BLUE.
+  Each venue's ground can set a default kitchen (`venues.json`).
+- **Checks:** the line contrast check covers the kitchen too, because the
+  kitchen lines and centre line border it. Adding the part changes the save's
+  settings layout, which bumps `SAVE_VERSION`.
+- **UI:** one more row on the COURT page (5 rows; the box has room through
+  row 21).
+- **Gameplay bonus:** a kitchen you can see at a glance makes kitchen faults
+  easier to read.
+
 ## Story mode: CPU personalities
 
 **Started:** [ADR-023](decisions/ADR-023-cpu-personalities.md) adds eight

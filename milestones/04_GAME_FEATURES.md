@@ -21,6 +21,8 @@ ADR-024.
 
 - [x] `M4-COURT-01` Court colour presets for surface, surround, and lines, with a live preview on the COURT page.
   - Verified: [ADR-022](../docs/decisions/ADR-022-court-colors.md), contrast checks in the asset build, `court.timeline`.
+- [ ] `M4-COURT-02` Two-tone court: the kitchen gets its own colour part (see IDEAS.md, "Two-tone court").
+  - Accept: the kitchen paints with its own palette-2 entries; a KITCHEN row (with SAME as an option) previews live; every kitchen preset passes the line contrast check; venues can set a default kitchen.
 - [x] `M4-VENUE-01` Venues PARK, LAKESIDE, and SUNSET with shared ground tiles and home courts.
   - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md), `venue.timeline`, `lake.timeline`.
 - [ ] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
