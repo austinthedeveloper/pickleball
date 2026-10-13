@@ -1,5 +1,6 @@
--- Headless MesenCE driver: plays a scripted pad timeline and saves screenshots.
--- It only supplies controller input; it never writes emulated memory.
+-- Headless MesenCE driver: plays a scripted pad timeline, saves screenshots,
+-- and prints work-RAM probes. It only supplies controller input; it never
+-- writes emulated memory.
 --
 -- Environment:
 --   SMOKE_TIMELINE  file with lines "<first> <last> <buttons>" (inclusive
@@ -7,19 +8,23 @@
 --                   and "shot <frame>" lines; '#' starts a comment.
 --   SMOKE_OUT       directory for frame-NNNNN.png screenshots.
 --   SMOKE_FRAMES    total frames to run before exiting (default 600).
---   SMOKE_PROBES    optional "name=wramhex:size,..." values (size 1 or 2) to
---                   print on every shot frame, e.g. "frames=27f8:2".
+--   SMOKE_PROBES    optional "name=wramhex:size,..." values. Sizes 1 and 2
+--                   print as decimal; larger sizes print as a hex dump.
+--   SMOKE_PROBE_EVERY  "1" to print probes on every frame (golden traces).
+--   SMOKE_NOSHOT    "1" to skip screenshots (probes still print).
 
 local timeline_path = os.getenv("SMOKE_TIMELINE")
 local out = os.getenv("SMOKE_OUT") or "."
 local total = tonumber(os.getenv("SMOKE_FRAMES") or "600")
+local every = os.getenv("SMOKE_PROBE_EVERY") == "1"
+local noshot = os.getenv("SMOKE_NOSHOT") == "1"
 local ranges = {}
 local shots = {}
 local frame = 0
 local probes = {}
 
 for name, addr, size in (os.getenv("SMOKE_PROBES") or ""):gmatch(
-        "([%w_]+)=(%x+):(%d)") do
+        "([%w_]+)=(%x+):(%d+)") do
     table.insert(probes, { name = name, addr = tonumber(addr, 16),
         size = tonumber(size) })
 end
@@ -28,10 +33,17 @@ local function probeLine()
     local parts = {}
     for _, p in ipairs(probes) do
         local value
-        if p.size == 2 then
+        if p.size == 1 then
+            value = emu.read(p.addr, emu.memType.snesWorkRam, false)
+        elseif p.size == 2 then
             value = emu.readWord(p.addr, emu.memType.snesWorkRam, false)
         else
-            value = emu.read(p.addr, emu.memType.snesWorkRam, false)
+            local bytes = {}
+            for i = 0, p.size - 1 do
+                bytes[#bytes + 1] = string.format("%02x",
+                    emu.read(p.addr + i, emu.memType.snesWorkRam, false))
+            end
+            value = table.concat(bytes)
         end
         table.insert(parts, p.name .. "=" .. value)
     end
@@ -77,11 +89,10 @@ emu.addEventCallback(function()
 end, emu.eventType.inputPolled)
 
 emu.addEventCallback(function()
-    if shots[frame] and #probes > 0 then
+    if #probes > 0 and (every or shots[frame]) then
         print(string.format("frame %d %s", frame, probeLine()))
     end
-    if shots[frame] then
-        if os.getenv("SMOKE_NOSHOT") then frame = frame + 1; if frame >= total then emu.stop(0) end; return end
+    if shots[frame] and not noshot then
         local file = assert(io.open(
             string.format("%s/frame-%05d.png", out, frame), "wb"))
         file:write(emu.takeScreenshot())

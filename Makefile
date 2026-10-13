@@ -42,7 +42,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke repro
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke repro stats golden-record golden-compare
 
 all: debug
 
@@ -89,6 +89,22 @@ host-check: assets
 
 CC_HOST ?= cc
 check: host-check asset-check
+
+# Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE, MATCHES.
+LATE ?= 4
+MATCHES ?= 20
+stats: assets
+	@mkdir -p build/host
+	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated \
+		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
+	@build/host/match_stats $(LATE) $(MATCHES)
+
+# Golden emulator trace (docs/REFACTOR_PLAN.md R0): record before a
+# refactor, compare after; simulation state must stay identical.
+golden-record: release
+	@python3 tools/mesen_probe.py golden-record
+golden-compare: release
+	@python3 tools/mesen_probe.py golden-compare
 
 MESEN_BIN ?= /Applications/Mesen.app/Contents/MacOS/Mesen
 SMOKE ?= m1
