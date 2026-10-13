@@ -74,7 +74,11 @@ static u8 ball_incoming(const Player *player)
 /* Aim: away from the opponent's y, mostly deep, a drop shot every 4th. */
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
+    /* First active player on the other team (slots 0-1 left, 2-3 right). */
     const Player *opponent = &g_players[player->team ? 0 : 2];
+
+    if (!opponent->active)
+        ++opponent;
     s16 toward_opponent = court_toward_net(player->team);
 
     intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;

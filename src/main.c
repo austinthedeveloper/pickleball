@@ -4,6 +4,7 @@
 #include "game.h"
 #include "input.h"
 #include "match.h"
+#include "player.h"
 #include "profile.h"
 #include "render.h"
 
@@ -25,7 +26,14 @@ static void update_controllers(void)
         }
         PROFILE_MARK(6);
     }
-    ai_update(2, &g_player_intents[2]);
+    /* Every CPU-owned active slot thinks (only slot 2 in the POC). Constant
+     * indices keep 816-tcc from multiplying per access. */
+    if (g_input_owners[1] == INPUT_OWNER_CPU && g_players[1].active)
+        ai_update(1, &g_player_intents[1]);
+    if (g_input_owners[2] == INPUT_OWNER_CPU && g_players[2].active)
+        ai_update(2, &g_player_intents[2]);
+    if (g_input_owners[3] == INPUT_OWNER_CPU && g_players[3].active)
+        ai_update(3, &g_player_intents[3]);
     PROFILE_MARK(0);
 }
 
