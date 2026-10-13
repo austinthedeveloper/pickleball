@@ -22,6 +22,10 @@ RANGES = {
 }
 VARIANTS = ("male", "female")
 NAME_CELLS = 9                   # "VS " + name in the 12-cell centre panel
+LINE_CELLS = 28                  # a story card line in one HUD panel
+LINE_KEYS = ("intro", "taunt", "concede")
+# The HUD font draws ASCII 32-95; '@' is the B button glyph in prompts.
+LINE_CHARS = re.compile(r"[A-Z0-9 .,!?'\-:]+")
 
 
 def header_constant(path, name):
@@ -120,6 +124,7 @@ def opponents_header():
                          "shows the rung as one digit)")
     styles, palettes, variants, paddle_ids, huds, teams, captains, homes = \
         [], [], [], [], [], [], [], []
+    story = []
     for opponent in opponents:
         team = opponent["team"]
         if not 1 <= len(team) <= NAME_CELLS or not re.fullmatch(r"[A-Z0-9 ']+", team):
@@ -133,6 +138,13 @@ def opponents_header():
             raise AssetError(f"opponent {team}: venue is one of "
                              f"{', '.join(venue_names)}")
         homes.append(venue_names.index(opponent["venue"]))
+        for key in LINE_KEYS:
+            line = opponent.get(key, "")
+            if not 1 <= len(line) <= LINE_CELLS or \
+                    not LINE_CHARS.fullmatch(line):
+                raise AssetError(f"opponent {team}: {key} is 1..{LINE_CELLS} "
+                                 "capitals, digits, spaces, and .,!?'-:")
+        story.append([opponent[k] for k in LINE_KEYS])
         teams.append(team)
         row_styles, row_pals, row_vars, row_paddles = [], [], [], []
         for player in opponent["players"]:
@@ -164,7 +176,10 @@ def opponents_header():
              "#define OPPONENT_NONE 0xff", "",
              "/* AiStyle.aim and .depth values. */",
              "enum { AI_AIM_AWAY = 0, AI_AIM_BODY = 1, AI_AIM_MIX = 2 };",
-             "enum { AI_DEPTH_ALTERNATE = 0, AI_DEPTH_DEEP = 1 };", "",
+             "enum { AI_DEPTH_ALTERNATE = 0, AI_DEPTH_DEEP = 1 };",
+             "/* g_opponent_lines columns. */",
+             "enum { OPPONENT_LINE_INTRO = 0, OPPONENT_LINE_TAUNT = 1, "
+             "OPPONENT_LINE_CONCEDE = 2 };", "",
              "/* A CPU's play style (ADR-023); the default is the shipped CPU. */",
              "typedef struct {",
              "    u8 late_period;       /* deliberately late every Nth return; 0 never */",
@@ -203,6 +218,11 @@ def opponents_header():
                  ", ".join(f'"{t}"' for t in teams) + " };")
     lines.append("const char *const g_opponent_captain[OPPONENT_COUNT] = { " +
                  ", ".join(f'"{c}"' for c in captains) + " };")
+    lines.append("/* Story card lines (ADR-026): intro, taunt (they won), "
+                 "concede (you won). */")
+    lines.append("const char *const g_opponent_lines[OPPONENT_COUNT][3] = {")
+    lines += ["    { " + ", ".join(f'"{t}"' for t in row) + " }," for row in story]
+    lines.append("};")
     lines.append("/* Home court (venue index, ADR-024). */")
     lines.append("const u8 g_opponent_venue[OPPONENT_COUNT] = { " +
                  ", ".join(map(str, homes)) + " };")
@@ -216,5 +236,6 @@ def opponents_header():
               "extern const char *const g_opponent_team[OPPONENT_COUNT];",
               "extern const char *const g_opponent_captain[OPPONENT_COUNT];",
               "extern const u8 g_opponent_venue[OPPONENT_COUNT];",
+              "extern const char *const g_opponent_lines[OPPONENT_COUNT][3];",
               "#endif", "", "#endif", ""]
     return "\n".join(lines)

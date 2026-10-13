@@ -11,6 +11,7 @@
 #include "court_style.h"
 #include "options.h"
 #include "save.h"
+#include "story.h"
 
 /*
  * Score panels and scene overlays (title, serve prompt, point and match
@@ -40,10 +41,10 @@
 #define TITLE_MENU_COL 12
 #define TITLE_2P_ROW 18
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
-#define TITLE_AREA_ROWS 10          /* menu or records: rows 12-21 */
+#define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
 #define RECORDS_WIDTH 24
-#define RECORDS_ROWS 10
+#define RECORDS_ROWS 11
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
 #define COURT_PAGE_ROWS 6           /* the court box: header, gap, 4 rows */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
@@ -63,7 +64,7 @@ u8 g_title_mode;
 u8 g_title_page;
 u8 g_title_2p;
 /*
- * Title area (rows 12-21: the menu or the records page), drawn a part per
+ * Title area (rows 12-22: the menu or a page), drawn a part per
  * idle frame by hud_title_area_update, apart from the staged scene steps so
  * the prompt blink never interrupts it. s_title_view is the view on screen
  * or being drawn (hud_title_view), HUD_TITLE_CLEARED after a clear, or
@@ -222,6 +223,7 @@ static void hud_draw_scores(void)
 #define HUD_KEY_PAUSED 0x80
 #define HUD_KEY_TITLE 0x100
 #define HUD_KEY_TITLE_BLINK 0x101
+#define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 
 /* Doubles shows ARCADE RULES under DOUBLES; either mode shows MATCH POINT
  * when a team is one point from winning (the doubles mockup). */
@@ -268,6 +270,10 @@ static const char *hud_point_text(u8 winner)
 
 static const char *hud_match_winner_text(void)
 {
+    /* ADR-026: beating the last ladder opponent. */
+    if (g_game_state.match_winner == 0 && !g_attract &&
+            g_match_config.opponent == OPPONENT_COUNT - 1)
+        return "CHAMPION!";
     if (hud_versus_2p())
         return g_game_state.match_winner == 0 ? "P1 WINS" : "P2 WINS";
     return g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS";
@@ -276,6 +282,9 @@ static const char *hud_match_winner_text(void)
 static u16 hud_scene_key(void)
 {
     u8 phase = g_game_state.phase;
+
+    if (g_story.card == STORY_CARD_INTRO)
+        return HUD_KEY_INTRO;
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
@@ -304,10 +313,84 @@ static u16 hud_scene_key(void)
  * frame overrun; spread out, no frame does more than one step.
  */
 enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
-       HUD_STEP_DONE = 3 };
+       /* Story cards (intro, match result): one panel per frame. */
+       HUD_STEP_EXTRA = 3, HUD_STEP_EXTRA2 = 4,
+       HUD_STEP_DONE = 5 };
 
 static u8 s_scene_step;
 static u16 s_prev_scene;
+
+/* The opponent speaking on the story cards: singles names the captain,
+ * doubles the team. */
+static const char *hud_opponent_name(void)
+{
+    return hud_doubles() ? g_opponent_team[g_match_config.opponent] :
+        g_opponent_captain[g_match_config.opponent];
+}
+
+/* A line of text centred on a row, without a panel. */
+static void hud_center_text(u8 row, u8 palette, const char *text)
+{
+    u8 length = 0;
+
+    while (text[length])
+        ++length;
+    hud_text((u8)(16 - length / 2), row, palette, text);
+}
+
+/* Intro card (ADR-026): the opponent's name, their line, the prompt, and
+ * the rung, one per frame. */
+static void hud_intro_step(u8 step)
+{
+    static char rung[] = "LADDER 0 OF 0";
+
+    if (step == HUD_STEP_BIG) {
+        hud_center_big(CENTER_BIG_ROW, HUD_PAL_TEAM_RIGHT, hud_opponent_name());
+    } else if (step == HUD_STEP_PROMPT) {
+        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE,
+            g_opponent_lines[g_match_config.opponent][OPPONENT_LINE_INTRO]);
+    } else if (step == HUD_STEP_EXTRA) {
+        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "@ PLAY");
+    } else if (step == HUD_STEP_EXTRA2) {
+        rung[7] = (char)('1' + g_match_config.opponent);
+        rung[12] = (char)('0' + OPPONENT_COUNT);
+        hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, rung);
+    }
+}
+
+/* Under the match result (ADR-026): the opponent's line (EXTRA), and
+ * after a win the next opponent or the ladder cleared (EXTRA2). */
+static void hud_result_story(u8 step)
+{
+    static char next[] = "NEXT UP: 123456789";
+    u8 won = g_game_state.match_winner == 0;
+    const char *const *lines;
+    const char *team;
+    u8 i;
+
+    if (g_match_config.opponent == OPPONENT_NONE)
+        return;
+    if (step == HUD_STEP_EXTRA) {
+        /* Separate steps: 816-tcc fails (ICE 2) on a ternary as the index. */
+        lines = g_opponent_lines[g_match_config.opponent];
+        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_TEAM_RIGHT,
+            won ? lines[OPPONENT_LINE_CONCEDE] : lines[OPPONENT_LINE_TAUNT]);
+        return;
+    }
+    if (!won)
+        return;
+    if (g_match_config.opponent == OPPONENT_COUNT - 1) {
+        hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW,
+            "LADDER CLEARED!");
+        return;
+    }
+    team = g_opponent_team[g_save.settings.ladder < OPPONENT_COUNT ?
+        g_save.settings.ladder : 0];
+    for (i = 0; team[i]; ++i)
+        next[9 + i] = team[i];
+    next[9 + i] = 0;
+    hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, next);
+}
 
 /* Four digits, right-aligned; leading zeros are spaces, which the font
  * draws as dark cells like the box. Records saturate at SAVE_COUNTER_MAX.
@@ -599,8 +682,12 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         hud_record_line(TITLE_MENU_ROW + 8, "LONGEST RALLY",
             g_save.records.longest_rally);
         return 0;
-    default:
+    case 8:
         hud_record_ladder(TITLE_MENU_ROW + 9);
+        return 0;
+    default:
+        hud_record_line(TITLE_MENU_ROW + 10, "LADDER CLEARS",
+            g_save.records.ladder_clears);
         return 1;
     }
 }
@@ -688,6 +775,16 @@ static void hud_scene_step(u16 key, u8 step)
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
             from_title ? 6 + TITLE_AREA_ROWS : 7);
         hud_clear_rows(BANNER_ROW - 1, 4);
+        return;
+    }
+    if (key == HUD_KEY_INTRO) {
+        hud_intro_step(step);
+        return;
+    }
+    if (step >= HUD_STEP_EXTRA) {
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
+                key != HUD_KEY_PAUSED && !g_attract)
+            hud_result_story(step);
         return;
     }
     if (key == HUD_KEY_PAUSED) {

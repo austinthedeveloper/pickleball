@@ -35,6 +35,8 @@ sources the ROM uses).
 | OPT-01 | `test_options.c`: values, difficulty styles, slow-ball pattern, editor, first to 11 (ADR-025) | PASS |
 | OPT-02 | `test_options.c: test_difficulty_and_kid`: bot wins ordered KID >= EASY > MEDIUM > HARD; KID assist alone returns and wins | PASS |
 | OPT-03 | `test/smoke/options.timeline`: OPTIONS page, a KID match to 7, zero overruns | PASS (MesenCE smoke) |
+| STY-01 | `test_story.c`: intro card shows, can't be skipped instantly, ends by itself; ladder clears recorded; lines fit (ADR-026) | PASS |
+| STY-02 | `test/smoke/story.timeline`: DAD's intro card, B dismisses without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

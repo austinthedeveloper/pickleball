@@ -42,9 +42,12 @@ ADR-024.
   - Accept: his matches stop being a coin flip of balls hit out; his bot win rate sits between MARGE's and PETE's in the ADR-023 table.
 - [ ] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
   - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.
-- [ ] `M4-STORY-01` Story screens: an intro card per opponent (portrait, name, one line of trash talk) and a win or lose card.
-  - Accept: shown before and after ladder matches and skippable with B; portraits fit the BG2 portrait budget (ADR-020).
-- [ ] `M4-STORY-02` A ladder ending after beating CHAMPS (a champion screen, plus a "ladder clears" record).
+- [x] `M4-STORY-01` Story cards: an intro card per opponent (name, one line of trash talk, rung) and the opponent's line on the match result.
+  - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md), `test/test_story.c`, `story.timeline`. Uses the HUD over the live court; portraits are `M4-STORY-03`.
+- [x] `M4-STORY-02` A ladder ending after beating CHAMPS (CHAMPION!, plus a "ladder clears" record).
+  - Verified: ADR-026, `test_story.c`.
+- [ ] `M4-STORY-03` Opponent portraits on the intro card (BG2, like Player Select's).
+  - Accept: one portrait per team in palette roles; fits the BG2 portrait budget (ADR-020) and VRAM alongside the court.
 
 ## Options
 
@@ -65,7 +68,8 @@ ADR-024.
 
 ## Polish
 
-- [ ] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
+- [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
+  - Verified: ADR-026; `hud_panel` now uses the assembly fill, and doubles has zero overruns.
   - Accept: zero overruns on the doubles timeline and a 3,000-frame doubles soak, with a few scanlines of margin.
 
 - [ ] `M4-UI-01` Draw the title pages faster.

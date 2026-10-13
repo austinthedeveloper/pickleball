@@ -1,5 +1,5 @@
 {
-  "comment": "CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
@@ -14,6 +14,9 @@
   "opponents": [
     {
       "team": "HENDERSON", "venue": "PARK",
+      "intro": "DAD JOKES INCOMING, SPORT!",
+      "taunt": "THAT'S HOW IT'S DONE, SPORT!",
+      "concede": "GOOD GAME! WHO WANTS PIZZA?",
       "hud": [[31, 17, 4], [22, 10, 2]],
       "players": [
         {
@@ -40,6 +43,9 @@
     },
     {
       "team": "SNOWBIRDS", "venue": "LAKESIDE",
+      "intro": "WE'VE PLAYED SINCE 1962.",
+      "taunt": "AGE BEFORE BEAUTY, DEAR.",
+      "concede": "WELL PLAYED, YOUNGSTER!",
       "hud": [[29, 18, 22], [20, 10, 14]],
       "players": [
         {
@@ -66,6 +72,9 @@
     },
     {
       "team": "GYM BROS", "venue": "PARK",
+      "intro": "DO YOU EVEN DINK, BRO?",
+      "taunt": "NEW PERSONAL BEST, BRO!",
+      "concede": "BRO... THAT WAS SICK.",
       "hud": [[16, 31, 6], [8, 20, 2]],
       "players": [
         {
@@ -92,6 +101,9 @@
     },
     {
       "team": "PIRATES", "venue": "LAKESIDE",
+      "intro": "ARR! PREPARE TO BE BOARDED!",
+      "taunt": "YE WALK THE PLANK, MATEY!",
+      "concede": "ARR... KEEP THE TREASURE.",
       "hud": [[28, 10, 8], [16, 4, 4]],
       "players": [
         {
@@ -118,6 +130,9 @@
     },
     {
       "team": "GOTH CLUB", "venue": "SUNSET",
+      "intro": "THE KITCHEN IS OUR CRYPT.",
+      "taunt": "DARKNESS ALWAYS WINS.",
+      "concede": "HOW... DELIGHTFULLY GRIM.",
       "hud": [[20, 8, 28], [12, 3, 18]],
       "players": [
         {
@@ -144,6 +159,9 @@
     },
     {
       "team": "SURF CREW", "venue": "LAKESIDE",
+      "intro": "COWABUNGA, DUDE!",
+      "taunt": "TOTALLY TUBULAR, BRAH!",
+      "concede": "GNARLY GAME, DUDE. RESPECT.",
       "hud": [[6, 26, 28], [2, 16, 18]],
       "players": [
         {
@@ -170,6 +188,9 @@
     },
     {
       "team": "TWINS", "venue": "SUNSET",
+      "intro": "DOUBLE TROUBLE. READY?",
+      "taunt": "TWINS WIN! TWINS WIN!",
+      "concede": "WAIT... THAT WASN'T PLANNED.",
       "hud": [[8, 28, 26], [3, 18, 17]],
       "players": [
         {
@@ -196,6 +217,9 @@
     },
     {
       "team": "CHAMPS", "venue": "SUNSET",
+      "intro": "THE TITLE STAYS WITH US.",
+      "taunt": "THAT'S WHY WE'RE CHAMPS.",
+      "concede": "THE CROWN IS YOURS. EARNED.",
       "hud": [[31, 25, 6], [22, 15, 2]],
       "players": [
         {

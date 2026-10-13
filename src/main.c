@@ -13,6 +13,7 @@
 #include "render.h"
 #include "save.h"
 #include "select.h"
+#include "story.h"
 
 /* The court (title, attract, match) or Player Select (ADR-020). */
 enum { SCENE_MATCH = 0, SCENE_SELECT = 1 };
@@ -182,6 +183,8 @@ static void update_select(void)
     if (result == SELECT_DONE) {
         select_apply();
         game_start_match();
+        /* ADR-026: a ladder match opens with the opponent's intro card. */
+        story_begin_intro();
     } else {
         game_start_attract();
     }
@@ -244,8 +247,15 @@ int main(void)
         if (!render_stress_active())
 #endif
         {
-            update_controllers();
-            game_update(g_player_intents);
+            /* The match waits under a story card (ADR-026). The frame that
+             * closes it is the card's too: the serve buffers presses, so the
+             * closing B would otherwise serve. */
+            if (g_story.card != STORY_CARD_NONE) {
+                story_update(g_pad_snapshots[0].pressed);
+            } else {
+                update_controllers();
+                game_update(g_player_intents);
+            }
             PROFILE_MARK(1);
         }
         /* A new attract demo or a return to the title: palettes, ponytails

@@ -34,6 +34,11 @@ a CPU partner play the whole team. Win to face the next opponent the next
 time you start a match; lose and you face them again. After the Champs the
 ladder starts over. The records page shows your place.
 
+Before a ladder match, the opponent introduces themselves (press B to
+play). After the match they have something to say, and when you win the
+next opponent is named. Beat the Champs to clear the ladder: the records page
+counts your ladder clears.
+
 ## Court colours
 
 **COURT** picks where you play and the colours of the court surface, the

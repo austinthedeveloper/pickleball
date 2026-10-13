@@ -13,7 +13,8 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 4,           /* 2: settings (ADR-022); 3: venue; 4: options */
+    SAVE_VERSION = 5,           /* 2: settings (ADR-022); 3: venue; 4: options;
+                                   5: ladder clears (ADR-026) */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -25,6 +26,7 @@ typedef struct {
     u16 best_streak;
     u16 shutouts;               /* wins without conceding a point */
     u16 longest_rally;          /* shots in one point, serve included */
+    u16 ladder_clears;          /* wins over the last ladder opponent */
 } SaveRecords;
 
 /* Choices that persist (ADR-022). */
@@ -62,7 +64,7 @@ void save_clear_records(void);
  * on team 0). Updates the records and writes. */
 void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against);
 /* A win over a ladder opponent: the next one is up (after the last, the
- * first again). Written with the match. */
+ * first again, and a ladder clear is recorded). Written with the match. */
 void save_advance_ladder(void);
 /* A finished point with this many shots; written with the match. */
 void save_record_rally(u8 shots);

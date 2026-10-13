@@ -80,6 +80,12 @@ void save_clear(void)
     save_write();
 }
 
+static void save_bump(u16 *counter)
+{
+    if (*counter < SAVE_COUNTER_MAX)
+        ++*counter;
+}
+
 void save_clear_records(void)
 {
     memset(&g_save.records, 0, sizeof(g_save.records));
@@ -107,17 +113,16 @@ void save_initialize(void)
     }
 }
 
-static void save_bump(u16 *counter)
-{
-    if (*counter < SAVE_COUNTER_MAX)
-        ++*counter;
-}
 
 void save_advance_ladder(void)
 {
     u8 next = g_save.settings.ladder + 1;
 
-    g_save.settings.ladder = next >= OPPONENT_COUNT ? 0 : next;
+    if (next >= OPPONENT_COUNT) {
+        next = 0;
+        save_bump(&g_save.records.ladder_clears);
+    }
+    g_save.settings.ladder = next;
 }
 
 void save_record_rally(u8 shots)

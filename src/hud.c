@@ -99,14 +99,20 @@ void hud_number(u8 col, u8 row, u8 palette, u8 value)
     hud_mark(row);
 }
 
+/* Edges as one assembly fill per row (hud_fill_box): a C loop over a wide
+ * panel cost 816-tcc about 60 scanlines (ADR-026). */
 void hud_panel(u8 col, u8 row, u8 inner_cols)
 {
-    u8 x;
     u8 right = col + inner_cols + 1;
     u16 top = (u16)row * 32;
     u16 mid = top + 32;
     u16 bottom = mid + 32;
 
+    hud_fill_box(col + 1, row, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0));
+    hud_fill_box(col + 1, row + 1, inner_cols, 1, hud_entry(HUD_SPACE, 0));
+    hud_fill_box(col + 1, row + 2, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP);
     g_hud_map[top + col] = hud_entry(HUD_TILE_PANEL_TL, 0);
     g_hud_map[top + right] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP;
     g_hud_map[bottom + col] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_VFLIP;
@@ -114,14 +120,6 @@ void hud_panel(u8 col, u8 row, u8 inner_cols)
         hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP | HUD_VFLIP;
     g_hud_map[mid + col] = hud_entry(HUD_TILE_PANEL_L, 0);
     g_hud_map[mid + right] = hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
-    for (x = col + 1; x < right; ++x) {
-        g_hud_map[top + x] = hud_entry(HUD_TILE_PANEL_T, 0);
-        g_hud_map[mid + x] = hud_entry(HUD_SPACE, 0);
-        g_hud_map[bottom + x] = hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP;
-    }
-    hud_mark(row);
-    hud_mark(row + 1);
-    hud_mark(row + 2);
 }
 
 /* Index into HUD_BIG_CHARS ("A-Z0-9'!") without searching. */
