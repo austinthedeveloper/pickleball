@@ -57,6 +57,11 @@ ADR-024.
 - [x] `M4-OPT-02` KID auto-serve: serve automatically after a short wait so a kid never needs a button.
   - Verified: ADR-025 (amended), `test_options.c` (a P1 with no button presses serves, returns, and wins 8 of 8).
 
+## Pause
+
+- [x] `M4-PAUSE-01` Pause menu: RESUME, RESTART, MAIN MENU in matches and practice.
+  - Verified: [ADR-030](../docs/decisions/ADR-030-pause-menu.md), `test/test_pause_menu.c`, `pause.timeline`.
+
 ## Practice
 
 - [x] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").

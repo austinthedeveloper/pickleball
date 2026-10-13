@@ -8,6 +8,7 @@
 #include "input.h"
 #include "match.h"
 #include "options.h"
+#include "pause_menu.h"
 #include "practice.h"
 #include "sfx.h"
 #include "player.h"
@@ -33,6 +34,25 @@ static void ui_sounds(u16 pressed)
         audio_ui(SFX_CONFIRM);
     else if (pressed & (PAD_UP | PAD_DOWN | PAD_LEFT | PAD_RIGHT))
         audio_ui(SFX_BLIP);
+}
+
+/* Pause menu (ADR-030): RESUME, RESTART, or MAIN MENU. Nonzero when it
+ * acted, so this frame's buttons (a B) do not reach the match. */
+static u8 update_pause_menu(u16 pressed)
+{
+    u8 action = pause_input(pressed);
+
+    if (action == PAUSE_STAY)
+        return 0;
+    g_game_state.paused = 0;
+    if (action == PAUSE_DO_RESTART) {
+        game_new_match();
+    } else if (action == PAUSE_DO_MAIN_MENU) {
+        if (g_match_config.practice)
+            practice_finish();
+        game_start_attract();
+    }
+    return 1;
 }
 
 /* B after a ladder win (ADR-023): the next opponent, with their intro card
@@ -325,7 +345,15 @@ int main(void)
                 /* Pause, unpause, or back to the title. */
                 if (!g_attract && g_player_intents[0].pause_pressed)
                     audio_ui(SFX_BLIP);
-                game_update(g_player_intents);
+                if (g_game_state.paused && !g_attract) {
+                    ui_sounds(g_pad_snapshots[0].pressed & ~PAD_START);
+                    if (!update_pause_menu(g_pad_snapshots[0].pressed))
+                        game_update(g_player_intents);
+                } else {
+                    game_update(g_player_intents);
+                    if (g_game_state.paused)
+                        pause_begin();      /* just paused: on RESUME */
+                }
             }
             if (g_next_opponent)
                 start_next_opponent();

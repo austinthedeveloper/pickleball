@@ -21,7 +21,13 @@ Player Select (or the court, records, or options page).
 Press B, choose your player and paddle, and the machine starts feeding. Every
 return that lands in adds to your streak (P1 on the scoreboard), and your
 best streak is saved. Ball speed and the KID swing assist follow your
-OPTIONS difficulty. Start returns to the title.
+OPTIONS difficulty. Start pauses; choose MAIN MENU to leave.
+
+## Pause
+
+Start pauses a match or practice. Up/Down picks **RESUME**, **RESTART**
+(the same match from 0-0, or a fresh practice session), or **MAIN MENU**,
+and B chooses. Start or Y also resumes.
 
 ## Options
 
@@ -111,7 +117,7 @@ partner. The CPUs take the remaining colours.
 | B | Standard swing. When you're holding the ball, B (or A/Y) serves. |
 | A | Drive: a faster, flatter shot. Mistimed drives spray wider. |
 | Y | Lob: a slow, high shot deep over an opponent at the net. With the D-pad away from the net, it's a dink that lands softly in the opponent's kitchen. |
-| Start | Open Player Select from the title; pause and unpause during play; back to the title from the result screen. |
+| Start | Open Player Select from the title; pause and unpause during play (in practice too); back to the title from the result screen. |
 | Select | Debug and hardware-test ROMs only: OBJ stress scene. |
 
 **Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep. Away from the net (Left) hits short, a drop shot near the kitchen.

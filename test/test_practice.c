@@ -136,15 +136,15 @@ static void test_streaks(void)
     assert(g_save.records.practice_best == (u16)kid_best);
 }
 
-/* Start leaves practice for the title (attract) and keeps the best. */
+/* Leaving through the pause menu's MAIN MENU (ADR-030) saves the best:
+ * main.c calls practice_finish, then returns to the title. */
 static void test_exit(void)
 {
     start(PRACTICE_SHOT_DRIVE, PRACTICE_TARGET_AT_YOU, PRACTICE_RATE_FAST,
         DIFFICULTY_MEDIUM);
     g_practice.best = 7;
-    memset(intents, 0, sizeof(intents));
-    intents[0].pause_pressed = 1;
-    game_update(intents);
+    practice_finish();
+    game_start_attract();
     assert(g_attract);
     assert(!g_match_config.practice);
     assert(g_save.records.practice_best == 7);

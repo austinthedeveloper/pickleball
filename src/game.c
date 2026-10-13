@@ -265,12 +265,6 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 void game_update(const PlayerIntent intents[MAX_PLAYERS])
 {
     ++g_game_state.frame_count;
-    /* Practice (ADR-028): Start returns to the title. */
-    if (g_match_config.practice && intents[0].pause_pressed && !g_attract) {
-        practice_finish();
-        game_start_attract();
-        return;
-    }
     /* Start pauses; on the match result it returns to the title. */
     if (intents[0].pause_pressed && !g_attract &&
             g_game_state.phase != GAME_PHASE_MATCH_RESULT)

@@ -11,6 +11,7 @@
 #include "court_style.h"
 #include "audio_events.h"
 #include "options.h"
+#include "pause_menu.h"
 #include "practice.h"
 #include "save.h"
 #include "story.h"
@@ -257,7 +258,11 @@ static void hud_draw_scores(void)
  * staged redraw. Game phases use their own value (with winner/fault bits for
  * results); these special keys sit above that range.
  */
-#define HUD_KEY_PAUSED 0x80
+#define HUD_KEY_PAUSED 0x80        /* | the menu choice (ADR-030) */
+#define HUD_IS_PAUSED(k) (((k) & ~3u) == HUD_KEY_PAUSED)
+#define PAUSE_BOX_COL 9
+#define PAUSE_BOX_ROW 9             /* header, gap, 3 items: rows 9-13 */
+#define PAUSE_BOX_WIDTH 14
 #define HUD_KEY_TITLE 0x100
 #define HUD_KEY_TITLE_BLINK 0x101
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
@@ -323,15 +328,14 @@ static u16 hud_scene_key(void)
 
     if (g_story.card == STORY_CARD_INTRO)
         return HUD_KEY_INTRO;
+    if (g_game_state.paused && !g_attract)
+        return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
         return HUD_KEY_PRACTICE;
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
             HUD_KEY_TITLE) | (g_title_page << 1);
-
-    if (g_game_state.paused)
-        return HUD_KEY_PAUSED;
     if (phase == GAME_PHASE_SERVE_TOSS || phase == GAME_PHASE_SERVE_FAULT)
         phase = GAME_PHASE_LIVE;
     if (phase == GAME_PHASE_SERVE_SETUP)
@@ -902,6 +906,28 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
     }
 }
 
+/* Pause menu (ADR-030): a box with PAUSED and the three choices. */
+static void hud_pause_step(u8 step)
+{
+    u8 i;
+    u8 on;
+
+    if (step == HUD_STEP_PROMPT) {
+        hud_fill_box(PAUSE_BOX_COL, PAUSE_BOX_ROW, PAUSE_BOX_WIDTH, 5,
+            hud_entry(' ', HUD_PAL_WHITE));
+        hud_text(PAUSE_BOX_COL + 4, PAUSE_BOX_ROW, HUD_PAL_YELLOW, "PAUSED");
+    } else if (step == HUD_STEP_EXTRA) {
+        for (i = 0; i < PAUSE_CHOICES; ++i) {
+            on = i == g_pause_choice;
+            hud_tile(PAUSE_BOX_COL + 1, PAUSE_BOX_ROW + 2 + i, on ?
+                hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
+                hud_entry(' ', HUD_PAL_WHITE));
+            hud_text(PAUSE_BOX_COL + 3, PAUSE_BOX_ROW + 2 + i,
+                on ? HUD_PAL_YELLOW : HUD_PAL_WHITE, pause_choice_name(i));
+        }
+    }
+}
+
 static void hud_scene_step(u16 key, u8 step)
 {
     u8 winner = g_game_state.point_winner;
@@ -924,18 +950,16 @@ static void hud_scene_step(u16 key, u8 step)
     }
     if (key == HUD_KEY_PRACTICE) {
         if (step == HUD_STEP_PROMPT)
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "START  MENU");
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "START  PAUSE");
+        return;
+    }
+    if (HUD_IS_PAUSED(key)) {
+        hud_pause_step(step);
         return;
     }
     if (step >= HUD_STEP_EXTRA) {
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
-                key != HUD_KEY_PAUSED && !g_attract)
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT && !g_attract)
             hud_result_story(step);
-        return;
-    }
-    if (key == HUD_KEY_PAUSED) {
-        if (step == HUD_STEP_PROMPT)
-            hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, "PAUSED");
         return;
     }
     switch (g_game_state.phase) {
@@ -996,6 +1020,9 @@ void hud_scene_update(void)
          * changed the page (a recolour or a reload can share it). */
         s_scene_step = (s_hud_valid && HUD_IS_TITLE(key) &&
             HUD_IS_TITLE(s_prev_scene)) ? HUD_STEP_BIG : HUD_STEP_CLEAR;
+        /* The pause cursor moved: only the items redraw (no flicker). */
+        if (s_hud_valid && HUD_IS_PAUSED(key) && HUD_IS_PAUSED(s_prev_scene))
+            s_scene_step = HUD_STEP_EXTRA;
     }
     /* Title steps also wait for a lighter frame (the demo runs behind). */
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
@@ -1020,7 +1047,7 @@ void hud_scene_update(void)
     s_hud_valid = 1;
 
 #ifdef RENDER_DIAGNOSTICS
-    diag_draw_overlay(key == HUD_KEY_PAUSED);
+    diag_draw_overlay(HUD_IS_PAUSED(key));
 #endif
 }
 

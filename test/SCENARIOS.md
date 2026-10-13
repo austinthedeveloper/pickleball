@@ -43,6 +43,8 @@ sources the ROM uses).
 | PRA-03 | `test/smoke/practice.timeline`: page, Player Select, session, exit | PASS (MesenCE smoke) |
 | AUD-01 | `test_audio.c`: event to effect, pitch by shot, pan, crowd by rally, NO CROWD / OFF, attract silent (ADR-029) | PASS |
 | AUD-02 | MesenCE SPC700 voice probe: voices sound for menus, practice, and the golden match | PASS (MesenCE) |
+| PAU-01 | `test_pause_menu.c`: choices, actions, Start toggling, practice pausing (ADR-030) | PASS |
+| PAU-02 | `test/smoke/pause.timeline`: pause, MAIN MENU, back to the title | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

@@ -13,7 +13,8 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
 2. **Player Select (1P):** your look and paddle (its stats apply).
 3. **The session:** you alone on the left. A ball machine on the far
    baseline (x 232, centred) feeds balls from its nozzle, 8 px up. Start
-   returns to the title.
+   pauses, and the pause menu's MAIN MENU leaves (*amended by ADR-030*; it
+   used to leave at once).
 
 | Setting | Values | Default |
 |---|---|---|

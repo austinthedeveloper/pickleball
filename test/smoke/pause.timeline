@@ -1,0 +1,13 @@
+# Pause menu (ADR-030): a match, Start pauses, Down twice to MAIN MENU,
+# B returns to the title.
+70 71 start
+110 111 start      # confirm Player Select
+200 201 b          # dismiss the intro card (after its minimum)
+250 251 start      # pause
+shot 270
+280 281 down
+shot 290
+290 291 down
+shot 300
+320 321 b          # MAIN MENU
+shot 380
