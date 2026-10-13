@@ -13,14 +13,10 @@
 #include "profile.h"
 #include "projection.h"
 #include "render.h"
+#include "render_internal.h"
+#include "hud_scene.h"
 #include "serve.h"
 
-#define CGRAM_OBJ 128
-#define OBJ_PRIORITY 2
-#define BANNER_ROW 24
-#define CENTER_BIG_ROW 8
-#define CENTER_PANEL_ROW 11
-#define TITLE_ROW 7
 
 extern char court_tiles, court_tiles_end;
 extern char court_map, court_map_end;
@@ -42,13 +38,6 @@ static u16 s_player_palettes[2][16];
 static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
 
-/* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
-static u8 s_hud_score[2];
-static u8 s_hud_scene;
-static u8 s_hud_valid;
-#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
-static u8 s_hud_debug_build_shown;
-#endif
 
 void render_apply_match_config(void)
 {
@@ -93,7 +82,7 @@ typedef char oam_accessories_after_effects[
 typedef char oam_hidden_after_accessories[
     (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
 
-/* Inputs for oam_write (src/asm/oam_write.asm). */
+/* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
 s16 oam_in_x;
 s16 oam_in_y;
@@ -102,25 +91,8 @@ u8 oam_in_attr;
 u8 oam_in_large;
 u8 oam_tmp_bits;
 u8 oam_tmp_mask;
-extern void oam_write(void);
 
-#define OBJ_ATTR(palette, hflip) \
-    ((OBJ_PRIORITY << 4) | ((palette) << 1) | ((hflip) << 6))
-
-/* A macro, not a function: 816-tcc's six stack arguments cost more than the
- * OAM write itself. */
-#define obj_put(id, x, y, tile, attr, large) \
-    do { \
-        oam_in_id = (id); \
-        oam_in_x = (x); \
-        oam_in_y = (y); \
-        oam_in_tile = (tile); \
-        oam_in_attr = (attr); \
-        oam_in_large = (large); \
-        oam_write(); \
-    } while (0)
-
-static void obj_hide(u8 id)
+void render_obj_hide(u8 id)
 {
     oam_in_id = id;
     oam_in_x = 0;
@@ -160,8 +132,8 @@ static void render_player(const Player *player, u8 body_id, u8 shadow_id)
 
     memcpy(&s_rp, player, sizeof(Player));
     if (!s_rp.active) {
-        obj_hide(body_id);
-        obj_hide(shadow_id);
+        render_obj_hide(body_id);
+        render_obj_hide(shadow_id);
         return;
     }
     y = FROM_FP(s_rp.y_fp);
@@ -179,6 +151,16 @@ static void render_player(const Player *player, u8 body_id, u8 shadow_id)
  */
 static s16 s_depth[MAX_PLAYERS];
 static u8 s_active_bodies;
+
+void render_reset_bodies(void)
+{
+    s_active_bodies = 0xff;
+}
+
+void render_request_palettes(void)
+{
+    s_palette_dirty = 1;
+}
 
 static void render_players(void)
 {
@@ -210,9 +192,9 @@ static void render_players(void)
         s_active_bodies = i;
         for (j = 0; j < MAX_PLAYERS; ++j) {
             if (j >= i)
-                obj_hide(RENDER_OAM_BODIES + j);
+                render_obj_hide(RENDER_OAM_BODIES + j);
             if (s_depth[j] == -32767)
-                obj_hide(RENDER_OAM_SHADOWS + j);
+                render_obj_hide(RENDER_OAM_SHADOWS + j);
         }
     }
 }
@@ -225,8 +207,8 @@ static void render_ball(void)
     s16 sx;
 
     if (!g_ball.active) {
-        obj_hide(RENDER_OAM_BALL);
-        obj_hide(RENDER_OAM_BALL_SHADOW);
+        render_obj_hide(RENDER_OAM_BALL);
+        render_obj_hide(RENDER_OAM_BALL_SHADOW);
         return;
     }
     x = FROM_FP(g_ball.x_fp);
@@ -250,7 +232,7 @@ static void render_effects(void)
             (g_game_state.spark_timer & 2) ? OBJTILE_SPARK :
             OBJTILE_SPARK_SMALL, OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
     } else {
-        obj_hide(RENDER_OAM_SPARK);
+        render_obj_hide(RENDER_OAM_SPARK);
     }
 
 #ifdef BUILD_DEBUG
@@ -260,367 +242,18 @@ static void render_effects(void)
             g_ai.predicted_land_y - 4, OBJTILE_SPARK_SMALL,
             OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
     } else {
-        obj_hide(RENDER_OAM_DEBUG_MARKER);
+        render_obj_hide(RENDER_OAM_DEBUG_MARKER);
     }
 #else
-    obj_hide(RENDER_OAM_DEBUG_MARKER);
+    render_obj_hide(RENDER_OAM_DEBUG_MARKER);
 #endif
 }
-
-/* ---- HUD ------------------------------------------------------------- */
-
-static const char *fault_word(u8 fault)
-{
-    switch (fault) {
-    case GAME_FAULT_NET:
-        return "NET!";
-    case GAME_FAULT_KITCHEN:
-        return "KITCHEN!";
-    case GAME_FAULT_WRONG_BOX:
-        return "FAULT!";
-    case GAME_FAULT_OUT:
-        return "OUT!";
-    case GAME_FAULT_SECOND_BOUNCE:
-        return "2 BOUNCES";
-    case GAME_FAULT_EARLY_VOLLEY:
-        return "VOLLEY!";
-    default:
-        return "POINT!";
-    }
-}
-
-static u8 team_hud_palette(u8 team)
-{
-    return team ? HUD_PAL_TEAM_RIGHT : HUD_PAL_TEAM_LEFT;
-}
-
-/* Score digits only; tens are drawn as a leading digit or a blank. */
-static void hud_draw_score_digits(void)
-{
-    static const char digits[] = "0123456789";
-    char text[3];
-    u8 team;
-    u8 score;
-
-    for (team = 0; team < 2; ++team) {
-        score = g_game_state.team_score[team];
-        text[0] = ' ';
-        while (score >= 10) {      /* no 816-tcc division */
-            score -= 10;
-            text[0] = text[0] == ' ' ? '1' : text[0] + 1;
-        }
-        text[1] = digits[score];
-        text[2] = 0;
-        hud_text(team ? 28 : 6, 2, HUD_PAL_WHITE, text);
-    }
-    s_hud_score[0] = g_game_state.team_score[0];
-    s_hud_score[1] = g_game_state.team_score[1];
-}
-
-/* Panels and labels never change during a match; drawn on full redraws. */
-static void hud_draw_scores(void)
-{
-    hud_clear_rows(1, 3);
-    hud_panel(1, 1, 6);
-    hud_text(2, 2, team_hud_palette(0), "P1");
-    hud_panel(9, 1, 12);
-    hud_text(10, 2, HUD_PAL_YELLOW, "ARCADE RULES");
-    hud_panel(23, 1, 6);
-    hud_text(24, 2, team_hud_palette(1), "CPU");
-    hud_draw_score_digits();
-}
-
-static void hud_center_big(u8 row, u8 palette, const char *text)
-{
-    hud_big_text((u8)(16 - hud_big_width(text) / 2), row, palette, text);
-}
-
-/* Centered three-row panel with a B button glyph replacing '@'. */
-static void hud_center_prompt(u8 row, u8 palette, const char *text)
-{
-    u8 len = 0;
-    u8 col;
-    const char *p = text;
-
-    while (*p++)
-        ++len;
-    col = (u8)(16 - (len + 2) / 2);
-    hud_panel(col, row, len);
-    hud_text(col + 1, row + 1, palette, text);
-    p = text;
-    while (*p) {
-        if (*p == '@')
-            hud_tile(col + 1 + (u8)(p - text), row + 1,
-                HUD_TILE_BUTTON_B | (HUD_PAL_YELLOW << 10) | 0x2000);
-        ++p;
-    }
-}
-
-#define HUD_KEY_TITLE 0x40
-#define HUD_KEY_TITLE_BLINK 0x41
-
-static u8 hud_scene_key(void)
-{
-    u8 phase = g_game_state.phase;
-
-    if (g_attract)
-        return (g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
-            HUD_KEY_TITLE;
-
-    if (g_game_state.paused)
-        return 0x80;
-    if (phase == GAME_PHASE_SERVE_TOSS || phase == GAME_PHASE_SERVE_FAULT)
-        phase = GAME_PHASE_LIVE;
-    if (phase == GAME_PHASE_SERVE_SETUP)
-        return phase | (g_game_state.serving_team << 4);
-    if (phase == GAME_PHASE_POINT_RESULT || phase == GAME_PHASE_MATCH_RESULT)
-        return phase | (g_game_state.point_winner << 4) |
-            ((g_game_state.last_fault & 7) << 5);
-    return phase;
-}
-
-#define HUD_IS_TITLE(k) ((k) == HUD_KEY_TITLE || (k) == HUD_KEY_TITLE_BLINK)
-
-/*
- * Scene overlays are drawn in three steps on consecutive frames (clear, big
- * text, prompt). Doing all three on the frame a point ends made that one
- * frame overrun; spread out, no frame does more than one step.
- */
-enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
-       HUD_STEP_DONE = 3 };
-
-static u8 s_scene_step;
-static u8 s_prev_scene;
-
-static void hud_scene_step(u8 key, u8 step)
-{
-    u8 winner = g_game_state.point_winner;
-    u8 from_title = HUD_IS_TITLE(s_prev_scene);
-
-    if (HUD_IS_TITLE(key)) {
-        if (step == HUD_STEP_CLEAR && !from_title)
-            hud_clear_rows(CENTER_BIG_ROW - 2, 9);
-        else if (step == HUD_STEP_BIG && !from_title) {
-            hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
-            hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
-        } else if (step == HUD_STEP_PROMPT) {
-            /* Only the prompt blinks; the logo stays. */
-            hud_clear_rows(BANNER_ROW - 1, 4);
-            if (key == HUD_KEY_TITLE)
-                hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
-        }
-        return;
-    }
-
-    if (step == HUD_STEP_CLEAR) {
-        hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 9 : 7);
-        hud_clear_rows(BANNER_ROW - 1, 4);
-        return;
-    }
-    if (key == 0x80) {
-        if (step == HUD_STEP_PROMPT)
-            hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, "PAUSED");
-        return;
-    }
-    switch (g_game_state.phase) {
-    case GAME_PHASE_SERVE_SETUP:
-        if (step != HUD_STEP_PROMPT)
-            break;
-        if (g_game_state.serving_team == 0)
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS @ TO SERVE");
-        else
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "CPU TO SERVE");
-        break;
-    case GAME_PHASE_POINT_RESULT:
-        if (step == HUD_STEP_BIG)
-            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
-                fault_word(g_game_state.last_fault));
-        else
-            hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
-                winner == 0 ? "P1 POINT" : "CPU POINT");
-        break;
-    case GAME_PHASE_MATCH_RESULT:
-        if (step == HUD_STEP_BIG)
-            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
-                g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS");
-        else
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                "PRESS @ TO REMATCH");
-        break;
-    default:
-        break;
-    }
-}
-
-#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
-extern u16 g_overrun_frames;
-static const char s_hex[] = "0123456789ABCDEF";
-static char s_debug_line[20];
-
-/* Hex only: 816-tcc division is far too slow for a per-frame overlay. */
-static void debug_hex(u8 at, u16 value)
-{
-    s_debug_line[at] = s_hex[(value >> 8) & 15];
-    s_debug_line[at + 1] = s_hex[(value >> 4) & 15];
-    s_debug_line[at + 2] = s_hex[value & 15];
-}
-
-static void hud_draw_debug(void)
-{
-    static const char req[3] = { '-', 'S', 'R' };
-
-    debug_hex(0, (u16)FROM_FP(g_players[0].x_fp));
-    s_debug_line[3] = ',';
-    debug_hex(4, (u16)FROM_FP(g_players[0].y_fp));
-    s_debug_line[7] = ' ';
-    s_debug_line[8] = req[g_game_state.required_bounce % 3];
-    s_debug_line[9] = '0' + g_game_state.phase;
-    s_debug_line[10] = ' ';
-    s_debug_line[11] = 'O';
-    debug_hex(12, g_overrun_frames);
-    s_debug_line[15] = 0;
-    hud_text(0, 0, HUD_PAL_WHITE, s_debug_line);
-}
-#endif
-
-static void render_hud(void)
-{
-    u8 key;
-
-    /* Spread big redraws over frames: a score change and a scene change on
-     * the same frame (every point) would overrun 816-tcc's budget. */
-    u8 busy = 0;
-
-    if (!s_hud_valid)
-        hud_draw_scores();
-    else if (s_hud_score[0] != g_game_state.team_score[0] ||
-             s_hud_score[1] != g_game_state.team_score[1]) {
-        hud_draw_score_digits();
-        busy = 1;               /* the scene step waits one frame */
-    }
-
-    key = hud_scene_key();
-    if (!s_hud_valid || key != s_hud_scene) {
-        s_prev_scene = s_hud_valid ? s_hud_scene : 0xff;
-        s_hud_scene = key;
-        s_scene_step = HUD_STEP_CLEAR;
-    }
-    if (s_scene_step < HUD_STEP_DONE && !busy) {
-        PROFILE_MARK(15);
-        hud_scene_step(key, s_scene_step);
-        ++s_scene_step;
-    }
-    s_hud_valid = 1;
-
-#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
-    hud_draw_debug();
-    if (key == 0x80 && !s_hud_debug_build_shown) {
-        hud_text(0, 26, HUD_PAL_WHITE,
-            g_multitap_present ? "MULTITAP: YES" : "MULTITAP: NO");
-        hud_text(0, 27, HUD_PAL_WHITE, BUILD_ID_STRING);
-        s_hud_debug_build_shown = 1;
-    } else if (key != 0x80 && s_hud_debug_build_shown) {
-        hud_clear_rows(26, 2);
-        s_hud_debug_build_shown = 0;
-    }
-#endif
-}
-
-#ifdef RENDER_DIAGNOSTICS
-/*
- * OBJ stress scene (M3-OBJ-01/02, M3-ASSET-03). Every object below overlaps
- * screen row 148, the worst planned row from ADR-014:
- *   4 bodies x 4 slivers (OAM 2-5)          16
- *   4 player shadows (OAM 6-9)               4
- *   4 accessory placeholders (OAM 14-17)     4
- *   ball + ball shadow (OAM 0-1)             2
- *   4 impact effects (OAM 10-13)             4
- *                                    total  30 of 34
- * Bodies use OBJ palettes 0-3 loaded with all four composed team palettes
- * (one shared tile set), rotate palettes every 64 frames, flip every 32,
- * and step through every frame slot. The PPU's range/time-over flags are
- * latched in g_obj_overflow_frames.
- */
-#define STRESS_ROW 150
-static u8 s_stress;
-static u8 s_stress_timer;
-static u16 s_stress_palettes[4][16];
-static const u16 s_stress_frames[11] = {
-    FRAME_IDLE0, FRAME_IDLE1, FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3,
-    FRAME_WINDUP, FRAME_SWING, FRAME_FOLLOW, FRAME_TOSS, FRAME_CHEER
-};
-static const s16 s_stress_x[4] = { 40, 96, 152, 208 };
-
-u8 render_stress_active(void)
-{
-    return s_stress;
-}
-
-void render_stress_toggle(void)
-{
-    u8 i;
-
-    s_stress = !s_stress;
-    s_stress_timer = 0;
-    for (i = 0; i < RENDER_OAM_FIRST_HIDDEN; ++i)
-        obj_hide(i);
-    for (i = 0; i < 4; ++i)
-        match_compose_parts(i, 0, i, s_stress_palettes[i]);
-    s_palette_dirty = 1;
-    s_active_bodies = 0xff;
-    s_hud_valid = 0;
-    hud_clear_rows(4, 24);
-    g_obj_overflow_frames = 0;
-}
-
-static void render_stress(void)
-{
-    u8 i;
-    u8 pal;
-    u8 frame;
-    s16 x;
-
-    ++s_stress_timer;
-    for (i = 0; i < 4; ++i) {
-        x = s_stress_x[i];
-        pal = (u8)((i + (s_stress_timer >> 6)) & 3);
-        frame = (u8)(((s_stress_timer >> 3) + i * 3) % 11);
-        obj_put(RENDER_OAM_BODIES + i, x - PLAYER_SPRITE_HALF_WIDTH,
-            STRESS_ROW - PLAYER_SPRITE_FOOT_Y, s_stress_frames[frame],
-            OBJ_ATTR(pal, ((s_stress_timer >> 5) + i) & 1), 1);
-        obj_put(RENDER_OAM_SHADOWS + i, x - 4, STRESS_ROW - 4,
-            OBJTILE_PLAYER_SHADOW, OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
-        obj_put(RENDER_OAM_ACCESSORIES + i, x + 10, STRESS_ROW - 6,
-            OBJTILE_SPARK_SMALL, OBJ_ATTR(pal, 0), 0);
-        obj_put(RENDER_OAM_SPARK + i, x + 18, STRESS_ROW - 6,
-            (s_stress_timer & 4) ? OBJTILE_SPARK : OBJTILE_SPARK_SMALL,
-            OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
-    }
-    obj_put(RENDER_OAM_BALL, 120, STRESS_ROW - 6, OBJTILE_BALL,
-        OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
-    obj_put(RENDER_OAM_BALL_SHADOW, 124, STRESS_ROW - 4, OBJTILE_BALL_SHADOW,
-        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
-
-    if (!s_hud_valid) {
-        hud_clear_rows(4, 24);
-        hud_center_prompt(5, HUD_PAL_YELLOW, "OBJ STRESS 30/34");
-        hud_text(2, 22, HUD_PAL_WHITE, "4 PALETTES, 1 TILE SET");
-        hud_text(2, 24, HUD_PAL_WHITE, "SELECT: BACK TO GAME");
-        s_hud_valid = 1;
-    }
-    hud_text(2, 9, HUD_PAL_WHITE,
-        g_obj_overflow_frames ? "OBJ OVERFLOW: YES" : "OBJ OVERFLOW: NO ");
-    hud_text(2, 10, HUD_PAL_WHITE,
-        g_multitap_present ? "MULTITAP: YES" : "MULTITAP: NO ");
-}
-#endif
 
 void render_prepare(void)
 {
 #ifdef RENDER_DIAGNOSTICS
-    if (s_stress) {
-        render_stress();
+    if (render_stress_active()) {
+        diag_stress_render();
         return;
     }
 #endif
@@ -629,7 +262,7 @@ void render_prepare(void)
     render_ball();
     render_effects();
     PROFILE_MARK(3);
-    render_hud();
+    hud_scene_update();
 }
 
 void render_commit(void)
@@ -639,16 +272,8 @@ void render_commit(void)
     if (REG_STAT77_FLAGS & 0xC0)
         ++g_obj_overflow_frames;
 #ifdef RENDER_DIAGNOSTICS
-    if (s_palette_dirty && s_stress) {
-        dmaCopyCGram((u8 *)s_stress_palettes, CGRAM_OBJ, 4 * 32);
+    if (s_palette_dirty && diag_upload_palettes())
         s_palette_dirty = 0;
-    } else if (s_palette_dirty && !s_stress) {
-        /* Leaving the stress scene restores objects and flash too. */
-        dmaCopyCGram((u8 *)&objects_palette,
-            CGRAM_OBJ + RENDER_OBJPAL_OBJECTS * 16, 32);
-        dmaCopyCGram((u8 *)g_pal_flash,
-            CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
-    }
 #endif
     if (s_palette_dirty)
         render_upload_palettes();
@@ -662,22 +287,17 @@ void render_initialize(void)
     /* RAM is not cleared at power-on (real hardware or emulators that
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
-    s_hud_valid = 0;
-    s_hud_scene = 0;
-    s_scene_step = HUD_STEP_DONE;
-    s_prev_scene = 0xff;
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
+    hud_scene_initialize();
 #ifdef RENDER_DIAGNOSTICS
-    s_hud_debug_build_shown = 0;
-    s_stress = 0;
-    s_stress_timer = 0;
+    diag_initialize();
 #endif
 
     setScreenOff();
     oamInit();
     for (i = 0; i < 128; ++i)
-        obj_hide(i);
+        render_obj_hide(i);
 
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR,
         (u16)(&court_tiles_end - &court_tiles));
@@ -717,7 +337,7 @@ void render_initialize(void)
     setColorEffect(0x02, 0x50);
 
     hud_initialize();
-    s_hud_valid = 0;
+    hud_scene_invalidate();
     render_prepare();
     hud_commit_all();
     setScreenOn();

@@ -28,6 +28,10 @@ void hud_tile(u8 col, u8 row, u16 entry);
 void hud_panel(u8 col, u8 row, u8 inner_cols);
 void hud_big_text(u8 col, u8 row, u8 palette, const char *text);
 u8 hud_big_width(const char *text);
+/* Big text centred on the 32-column map. */
+void hud_center_big(u8 row, u8 palette, const char *text);
+/* Centred three-row panel; '@' in the text draws the B button glyph. */
+void hud_center_prompt(u8 row, u8 palette, const char *text);
 /* DMA up to three dirty 4-row bands; call only inside VBlank. */
 void hud_commit(void);
 /* Uploads every dirty band; forced blank only. */

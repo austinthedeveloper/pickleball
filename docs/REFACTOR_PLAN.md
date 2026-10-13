@@ -24,7 +24,7 @@ gameplay.
 |---|---|---|---|---|
 | R0 | Golden trace tool: record per-frame simulation state from a scripted MesenCE run and diff it after each change | Makes every later item provably behavior-preserving on the real ROM, not just in host tests | High | Done |
 | R1 | Promote the scratchpad tools into the repo: `tools/mesen_probe.py` (symbol-resolved memory probes) and `tools/match_stats.c` (bot-vs-CPU balance stats) | Profiling and CPU tuning were only possible from a private scratchpad | High | Done |
-| R2 | Split `src/render.c` (~750 lines) into `render.c` (OAM/sprites/palettes), `hud_scene.c` (score panels and scene overlays), and `diagnostics.c` (debug overlay, stress scene) | One file mixes three concerns; the HUD state machine is hard to follow | High | Open |
+| R2 | Split `src/render.c` (~750 lines) into `render.c` (OAM/sprites/palettes), `hud_scene.c` (score panels and scene overlays), and `diagnostics.c` (debug overlay, stress scene) | One file mixes three concerns; the HUD state machine is hard to follow | High | Done |
 | R3 | Move scanline/overrun/profiler code from `main.c` to `src/profile.c` | `main.c` should read as the frame pipeline from `02_TECHNICAL_PLAN.md` | Medium | Open |
 | R4 | One shared aim → target function for serves and rally shots, defined for the left team and mirrored for the right (the court is symmetric about x = 128) | `serve.c` and `collision.c` each repeat team-mirrored deep/neutral/short branches | Medium | Open |
 | R5 | Name the HUD scene keys (`0x80` pause, `0x40` title) and the HUD layout rows and columns | Magic numbers in the HUD code | Medium | Open |

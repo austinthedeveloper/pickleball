@@ -157,6 +157,32 @@ void hud_big_text(u8 col, u8 row, u8 palette, const char *text)
     hud_mark(row + 1);
 }
 
+void hud_center_big(u8 row, u8 palette, const char *text)
+{
+    hud_big_text((u8)(16 - hud_big_width(text) / 2), row, palette, text);
+}
+
+/* Centered three-row panel with a B button glyph replacing '@'. */
+void hud_center_prompt(u8 row, u8 palette, const char *text)
+{
+    u8 len = 0;
+    u8 col;
+    const char *p = text;
+
+    while (*p++)
+        ++len;
+    col = (u8)(16 - (len + 2) / 2);
+    hud_panel(col, row, len);
+    hud_text(col + 1, row + 1, palette, text);
+    p = text;
+    while (*p) {
+        if (*p == '@')
+            hud_tile(col + 1 + (u8)(p - text), row + 1,
+                hud_entry(HUD_TILE_BUTTON_B, HUD_PAL_YELLOW));
+        ++p;
+    }
+}
+
 /* At most this many 256-byte bands per VBlank, alongside the NMI's OAM DMA;
  * anything left over stays dirty for the next frame. */
 #define HUD_MAX_BANDS_PER_COMMIT 3
