@@ -82,8 +82,9 @@ asset-check: assets
 HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/court.c src/court_style.c src/events.c src/fx.c src/game.c \
 	src/input_state.c src/match.c src/options.c src/player.c src/projection.c \
-	src/rules.c src/save.c src/select.c src/serve.c src/story.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story
+	src/practice.c src/rules.c src/save.c src/select.c src/serve.c \
+	src/story.c
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice
 
 host-check: assets
 	@mkdir -p build/host

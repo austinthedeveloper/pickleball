@@ -1,6 +1,7 @@
 #include <string.h>
 #include "opponents.h"
 #include "options.h"
+#include "practice.h"
 #include "save.h"
 
 SaveData g_save;
@@ -63,6 +64,10 @@ static void save_defaults(void)
     g_save.version = SAVE_VERSION;
     g_save.settings.points = OPTIONS_POINTS_DEFAULT;
     g_save.settings.difficulty = DIFFICULTY_MEDIUM;
+    /* Practice: MIX to RANDOM targets at a NORMAL rate (ADR-028). */
+    g_save.settings.practice[PRACTICE_ROW_SHOT] = PRACTICE_SHOT_MIX;
+    g_save.settings.practice[PRACTICE_ROW_TARGET] = PRACTICE_TARGET_RANDOM;
+    g_save.settings.practice[PRACTICE_ROW_RATE] = PRACTICE_RATE_NORMAL;
 }
 
 void save_write(void)

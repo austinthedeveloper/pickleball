@@ -1,0 +1,24 @@
+# Practice (ADR-028): Up wraps to PRACTICE; SHOT DRIVE (Right from MIX),
+# TARGET FOREHAND; B to Player Select, Start to play; the machine feeds.
+# P1 holds Down toward the forehand lane and swings; Start leaves.
+70 71 up
+90 91 start
+110 111 right
+120 121 down
+130 131 left
+140 141 left
+150 151 left
+shot 165
+170 171 b
+230 231 start   # confirm Player Select (after its fade-in)
+shot 260
+280 320 down
+330 331 b
+360 361 b
+shot 340
+400 401 b
+440 441 b
+480 481 b
+shot 600
+700 701 start
+shot 760

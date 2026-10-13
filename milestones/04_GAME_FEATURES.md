@@ -59,7 +59,10 @@ ADR-024.
 
 ## Practice
 
-- [ ] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").
+- [x] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").
+  - Verified: [ADR-028](../docs/decisions/ADR-028-practice.md), `test/test_practice.c`, `practice.timeline`.
+- [ ] `M4-PRACTICE-02` A ball machine sprite on the far baseline (a few OBJ tiles; 208 of 256 used).
+- [ ] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
 
 ## Play modifiers
@@ -68,6 +71,9 @@ ADR-024.
   - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
 
 ## Polish
+
+- [ ] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title.
+  - Accept: zero overruns over a full doubles demo (about frames 4,300-9,300 from boot), without changing human matches or the golden trace.
 
 - [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
   - Verified: ADR-026; `hud_panel` now uses the assembly fill, and doubles has zero overruns.

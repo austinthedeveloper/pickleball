@@ -38,6 +38,9 @@ sources the ROM uses).
 | STY-01 | `test_story.c`: intro card shows, can't be skipped instantly, ends by itself; ladder clears recorded; lines fit (ADR-026) | PASS |
 | STY-02 | `test/smoke/story.timeline`: DAD's intro card, B dismisses without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
 | KIT-01 | `test_court_style.c: test_kitchen`: SAME follows the surface, other presets two-tone, every venue default two-toned (ADR-027) | PASS |
+| PRA-01 | `test_practice.c: test_feeds_land`: every shot x target lands in on P1's side where asked; unreturned feeds reset the streak (ADR-028) | PASS |
+| PRA-02 | `test_practice.c`: streaks build (bot, KID assist), best saved on leaving, Start exits | PASS |
+| PRA-03 | `test/smoke/practice.timeline`: page, Player Select, session, exit | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

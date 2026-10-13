@@ -79,5 +79,9 @@ void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 /* Nonzero when the ball steps `frames` frames from now (ADR-025 slow ball;
  * 0 = during this frame's update). */
 u8 game_ball_moves_ahead(u8 frames);
+/* This frame's ball step at the difficulty's speed; BallEvent bits. */
+u8 game_step_ball(void);
+/* A player's paddle met the ball: flash, hit stop, and the HIT event. */
+void game_contact(u8 player_index);
 
 #endif

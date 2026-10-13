@@ -13,8 +13,9 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 6,           /* 2: settings (ADR-022); 3: venue; 4: options;
-                                   5: ladder clears (ADR-026); 6: kitchen */
+    SAVE_VERSION = 7,           /* 2: settings (ADR-022); 3: venue; 4: options;
+                                   5: ladder clears (ADR-026); 6: kitchen;
+                                   7: practice (ADR-028) */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -27,6 +28,7 @@ typedef struct {
     u16 shutouts;               /* wins without conceding a point */
     u16 longest_rally;          /* shots in one point, serve included */
     u16 ladder_clears;          /* wins over the last ladder opponent */
+    u16 practice_best;          /* best practice return streak (ADR-028) */
 } SaveRecords;
 
 /* Choices that persist (ADR-022). */
@@ -36,6 +38,8 @@ typedef struct {
     u8 venue;                   /* COURT_VENUE_AUTO or venue + 1 (ADR-024) */
     u8 points;                  /* points to win (ADR-025) */
     u8 difficulty;              /* Difficulty (ADR-025) */
+    u8 practice[3];             /* shot, target, rate (ADR-028) */
+    u8 reserved;
 } SaveSettings;
 
 typedef struct {

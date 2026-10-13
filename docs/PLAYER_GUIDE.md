@@ -5,9 +5,23 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
 On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **COURT**,
-**RECORDS**, or **OPTIONS**. Pressing Start on controller 2 adds a second player
+**RECORDS**, **OPTIONS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
 Player Select (or the court, records, or options page).
+
+## Practice
+
+**PRACTICE** sets up a ball machine on the far side of the court:
+
+- **SHOT**: DRIVE, LOB, DINK, or MIX.
+- **TARGET**: the KITCHEN, DEEP, your FOREHAND (the lower side), your
+  BACKHAND, AT YOU, or RANDOM.
+- **RATE**: how quickly the next ball comes (SLOW, NORMAL, FAST).
+
+Press B, choose your player and paddle, and the machine starts feeding. Every
+return that lands in adds to your streak (P1 on the scoreboard), and your
+best streak is saved. Ball speed and the KID swing assist follow your
+OPTIONS difficulty. Start returns to the title.
 
 ## Options
 

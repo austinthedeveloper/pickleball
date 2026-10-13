@@ -18,7 +18,8 @@ MatchConfig g_match_config = {
     { 1, 0, 0, 0 },
     OPPONENT_NONE,
     OPTIONS_POINTS_DEFAULT,
-    DIFFICULTY_MEDIUM
+    DIFFICULTY_MEDIUM,
+    0
 };
 #else
 MatchConfig g_match_config;
@@ -44,6 +45,20 @@ void match_config_defaults(void)
     g_match_config.opponent = OPPONENT_NONE;
     g_match_config.points_to_win = OPTIONS_POINTS_DEFAULT;
     g_match_config.difficulty = DIFFICULTY_MEDIUM;
+    g_match_config.practice = 0;
+}
+
+void match_config_practice(void)
+{
+    u8 slot;
+
+    g_match_config.mode = MATCH_SINGLES;
+    g_match_config.opponent = OPPONENT_NONE;
+    for (slot = 1; slot < MAX_PLAYERS; ++slot) {
+        g_match_config.palette_id[slot] = MATCH_NO_PALETTE;
+        g_match_config.human[slot] = 0;
+    }
+    g_match_config.practice = 1;
 }
 
 void match_config_opponent(u8 opponent)

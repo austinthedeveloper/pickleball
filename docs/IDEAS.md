@@ -159,6 +159,10 @@ food-truck chef.
 
 ## Practice mode: ball machine
 
+**Done:** [ADR-028](decisions/ADR-028-practice.md). The machine sprite and
+return targets are follow-ups (M4-PRACTICE-02/03). The notes below are the
+original idea.
+
 A PRACTICE entry where the opponent is a ball machine on the far side. It
 feeds balls at you one after another with no scoring, so you can drill a
 shot.

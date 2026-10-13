@@ -8,6 +8,7 @@
 #include "input.h"
 #include "match.h"
 #include "options.h"
+#include "practice.h"
 #include "player.h"
 #include "profile.h"
 #include "render.h"
@@ -19,6 +20,8 @@
 enum { SCENE_MATCH = 0, SCENE_SELECT = 1 };
 static u8 s_scene;
 static u8 s_open_select;
+/* Player Select is open on the way to practice (ADR-028). */
+static u8 s_practice_pending;
 
 /* Records page (ADR-021): Start, B, or Y closes it; holding L+R and
  * pressing X erases the records (court colours stay). */
@@ -73,6 +76,25 @@ static void update_title_options(u16 pressed)
         save_write();
 }
 
+/* Practice page (ADR-028): B or Start saves any change and goes on to
+ * Player Select for the session; Y puts the settings back. */
+static void update_title_practice(u16 pressed)
+{
+    u8 *values = g_save.settings.practice;
+    u8 result = practice_edit_input(values, pressed);
+
+    if (result == PRACTICE_EDIT_STAY)
+        return;
+    g_title_page = TITLE_PAGE_MENU;
+    if (result != PRACTICE_EDIT_DONE)
+        return;
+    if (practice_edit_changed(values))
+        save_write();
+    select_begin(MATCH_SINGLES, 1);
+    s_practice_pending = 1;
+    s_open_select = 1;
+}
+
 /* Title: Up/Down picks an entry, Start on pad 2 toggles 2P, and Start/B
  * opens Player Select (singles, doubles) or a page (court, records). */
 static void update_title(void)
@@ -85,6 +107,8 @@ static void update_title(void)
         update_title_court(pressed);
     else if (g_title_page == TITLE_PAGE_OPTIONS)
         update_title_options(pressed);
+    else if (g_title_page == TITLE_PAGE_PRACTICE)
+        update_title_practice(pressed);
     else {
         if (pressed & PAD_UP)
             g_title_mode = g_title_mode ? g_title_mode - 1 :
@@ -97,6 +121,9 @@ static void update_title(void)
         if (pressed & (PAD_START | PAD_B)) {
             if (g_title_mode == TITLE_RECORDS) {
                 g_title_page = TITLE_PAGE_RECORDS;
+            } else if (g_title_mode == TITLE_PRACTICE) {
+                practice_edit_begin(g_save.settings.practice);
+                g_title_page = TITLE_PAGE_PRACTICE;
             } else if (g_title_mode == TITLE_OPTIONS) {
                 options_edit_begin(&g_save.settings.points,
                     &g_save.settings.difficulty);
@@ -113,6 +140,8 @@ static void update_title(void)
             }
         }
     }
+    if (s_open_select)
+        return;
     if (g_loop_count & 1)
         ai_update(0, &g_player_intents[0]);
     else
@@ -182,12 +211,15 @@ static void update_select(void)
     }
     if (result == SELECT_DONE) {
         select_apply();
+        if (s_practice_pending)
+            match_config_practice();
         game_start_match();
         /* ADR-026: a ladder match opens with the opponent's intro card. */
         story_begin_intro();
     } else {
         game_start_attract();
     }
+    s_practice_pending = 0;
     /* render_open_match applies the new config itself. */
     g_match_config_changed = 0;
     render_open_match();
@@ -215,6 +247,7 @@ int main(void)
     g_title_2p = 0;
     s_scene = SCENE_MATCH;
     s_open_select = 0;
+    s_practice_pending = 0;
     g_match_config_changed = 0;
     g_demo_mode = 0;
     game_start_attract();

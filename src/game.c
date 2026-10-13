@@ -7,6 +7,7 @@
 #include "input.h"
 #include "match.h"
 #include "options.h"
+#include "practice.h"
 #include "game.h"
 #include "player.h"
 #include "profile.h"
@@ -118,7 +119,10 @@ void game_new_match(void)
     fx_initialize();
     game_initialize();
     game_activate_players();
-    game_begin_serve(0);
+    if (g_match_config.practice)
+        practice_begin();               /* ADR-028: no serve */
+    else
+        game_begin_serve(0);
 }
 
 /* The demo alternates singles and doubles. */
@@ -144,7 +148,7 @@ void game_start_match(void)
     g_attract = 0;
 }
 
-static void game_on_contact(u8 player_index)
+void game_contact(u8 player_index)
 {
     Player *player = &g_players[player_index];
 
@@ -153,6 +157,19 @@ static void game_on_contact(u8 player_index)
     g_game_state.hit_stop = GAME_HIT_STOP_FRAMES;
     events_emit(EVENT_HIT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
         player_index | (player->shot_type << 4));
+}
+
+u8 game_step_ball(void)
+{
+    u8 events;
+
+    /* ADR-025: a slow ball skips some steps; normal speed skips the call. */
+    if (g_match_config.difficulty >= DIFFICULTY_MEDIUM)
+        return ball_update(0);
+    events = game_ball_moves_ahead(0) ? ball_update(0) : 0;
+    if (++s_ball_tick >= OPTIONS_BALL_CYCLE)
+        s_ball_tick = 0;
+    return events;
 }
 
 static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
@@ -164,19 +181,12 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
         MAX_PLAYERS);
     PROFILE_MARK(5);
     if (hit_player) {
-        game_on_contact(hit_player - 1);
+        game_contact(hit_player - 1);
         rules_process_player_hit(hit_player - 1);
         if (g_game_state.phase != GAME_PHASE_LIVE)
             return;
     }
-    /* ADR-025: a slow ball skips some steps; normal speed skips the call. */
-    if (g_match_config.difficulty >= DIFFICULTY_MEDIUM) {
-        ball_events = ball_update(0);
-    } else {
-        ball_events = game_ball_moves_ahead(0) ? ball_update(0) : 0;
-        if (++s_ball_tick >= OPTIONS_BALL_CYCLE)
-            s_ball_tick = 0;
-    }
+    ball_events = game_step_ball();
     if (ball_events & BALL_EVENT_BOUNCE)
         events_emit(EVENT_BOUNCE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
             g_ball.bounce_count);
@@ -250,6 +260,12 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 void game_update(const PlayerIntent intents[MAX_PLAYERS])
 {
     ++g_game_state.frame_count;
+    /* Practice (ADR-028): Start returns to the title. */
+    if (g_match_config.practice && intents[0].pause_pressed && !g_attract) {
+        practice_finish();
+        game_start_attract();
+        return;
+    }
     /* Start pauses; on the match result it returns to the title. */
     if (intents[0].pause_pressed && !g_attract &&
             g_game_state.phase != GAME_PHASE_MATCH_RESULT)
@@ -268,6 +284,10 @@ void game_update(const PlayerIntent intents[MAX_PLAYERS])
     players_update(intents, 0);
     players_separate_teammates();
     PROFILE_MARK(4);
+    if (g_match_config.practice) {
+        practice_update(intents);
+        return;
+    }
     switch (g_game_state.phase) {
     case GAME_PHASE_SERVE_SETUP:
     case GAME_PHASE_SERVE_TOSS:

@@ -10,6 +10,7 @@
 #include "render_internal.h"
 #include "court_style.h"
 #include "options.h"
+#include "practice.h"
 #include "save.h"
 #include "story.h"
 
@@ -37,7 +38,7 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... OPTIONS (rows 12-16) */
+#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-17) */
 #define TITLE_MENU_COL 12
 #define TITLE_2P_ROW 18
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
@@ -51,6 +52,7 @@
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
 #define OPTIONS_PAGE_ROWS 4         /* header, gap, points, difficulty */
+#define PRACTICE_PAGE_ROWS 7        /* header, gap, 3 rows, gap, best */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -76,6 +78,7 @@ static u8 s_title_part;
  * drawn. */
 static u8 s_court_row_drawn[COURT_ROWS];
 static u8 s_options_row_drawn[OPTIONS_ROWS];
+static u8 s_practice_row_drawn[PRACTICE_ROWS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
 /* Title drawing (staged steps and area parts) waits for a later frame once
@@ -104,10 +107,18 @@ static u8 hud_opponent_team(u8 team)
     return team && g_match_config.opponent != OPPONENT_NONE;
 }
 
+static u8 hud_practice(void)
+{
+    return g_match_config.practice && !g_attract;
+}
+
 /* Singles: P1 / CPU (or P2). Doubles: the team's palette name
  * (ADR-010/018), or CPU for a ladder opponent (ADR-023). */
 static const char *team_name(u8 team)
 {
+    /* Practice (ADR-028): P1's streak and the best streak. */
+    if (hud_practice())
+        return team ? "BEST" : "P1";
     if (hud_doubles() && !hud_opponent_team(team))
         return s_palette_names[match_team_palette(team)];
     if (team)
@@ -203,7 +214,10 @@ static void hud_draw_scores(void)
     hud_text(LEFT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(0),
         team_name(0));
     hud_panel(CENTER_PANEL_COL, SCORE_PANEL_ROW, CENTER_PANEL_WIDTH);
-    if (!g_attract && !hud_doubles() && hud_opponent_team(1))
+    if (hud_practice())
+        hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
+            "  PRACTICE");
+    else if (!g_attract && !hud_doubles() && hud_opponent_team(1))
         hud_versus(SCORE_TEXT_ROW);
     else
         hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
@@ -224,12 +238,13 @@ static void hud_draw_scores(void)
 #define HUD_KEY_TITLE 0x100
 #define HUD_KEY_TITLE_BLINK 0x101
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
+#define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
 
 /* Doubles shows ARCADE RULES under DOUBLES; either mode shows MATCH POINT
  * when a team is one point from winning (the doubles mockup). */
 static u8 hud_sub_panel_wanted(void)
 {
-    if (g_attract)
+    if (g_attract || g_match_config.practice)
         return 0;
     if (g_game_state.phase != GAME_PHASE_MATCH_RESULT &&
         (g_game_state.team_score[0] == g_match_config.points_to_win - 1 ||
@@ -285,6 +300,8 @@ static u16 hud_scene_key(void)
 
     if (g_story.card == STORY_CARD_INTRO)
         return HUD_KEY_INTRO;
+    if (hud_practice())
+        return HUD_KEY_PRACTICE;
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
@@ -302,7 +319,7 @@ static u16 hud_scene_key(void)
     return phase;
 }
 
-/* Title keys: 0x100 | blink (bit 0) | page (bits 1-2, for its prompt).
+/* Title keys: 0x100 | blink (bit 0) | page (bits 1-3, for its prompt).
  * Bit 8 keeps them apart from phase keys: a kitchen fault point for P1 is
  * 0x44. The menu choice and 2P are drawn by hud_title_area_update. */
 #define HUD_IS_TITLE(k) (((k) & HUD_KEY_TITLE) != 0)
@@ -461,7 +478,8 @@ static void hud_record_ladder(u8 row)
 static void hud_title_menu(u8 choice, u8 half)
 {
     static const char *const items[TITLE_ENTRIES] = {
-        "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS ", "  OPTIONS "
+        "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS ", "  OPTIONS ",
+        "  PRACTICE"
     };
     u8 i = half * 2;
     u8 last = i + 2 > TITLE_ENTRIES ? TITLE_ENTRIES : i + 2;
@@ -565,6 +583,59 @@ static u8 hud_options_draw_part(u8 part)
     return part - 2 == OPTIONS_ROWS - 1;
 }
 
+/* One practice page row (ADR-028). */
+static void hud_practice_row(u8 index)
+{
+    static const char *const labels[PRACTICE_ROWS] = {
+        "SHOT", "TARGET", "RATE"
+    };
+    u8 value = g_save.settings.practice[index];
+    u8 cursor = g_practice_edit.row == index;
+    const char *name = index == PRACTICE_ROW_SHOT ? practice_shot_name(value) :
+        index == PRACTICE_ROW_TARGET ? practice_target_name(value) :
+        practice_rate_name(value);
+
+    hud_setting_row(COURT_FIRST_ROW + index, labels[index], name, cursor);
+    s_practice_row_drawn[index] = value | (cursor << 7);
+}
+
+/* Practice page: the box, the header, a row per frame, then the best. */
+static u8 hud_practice_draw_part(u8 part)
+{
+    if (part == 0) {
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+            PRACTICE_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        s_practice_row_drawn[0] = 0xff;
+        s_practice_row_drawn[1] = 0xff;
+        s_practice_row_drawn[2] = 0xff;
+        return 0;
+    }
+    if (part == 1) {
+        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PRACTICE");
+        return 0;
+    }
+    if (part < 2 + PRACTICE_ROWS) {
+        hud_practice_row(part - 2);
+        return 0;
+    }
+    hud_record_line(COURT_FIRST_ROW + PRACTICE_ROWS + 1, "BEST STREAK",
+        g_save.records.practice_best);
+    return 1;
+}
+
+static void hud_practice_refresh(void)
+{
+    u8 index;
+
+    for (index = 0; index < PRACTICE_ROWS; ++index) {
+        if (s_practice_row_drawn[index] != (g_save.settings.practice[index] |
+                ((g_practice_edit.row == index) << 7))) {
+            hud_practice_row(index);
+            return;
+        }
+    }
+}
+
 /* After the options page is drawn: a changed row, one per frame. */
 static void hud_options_refresh(void)
 {
@@ -584,6 +655,7 @@ static void hud_options_refresh(void)
 #define HUD_TITLE_VIEW_COURT 0x80
 #define HUD_TITLE_VIEW_RECORDS 0x81
 #define HUD_TITLE_VIEW_OPTIONS 0x82
+#define HUD_TITLE_VIEW_PRACTICE 0x83
 
 static u8 hud_title_view(void)
 {
@@ -593,6 +665,8 @@ static u8 hud_title_view(void)
         return HUD_TITLE_VIEW_RECORDS;
     if (g_title_page == TITLE_PAGE_OPTIONS)
         return HUD_TITLE_VIEW_OPTIONS;
+    if (g_title_page == TITLE_PAGE_PRACTICE)
+        return HUD_TITLE_VIEW_PRACTICE;
     return g_title_mode | (g_title_2p << 3);
 }
 
@@ -640,6 +714,8 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         return hud_court_draw_part(part);
     if (view == HUD_TITLE_VIEW_OPTIONS)
         return hud_options_draw_part(part);
+    if (view == HUD_TITLE_VIEW_PRACTICE)
+        return hud_practice_draw_part(part);
     if (view != HUD_TITLE_VIEW_RECORDS) {
         if (part < 3) {
             hud_title_menu(view & 7, part);
@@ -707,6 +783,8 @@ static void hud_title_area_update(void)
                 hud_court_refresh();
             else if (view == HUD_TITLE_VIEW_OPTIONS)
                 hud_options_refresh();
+            else if (view == HUD_TITLE_VIEW_PRACTICE)
+                hud_practice_refresh();
             return;
         }
         if (hud_title_draw_part(view, s_title_part))
@@ -725,6 +803,8 @@ static const char *hud_title_prompt(u8 page)
 {
     if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS)
         return "@ OK  Y CANCEL";
+    if (page == TITLE_PAGE_PRACTICE)
+        return "@ PLAY  Y BACK";
     if (page == TITLE_PAGE_RECORDS)
         return "@ BACK";
     return "PRESS START";
@@ -754,7 +834,7 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
         hud_clear_rows(BANNER_ROW - 1, 4);
         if (!(key & 1))
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                hud_title_prompt((key >> 1) & 3));
+                hud_title_prompt((key >> 1) & 7));
         break;
     default:
         break;
@@ -779,6 +859,11 @@ static void hud_scene_step(u16 key, u8 step)
     }
     if (key == HUD_KEY_INTRO) {
         hud_intro_step(step);
+        return;
+    }
+    if (key == HUD_KEY_PRACTICE) {
+        if (step == HUD_STEP_PROMPT)
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "START  MENU");
         return;
     }
     if (step >= HUD_STEP_EXTRA) {
