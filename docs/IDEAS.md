@@ -1,7 +1,9 @@
 # Ideas
 
 Candidate features that have not been planned yet. When one is picked up, it
-gets an ADR in [decisions/](decisions/) and this entry links to it.
+gets an ADR in [decisions/](decisions/) and this entry links to it. Started
+ideas and their follow-ups are tracked as tasks in
+[M4 — Game Features](../milestones/04_GAME_FEATURES.md).
 
 Budget snapshot (2026-10-13, release build of `d8b3dd5`): the ROM is 256 KiB
 (8 LoROM banks); about 115 KiB is used and 140 KiB is free (banks 3–7). Per-screen

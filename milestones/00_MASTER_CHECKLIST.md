@@ -17,6 +17,8 @@ This is the only cross-milestone status sheet. Detailed tasks live in the linked
   - Exit: P1 and CPU can serve, hit, bounce, fault, and award a single point deterministically.
 - [ ] [M3 — Complete Hardware POC](03_POC_HARDWARE_BUILD.md)
   - Exit: a first-to-five match/rematch passes the emulator matrix and 15-minute real-hardware session.
+- [ ] [M4 — Game Features](04_GAME_FEATURES.md)
+  - Exit: saved records and settings, the opponent ladder with story screens, and the venues all pass their checks, including the save on a real cart.
 
 ## Cross-cutting gates
 

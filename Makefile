@@ -66,9 +66,10 @@ profile: assets
 	@mkdir -p build/$(CONFIG)
 	@rm -f build/$(CONFIG)/pickleball-*.sfc \
 		build/$(CONFIG)/pickleball-*.sym build/$(CONFIG)/pickleball-*.map
-	@cp $(ROMNAME).sfc build/$(CONFIG)/$(ROMNAME).sfc
-	@cp $(ROMNAME).sym build/$(CONFIG)/$(ROMNAME).sym
-	@cp $(ROMNAME).symfull build/$(CONFIG)/$(ROMNAME).map
+	@# The linker writes to the repo root; move (not copy) so only build/ keeps ROMs.
+	@mv $(ROMNAME).sfc build/$(CONFIG)/$(ROMNAME).sfc
+	@mv $(ROMNAME).sym build/$(CONFIG)/$(ROMNAME).sym
+	@mv $(ROMNAME).symfull build/$(CONFIG)/$(ROMNAME).map
 	@echo "Built build/$(CONFIG)/$(ROMNAME).sfc"
 
 assets:

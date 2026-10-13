@@ -1,0 +1,53 @@
+# M4 — Game Features
+
+Outcome: the POC grows into a game you return to: saved records and
+settings, themed opponents on a ladder, and several venues. Design notes for
+each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 to
+ADR-024.
+
+## Save and records
+
+- [x] `M4-SAVE-01` Battery-backed SRAM with a checksummed, double-buffered save block.
+  - Accept: a torn or blank save falls back safely; records persist across boots.
+  - Verified: [ADR-021](../docs/decisions/ADR-021-battery-save.md), `test/test_save.c`, `records.timeline` with `KEEP_SAVE=1`.
+- [x] `M4-SAVE-02` RECORDS page on the title, with an erase combo.
+  - Verified: ADR-021; zero frame overruns on the records timeline.
+- [ ] `M4-SAVE-03` Initials entry for new records, arcade style.
+  - Accept: a new best streak or longest rally asks for three letters, which the records page shows; the save layout change bumps `SAVE_VERSION`.
+- [ ] `M4-SAVE-04` Verify the save on a physical cart with SRAM and a battery.
+  - Accept: records survive a power cycle on real hardware; logged in `test/hardware-log.md`.
+
+## Court colours and venues
+
+- [x] `M4-COURT-01` Court colour presets for surface, surround, and lines, with a live preview on the COURT page.
+  - Verified: [ADR-022](../docs/decisions/ADR-022-court-colors.md), contrast checks in the asset build, `court.timeline`.
+- [x] `M4-VENUE-01` Venues PARK, LAKESIDE, and SUNSET with shared ground tiles and home courts.
+  - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md), `venue.timeline`, `lake.timeline`.
+- [ ] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
+  - Accept: scrolling VENUE shows the backdrop (reload with a short fade, or a thumbnail) without dropped frames; Y still restores the original.
+- [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium).
+  - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (about 6 more fit in 256 KiB).
+
+## Opponents and story
+
+- [x] `M4-OPP-01` Eight CPU personalities with looks, play styles, and a saved ladder.
+  - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md), `test/test_opponents.c`, `make stats OPPONENT=n`.
+- [ ] `M4-OPP-02` Tune the doubles partners.
+  - Accept: a doubles balance run (`tools/match_stats.c` is singles only today) shows each team's difficulty in ladder order.
+- [ ] `M4-OPP-03` Give BRAD a distinct difficulty.
+  - Accept: his matches stop being a coin flip of balls hit out; his bot win rate sits between MARGE's and PETE's in the ADR-023 table.
+- [ ] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
+  - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.
+- [ ] `M4-STORY-01` Story screens: an intro card per opponent (portrait, name, one line of trash talk) and a win or lose card.
+  - Accept: shown before and after ladder matches and skippable with B; portraits fit the BG2 portrait budget (ADR-020).
+- [ ] `M4-STORY-02` A ladder ending after beating CHAMPS (a champion screen, plus a "ladder clears" record).
+
+## Play modifiers
+
+- [ ] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
+  - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
+
+## Polish
+
+- [ ] `M4-UI-01` Draw the title pages faster.
+  - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.
