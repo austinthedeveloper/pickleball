@@ -208,25 +208,41 @@ TOSS = (10, 3, [
     "........OOOOOO.......OOOOOO.....",
 ])
 
-CHEER = (10, 4, [
-    "..OOO...................OOO.....",
-    ".OdTTO.................OSSO.....",
-    ".OdTTTO...............OSSO......",
-    ".OdTTTO..............OSSO.......",
-    "..OdTOO.............OSSO........",
-    "...OOhO..OOOOOOOOO.OSSO.........",
-    ".....OSSOdTTTTTTTLOSSO..........",
-    "......OSSdTTTTTTTTLSO...........",
-    ".......OOdTTTTTTTTLO............",
-    "........OdTTTTTTTTTO............",
-    "........OddddddddddO............",
-    "........OgWWWWWWWWWO............",
-    "........OgWWWOOOgWWO............",
-    ".........OsSO...OsSO............",
-    ".........OsSO...OsSO............",
-    ".........OgWO...OgWO............",
-    "........OgWWO...OgWWO...........",
-    "........OOOOO...OOOOOO..........",
+# Cheer: both arms raised, paddle held high in the front hand. Drawn as a
+# full 32-row frame (rows start at y=0) so the arms can rise past the head.
+CHEER_FULL = (9, 6, [
+    "................................",
+    "........................OOO.....",
+    ".......................OdTTO....",
+    ".......................OdTTTO...",
+    "........................OdTTO...",
+    "..OO.....................OhOO...",
+    ".OSSO....................OhO....",
+    ".OSSO...................OSSO....",
+    "..OSO...................OSO.....",
+    "..OSSO.................OSSO.....",
+    "...OSO.................OSO......",
+    "...OSSO...............OSSO......",
+    "....OSO...............OSO.......",
+    "....OSSO.............OSSO.......",
+    ".....OSSO...........OSSO........",
+    "......OSSOOOOOOOOOOOSSO.........",
+    ".......OSdTTTTTTTTTTLO..........",
+    "........OdTTTTTTTTTTLO..........",
+    "........OdTTTTTTTTTTTO..........",
+    "........OdTTTTTTTTTTTO..........",
+    "........OddddddddddddO..........",
+    "........OgWWWWWWWWWWWO..........",
+    "........OgWWWWOOOgWWWO..........",
+    ".........OsSSO...OsSSO..........",
+    ".........OsSO.....OsSO..........",
+    ".........OsSO.....OsSO..........",
+    ".........OgWO.....OgWO..........",
+    "........OgWWO.....OgWWO.........",
+    "........OWWWWO....OWWWWO........",
+    "........OOOOOO....OOOOOO........",
+    "................................",
+    "................................",
 ])
 
 
@@ -288,6 +304,15 @@ def body_frame(spec, bob=0):
     return grid
 
 
+def full_frame(spec):
+    """A frame drawn on all 32 rows, with the head stamped on top."""
+    head_x, head_y, rows = spec
+    grid = blank()
+    stamp(grid, rows, 0, 0)
+    stamp(grid, HEAD, head_x, head_y, HEAD_TAG)
+    return grid
+
+
 def run_frame(legs, bob):
     """Feet stay on the anchor row; torso and head bob over them."""
     grid = blank()
@@ -318,7 +343,7 @@ FRAMES = [
     body_frame(SWING),                # 7 swing (active)
     body_frame(FOLLOW),               # 8 follow-through (recovery)
     body_frame(TOSS),                 # 9 serve toss
-    body_frame(CHEER),                # 10 cheer
+    full_frame(CHEER_FULL),           # 10 cheer
 ]
 
 # 8x8 small objects, palette roles: 1 outline, 2 ball, 3 ball light,
