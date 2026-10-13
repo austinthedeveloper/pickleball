@@ -1,5 +1,6 @@
 #include <snes.h>
 #include "ai.h"
+#include "audio_events.h"
 #include "game.h"
 #include "input.h"
 #include "match.h"
@@ -31,6 +32,7 @@ static void update_controllers(void)
 int main(void)
 {
     input_initialize();
+    audio_events_initialize();
     match_config_defaults();
 #ifdef BUILD_DEBUG
     /* ADR-010: every active player has a unique palette. */

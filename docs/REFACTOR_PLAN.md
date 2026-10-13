@@ -31,7 +31,7 @@ gameplay.
 | R6 | Court-side helpers in `court.h` (`court_side_of_x`, `court_toward_net`) used by AI, rules, and collision | Three private copies of "which side is this x on" | Medium | Done |
 | R7 | Shared host-test support header (`test/test_support.h`: frame stepping, bot P1, snapshots) | `test_ai.c`, `test_match_flow.c`, and `test_serve.c` each reimplement the frame loop | Low | Done |
 | R8 | Split `tools/generate_assets.py` into modules (PNG I/O, scene, HUD font, OBJ/palettes) | 600+ lines in one file; the font tables dominate it | Low | Open |
-| R9 | Move presentation timers (`hit_stop`, `spark_*`) out of `GameState` into an FX struct | Match state should hold only rules state; simplifies RST-01 snapshots | Low | Open |
+| R9 | Move the spark out of `GameState` behind an event seam: `events_emit` feeds `fx` (spark) and an `audio_events` stub. `hit_stop` stays, because it pauses the simulation. | Match state holds only simulation state. This also delivers the spec's required hooks for serve, hit, bounce, fault, and point sounds. | Low | Done |
 | R10 | Doubles readiness: drop the hard-coded opponent slot in `ai_choose_aim` and the slot 0/2 assumptions in serve/render | Required before activating slots 1 and 3 | Vertical slice | Open |
 
 ## Verification recipe

@@ -74,10 +74,10 @@ asset-check: assets
 	@python3 tools/generate_assets.py --check
 	@python3 tools/test_asset_validation.py
 
-HOST_CORE := src/ai.c src/ball.c src/collision.c src/court.c src/game.c \
-	src/input_state.c src/match.c src/player.c src/projection.c src/rules.c \
-	src/serve.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input
+HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
+	src/court.c src/events.c src/fx.c src/game.c src/input_state.c src/match.c \
+	src/player.c src/projection.c src/rules.c src/serve.c
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events
 
 host-check: assets
 	@mkdir -p build/host

@@ -32,7 +32,7 @@ GOLDEN_FRAMES = 4200
 # Simulation state captured by golden traces. Sizes are the SNES layouts
 # (identical to the host's sizeof); each run checks them against .sym gaps.
 GOLDEN_STATE = [
-    ("game", "g_game_state", 20),
+    ("game", "g_game_state", 16),
     ("players", "g_players", 96),
     ("ball", "g_ball", 18),
     ("serve", "g_serve_state", 10),
@@ -41,7 +41,7 @@ GOLDEN_STATE = [
 # Frames before initialization hold MesenCE's randomized power-on RAM.
 GOLDEN_SKIP_FRAMES = 2
 # Frame counters move with code size/timing, not behavior; mask them.
-GAME_MASK_BYTES = (18, 19)   # GameState.frame_count
+GAME_MASK_BYTES = (14, 15)   # GameState.frame_count (offsetof)
 
 
 def rom_for(config):
@@ -135,6 +135,9 @@ def main():
     for name in ("golden-record", "golden-compare"):
         g = sub.add_parser(name)
         g.add_argument("--config", default="release")
+        g.add_argument("--fields", help="compare only these comma-separated "
+                       "fields (for a refactor that changes one struct's "
+                       "layout); then re-record")
     args = parser.parse_args()
 
     if args.cmd == "probe":
@@ -156,6 +159,15 @@ def main():
     if not GOLDEN_TRACE.exists():
         raise SystemExit("no golden trace; run golden-record first")
     expected = GOLDEN_TRACE.read_text().splitlines()
+    if args.fields:
+        keep = set(args.fields.split(","))
+
+        def only(line):
+            frame, *parts = line.split()
+            return frame + " " + " ".join(
+                p for p in parts if p.split("=", 1)[0] in keep)
+        expected = [only(line) for line in expected]
+        lines = [only(line) for line in lines]
     for i, (want, got) in enumerate(zip(expected, lines)):
         if want != got:
             print(f"golden trace differs first at line {i + 1}:")
@@ -165,7 +177,8 @@ def main():
     if len(expected) != len(lines):
         sys.exit(f"golden trace length differs: {len(expected)} vs "
                  f"{len(lines)}")
-    print(f"golden trace identical ({len(lines)} frames)")
+    scope = f" for {args.fields}" if args.fields else ""
+    print(f"golden trace identical{scope} ({len(lines)} frames)")
 
 
 if __name__ == "__main__":

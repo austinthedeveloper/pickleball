@@ -54,7 +54,9 @@ No gameplay mutation occurs from rendering functions.
 | `src/projection.c/.h` | World-to-screen projection over the generated `court_projection.h` table (may be header-only) |
 | `src/render.c/.h` | Background setup and OAM construction |
 | `src/hud.c/.h` | Score, state banners, debug overlay |
-| `src/audio_events.c/.h` | No-op POC event seam |
+| `src/events.c/.h` | Simulation → presentation event seam (serve, hit, bounce, fault, point) |
+| `src/fx.c/.h` | Event-driven presentation effects (contact spark) |
+| `src/audio_events.c/.h` | No-op POC audio consumer; counts events for tests |
 | `src/debug.c/.h` | Assertions, counters, visualization flags |
 
 Keep module globals private. Pass compact structures or IDs; do not allocate dynamically.

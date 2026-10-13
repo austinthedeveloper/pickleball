@@ -1,4 +1,5 @@
 #include "court.h"
+#include "events.h"
 #include "serve.h"
 
 ServeState g_serve_state;
@@ -64,6 +65,8 @@ static void serve_contact(const PlayerIntent *intent)
     g_ball.bounce_count = 0;
     g_ball.rally_state = BALL_RALLY_LIVE;
     ++g_game_state.shot_serial;
+    events_emit(EVENT_SERVE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+        g_serve_state.server_index);
     g_serve_state.landing_pending = 1;
     g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_SERVE;
     server->contact_consumed = 1;

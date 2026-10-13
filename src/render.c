@@ -4,6 +4,7 @@
 #include "asset_frames.h"
 #include "ball.h"
 #include "court.h"
+#include "fx.h"
 #include "game.h"
 #include "hud.h"
 #include "hud_tiles.h"
@@ -225,11 +226,11 @@ static void render_effects(void)
 {
     s16 sx;
 
-    if (g_game_state.spark_timer) {
-        sx = projection_x(g_game_state.spark_x, g_game_state.spark_y);
+    if (g_fx.spark_timer) {
+        sx = projection_x(g_fx.spark_x, g_fx.spark_y);
         obj_put(RENDER_OAM_SPARK, sx - 4,
-            g_game_state.spark_y - FROM_FP(g_ball.z_fp) - 4,
-            (g_game_state.spark_timer & 2) ? OBJTILE_SPARK :
+            g_fx.spark_y - FROM_FP(g_ball.z_fp) - 4,
+            (g_fx.spark_timer & 2) ? OBJTILE_SPARK :
             OBJTILE_SPARK_SMALL, OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
     } else {
         render_obj_hide(RENDER_OAM_SPARK);

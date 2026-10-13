@@ -1,4 +1,5 @@
 #include "court.h"
+#include "events.h"
 #include "player.h"
 #include "rules.h"
 #include "serve.h"
@@ -32,6 +33,11 @@ void rules_resolve_point(u8 losing_team, u8 fault)
     g_game_state.point_winner = winner;
     g_game_state.last_fault = fault;
     ++g_game_state.team_score[winner];
+    if (fault != GAME_FAULT_SECOND_BOUNCE && fault != GAME_FAULT_NONE)
+        events_emit(EVENT_FAULT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+            fault);
+    events_emit(EVENT_POINT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+        winner);
     game_set_phase(GAME_PHASE_POINT_RESULT);
     g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
     g_serve_state.landing_pending = 0;

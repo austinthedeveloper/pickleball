@@ -36,7 +36,6 @@ enum {
     GAME_POINT_RESULT_FRAMES = 90,
     GAME_HIT_STOP_FRAMES = 2,
     GAME_HIT_FLASH_FRAMES = 2,
-    GAME_SPARK_FRAMES = 10,
     GAME_NO_TEAM = 0xff
 };
 
@@ -53,9 +52,6 @@ typedef struct {
     u8 hit_stop;
     /* Increments on every serve and contact; lets controllers see a new shot. */
     u8 shot_serial;
-    u8 spark_timer;
-    s16 spark_x;
-    s16 spark_y;
     u16 frame_count;
 } GameState;
 

@@ -1,6 +1,8 @@
 #include "ai.h"
 #include "ball.h"
 #include "collision.h"
+#include "events.h"
+#include "fx.h"
 #include "game.h"
 #include "player.h"
 #include "profile.h"
@@ -28,9 +30,6 @@ void game_initialize(void)
     g_game_state.serving_team = 0;
     g_game_state.hit_stop = 0;
     g_game_state.shot_serial = 0;
-    g_game_state.spark_timer = 0;
-    g_game_state.spark_x = 0;
-    g_game_state.spark_y = 0;
     g_game_state.frame_count = 0;
     game_set_phase(GAME_PHASE_SERVE_SETUP);
 }
@@ -54,6 +53,7 @@ void game_new_match(void)
     ball_initialize();
     serve_initialize();
     ai_initialize();
+    fx_initialize();
     game_initialize();
     g_players[2].active = 1;
     g_ai_slots[2].late_period = AI_LATE_SHOT_PERIOD;
@@ -79,10 +79,9 @@ static void game_on_contact(u8 player_index)
 
     ++g_game_state.shot_serial;
     player->flash_timer = GAME_HIT_FLASH_FRAMES;
-    g_game_state.spark_timer = GAME_SPARK_FRAMES;
-    g_game_state.spark_x = FROM_FP(g_ball.x_fp);
-    g_game_state.spark_y = FROM_FP(g_ball.y_fp);
     g_game_state.hit_stop = GAME_HIT_STOP_FRAMES;
+    events_emit(EVENT_HIT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+        player_index);
 }
 
 static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
@@ -100,6 +99,9 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
             return;
     }
     ball_events = ball_update(0);
+    if (ball_events & BALL_EVENT_BOUNCE)
+        events_emit(EVENT_BOUNCE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
+            g_ball.bounce_count);
     serve_process_ball_events(ball_events);
     rules_process_ball_events(ball_events);
 }
@@ -160,8 +162,7 @@ void game_update(const PlayerIntent intents[MAX_PLAYERS])
     if (g_game_state.paused)
         return;
 
-    if (g_game_state.spark_timer)
-        --g_game_state.spark_timer;
+    fx_tick();
     if (g_game_state.hit_stop) {
         --g_game_state.hit_stop;
         return;
