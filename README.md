@@ -57,6 +57,7 @@ make debug          # adds the debug overlay, landing marker, and stress scene
 make dist           # dist/: ROM, SHA-256, build report, player guide, hardware log
 make repro          # two clean builds must produce identical hashes
 make smoke SMOKE=m2 # headless MesenCE run of test/smoke/m2.timeline
+make perf           # dropped frames, hangs, and sound on every timeline (test/perf.json)
 make release PROFILE=1  # per-stage scanline profiler (see include/profile.h)
 ```
 

@@ -1,0 +1,27 @@
+{
+  "comment": "make perf (tools/mesen_probe.py perf): each timeline runs on the release ROM from a blank save. 'overruns' is the allowed frame-overrun count (g_overrun_frames); 'min_loops' is the share of frames the main loop must run, 0.3 by default (a hang or a stuck load runs ~0; fades and screen loads skip some). 'sound' checks SPC700 voices with tools/mesen_voices.lua.",
+  "runs": [
+    {"timeline": "idle.timeline", "frames": 3000},
+    {"timeline": "golden.timeline", "frames": 4300},
+    {"timeline": "doubles.timeline", "frames": 1200},
+    {"timeline": "select.timeline", "frames": 320},
+    {"timeline": "story.timeline", "frames": 270},
+    {"timeline": "records.timeline", "frames": 320},
+    {"timeline": "court.timeline", "frames": 320},
+    {"timeline": "venue.timeline", "frames": 380},
+    {"timeline": "lake.timeline", "frames": 210},
+    {"timeline": "options.timeline", "frames": 1500},
+    {"timeline": "practice.timeline", "frames": 780},
+    {"timeline": "machine.timeline", "frames": 320},
+    {"timeline": "pause.timeline", "frames": 390},
+    {"timeline": "menu.timeline", "frames": 605, "overruns": 40,
+     "note": "the doubles attract demo's own budget (M4-UI-03)"}
+  ],
+  "sound": [
+    {"timeline": "practice.timeline", "frames": 700, "min_starts": 10,
+     "voices": [0, 1, 7],
+     "note": "ambience murmur (0) and calls (1), effects (7)"},
+    {"timeline": "golden.timeline", "frames": 900, "min_starts": 10,
+     "voices": [0, 7]}
+  ]
+}

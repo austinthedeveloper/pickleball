@@ -16,6 +16,7 @@ Environment: MESEN_BIN overrides /Applications/Mesen.app/.../Mesen.
 """
 import argparse
 import glob
+import json
 import os
 import subprocess
 import sys
@@ -38,8 +39,10 @@ GOLDEN_STATE = [
     ("serve", "g_serve_state", 10),
     ("ai", "g_ai_slots", 96),
 ]
-# Frames before initialization hold MesenCE's randomized power-on RAM.
-GOLDEN_SKIP_FRAMES = 2
+# Frames before initialization hold MesenCE's randomized power-on RAM. Boot
+# (the sound CPU, the two-bank soundbank, the first court load) ends near
+# frame 10 since v0.5.0; 30 leaves room.
+GOLDEN_SKIP_FRAMES = 30
 # Frame counters move with code size/timing, not behavior; mask them.
 GAME_MASK_BYTES = (14, 15)   # GameState.frame_count (offsetof)
 
@@ -131,6 +134,97 @@ def golden_lines(config):
     return cleaned
 
 
+PERF_MANIFEST = ROOT / "test" / "perf.json"
+PERF_MIN_LOOPS = 0.3            # share of frames the main loop must run
+
+
+def perf_run(rom, table, timeline, frames):
+    """Final overrun and loop counts for a timeline (shots removed)."""
+    lines = [line for line in timeline.read_text().splitlines()
+             if not line.strip().startswith("shot")]
+    with tempfile.NamedTemporaryFile("w", suffix=".timeline",
+                                     delete=False) as tmp:
+        tmp.write("\n".join(lines + [f"shot {frames - 2}"]) + "\n")
+    probes = [resolve(table, "ovr=g_overrun_frames:2"),
+              resolve(table, "loops=g_loop_count:2")]
+    out = run(rom, Path(tmp.name), frames, probes)
+    os.unlink(tmp.name)
+    if not out:
+        return None, None
+    fields = dict(part.split("=", 1) for part in out[-1].split()[2:])
+    return int(fields["ovr"]), int(fields["loops"])
+
+
+def sound_run(rom, timeline, frames):
+    """Voice starts from tools/mesen_voices.lua."""
+    (MESEN_SAVES / (rom.stem + ".srm")).unlink(missing_ok=True)
+    env = dict(os.environ, SMOKE_TIMELINE=str(timeline),
+               SMOKE_FRAMES=str(frames))
+    result = subprocess.run(
+        [MESEN, "--testRunner", "--doNotSaveSettings", "--noAudio",
+         "--enableStdout", "--debug.scriptWindow.allowIoOsAccess=true",
+         str(ROOT / "tools" / "mesen_voices.lua"), str(rom)],
+        env=env, capture_output=True, text=True)
+    starts = [line.split() for line in result.stdout.splitlines()
+              if line.endswith(" starts")]
+    done = any(line.startswith("done ") for line in result.stdout.splitlines())
+    return done, [int(parts[3]) for parts in starts]
+
+
+def perf(config):
+    """make perf: every run in test/perf.json within its overrun budget,
+    with the main loop running, and the sound checks passing."""
+    rom = rom_for(config)
+    table = symbols(rom)
+    manifest = json.loads(PERF_MANIFEST.read_text())
+    smoke = ROOT / "test" / "smoke"
+    failures = []
+    print(f"{'timeline':<20} {'frames':>6} {'loops':>6} {'overruns':>9}")
+    for entry in manifest["runs"]:
+        name = entry["timeline"]
+        frames = entry["frames"]
+        budget = entry.get("overruns", 0)
+        ovr, loops = perf_run(rom, table, smoke / name, frames)
+        if ovr is None:
+            failures.append(f"{name}: no output (emulator or script failed)")
+            print(f"{name:<20} {frames:>6} {'-':>6} {'-':>9}  FAIL")
+            continue
+        problems = []
+        if loops < frames * entry.get("min_loops", PERF_MIN_LOOPS):
+            problems.append(f"main loop ran {loops} of {frames} frames "
+                            "(hung or stuck?)")
+        if ovr > budget:
+            problems.append(f"{ovr} overruns > budget {budget}")
+        status = "FAIL" if problems else "ok"
+        note = f"  ({entry['note']})" if "note" in entry else ""
+        print(f"{name:<20} {frames:>6} {loops:>6} {ovr:>5}/{budget:<3} "
+              f"{status}{note}")
+        failures += [f"{name}: {p}" for p in problems]
+    for entry in manifest.get("sound", []):
+        name = entry["timeline"]
+        done, voices = sound_run(rom, (smoke / name).resolve(),
+                                 entry["frames"])
+        missing = sorted(set(entry.get("voices", [])) - set(voices))
+        problems = []
+        if not done:
+            problems.append("the sound probe did not finish")
+        if len(voices) < entry.get("min_starts", 1):
+            problems.append(f"{len(voices)} voice starts < "
+                            f"{entry.get('min_starts', 1)}")
+        if missing:
+            problems.append(f"voices never sounded: {missing}")
+        status = "FAIL" if problems else "ok"
+        print(f"sound {name:<14} {entry['frames']:>6} {len(voices):>6} starts, "
+              f"voices {sorted(set(voices))} {status}")
+        failures += [f"sound {name}: {p}" for p in problems]
+    if failures:
+        print("\nperf failed:")
+        for failure in failures:
+            print("  " + failure)
+        sys.exit(1)
+    print("\nperf passed")
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -140,6 +234,8 @@ def main():
     p.add_argument("frames", type=int)
     p.add_argument("specs", nargs="+")
     p.add_argument("--shots", help="directory for screenshots")
+    pf = sub.add_parser("perf")
+    pf.add_argument("--config", default="release")
     for name in ("golden-record", "golden-compare"):
         g = sub.add_parser(name)
         g.add_argument("--config", default="release")
@@ -147,6 +243,10 @@ def main():
                        "fields (for a refactor that changes one struct's "
                        "layout); then re-record")
     args = parser.parse_args()
+
+    if args.cmd == "perf":
+        perf(args.config)
+        return
 
     if args.cmd == "probe":
         rom = rom_for(args.config)

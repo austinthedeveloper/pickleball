@@ -1,6 +1,6 @@
 # Refactor Plan
 
-Status: **In progress** (branch `feature/cld-polish`)
+Status: **R0–R11 done; R12–R15 planned** (R11 on `feature/cld-perf`)
 
 The POC grew quickly, much of it while fighting 816-tcc's code generation
 for performance. These refactors make the code easier to change before the
@@ -33,6 +33,29 @@ gameplay.
 | R8 | Split `tools/generate_assets.py` into modules (PNG I/O, scene, HUD font, OBJ/palettes) | 600+ lines in one file; the font tables dominate it | Low | Done |
 | R9 | Move the spark out of `GameState` behind an event seam: `events_emit` feeds `fx` (spark) and an `audio_events` stub. `hit_stop` stays, because it pauses the simulation. | Match state holds only simulation state. This also delivers the spec's required hooks for serve, hit, bounce, fault, and point sounds. | Low | Done |
 | R10 | Doubles readiness: drop the hard-coded opponent slot in `ai_choose_aim` and the slot 0/2 assumptions in serve/render | Required before activating slots 1 and 3 | Vertical slice | Done (ADR-018) |
+| R11 | `make perf`: every timeline in `test/perf.json` on the release ROM, checking dropped frames against a budget (0 except the doubles demo), that the main loop keeps running (hangs), and that SPC700 voices sound (`tools/mesen_voices.lua`, promoted from the scratchpad) | The boot hang (`spcFlush`), the late whistle, and the doubles demo drops were each found by hand-run probes | High | Done |
+| R12 | Split `src/hud_scene.c` (1,064 lines) into the match HUD (score panels, banners, pause menu) and the title (logo, menu, COURT/OPTIONS/PRACTICE/RECORDS pages); move title input (`update_title*`, ~120 lines of `main.c`) into a host-tested `title.c` | The title grew a page per feature; its input is the only menu logic without host tests | Medium | Planned |
+| R13 | One settings-page component: rows of (label, value names, count) with Up/Down rows, Left/Right wrapping values, B/Start keep, Y restore, and one HUD row renderer | `court_edit_input`, `options_edit_input`, and `practice_edit_input` repeat the same editor; their HUD pages repeat the row drawing | Medium | Planned |
+| R14 | One frame-budget helper: "defer if past scanline N, at most M frames in a row" | The same wait logic is written three times: `hud_title_wait` (hud_scene.c), `render_update_ground` (render.c), and `audio_update` (audio_events.c) | Low | Planned |
+| R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Planned |
+
+### R11 notes
+
+- **Budgets:** `test/perf.json` lists each run (timeline, frames, allowed
+  overruns, and optionally `min_loops`). The main loop must run on at least
+  30% of frames: a hang runs ~0, and fades and screen loads skip some.
+- **Sound:** the voice probe reports each SPC700 voice that starts (its
+  envelope rises from 0). The practice and golden runs must start at least
+  10 voices, including the ambience (voice 0, and calls on 1) and the
+  effects (7).
+- **First catch:** the first run found one dropped frame whenever a match
+  ended back at the title or a demo gave way to the next. `game_new_match`
+  takes about 180 scanlines and the first draw follows in the same frame.
+  That frame is a scene switch, so the main loop now resyncs the overrun
+  latch after it, as fades do (`s_switched`, main.c). The screen holds one
+  frame; nothing tears.
+- **Golden trace:** boot now ends near frame 10 (the sound CPU and the
+  two-bank soundbank), so the trace skips 30 frames, not 2.
 
 ### R10 progress
 
@@ -46,13 +69,14 @@ Then completed with doubles (`feature/cld-doubles`, ADR-018): lane-based serve r
 make check            # host tests + asset fixtures
 make golden-record    # once, before a refactor (build/golden/trace.txt)
 make golden-compare   # after; must report "identical"
+make perf             # frame budget, hangs, and sound (test/perf.json)
 make stats            # bot-vs-CPU balance; LATE=n MATCHES=n
 make release PROFILE=1  # per-stage timing (probe g_stage_scanline_sum)
 ```
 
 The golden trace records game, player, ball, serve, and AI state on every
 frame of `test/smoke/golden.timeline`: about 4,200 frames, 18 points, and 3
-match results with rematches. Frames 0–1 (MesenCE's randomized power-on RAM)
+match results with rematches. Frames 0–29 (boot, over MesenCE's randomized power-on RAM)
 and `frame_count` are excluded. Everything else is byte-identical across
 runs, which also confirms that no game state depends on uninitialized RAM.
 The scripted P1 never wins a point, so the P1-scoring paths are covered by

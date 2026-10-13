@@ -59,7 +59,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare sfx-preview
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
 
 all: debug
 
@@ -154,6 +154,12 @@ smoke: debug
 		$(CURDIR)/tools/mesen_smoke.lua \
 		$(CURDIR)/build/debug/pickleball-$(VERSION_NAME)-debug-$(BUILD_ID).sfc
 	@ls build/smoke/$(SMOKE) | wc -l | xargs echo "smoke screenshots:"
+
+# Frame budget and hang check (headless MesenCE, release ROM): every run in
+# test/perf.json within its overrun budget with the main loop running, and
+# the SPC700 voices sounding (tools/mesen_voices.lua).
+perf: release
+	@MESEN_BIN="$(MESEN_BIN)" python3 tools/mesen_probe.py perf
 
 clean: cleanBuildRes cleanRom cleanLogs
 	@rm -rf build dist assets/generated

@@ -24,6 +24,8 @@ static u8 s_scene;
 static u8 s_open_select;
 /* Player Select is open on the way to practice (ADR-028). */
 static u8 s_practice_pending;
+/* This frame set up a new match (a scene switch for the overrun latch). */
+static u8 s_switched;
 
 /* Menu sounds (ADR-029): Y goes back, a choice confirms, a move blips. */
 static void ui_sounds(u16 pressed)
@@ -303,6 +305,7 @@ int main(void)
     s_scene = SCENE_MATCH;
     s_open_select = 0;
     s_practice_pending = 0;
+    s_switched = 0;
     g_match_config_changed = 0;
     g_demo_mode = 0;
     g_next_opponent = 0;
@@ -367,6 +370,7 @@ int main(void)
             render_apply_match_config();
             hud_scene_invalidate();
             g_match_config_changed = 0;
+            s_switched = 1;
         }
         render_prepare();
         PROFILE_MARK(7);
@@ -376,7 +380,15 @@ int main(void)
         audio_update();
         WaitForVBlank();
         render_commit();
-        profile_frame_end();
+        /* A new match set up this frame (game_new_match, about 180
+         * scanlines, then the first draw) runs past one VBlank: a scene
+         * switch, like a fade, so the held frame is not an overrun. */
+        if (s_switched) {
+            s_switched = 0;
+            profile_resync();
+        } else {
+            profile_frame_end();
+        }
     }
 
     return 0;
