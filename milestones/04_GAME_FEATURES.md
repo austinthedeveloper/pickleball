@@ -61,7 +61,8 @@ ADR-024.
 
 - [x] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").
   - Verified: [ADR-028](../docs/decisions/ADR-028-practice.md), `test/test_practice.c`, `practice.timeline`.
-- [ ] `M4-PRACTICE-02` A ball machine sprite on the far baseline (a few OBJ tiles; 208 of 256 used).
+- [x] `M4-PRACTICE-02` A ball machine sprite on the far baseline (a few OBJ tiles; 208 of 256 used).
+  - Verified: ADR-028 (amended), `test/smoke/machine.timeline`.
 - [ ] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
 

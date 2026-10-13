@@ -34,7 +34,8 @@ enum {
     RENDER_OAM_SPARK = 10,        /* 10-13: impact effects reserve */
     RENDER_OAM_DEBUG_MARKER = 11,
     RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
-    RENDER_OAM_FIRST_HIDDEN = 18
+    RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
+    RENDER_OAM_FIRST_HIDDEN = 22
 };
 
 void render_initialize(void);

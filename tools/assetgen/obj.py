@@ -54,7 +54,10 @@ def palette_parts_header(colors, paddle_names):
 V2_ROLES = set(range(1, 16))
 
 OBJECT_PALETTE = [0, bgr15(6, 6, 2), bgr15(28, 29, 6), bgr15(31, 31, 24),
-                  bgr15(0, 0, 0), bgr15(31, 27, 8), bgr15(31, 31, 31)] + [0] * 9
+                  bgr15(0, 0, 0), bgr15(31, 27, 8), bgr15(31, 31, 31),
+                  # 7-9: the practice ball machine's greys (ADR-028).
+                  bgr15(10, 11, 13), bgr15(17, 18, 20), bgr15(24, 25, 26)] + \
+    [0] * 6
 # Shadows draw with OBJ palette 4 so color math halves the court behind them.
 SHADOW_PALETTE = [0, 0, 0, 0, bgr15(0, 0, 0)] + [0] * 11
 # Doubles (ADR-018): shadows are opaque because colour math is off.

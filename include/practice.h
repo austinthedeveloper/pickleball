@@ -28,10 +28,11 @@ typedef enum {
 } PracticeRate;
 
 enum {
-    /* The machine: on the far baseline, centred, at paddle height. */
+    /* The machine: on the far baseline, centred; feeds leave its nozzle
+     * (the sprite's left edge, 8 px up; render.c draws it there). */
     PRACTICE_MACHINE_X = 232,
     PRACTICE_MACHINE_Y = 130,
-    PRACTICE_MACHINE_Z = 20,
+    PRACTICE_MACHINE_Z = 8,
     PRACTICE_FIRST_FEED_FRAMES = 60,
     PRACTICE_FEED_TIMEOUT_FRAMES = 300, /* a stuck feed ends anyway */
     PRACTICE_STREAK_MAX = 99            /* two digits on the score panel */

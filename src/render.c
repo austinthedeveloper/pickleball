@@ -19,6 +19,7 @@
 #include "render_internal.h"
 #include "hud_scene.h"
 #include "save.h"
+#include "practice.h"
 #include "serve.h"
 
 
@@ -132,8 +133,10 @@ typedef char oam_effects_within_reserve[
     (RENDER_OAM_DEBUG_MARKER < RENDER_OAM_SPARK + 4) ? 1 : -1];
 typedef char oam_accessories_after_effects[
     (RENDER_OAM_ACCESSORIES >= RENDER_OAM_SPARK + 4) ? 1 : -1];
-typedef char oam_hidden_after_accessories[
-    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
+typedef char oam_machine_after_accessories[
+    (RENDER_OAM_MACHINE >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
+typedef char oam_hidden_after_machine[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
 
 /* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
@@ -241,6 +244,27 @@ static void render_ball(void)
         OBJ_ATTR(g_objpal_objects, 0), 0);
 }
 
+/* The practice ball machine (ADR-028): four 8x8 objects, its nozzle (the
+ * left edge, 8 px up) where the feeds leave. Hidden outside practice. */
+static void render_machine(void)
+{
+    s16 x;
+    s16 y = PRACTICE_MACHINE_Y - 16;
+    u8 attr = OBJ_ATTR(g_objpal_objects, 0);
+    u8 i;
+
+    if (!g_match_config.practice || g_attract) {
+        for (i = 0; i < 4; ++i)
+            render_obj_hide(RENDER_OAM_MACHINE + i);
+        return;
+    }
+    x = projection_x(PRACTICE_MACHINE_X, PRACTICE_MACHINE_Y) - 1;
+    obj_put(RENDER_OAM_MACHINE, x, y, OBJTILE_MACHINE_TL, attr, 0);
+    obj_put(RENDER_OAM_MACHINE + 1, x + 8, y, OBJTILE_MACHINE_TR, attr, 0);
+    obj_put(RENDER_OAM_MACHINE + 2, x, y + 8, OBJTILE_MACHINE_BL, attr, 0);
+    obj_put(RENDER_OAM_MACHINE + 3, x + 8, y + 8, OBJTILE_MACHINE_BR, attr, 0);
+}
+
 static void render_effects(void)
 {
     s16 sx;
@@ -282,6 +306,7 @@ void render_prepare(void)
     PROFILE_MARK(2);
     render_ball();
     render_effects();
+    render_machine();
     PROFILE_MARK(3);
     hud_scene_update();
 }

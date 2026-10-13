@@ -12,8 +12,8 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
    Start saves any change and continues; Y goes back.
 2. **Player Select (1P):** your look and paddle (its stats apply).
 3. **The session:** you alone on the left. A ball machine on the far
-   baseline (x 232, centred, at paddle height) feeds balls. Start returns to
-   the title.
+   baseline (x 232, centred) feeds balls from its nozzle, 8 px up. Start
+   returns to the title.
 
 | Setting | Values | Default |
 |---|---|---|
@@ -37,8 +37,17 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
 - **A miss resets the streak:** a return into the net, out, or on your own
   side; a feed you let bounce twice; or a feed that runs 5 s without ending.
 - **On screen:** the score panels read `P1 <streak>`, `PRACTICE`, and
-  `BEST <best>` (up to 99), with a `START  MENU` banner. The machine has no
-  sprite yet (`M4-PRACTICE-02`); a spark and the hit sound mark each feed.
+  `BEST <best>` (up to 99), with a `START  MENU` banner. A spark and the
+  hit sound mark each feed.
+- **The machine** (`M4-PRACTICE-02`) is a 16 × 16 sprite: a grey body with a
+  hopper of yellow balls, a nozzle facing P1, and wheels.
+  - It is four 8 × 8 tiles in the small-object sheet (slots 7–10) and four
+    OAM entries (18–21). The objects palette gains three greys (entries
+    7–9). The OBJ tile count is unchanged (208).
+  - Feeds leave the nozzle, so the launch height is 8 px. A flat drive from
+    there can't clear the net and still land in the kitchen, so a DRIVE to
+    the kitchen is fed as a firm standard shot. The every-shot × every-target
+    landing test covers this.
 - **Saving:** the best streak is saved when you leave, as
   `practice_best`. The three settings are kept in `SaveSettings.practice`
   (SaveData v7).

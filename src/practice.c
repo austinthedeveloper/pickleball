@@ -168,6 +168,10 @@ static void practice_feed(void)
     }
     if (dink)
         tx = HIT_TARGET_DINK_LEFT;      /* a dink always lands short */
+    /* From the low nozzle a flat drive cannot clear the net and still land
+     * in the kitchen: a "drive" there is a firm standard shot. */
+    if (shot_type == SHOT_DRIVE && tx == HIT_TARGET_DINK_LEFT)
+        shot_type = SHOT_STANDARD;
 
     g_ball.active = 1;
     g_ball.x_fp = TO_FP(PRACTICE_MACHINE_X);

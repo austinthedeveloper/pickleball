@@ -90,7 +90,11 @@
     "spark": 3,
     "spark_small": 4,
     "ponytail": 5,
-    "select_corner": 6
+    "select_corner": 6,
+    "machine_tl": 7,
+    "machine_tr": 8,
+    "machine_bl": 9,
+    "machine_br": 10
   },
   "palettes": [
     "blue",
