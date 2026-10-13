@@ -1,0 +1,17 @@
+.DS_Store
+*.asm
+!/data.asm
+*.obj
+*.ps
+*.dbg
+*.log
+*.sfc
+*.sym
+*.symfull
+/hdr.asm
+/linkfile
+/build/
+/dist/
+/assets/generated/
+__pycache__/
+
