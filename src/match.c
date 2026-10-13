@@ -1,12 +1,24 @@
 #define PALETTE_PARTS_DEFINE
 #include "match.h"
 
+#ifdef HOST_TEST
+/* Host tests start from the singles defaults without calling them; on the
+ * SNES main() calls match_config_defaults() (RAM is not initialized). */
+MatchConfig g_match_config = {
+    MATCH_SINGLES,
+    { PAL_BLUE, MATCH_NO_PALETTE, PAL_RED, MATCH_NO_PALETTE },
+    { 0, 0, 0, 0 },
+    { PAL_BLUE, 0, PAL_RED, 0 }
+};
+#else
 MatchConfig g_match_config;
+#endif
 
 void match_config_defaults(void)
 {
     u8 i;
 
+    g_match_config.mode = MATCH_SINGLES;
     for (i = 0; i < MAX_PLAYERS; ++i) {
         g_match_config.palette_id[i] = MATCH_NO_PALETTE;
         g_match_config.skin_id[i] = 0;
@@ -16,6 +28,28 @@ void match_config_defaults(void)
     g_match_config.paddle_id[0] = PAL_BLUE;
     g_match_config.palette_id[2] = PAL_RED;
     g_match_config.paddle_id[2] = PAL_RED;
+}
+
+void match_config_doubles(void)
+{
+    u8 i;
+
+    match_config_defaults();
+    g_match_config.mode = MATCH_DOUBLES;
+    g_match_config.palette_id[1] = PAL_GOLD;
+    g_match_config.palette_id[3] = PAL_GREEN;
+    for (i = 0; i < MAX_PLAYERS; ++i)
+        g_match_config.paddle_id[i] = g_match_config.palette_id[i];
+}
+
+u8 match_slot_active(u8 slot)
+{
+    return g_match_config.palette_id[slot] != MATCH_NO_PALETTE;
+}
+
+u8 match_slot_lane_top(u8 slot)
+{
+    return slot == 1 || slot == 2;
 }
 
 u8 match_config_palettes_unique(void)

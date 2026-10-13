@@ -10,4 +10,7 @@ void hud_scene_invalidate(void);
 /* Call once per frame before VBlank; touches only WRAM. */
 void hud_scene_update(void);
 
+/* Title menu choice: 0 singles, 1 doubles (set by main.c). */
+extern u8 g_title_mode;
+
 #endif

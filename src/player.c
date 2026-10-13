@@ -1,11 +1,21 @@
 #include <string.h>
+#include "ram_copy.h"
 #include "court.h"
 #include "player.h"
 
 Player g_players[MAX_PLAYERS];
 
+/* limit * 181 / 256 for every limit the game uses (12.4 units, <= 31):
+ * a table, because 816-tcc's multiply is a library call. */
+static const u8 s_diagonal_limit[32] = {
+    0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 9, 10,
+    11, 12, 12, 13, 14, 14, 15, 16, 16, 17, 18, 19, 19, 20, 21, 21
+};
+
 s16 player_diagonal_limit(s16 limit)
 {
+    if (limit >= 0 && limit < 32)
+        return s_diagonal_limit[limit];
     return (s16)((limit * 181) >> 8);
 }
 
@@ -112,7 +122,7 @@ static void player_step(const PlayerIntent *intent)
     accel = PLAYER_ACCEL_FP;
     if (move_x && move_y) {
         accel = PLAYER_DIAGONAL_ACCEL_FP;
-        limit = player_diagonal_limit(limit);
+        limit = s_diagonal_limit[limit & 31];
     }
 
     if (move_x > 0)
@@ -137,14 +147,35 @@ static void player_step(const PlayerIntent *intent)
     else if (s_p.vy_fp < -limit)
         s_p.vy_fp = -limit;
 
+    /* court_clamp_x_fp/court_clamp_y_fp, inlined (hot path). */
     next = s_p.x_fp + s_p.vx_fp;
-    s_p.x_fp = court_clamp_x_fp(next, s_p.team);
-    if (s_p.x_fp != next)
-        s_p.vx_fp = 0;
+    if (s_p.team == 0) {
+        if (next < TO_FP(PLAYER_CLAMP_MIN_X)) {
+            next = TO_FP(PLAYER_CLAMP_MIN_X);
+            s_p.vx_fp = 0;
+        } else if (next > TO_FP(PLAYER_CLAMP_MAX_X)) {
+            next = TO_FP(PLAYER_CLAMP_MAX_X);
+            s_p.vx_fp = 0;
+        }
+    } else {
+        if (next < TO_FP(PLAYER_RIGHT_CLAMP_MIN_X)) {
+            next = TO_FP(PLAYER_RIGHT_CLAMP_MIN_X);
+            s_p.vx_fp = 0;
+        } else if (next > TO_FP(PLAYER_RIGHT_CLAMP_MAX_X)) {
+            next = TO_FP(PLAYER_RIGHT_CLAMP_MAX_X);
+            s_p.vx_fp = 0;
+        }
+    }
+    s_p.x_fp = next;
     next = s_p.y_fp + s_p.vy_fp;
-    s_p.y_fp = court_clamp_y_fp(next);
-    if (s_p.y_fp != next)
+    if (next < TO_FP(PLAYER_CLAMP_MIN_Y)) {
+        next = TO_FP(PLAYER_CLAMP_MIN_Y);
         s_p.vy_fp = 0;
+    } else if (next > TO_FP(PLAYER_CLAMP_MAX_Y)) {
+        next = TO_FP(PLAYER_CLAMP_MAX_Y);
+        s_p.vy_fp = 0;
+    }
+    s_p.y_fp = next;
 
     /* Players always square up to the net; flips come from OAM. */
     s_p.facing_left = s_p.team;
@@ -166,16 +197,53 @@ void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
 {
     u8 i;
     Player *player;
+    const PlayerIntent *intent;
 
     if (paused)
         return;
 
     player = g_players;
-    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
+    intent = intents;
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player, ++intent) {
         if (!player->active)
             continue;
-        memcpy(&s_p, player, sizeof(Player));
-        player_step(&intents[s_p.logical_input_slot]);
-        memcpy(player, &s_p, sizeof(Player));
+        RAM_COPY(&s_p, player, sizeof(Player));
+        /* Walk the intent pointer (816-tcc multiplies for intents[n]);
+         * index only if a slot was remapped to another input. */
+        player_step(s_p.logical_input_slot == i ? intent :
+            &intents[s_p.logical_input_slot]);
+        RAM_COPY(player, &s_p, sizeof(Player));
     }
+}
+
+/* Pushes a and b apart in y by 1 px each when they overlap; the upper one
+ * moves up. Clamps keep both on court. */
+static void separate_pair(Player *a, Player *b)
+{
+    fx dx;
+    fx dy;
+
+    if (!a->active || !b->active)
+        return;
+    dx = a->x_fp - b->x_fp;
+    dy = a->y_fp - b->y_fp;
+    if (dx < 0)
+        dx = -dx;
+    if (dx >= TO_FP(PLAYER_SEPARATION_X))
+        return;
+    if (dy >= TO_FP(PLAYER_SEPARATION_Y) || dy <= -TO_FP(PLAYER_SEPARATION_Y))
+        return;
+    if (dy < 0 || (dy == 0 && a < b)) {
+        a->y_fp = court_clamp_y_fp(a->y_fp - FP_ONE);
+        b->y_fp = court_clamp_y_fp(b->y_fp + FP_ONE);
+    } else {
+        a->y_fp = court_clamp_y_fp(a->y_fp + FP_ONE);
+        b->y_fp = court_clamp_y_fp(b->y_fp - FP_ONE);
+    }
+}
+
+void players_separate_teammates(void)
+{
+    separate_pair(&g_players[0], &g_players[1]);
+    separate_pair(&g_players[2], &g_players[3]);
 }

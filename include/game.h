@@ -58,6 +58,10 @@ typedef struct {
 extern GameState g_game_state;
 /* Nonzero while the attract demo (CPU vs CPU behind the title) runs. */
 extern u8 g_attract;
+/* Set when a match start changed g_match_config; the frame loop re-applies
+ * presentation (palettes, colour math) and clears it. */
+extern u8 g_match_config_changed;
+extern u8 g_demo_mode;
 
 enum {
     GAME_ATTRACT_RESULT_FRAMES = 150,
@@ -68,8 +72,8 @@ void game_initialize(void);
 void game_new_match(void);
 /* ATTRACT_READY: demo match with slot 0 driven by the AI. */
 void game_start_attract(void);
-/* Leaves attract and starts a human match. */
-void game_start_match(void);
+/* Leaves attract and starts a human match in the given mode. */
+void game_start_match(u8 mode);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 

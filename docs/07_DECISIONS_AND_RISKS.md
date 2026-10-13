@@ -22,6 +22,7 @@ Status: **Living record**
 | [ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object) | Body variants via an 8×8 accessory object | Female variant without a second body tile set | Distinct silhouette becomes a readability need |
 | [ADR-015](10_MOCKUP_DECISIONS.md#adr-015--paddle-selection-with-gameplay-stats-post-poc) | Paddle selection with gameplay stats (post-POC) | Player Select mockup; gated by a rules ADR | — |
 | [ADR-016](10_MOCKUP_DECISIONS.md#adr-016--scenery-hud-palettes-and-contact-effects) | Scenery, HUD palettes, and contact effects budget (BG1 budget raised to 28 KiB on 2026-10-12) | CGRAM overlap and worst-row budget | BG1 exceeds its character budget |
+| [ADR-018](decisions/ADR-018-doubles.md) | Arcade doubles: lanes, alternating servers, CPU lane coverage, doubles OBJ palette layout | Doubles mockup; vertical-slice priority | Full doubles serve order is implemented |
 | ADR-017 | FastROM (LoROM, map mode `$30`) | 816-tcc code needs the 3.58 MHz bus. It cut title-demo overruns from about 5% to 0.2% and match overruns during live play to zero. FastROM is standard SNES hardware, not an enhancement chip. | A target cartridge cannot provide 120 ns ROM |
 
 ## Risk register

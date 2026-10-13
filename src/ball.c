@@ -1,4 +1,5 @@
 #include <string.h>
+#include "ram_copy.h"
 #include "ball.h"
 #include "court.h"
 #include "player.h"
@@ -84,13 +85,13 @@ u8 ball_simulate_step(Ball *ball)
 
     if (!ball->active || ball->rally_state != BALL_RALLY_LIVE)
         return BALL_EVENT_NONE;
-    memcpy(&s_b, ball, sizeof(Ball));
+    RAM_COPY(&s_b, ball, sizeof(Ball));
 
     if (s_b.z_fp == 0 && s_b.vz_fp <= 0) {
         s_b.vx_fp = 0;
         s_b.vy_fp = 0;
         s_b.vz_fp = 0;
-        memcpy(ball, &s_b, sizeof(Ball));
+        RAM_COPY(ball, &s_b, sizeof(Ball));
         return BALL_EVENT_NONE;
     }
 
@@ -126,7 +127,7 @@ u8 ball_simulate_step(Ball *ball)
         }
     }
 
-    memcpy(ball, &s_b, sizeof(Ball));
+    RAM_COPY(ball, &s_b, sizeof(Ball));
     return events;
 }
 

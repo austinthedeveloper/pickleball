@@ -32,17 +32,13 @@ gameplay.
 | R7 | Shared host-test support header (`test/test_support.h`: frame stepping, bot P1, snapshots) | `test_ai.c`, `test_match_flow.c`, and `test_serve.c` each reimplement the frame loop | Low | Done |
 | R8 | Split `tools/generate_assets.py` into modules (PNG I/O, scene, HUD font, OBJ/palettes) | 600+ lines in one file; the font tables dominate it | Low | Done |
 | R9 | Move the spark out of `GameState` behind an event seam: `events_emit` feeds `fx` (spark) and an `audio_events` stub. `hit_stop` stays, because it pauses the simulation. | Match state holds only simulation state. This also delivers the spec's required hooks for serve, hit, bounce, fault, and point sounds. | Low | Done |
-| R10 | Doubles readiness: drop the hard-coded opponent slot in `ai_choose_aim` and the slot 0/2 assumptions in serve/render | Required before activating slots 1 and 3 | Vertical slice | Partial |
+| R10 | Doubles readiness: drop the hard-coded opponent slot in `ai_choose_aim` and the slot 0/2 assumptions in serve/render | Required before activating slots 1 and 3 | Vertical slice | Done (ADR-018) |
 
 ### R10 progress
 
 Done: the AI aims away from the first *active* opponent rather than slot 0. The main loop runs the AI for every CPU-owned active slot (per `g_input_owners`) rather than slot 2 only.
 
-Remaining before doubles:
-- Serve rotation: `serve.c` maps each team to one server slot (0 or 2).
-- Four player palettes: only OBJ palettes 0–3 are exempt from shadow colour math (docs/09 doubles note).
-- Teammate separation and per-team recovery points in the AI.
-- `game_new_match` activates slot 2 only; match config needs per-match activation.
+Then completed with doubles (`feature/cld-doubles`, ADR-018): lane-based serve rotation, the doubles OBJ palette layout, teammate separation, lane homes, and per-match slot activation from the match config.
 
 ## Verification recipe
 

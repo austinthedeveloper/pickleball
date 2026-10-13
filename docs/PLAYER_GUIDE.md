@@ -1,6 +1,10 @@
 # Pickleball '94 — Player Guide
 
-One player against the CPU on a single outdoor court. First to 5 points wins.
+One player against the CPU (singles), or with a CPU partner against two CPUs
+(doubles), on a single outdoor court. First to 5 points wins.
+
+On the title screen, Up/Down chooses **SINGLES** or **DOUBLES**; Start or B
+begins the match.
 
 ## Controls
 
@@ -26,6 +30,9 @@ These are simplified rules; the HUD says **ARCADE RULES**.
 - A ball that lands out, hits the net, or bounces twice on a side ends the rally against the responsible side.
 - Lines are in.
 - Kitchen foot faults are not called.
+- Doubles: each player covers a lane (you play the bottom half of your side,
+  your partner the top). The serving side alternates which partner serves
+  with its score, always diagonally, and teammates never swap sides.
 
 ## Result banners
 

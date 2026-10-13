@@ -4,7 +4,6 @@
 #include "hud_tiles.h"
 #include "render.h"
 
-#define HUD_PRIORITY 0x2000
 #define HUD_HFLIP 0x4000
 #define HUD_VFLIP 0x8000
 #define HUD_SPACE 32
@@ -19,9 +18,6 @@ u16 hud_fill_count;
 u16 hud_fill_value;
 extern void hud_fill(void);
 
-/* A macro: a 816-tcc call per tile made full redraws overrun the frame. */
-#define hud_entry(tile, palette) \
-    ((u16)(tile) | ((u16)(palette) << 10) | HUD_PRIORITY)
 
 static void hud_mark(u8 row)
 {

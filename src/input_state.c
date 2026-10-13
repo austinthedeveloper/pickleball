@@ -34,6 +34,14 @@ void input_configure(u8 multitap_present)
     g_input_pad_for_player[3] = multitap_present ? 3 : INPUT_NO_PAD;
 }
 
+void input_assign_match(const u8 active[MAX_PLAYERS])
+{
+    g_input_owners[0] = INPUT_OWNER_HUMAN;
+    g_input_owners[1] = active[1] ? INPUT_OWNER_CPU : INPUT_OWNER_NONE;
+    g_input_owners[2] = active[2] ? INPUT_OWNER_CPU : INPUT_OWNER_NONE;
+    g_input_owners[3] = active[3] ? INPUT_OWNER_CPU : INPUT_OWNER_NONE;
+}
+
 static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
     u8 may_pause)
 {

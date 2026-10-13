@@ -11,16 +11,18 @@
 #define RENDER_OBJ_TILES_ADDR 0x6000
 
 /*
- * OBJ palette slots. Only palettes 0-3 are exempt from colour math, so the
- * two POC players, objects, and the hit flash fill them; palette 4 is the
- * colour-math shadow. Doubles needs a new plan here (see docs/09).
+ * OBJ palette layouts (ADR-018). Only palettes 0-3 are exempt from colour
+ * math. Singles: players 0-1, objects 2, flash 3, translucent shadow 4.
+ * Doubles: players 0-3, objects 4, flash 5, opaque shadow 6, math off.
+ * Player.palette holds the player's slot in the active layout.
  */
 enum {
-    RENDER_OBJPAL_PLAYER_A = 0,   /* slot 0 */
-    RENDER_OBJPAL_PLAYER_B = 1,   /* slot 2 */
-    RENDER_OBJPAL_OBJECTS = 2,
+    RENDER_OBJPAL_OBJECTS = 2,        /* singles values */
     RENDER_OBJPAL_FLASH = 3,
-    RENDER_OBJPAL_SHADOW = 4
+    RENDER_OBJPAL_SHADOW = 4,
+    RENDER_OBJPAL_DOUBLES_OBJECTS = 4,
+    RENDER_OBJPAL_DOUBLES_FLASH = 5,
+    RENDER_OBJPAL_DOUBLES_SHADOW = 6
 };
 
 /* OAM entry indices (docs/03_SPRITE_ASSET_PIPELINE.md OAM allocation). */
@@ -40,6 +42,8 @@ void render_initialize(void);
  * upload happens in the next render_commit (or immediately in forced blank
  * during render_initialize). */
 void render_apply_match_config(void);
+/* Mode whose palettes/colour math are currently set up. */
+u8 render_match_mode_applied(void);
 /* Builds OAM and HUD buffers; call before WaitForVBlank. */
 void render_prepare(void);
 /* VBlank-only uploads (HUD bands, pending palettes). */

@@ -60,7 +60,8 @@ make smoke SMOKE=m2 # headless MesenCE run of test/smoke/m2.timeline
 make release PROFILE=1  # per-stage scanline profiler (see include/profile.h)
 ```
 
-The ROM boots into a CPU-vs-CPU demo behind the title; Start begins a match.
+The ROM boots into a CPU-vs-CPU demo (alternating singles and doubles) behind
+the title; Up/Down picks SINGLES or DOUBLES and Start begins the match.
 Controls and rules are in [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md). In
 debug and hardware-test builds, pausing shows the build ID and Multitap
 status, and Select opens the OBJ stress scene. Build artifacts are written

@@ -27,25 +27,47 @@ extern char hud_palette, hud_palette_end;
 extern char obj_tiles, obj_tiles_end;
 extern char objects_palette, objects_palette_end;
 
-static const u16 s_idle_frames[2] = { FRAME_IDLE0, FRAME_IDLE1 };
-static const u16 s_run_frames[4] = {
-    FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3
-};
 u16 g_obj_overflow_frames;
+
+/* Inputs for ram_copy (src/asm/ram_copy.asm). */
+u16 ram_copy_src;
+u16 ram_copy_dst;
+u16 ram_copy_len;
 
 #define REG_STAT77_FLAGS (*(vuint8 *)0x213E)
 
-static u16 s_player_palettes[2][16];
+static u16 s_player_palettes[MAX_PLAYERS][16];
 static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
+static u8 s_doubles;
+static u8 s_applied_mode;
 
+u8 render_match_mode_applied(void)
+{
+    return s_applied_mode;
+}
+u8 g_objpal_objects;
+u8 g_objpal_flash;
+u8 g_objpal_shadow;
 
+/* Composes player palettes and picks the OBJ layout for the match mode
+ * (ADR-018); uploads happen in render_commit's VBlank. */
 void render_apply_match_config(void)
 {
     u8 team;
+    u8 slot;
 
-    match_compose_palette(0, s_player_palettes[0]);
-    match_compose_palette(2, s_player_palettes[1]);
+    s_doubles = g_match_config.mode == MATCH_DOUBLES;
+    s_applied_mode = g_match_config.mode;
+    g_objpal_objects = s_doubles ? RENDER_OBJPAL_DOUBLES_OBJECTS :
+        RENDER_OBJPAL_OBJECTS;
+    g_objpal_flash = s_doubles ? RENDER_OBJPAL_DOUBLES_FLASH :
+        RENDER_OBJPAL_FLASH;
+    g_objpal_shadow = s_doubles ? RENDER_OBJPAL_DOUBLES_SHADOW :
+        RENDER_OBJPAL_SHADOW;
+    for (slot = 0; slot < MAX_PLAYERS; ++slot)
+        if (match_slot_active(slot))
+            match_compose_palette(slot, s_player_palettes[slot]);
     for (team = 0; team < 2; ++team) {
         s_hud_team_colors[team][0] = g_pal_hud[match_team_palette(team)][0];
         s_hud_team_colors[team][1] = g_pal_hud[match_team_palette(team)][1];
@@ -53,14 +75,29 @@ void render_apply_match_config(void)
     s_palette_dirty = 1;
 }
 
+/* Every OBJ palette of the active layout, the HUD team colours, and the
+ * shadow colour math (on for singles, off for doubles). */
 static void render_upload_palettes(void)
 {
     u8 team;
 
-    dmaCopyCGram((u8 *)s_player_palettes[0],
-        CGRAM_OBJ + RENDER_OBJPAL_PLAYER_A * 16, 32);
-    dmaCopyCGram((u8 *)s_player_palettes[1],
-        CGRAM_OBJ + RENDER_OBJPAL_PLAYER_B * 16, 32);
+    if (s_doubles) {
+        dmaCopyCGram((u8 *)s_player_palettes, CGRAM_OBJ, 4 * 32);
+        dmaCopyCGram((u8 *)&objects_palette + 64,
+            CGRAM_OBJ + g_objpal_shadow * 16, 32);
+        setColorEffect(0x02, 0x00);
+    } else {
+        dmaCopyCGram((u8 *)s_player_palettes[0], CGRAM_OBJ, 32);
+        dmaCopyCGram((u8 *)s_player_palettes[2], CGRAM_OBJ + 16, 32);
+        dmaCopyCGram((u8 *)&objects_palette + 32,
+            CGRAM_OBJ + g_objpal_shadow * 16, 32);
+        /* Shadows: OBJ palette 4 pixels are black and averaged with BG1 on
+         * the subscreen, i.e. half-brightness court under every shadow. */
+        setColorEffect(0x02, 0x50);
+    }
+    dmaCopyCGram((u8 *)&objects_palette, CGRAM_OBJ + g_objpal_objects * 16,
+        32);
+    dmaCopyCGram((u8 *)g_pal_flash, CGRAM_OBJ + g_objpal_flash * 16, 32);
     /* BG3 palettes 2/3 colours 1-2 are the team label colours. */
     for (team = 0; team < 2; ++team)
         dmaCopyCGram((u8 *)s_hud_team_colors[team],
@@ -101,56 +138,30 @@ void render_obj_hide(u8 id)
     oam_write();
 }
 
-/* Static scratch copy: 816-tcc reaches static fields with one long access,
- * whereas every pointer dereference costs several stack loads. */
-static Player s_rp;
 
-static u16 player_frame(void)
-{
-    if (s_rp.pose == PLAYER_POSE_CHEER)
-        return FRAME_CHEER;
-    if (s_rp.pose == PLAYER_POSE_TOSS)
-        return FRAME_TOSS;
-    switch (s_rp.state) {
-    case PLAYER_STATE_WINDUP:
-        return FRAME_WINDUP;
-    case PLAYER_STATE_ACTIVE:
-        return FRAME_SWING;
-    case PLAYER_STATE_RECOVERY:
-        return FRAME_FOLLOW;
-    case PLAYER_STATE_MOVE:
-        return s_run_frames[s_rp.animation_frame & 3];
-    default:
-        return s_idle_frames[s_rp.animation_frame & 1];
-    }
-}
 
-static void render_player(const Player *player, u8 body_id, u8 shadow_id)
-{
-    s16 y;
-    s16 sx;
-    u8 palette;
-
-    memcpy(&s_rp, player, sizeof(Player));
-    if (!s_rp.active) {
-        render_obj_hide(body_id);
-        render_obj_hide(shadow_id);
-        return;
-    }
-    y = FROM_FP(s_rp.y_fp);
-    sx = projection_x(FROM_FP(s_rp.x_fp), y);
-    palette = s_rp.flash_timer ? RENDER_OBJPAL_FLASH : s_rp.palette;
-    obj_put(body_id, sx - PLAYER_SPRITE_HALF_WIDTH, y - PLAYER_SPRITE_FOOT_Y,
-        player_frame(), OBJ_ATTR(palette, s_rp.facing_left), 1);
-    obj_put(shadow_id, sx - 4, y - 4, OBJTILE_PLAYER_SHADOW,
-        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
-}
 
 /*
  * ADR-012: bodies take OAM 2-5 nearest-first (larger y wins; ties by slot) so
  * the nearer player draws on top; shadows keep fixed per-slot IDs 6-9.
  */
-static s16 s_depth[MAX_PLAYERS];
+/* Working variables for src/asm/render_bodies.asm (all words). */
+s16 rb_depth[MAX_PLAYERS];
+u16 rb_order[MAX_PLAYERS];
+u16 rb_i;
+u16 rb_key;
+s16 rb_kd;
+u16 rb_tmp;
+u16 rb_slot;
+s16 rb_y;
+s16 rb_d;
+u16 rb_sign;
+s16 rb_prod;
+s16 rb_sx;
+u16 rb_attr;
+u16 rb_count;
+extern void render_bodies(void);
+
 static u8 s_active_bodies;
 
 void render_reset_bodies(void)
@@ -163,38 +174,23 @@ void render_request_palettes(void)
     s_palette_dirty = 1;
 }
 
+/*
+ * ADR-012: bodies take OAM 2-5 nearest-first and shadows keep per-slot IDs
+ * 6-9. The per-player work is in src/asm/render_bodies.asm (four players in
+ * doubles did not fit the frame in 816-tcc C); here only the rare re-hide
+ * when the number of active players changes.
+ */
 static void render_players(void)
 {
-    u8 order[MAX_PLAYERS];
-    u8 i;
     u8 j;
-    u8 key;
 
-    /* Constant indices: 816-tcc multiplies for every variable g_players[i]. */
-    s_depth[0] = g_players[0].active ? g_players[0].y_fp : -32767;
-    s_depth[1] = g_players[1].active ? g_players[1].y_fp : -32767;
-    s_depth[2] = g_players[2].active ? g_players[2].y_fp : -32767;
-    s_depth[3] = g_players[3].active ? g_players[3].y_fp : -32767;
-    for (i = 0; i < MAX_PLAYERS; ++i) {
-        key = i;
-        j = i;
-        while (j > 0 && s_depth[key] > s_depth[order[j - 1]]) {
-            order[j] = order[j - 1];
-            --j;
-        }
-        order[j] = key;
-    }
-    /* Inactive slots sort last; stop there and only re-hide their objects
-     * when the active count changes. */
-    for (i = 0; i < MAX_PLAYERS && s_depth[order[i]] != -32767; ++i)
-        render_player(&g_players[order[i]], RENDER_OAM_BODIES + i,
-            RENDER_OAM_SHADOWS + order[i]);
-    if (i != s_active_bodies) {
-        s_active_bodies = i;
+    render_bodies();
+    if (rb_count != s_active_bodies) {
+        s_active_bodies = (u8)rb_count;
         for (j = 0; j < MAX_PLAYERS; ++j) {
-            if (j >= i)
+            if (j >= rb_count)
                 render_obj_hide(RENDER_OAM_BODIES + j);
-            if (s_depth[j] == -32767)
+            if (rb_depth[j] == -32767)
                 render_obj_hide(RENDER_OAM_SHADOWS + j);
         }
     }
@@ -217,9 +213,9 @@ static void render_ball(void)
     z = FROM_FP(g_ball.z_fp);
     sx = projection_x(x, y);
     obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4, OBJTILE_BALL_SHADOW,
-        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
+        OBJ_ATTR(g_objpal_shadow, 0), 0);
     obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
-        OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+        OBJ_ATTR(g_objpal_objects, 0), 0);
 }
 
 static void render_effects(void)
@@ -231,7 +227,7 @@ static void render_effects(void)
         obj_put(RENDER_OAM_SPARK, sx - 4,
             g_fx.spark_y - FROM_FP(g_ball.z_fp) - 4,
             (g_fx.spark_timer & 2) ? OBJTILE_SPARK :
-            OBJTILE_SPARK_SMALL, OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+            OBJTILE_SPARK_SMALL, OBJ_ATTR(g_objpal_objects, 0), 0);
     } else {
         render_obj_hide(RENDER_OAM_SPARK);
     }
@@ -241,7 +237,7 @@ static void render_effects(void)
         obj_put(RENDER_OAM_DEBUG_MARKER,
             projection_x(g_ai.predicted_land_x, g_ai.predicted_land_y) - 4,
             g_ai.predicted_land_y - 4, OBJTILE_SPARK_SMALL,
-            OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+            OBJ_ATTR(g_objpal_objects, 0), 0);
     } else {
         render_obj_hide(RENDER_OAM_DEBUG_MARKER);
     }
@@ -313,11 +309,6 @@ void render_initialize(void)
         (u16)(&hud_palette_end - &hud_palette));
     dmaCopyCGram((u8 *)&court_palette, 32,
         (u16)(&court_palette_end - &court_palette));
-    dmaCopyCGram((u8 *)&objects_palette,
-        CGRAM_OBJ + RENDER_OBJPAL_OBJECTS * 16, 32);
-    dmaCopyCGram((u8 *)&objects_palette + 32,
-        CGRAM_OBJ + RENDER_OBJPAL_SHADOW * 16, 32);
-    dmaCopyCGram((u8 *)g_pal_flash, CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
     /* Match palettes are composed and uploaded inside this forced blank. */
     render_apply_match_config();
     render_upload_palettes();
@@ -335,7 +326,6 @@ void render_initialize(void)
     /* Shadows: OBJ palette 4 pixels are black and averaged with BG1 on the
      * subscreen, i.e. half-brightness court under every shadow. */
     bgSetEnableSub(0);
-    setColorEffect(0x02, 0x50);
 
     hud_initialize();
     hud_scene_invalidate();

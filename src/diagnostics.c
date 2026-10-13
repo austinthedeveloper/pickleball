@@ -17,7 +17,6 @@
  */
 #ifdef RENDER_DIAGNOSTICS
 
-extern char objects_palette, objects_palette_end;
 static u8 s_hud_debug_build_shown;
 
 extern u16 g_overrun_frames;
@@ -127,17 +126,17 @@ void diag_stress_render(void)
             STRESS_ROW - PLAYER_SPRITE_FOOT_Y, s_stress_frames[frame],
             OBJ_ATTR(pal, ((s_stress_timer >> 5) + i) & 1), 1);
         obj_put(RENDER_OAM_SHADOWS + i, x - 4, STRESS_ROW - 4,
-            OBJTILE_PLAYER_SHADOW, OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
+            OBJTILE_PLAYER_SHADOW, OBJ_ATTR(g_objpal_shadow, 0), 0);
         obj_put(RENDER_OAM_ACCESSORIES + i, x + 10, STRESS_ROW - 6,
             OBJTILE_SPARK_SMALL, OBJ_ATTR(pal, 0), 0);
         obj_put(RENDER_OAM_SPARK + i, x + 18, STRESS_ROW - 6,
             (s_stress_timer & 4) ? OBJTILE_SPARK : OBJTILE_SPARK_SMALL,
-            OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+            OBJ_ATTR(g_objpal_objects, 0), 0);
     }
     obj_put(RENDER_OAM_BALL, 120, STRESS_ROW - 6, OBJTILE_BALL,
-        OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+        OBJ_ATTR(g_objpal_objects, 0), 0);
     obj_put(RENDER_OAM_BALL_SHADOW, 124, STRESS_ROW - 4, OBJTILE_BALL_SHADOW,
-        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
+        OBJ_ATTR(g_objpal_shadow, 0), 0);
 
     if (!s_stress_hud_drawn) {
         s_stress_hud_drawn = 1;
@@ -153,19 +152,14 @@ void diag_stress_render(void)
 }
 
 /* Called with pending palette work in VBlank. Returns 1 when the stress
- * scene's palettes replaced the match palettes. */
+ * scene's palettes replaced the match palettes; otherwise render restores
+ * the full match layout. */
 u8 diag_upload_palettes(void)
 {
-    if (s_stress) {
-        dmaCopyCGram((u8 *)s_stress_palettes, CGRAM_OBJ, 4 * 32);
-        return 1;
-    }
-    /* Leaving the stress scene restores objects and flash too. */
-    dmaCopyCGram((u8 *)&objects_palette,
-        CGRAM_OBJ + RENDER_OBJPAL_OBJECTS * 16, 32);
-    dmaCopyCGram((u8 *)g_pal_flash,
-        CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
-    return 0;
+    if (!s_stress)
+        return 0;
+    dmaCopyCGram((u8 *)s_stress_palettes, CGRAM_OBJ, 4 * 32);
+    return 1;
 }
 
 void diag_initialize(void)

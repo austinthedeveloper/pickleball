@@ -16,3 +16,6 @@ are blockers.
 | 9 | Minor | In the title demo, the demo P1 thinks every other frame to fit two AIs in the frame, so it reacts a little later than the CPU does. | Watch the attract demo. | Accepted; the demo only. Human matches run one AI at full rate. |
 | 10 | Minor | Impact effects are behind player bodies in OAM order (docs/03: bodies 2–5, effects 10–13). | — | Mitigated: the spark leads 10 px toward the net, in front of the paddle (`FX_SPARK_LEAD_X`). A future swing-arc effect needs its own plan (ADR-016 already rules out a trail). |
 | 11 | Minor | The golden trace's scripted P1 never wins a point, so P1-scoring paths are covered only by host tests. | `build/golden/trace.txt`. | Accepted. A smarter input script, or a bot-driven trace mode, would widen emulator coverage. |
+| 12 | Minor | Doubles shadows are opaque, not translucent. | Play doubles. | By design (ADR-018): four players use all four colour-math-exempt OBJ palettes. |
+| 13 | Minor | Doubles has one human (P1); port 2 and Multitap humans are not yet assignable. | — | Arrives with character select; `g_input_owners` and `input_assign_match` already support it. |
+| 14 | Minor | Doubles drops about one frame in 1,000 (7 in a 7,000-frame soak), mostly when a rally starts. | `make release`; doubles soak via `tools/mesen_probe.py`. | Accepted. Singles stays at zero. |

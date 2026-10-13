@@ -29,22 +29,16 @@ cannot overflow.
 | 0–15 | BG3 HUD palettes 0–3 (ADR-016): 0 neutral, 1 title gold / B button, 2 left-team label, 3 right-team label. Palettes 2–3 are rewritten from the match config. |
 | 16–31 | Unused (BG3 palettes 4–7 / BG 4bpp palette 1) |
 | 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. |
-| 128–143 | OBJ 0: slot 0 player, composed at match start (ADR-013) |
-| 144–159 | OBJ 1: slot 2 player, composed at match start |
-| 160–175 | OBJ 2: ball, spark, debug marker |
-| 176–191 | OBJ 3: hit flash |
-| 192–207 | OBJ 4: shadows (black, colour math) |
-| 208–255 | OBJ 5–7: unused |
+| 128–255 | OBJ palettes; the layout depends on the match mode (ADR-018). In singles, OBJ 0–1 are the slot 0 and slot 2 players, 2 is the ball and spark, 3 the hit flash, and 4 the shadow (black, colour math). In doubles, OBJ 0–3 are players by slot, 4 the ball, 5 the flash, and 6 the opaque shadow, with colour math off. |
 
 Shadows use colour math: `CGWSEL = $02` (add subscreen), `CGADSUB = $50`
 (half, OBJ). BG1 is also on the subscreen, so a black OBJ-palette-4 pixel
 renders as the court at half brightness. Only OBJ palettes 4–7 take part in
 colour math.
 
-**Doubles note.** Only OBJ palettes 0–3 are exempt from colour math. Four
-players plus objects and flash do not fit in them. Before doubles, either
-compose flash by rewriting the hitter's palette (ADR-010 permits this),
-which frees OBJ 3, or draw shadows without colour math.
+**Doubles.** Only OBJ palettes 0–3 are exempt from colour math, and four
+players need all four, so doubles turns colour math off and draws opaque
+dark shadows (ADR-018). Singles keeps translucent shadows.
 
 ## OAM
 

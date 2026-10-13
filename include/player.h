@@ -39,6 +39,9 @@ enum {
     /* CPU runs at 80% of human top speed. */
     PLAYER_CPU_MAX_SPEED_FP = 19,
 
+    PLAYER_SEPARATION_X = 16,
+    PLAYER_SEPARATION_Y = 12,
+
     PLAYER_IDLE_CEL_FRAMES = 20,
     PLAYER_RUN_CEL_FRAMES = 6
 };
@@ -69,6 +72,8 @@ extern Player g_players[MAX_PLAYERS];
 
 void players_initialize(void);
 void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused);
+/* Doubles (ADR-018): nudge crowded teammates 1 px apart in y. */
+void players_separate_teammates(void);
 void player_place(Player *player, s16 x, s16 y);
 u8 player_is_swinging(const Player *player);
 s16 player_diagonal_limit(s16 limit);

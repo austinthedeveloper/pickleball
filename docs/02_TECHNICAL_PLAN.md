@@ -52,7 +52,9 @@ No gameplay mutation occurs from rendering functions.
 | `src/rules.c/.h` | Two-bounce tracking, faults, scoring |
 | `src/ai.c/.h` | Landing prediction and CPU intent |
 | `src/projection.c/.h` | World-to-screen projection over the generated `court_projection.h` table (may be header-only) |
-| `src/render.c/.h` | Background setup and OAM construction |
+| `src/render.c/.h` | Background setup, palettes, ball/effects OAM |
+| `src/asm/render_bodies.asm` | Player bodies and shadows: depth sort, projection on the hardware multiplier, OAM (four players did not fit the frame in C) |
+| `src/asm/oam_write.asm`, `ram_copy.asm`, `hud_fill.asm` | OAM entry writer, MVN block copy for scratch structs, BG3 map fill |
 | `src/hud.c/.h` | Score, state banners, debug overlay |
 | `src/events.c/.h` | Simulation → presentation event seam (serve, hit, bounce, fault, point) |
 | `src/fx.c/.h` | Event-driven presentation effects (contact spark) |

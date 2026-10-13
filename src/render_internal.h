@@ -37,6 +37,10 @@ extern void oam_write(void);
 
 
 void render_obj_hide(u8 id);
+/* OBJ palette numbers in the active layout (render.h). */
+extern u8 g_objpal_objects;
+extern u8 g_objpal_flash;
+extern u8 g_objpal_shadow;
 /* Upload palettes (match or diagnostics) in the next VBlank. */
 void render_request_palettes(void);
 /* Re-hide unused body/shadow slots on the next frame. */

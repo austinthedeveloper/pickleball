@@ -4,6 +4,8 @@
 #include "collision.h"
 #include "events.h"
 #include "fx.h"
+#include "input.h"
+#include "match.h"
 #include "game.h"
 #include "player.h"
 #include "profile.h"
@@ -12,6 +14,9 @@
 
 GameState g_game_state;
 u8 g_attract;
+u8 g_match_config_changed;
+/* Mode of the next attract demo; boot starts with singles. */
+u8 g_demo_mode;
 
 void game_set_phase(u8 phase)
 {
@@ -48,6 +53,32 @@ static void game_begin_serve(u8 serving_team)
     game_set_phase(GAME_PHASE_SERVE_SETUP);
 }
 
+/*
+ * Slots follow the match config (ADR-018): singles plays slots 0 and 2,
+ * doubles all four. Every active slot except P1 is CPU-owned for now; OBJ
+ * palettes are slot order in doubles and 0/1 in singles (see render.h).
+ */
+static void game_activate_players(void)
+{
+    u8 active[MAX_PLAYERS];
+    u8 doubles = g_match_config.mode == MATCH_DOUBLES;
+    Player *player = g_players;
+    u8 i;
+
+    for (i = 0; i < MAX_PLAYERS; ++i)
+        active[i] = match_slot_active(i);
+    input_assign_match(active);
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
+        player->active = active[i];
+        player->cpu_controlled = g_input_owners[i] == INPUT_OWNER_CPU;
+        player->max_speed_fp = player->cpu_controlled ?
+            PLAYER_CPU_MAX_SPEED_FP : PLAYER_MAX_SPEED_FP;
+        player->palette = doubles ? i : player->team;
+        if (player->cpu_controlled)
+            g_ai_slots[i].late_period = AI_LATE_SHOT_PERIOD;
+    }
+}
+
 /* Fresh match without a console reset (RST-01): every simulation module is
  * re-initialized, so nothing from the previous match carries over. */
 void game_new_match(void)
@@ -58,20 +89,32 @@ void game_new_match(void)
     ai_initialize();
     fx_initialize();
     game_initialize();
-    g_players[2].active = 1;
-    g_ai_slots[2].late_period = AI_LATE_SHOT_PERIOD;
+    game_activate_players();
     game_begin_serve(0);
 }
 
+/* The demo alternates singles and doubles. */
 void game_start_attract(void)
 {
+    if (g_demo_mode == MATCH_DOUBLES)
+        match_config_doubles();
+    else
+        match_config_defaults();
+    g_demo_mode = g_demo_mode == MATCH_DOUBLES ? MATCH_SINGLES :
+        MATCH_DOUBLES;
+    g_match_config_changed = 1;
     game_new_match();
     g_attract = 1;
     g_ai_slots[0].late_period = GAME_ATTRACT_LATE_PERIOD;
 }
 
-void game_start_match(void)
+void game_start_match(u8 mode)
 {
+    if (mode == MATCH_DOUBLES)
+        match_config_doubles();
+    else
+        match_config_defaults();
+    g_match_config_changed = 1;
     game_new_match();
     g_attract = 0;
 }
@@ -174,6 +217,7 @@ void game_update(const PlayerIntent intents[MAX_PLAYERS])
         ++g_game_state.phase_timer;
 
     players_update(intents, 0);
+    players_separate_teammates();
     PROFILE_MARK(4);
     switch (g_game_state.phase) {
     case GAME_PHASE_SERVE_SETUP:

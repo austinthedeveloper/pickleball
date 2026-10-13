@@ -16,6 +16,7 @@ enum {
     SERVE_STANCE_OFFSET_Y = 22,
     SERVE_BASELINE_GAP = 6,
     SERVE_RECEIVER_GAP = 4,
+    SERVE_PARTNER_KITCHEN_GAP = 8,
     SERVE_TARGET_LANE_SHIFT = 12,
     /* Targets for a left-team server; the right team mirrors them. */
     SERVE_TARGET_SHORT_RIGHT = COURT_KITCHEN_RIGHT_X + 14,

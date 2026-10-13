@@ -18,6 +18,12 @@ enum {
     HUD_BANDS = 7
 };
 
+#define HUD_PRIORITY 0x2000
+/* A BG3 map entry. A macro: a 816-tcc call per tile made full redraws
+ * overrun the frame. */
+#define hud_entry(tile, palette) \
+    ((u16)(tile) | ((u16)(palette) << 10) | HUD_PRIORITY)
+
 void hud_initialize(void);
 void hud_clear_rows(u8 first_row, u8 count);
 void hud_text(u8 col, u8 row, u8 palette, const char *text);

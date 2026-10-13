@@ -9,6 +9,9 @@ enum {
     AI_PREDICT_MAX_STEPS = 60,
     AI_RECOVER_X = 208,           /* right team; mirrored for the left */
     AI_RECOVER_Y = 130,
+    /* Doubles lane homes (ADR-018): top and bottom of the half. */
+    AI_RECOVER_Y_TOP = 110,
+    AI_RECOVER_Y_BOTTOM = 150,
     /* Stand this far behind the predicted contact point (difficulty knob). */
     AI_CONTACT_OFFSET_X = 10,
     AI_DEAD_ZONE = 3,
@@ -43,6 +46,21 @@ typedef struct {
  * each slot's state persists in g_ai_slots between frames. */
 extern AiState g_ai;
 extern AiState g_ai_slots[MAX_PLAYERS];
+
+/* Swing lookahead probe (exposed for test_ai.c's equivalence check). */
+typedef struct {
+    fx x;
+    fx y;
+    fx z;
+    s16 vx;
+    s16 vy;
+    s16 vz;
+    u8 bounces;
+} AiProbe;
+
+extern AiProbe g_probe;
+void ai_probe_load(const Ball *ball);
+void ai_probe_step(void);
 
 void ai_initialize(void);
 /* Predicts the next ground contact; returns steps simulated (<= cap). */

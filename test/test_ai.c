@@ -64,6 +64,37 @@ static void test_prediction_matches_simulation(void)
         AI_PREDICT_MAX_STEPS);
 }
 
+/* The AI's lightweight probe must match ball_simulate_step exactly. */
+static void test_probe_matches_ball(void)
+{
+    static const s16 targets[6][2] = {
+        { 200, 104 }, { 228, 156 }, { 176, 130 }, { 28, 104 }, { 80, 156 },
+        { 250, 180 }
+    };
+    Ball ball;
+    u8 t;
+    u8 n;
+
+    for (t = 0; t < 6; ++t) {
+        memset(&ball, 0, sizeof(ball));
+        ball.active = 1;
+        ball.rally_state = BALL_RALLY_LIVE;
+        ball.x_fp = TO_FP(t < 3 ? 60 : 200);
+        ball.y_fp = TO_FP(120);
+        ball.z_fp = TO_FP(6 + t * 3);
+        ball_launch(&ball, targets[t][0], targets[t][1], (u8)(26 + t * 4));
+        ai_probe_load(&ball);
+        for (n = 0; n < 160; ++n) {
+            ball_simulate_step(&ball);
+            ai_probe_step();
+            assert(g_probe.x == ball.x_fp && g_probe.y == ball.y_fp);
+            assert(g_probe.z == ball.z_fp && g_probe.vz == ball.vz_fp);
+            assert(g_probe.vx == ball.vx_fp && g_probe.vy == ball.vy_fp);
+            assert(g_probe.bounces == ball.bounce_count);
+        }
+    }
+}
+
 static void test_cpu_uses_shared_player_path_and_bounds(void)
 {
     PlayerIntent idle;
@@ -124,6 +155,7 @@ int main(int argc, char **argv)
         return 0;
     }
     test_prediction_matches_simulation();
+    test_probe_matches_ball();
     test_cpu_uses_shared_player_path_and_bounds();
     test_cpu_returns_standard_serves();
     puts("ai host checks passed");

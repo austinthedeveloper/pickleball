@@ -1,13 +1,9 @@
 #include "court.h"
 #include "events.h"
+#include "match.h"
 #include "serve.h"
 
 ServeState g_serve_state;
-
-static u8 team_player_index(u8 team)
-{
-    return team == 0 ? 0 : 2;
-}
 
 static void serve_hold_ball(void)
 {
@@ -86,6 +82,38 @@ void serve_initialize(void)
     g_serve_state.server_y_fp = TO_FP(COURT_CENTERLINE_Y);
 }
 
+/* The team's active slot whose lane (ADR-018) is top/bottom; in singles the
+ * team's only active slot, whatever its lane. */
+static u8 serve_slot_for_lane(u8 team, u8 top)
+{
+    u8 first = team ? 2 : 0;
+
+    if (!g_players[first + 1].active)
+        return first;
+    if (!g_players[first].active)
+        return first + 1;
+    return match_slot_lane_top(first) == top ? first : first + 1;
+}
+
+static void serve_place_partner(u8 slot, u8 at_kitchen)
+{
+    Player *player = &g_players[slot];
+    s16 y = match_slot_lane_top(slot) ?
+        COURT_CENTERLINE_Y - SERVE_STANCE_OFFSET_Y :
+        COURT_CENTERLINE_Y + SERVE_STANCE_OFFSET_Y;
+    s16 x;
+
+    if (at_kitchen)
+        x = player->team ? COURT_KITCHEN_RIGHT_X + SERVE_PARTNER_KITCHEN_GAP :
+            COURT_KITCHEN_LEFT_X - SERVE_PARTNER_KITCHEN_GAP;
+    else
+        x = player->team ? COURT_BASELINE_RIGHT - SERVE_RECEIVER_GAP :
+            COURT_BASELINE_LEFT + SERVE_RECEIVER_GAP;
+    player_place(player, x, y);
+    player->frozen = 0;
+    player->pose = PLAYER_POSE_NONE;
+}
+
 void serve_setup(u8 serving_team)
 {
     Player *server;
@@ -93,13 +121,7 @@ void serve_setup(u8 serving_team)
     s16 server_y;
     s16 receiver_y;
     u8 even = (g_game_state.team_score[serving_team] & 1) == 0;
-
-    g_serve_state.server_index = team_player_index(serving_team);
-    g_serve_state.receiver_index = team_player_index(serving_team ? 0 : 1);
-    g_serve_state.landing_pending = 0;
-    g_serve_state.requested = 0;
-    server = &g_players[g_serve_state.server_index];
-    receiver = &g_players[g_serve_state.receiver_index];
+    u8 server_top;
 
     /* Serve from the right-hand court on an even score. The left team faces
      * +x so its right hand is +y; the right team's right hand is -y. */
@@ -110,6 +132,16 @@ void serve_setup(u8 serving_team)
     receiver_y = server_y >= COURT_CENTERLINE_Y ?
         COURT_CENTERLINE_Y - SERVE_STANCE_OFFSET_Y :
         COURT_CENTERLINE_Y + SERVE_STANCE_OFFSET_Y;
+    server_top = server_y < COURT_CENTERLINE_Y;
+
+    /* ADR-018: the lane decides who serves; the receiver is diagonal. */
+    g_serve_state.server_index = serve_slot_for_lane(serving_team, server_top);
+    g_serve_state.receiver_index =
+        serve_slot_for_lane(serving_team ? 0 : 1, !server_top);
+    g_serve_state.landing_pending = 0;
+    g_serve_state.requested = 0;
+    server = &g_players[g_serve_state.server_index];
+    receiver = &g_players[g_serve_state.receiver_index];
 
     if (serving_team == 0) {
         player_place(server, COURT_BASELINE_LEFT - SERVE_BASELINE_GAP,
@@ -126,6 +158,12 @@ void serve_setup(u8 serving_team)
     receiver->frozen = 0;
     server->pose = PLAYER_POSE_NONE;
     receiver->pose = PLAYER_POSE_NONE;
+    /* Doubles partners: the server's at the baseline, the receiver's at the
+     * kitchen line. */
+    if (g_players[g_serve_state.server_index ^ 1].active)
+        serve_place_partner(g_serve_state.server_index ^ 1, 0);
+    if (g_players[g_serve_state.receiver_index ^ 1].active)
+        serve_place_partner(g_serve_state.receiver_index ^ 1, 1);
     g_serve_state.server_y_fp = server->y_fp;
     g_game_state.serving_team = serving_team;
     g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
