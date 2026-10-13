@@ -122,6 +122,88 @@ static void test_twenty_pause_toggles(void)
     assert(g_game_state.paused == 0);
 }
 
+static void assert_state_for_frames(u8 state, u8 frames)
+{
+    u8 i;
+    for (i = 0; i < frames; ++i) {
+        assert(g_players[0].state == state);
+        intents[0].hit_pressed = 0;
+        if (i + 1 < frames)
+            players_update(intents, 0);
+    }
+}
+
+static void test_swing_state_durations(void)
+{
+    reset_test();
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    assert_state_for_frames(PLAYER_STATE_WINDUP, PLAYER_WINDUP_FRAMES);
+
+    players_update(intents, 0);
+    assert_state_for_frames(PLAYER_STATE_ACTIVE, PLAYER_ACTIVE_FRAMES);
+
+    players_update(intents, 0);
+    assert_state_for_frames(PLAYER_STATE_RECOVERY, PLAYER_RECOVERY_FRAMES);
+
+    players_update(intents, 0);
+    assert(g_players[0].state == PLAYER_STATE_IDLE);
+    assert(g_players[0].state_frames_remaining == 0);
+}
+
+static void test_swing_movement_penalty(void)
+{
+    reset_test();
+    g_players[0].vx_fp = 384;
+    intents[0].move_x = 1;
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    assert(g_players[0].state == PLAYER_STATE_WINDUP);
+    assert(g_players[0].vx_fp == PLAYER_SWING_MAX_SPEED_FP);
+
+    reset_test();
+    g_players[0].vx_fp = 271;
+    g_players[0].vy_fp = 271;
+    intents[0].move_x = 1;
+    intents[0].move_y = 1;
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    assert(g_players[0].vx_fp == PLAYER_SWING_DIAGONAL_MAX_FP);
+    assert(g_players[0].vy_fp == PLAYER_SWING_DIAGONAL_MAX_FP);
+}
+
+static void test_no_swing_retrigger(void)
+{
+    u8 frame;
+    reset_test();
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+
+    for (frame = 1;
+         frame <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES +
+             PLAYER_RECOVERY_FRAMES;
+         ++frame) {
+        intents[0].hit_pressed = 1;
+        players_update(intents, 0);
+    }
+    assert(g_players[0].state == PLAYER_STATE_IDLE);
+
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    assert(g_players[0].state == PLAYER_STATE_WINDUP);
+    assert(g_players[0].state_frames_remaining == PLAYER_WINDUP_FRAMES);
+}
+
+static void test_swing_freezes_while_paused(void)
+{
+    reset_test();
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    players_update(intents, 1);
+    assert(g_players[0].state == PLAYER_STATE_WINDUP);
+    assert(g_players[0].state_frames_remaining == PLAYER_WINDUP_FRAMES);
+}
+
 int main(void)
 {
     test_initialization();
@@ -132,6 +214,10 @@ int main(void)
     test_anchor_bounds_match_court();
     test_input_edges();
     test_twenty_pause_toggles();
+    test_swing_state_durations();
+    test_swing_movement_penalty();
+    test_no_swing_retrigger();
+    test_swing_freezes_while_paused();
     puts("player host checks passed");
     return 0;
 }

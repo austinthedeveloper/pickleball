@@ -5,15 +5,15 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 
 ## Ball and collision
 
-- [ ] `M2-BALL-01` Add deterministic 8.8 fixed-point ball state and tunable constants.
+- [x] `M2-BALL-01` Add deterministic 8.8 fixed-point ball state and tunable constants.
   - Accept: identical input sequence produces identical per-frame ball state after reset.
-- [ ] `M2-BALL-02` Implement x/y/z flight, gravity, bounce, ball object, and ground shadow.
+- [x] `M2-BALL-02` Implement x/y/z flight, gravity, bounce, ball object, and ground shadow.
   - Accept: shadow stays on ground; ball visibly separates by z; bounce fires once per ground crossing.
-- [ ] `M2-BALL-03` Implement swept net-plane crossing and height test.
+- [x] `M2-BALL-03` Implement swept net-plane crossing and height test.
   - Accept: PHY-01 and PHY-02 pass at the one-unit boundary.
-- [ ] `M2-BALL-04` Implement inclusive court line and out tests at ground contact.
+- [x] `M2-BALL-04` Implement inclusive court line and out tests at ground contact.
   - Accept: PHY-03 and PHY-04 pass on every boundary.
-- [ ] `M2-HIT-01` Implement player windup/active/recovery state machine.
+- [x] `M2-HIT-01` Implement player windup/active/recovery state machine.
   - Accept: state durations match spec; movement penalty applies; no retrigger during recovery.
 - [ ] `M2-HIT-02` Implement one-contact-per-swing hit volume.
   - Accept: HIT-01 and HIT-02 pass; an overlapping ball cannot be hit repeatedly.

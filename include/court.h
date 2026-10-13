@@ -12,6 +12,7 @@ enum {
     COURT_KITCHEN_LEFT_X = 88,
     COURT_KITCHEN_RIGHT_X = 168,
     COURT_CENTERLINE_Y = 120,
+    COURT_NET_HEIGHT = 12,
 
     PLAYER_BODY_HALF_WIDTH = 16,
     PLAYER_BODY_TOP_OFFSET = 24,
@@ -34,6 +35,7 @@ enum {
 
 s32 court_clamp_x_fp(s32 x_fp);
 s32 court_clamp_y_fp(s32 y_fp);
+u8 court_contains_ground_fp(s32 x_fp, s32 y_fp);
 
 #endif
 

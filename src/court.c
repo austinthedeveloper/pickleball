@@ -18,3 +18,11 @@ s32 court_clamp_y_fp(s32 y_fp)
     return y_fp;
 }
 
+u8 court_contains_ground_fp(s32 x_fp, s32 y_fp)
+{
+    return x_fp >= ((s32)COURT_BASELINE_LEFT << 8) &&
+        x_fp <= ((s32)COURT_BASELINE_RIGHT << 8) &&
+        y_fp >= ((s32)COURT_SIDELINE_TOP << 8) &&
+        y_fp <= ((s32)COURT_SIDELINE_BOTTOM << 8);
+}
+

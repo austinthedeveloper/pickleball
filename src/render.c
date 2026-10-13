@@ -1,4 +1,5 @@
 #include <snes.h>
+#include "ball.h"
 #include "court.h"
 #include "input.h"
 #include "player.h"
@@ -9,8 +10,12 @@
 #define BG1_TILES_ADDR 0x1000
 #define BG3_TILES_ADDR 0x3000
 #define OBJ_TILES_ADDR 0x4000
-#define PLAYER_OAM_ID 0
-#define SHADOW_OAM_ID 4
+#define BALL_OAM_ID 0
+#define BALL_SHADOW_OAM_ID 4
+#define PLAYER_OAM_ID 8
+#define SHADOW_OAM_ID 24
+#define BALL_TILE 12
+#define BALL_SHADOW_TILE 8
 #define HUD_TILE_PRIORITY 0x2000
 
 extern char court_tiles, court_tiles_end;
@@ -107,8 +112,33 @@ void render_initialize(void)
     dmaCopyVram((u8 *)hud_buffer, BG3_MAP_ADDR, sizeof(hud_buffer));
 #endif
     render_prepare_players();
+    render_prepare_ball();
     render_commit_hud(0);
     setScreenOn();
+}
+
+void render_prepare_ball(void)
+{
+    s16 x;
+    s16 y;
+    s16 z;
+
+    if (!g_ball.active) {
+        oamSetVisible(BALL_OAM_ID, OBJ_HIDE);
+        oamSetVisible(BALL_SHADOW_OAM_ID, OBJ_HIDE);
+        return;
+    }
+
+    x = FROM_FP(g_ball.x_fp);
+    y = FROM_FP(g_ball.y_fp);
+    z = FROM_FP(g_ball.z_fp);
+
+    oamSet(BALL_SHADOW_OAM_ID, x - 4, y + 1, 2,
+        0, 0, BALL_SHADOW_TILE, 0);
+    oamSetEx(BALL_SHADOW_OAM_ID, OBJ_SMALL, OBJ_SHOW);
+    oamSet(BALL_OAM_ID, x - 4, y - z - 4, 3,
+        0, 0, BALL_TILE, 0);
+    oamSetEx(BALL_OAM_ID, OBJ_SMALL, OBJ_SHOW);
 }
 
 void render_prepare_players(void)

@@ -21,7 +21,7 @@ This is the only cross-milestone status sheet. Detailed tasks live in the linked
 ## Cross-cutting gates
 
 - [x] `GATE-DOCS` Product, gameplay, technical, asset, input, and test documents exist in the repo.
-- [ ] `GATE-REPRO` A clean checkout produces identical generated asset sizes and a bootable ROM.
+- [x] `GATE-REPRO` A clean checkout produces identical generated asset sizes and a bootable ROM.
 - [ ] `GATE-REUSE` Four palette variants use one player graphics data set.
 - [ ] `GATE-BUDGET` Actual VRAM, ROM, OAM, and generated-asset sizes are recorded for the M3 build.
 - [ ] `GATE-HW` Hardware log records console, cartridge, controller, build ID, duration, and result.

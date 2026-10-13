@@ -118,3 +118,45 @@ No M1 hardware run has been recorded yet.
   or behavioral failure was observed; revisit if clean-build determinism or a
   second emulator exposes a related symptom.
 
+### 2026-10-12 — M1 reproducible release candidate
+
+- Build: `0.1.0-release-a34a7d0`.
+- Debug, hardware-test, and release profiles built successfully.
+- Two release builds produced byte-identical 262,144-byte ROMs with SHA-256
+  `2031465d6adec163681ef7f1c816e006c98fc9dfdf2d7efaefa45b3a9ed869f3`.
+- Both generated asset manifests were byte-identical.
+- MesenCE booted the reproduced ROM and completed a 600-frame smoke run with
+  exit status 0. This closes `GATE-REPRO`.
+
+### 2026-10-12 — M2 ball physics/render smoke
+
+- Host checks cover deterministic duplicate simulations, update order,
+  gravity, pause, inactive state, planar/vertical bounce retention, one bounce
+  event per crossing, and both directions of swept net crossing.
+- PHY-01/PHY-02 boundary checks pass at one 8.8 fixed-point unit above and
+  below the 12-pixel net height.
+- PHY-03/PHY-04 cover all four inclusive court boundaries and one 8.8
+  fixed-point unit outside each boundary; out is emitted only at ground contact.
+- MesenCE completed a 600-frame smoke run with exit status 0.
+- Visual review confirmed a contract-sized 8×8 ball and independent 8×8
+  ground shadow. An initial OBJ-priority defect behind the court layer was
+  corrected; the ball and shadow are now visible and vertically separated.
+- User visual confirmation: PASS. On a fresh ROM load, the demonstration toss
+  visibly drops, bounces, and settles beside its stationary ground shadow. No
+  player interaction is expected before the M2 hit tasks.
+
+### 2026-10-12 — M2 swing state machine
+
+- ROM: `0.1.0-release-a34a7d0-dirty-a77ee346`; MesenCE cold boot and court
+  render: PASS.
+- P1 enters windup on a B-button press for exactly 4 frames, followed by 3
+  active frames and 7 recovery frames.
+- Cardinal movement is capped at 0.75 px/frame during all committed swing
+  states; diagonal movement uses the normalized per-axis cap.
+- Host checks confirm presses during windup, active, and recovery cannot
+  retrigger the swing, while a new press after recovery can begin another.
+- Pause freezes both the swing state and its remaining-frame timer.
+- User acceptance: PASS. Manual review confirmed the temporary movement-speed
+  penalty while swinging. Ball contact and visible swing artwork are correctly
+  deferred to `M2-HIT-02` and the later asset tasks.
+

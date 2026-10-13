@@ -32,6 +32,29 @@ static s16 clamp_velocity(s16 value, s16 limit)
     return value;
 }
 
+static u8 player_is_swinging(const Player *player)
+{
+    return player->state == PLAYER_STATE_WINDUP ||
+        player->state == PLAYER_STATE_ACTIVE ||
+        player->state == PLAYER_STATE_RECOVERY;
+}
+
+static void player_advance_swing(Player *player)
+{
+    if (--player->state_frames_remaining != 0)
+        return;
+
+    if (player->state == PLAYER_STATE_WINDUP) {
+        player->state = PLAYER_STATE_ACTIVE;
+        player->state_frames_remaining = PLAYER_ACTIVE_FRAMES;
+    } else if (player->state == PLAYER_STATE_ACTIVE) {
+        player->state = PLAYER_STATE_RECOVERY;
+        player->state_frames_remaining = PLAYER_RECOVERY_FRAMES;
+    } else {
+        player->state = PLAYER_STATE_IDLE;
+    }
+}
+
 void players_initialize(void)
 {
     u8 i;
@@ -48,6 +71,8 @@ void players_initialize(void)
         g_players[i].animation = PLAYER_ANIM_IDLE;
         g_players[i].animation_frame = 0;
         g_players[i].animation_timer = 0;
+        g_players[i].state = PLAYER_STATE_IDLE;
+        g_players[i].state_frames_remaining = 0;
     }
 
     g_players[0].active = 1;
@@ -73,12 +98,30 @@ void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
             continue;
 
         intent = &intents[player->logical_input_slot];
+
+        if (player_is_swinging(player)) {
+            player_advance_swing(player);
+        } else if (intent->hit_pressed) {
+            player->state = PLAYER_STATE_WINDUP;
+            player->state_frames_remaining = PLAYER_WINDUP_FRAMES;
+        } else {
+            player->state = (intent->move_x || intent->move_y) ?
+                PLAYER_STATE_MOVE : PLAYER_STATE_IDLE;
+        }
+
         if (intent->move_x && intent->move_y) {
             accel = PLAYER_DIAGONAL_ACCEL_FP;
             limit = PLAYER_DIAGONAL_MAX_FP;
         } else {
             accel = PLAYER_ACCEL_FP;
             limit = PLAYER_MAX_SPEED_FP;
+        }
+
+        if (player_is_swinging(player)) {
+            if (intent->move_x && intent->move_y)
+                limit = PLAYER_SWING_DIAGONAL_MAX_FP;
+            else
+                limit = PLAYER_SWING_MAX_SPEED_FP;
         }
 
         if (intent->move_x)

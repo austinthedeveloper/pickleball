@@ -171,6 +171,10 @@ def player_assets():
         for x in range(64, 72):
             if ((x - 68) ** 2) // 4 + (y - 4) ** 2 <= 4:
                 canvas[y][x] = 1
+    for y in range(1, 7):
+        for x in range(97, 103):
+            if (x - 100) ** 2 + (y - 4) ** 2 <= 9:
+                canvas[y][x] = 2 if y < 3 else 6
     tiles = []
     for ty in range(4):
         for tx in range(16):
