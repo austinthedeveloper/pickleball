@@ -91,6 +91,32 @@ Results:
 - Zero overruns in a 3,000-frame title soak, where the worst frame ends at
   scanline 216.
 
+*Amended 2026-10-13 (title menu fix).* Scrolling the menu during the
+doubles demo flickered, and items disappeared. The demo is busy on nearly
+every frame (`M4-UI-03`), so the old rules (clear the area on every view
+change; wait without limit for a light frame) left the menu blank or half
+drawn. Now:
+
+- **Moving the cursor or toggling 2P** redraws only the two changed items,
+  or the 2P line, in place and on the same frame. There is no clear and no
+  wait.
+- **Menu to menu** never clears. Opening or closing a page still clears the
+  area.
+- **Waiting for a light frame is bounded:** at most 6 frames
+  (`HUD_TITLE_MAX_WAITS`), then the drawing goes through. The costly steps
+  (the logo and the prompt) wait for scanline 110; rows wait for 140.
+- **Title-to-title changes** (the prompt blink, a page opening) skip the
+  steps that do nothing, after one idle step, so the prompt never shares a
+  frame with the input that changed the page.
+- **A court recolour** (Left/Right on the COURT page) is composed on a light
+  frame within 3 frames (`render_update_ground`). It composes from a WRAM
+  copy of palette 2, with no 2D-table multiplies or calls in the loop.
+
+Results: zero overruns on the idle, records, court, venue, options, practice,
+golden, doubles-match, and 3,000-frame timelines. The doubles demo keeps its
+own rate (`M4-UI-03`). `test/smoke/menu.timeline` scrolls fast during the
+doubles demo.
+
 ## Tests
 
 - `test/test_court_style.c` (host):

@@ -1,0 +1,21 @@
+# Title menu during the doubles demo (the heavy case, M4-UI-03): back out of
+# Player Select (the demo switches to doubles), then scroll fast. Every
+# item and the 2P line must stay drawn, with no blank frame.
+90 91 start
+150 151 y
+250 251 down
+256 257 down
+262 263 down
+268 269 down
+274 275 up
+280 281 down
+286 287 down
+292 293 down
+298 299 up
+304 305 up
+shot 252
+shot 258
+shot 276
+shot 300
+shot 306
+shot 330

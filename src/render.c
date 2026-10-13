@@ -45,6 +45,16 @@ static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
 /* BG1 palette 2 with the saved court colours (ADR-022). */
 static u16 s_ground_palette[COURT_GROUND_COLORS];
+/* Palette 2 as painted, copied from ROM when the court loads: composing
+ * from WRAM is far cheaper for 816-tcc than reading ROM per colour, and a
+ * live recolour (COURT page) must fit a busy title frame. */
+static u16 s_painted_ground[COURT_GROUND_COLORS];
+/* A recolour waits for a frame with time left (the title demo alone
+ * reaches ~200 scanlines on its heavy frames), but at most a few frames. */
+static u8 s_ground_pending;
+static u8 s_ground_waits;
+#define RENDER_RECOLOR_SCANLINE_LIMIT 150
+#define RENDER_RECOLOR_MAX_WAITS 3
 static u8 s_ground_dirty;
 /* Venue on screen (ADR-024). */
 static u8 s_venue;
@@ -188,11 +198,31 @@ void render_reset_bodies(void)
     s_active_bodies = 0xff;
 }
 
-void render_apply_court_colors(void)
+static void render_compose_ground(void)
 {
-    court_style_compose(s_ground_palette, (const u16 *)&court_palette,
+    court_style_compose(s_ground_palette, s_painted_ground,
         g_save.settings.court, s_venue);
     s_ground_dirty = 1;
+    s_ground_pending = 0;
+    s_ground_waits = 0;
+}
+
+void render_apply_court_colors(void)
+{
+    s_ground_pending = 1;
+}
+
+/* In render_prepare: a pending recolour on a light frame (or a late one). */
+static void render_update_ground(void)
+{
+    if (!s_ground_pending)
+        return;
+    if (profile_scanline() > RENDER_RECOLOR_SCANLINE_LIMIT &&
+            s_ground_waits < RENDER_RECOLOR_MAX_WAITS) {
+        ++s_ground_waits;
+        return;
+    }
+    render_compose_ground();
 }
 
 void render_request_palettes(void)
@@ -307,6 +337,7 @@ void render_prepare(void)
     render_ball();
     render_effects();
     render_machine();
+    render_update_ground();
     PROFILE_MARK(3);
     hud_scene_update();
 }
@@ -338,6 +369,8 @@ void render_initialize(void)
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
     s_ground_dirty = 0;
+    s_ground_pending = 0;
+    s_ground_waits = 0;
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
     hud_scene_initialize();
@@ -391,7 +424,8 @@ static void render_load_court(void)
         venue->tiles_size);
     dmaCopyVram((u8 *)venue->map, RENDER_BG1_MAP_ADDR, venue->map_size);
     dmaCopyCGram((u8 *)venue->palettes, 48, 160);
-    render_apply_court_colors();
+    memcpy(s_painted_ground, &court_palette, sizeof(s_painted_ground));
+    render_compose_ground();
     dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
     s_ground_dirty = 0;
     bgSetDisable(1);

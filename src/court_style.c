@@ -13,35 +13,51 @@ static u8 preset_index(u8 part, u8 preset)
     return g_court_part_first[part] + preset;
 }
 
+/*
+ * Hot on the title: Left/Right on the COURT page recomposes every press, on
+ * a frame the attract demo already loads. 816-tcc calls a multiply routine
+ * for each variable 2D index and pays dearly for calls, so the tables are
+ * walked with pointers and nothing is called inside the loop.
+ */
 void court_style_compose(u16 out[COURT_GROUND_COLORS],
     const u16 painted[COURT_GROUND_COLORS], const u8 choice[COURT_PARTS],
     u8 venue)
 {
+    const u8 *ground;
+    const u8 *entries = &g_court_part_entries[0][0];
+    const u16 *colors;
     u8 part;
     u8 preset;
+    u8 count;
     u8 surface = 0;
     u8 i;
 
     if (venue >= VENUE_COUNT)
         venue = 0;
+    ground = &g_venue_ground[0][0];
+    for (i = 0; i < venue; ++i)
+        ground += COURT_PARTS;
     for (i = 0; i < COURT_GROUND_COLORS; ++i)
         out[i] = painted[i];
     for (part = 0; part < COURT_PARTS; ++part) {
-        const u16 *colors;
-        const u8 *entries = g_court_part_entries[part];
-
+        count = g_court_part_count[part];
         preset = choice[part];
-        if (preset == 0 || preset >= g_court_part_count[part])
-            preset = g_venue_ground[venue][part];
+        if (preset == 0 || preset >= count)
+            preset = ground[part];
         /* ADR-027: SAME is the surface's preset (surface k = kitchen k + 1;
          * the surface part comes first, so `surface` is resolved). */
         if (part == COURT_PART_KITCHEN && preset == COURT_KITCHEN_SAME)
             preset = surface ? surface + 1 : 0;
+        if (preset >= count)
+            preset = 0;
         if (part == COURT_PART_SURFACE)
             surface = preset;
-        colors = g_court_preset_colors[preset_index(part, preset)];
+        colors = &g_court_preset_colors[0][0];
+        for (i = g_court_part_first[part] + preset; i; --i)
+            colors += COURT_PART_MAX_ENTRIES;
         for (i = 0; i < g_court_part_size[part]; ++i)
             out[entries[i]] = colors[i];
+        entries += COURT_PART_MAX_ENTRIES;
     }
 }
 

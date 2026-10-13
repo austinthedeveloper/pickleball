@@ -86,6 +86,28 @@ static u8 s_practice_row_drawn[PRACTICE_ROWS];
  * 60+ scanlines, VBlank starts at 225, and the attract demo alone reaches
  * about 200 on its heavy frames. */
 #define HUD_TITLE_SCANLINE_LIMIT 140
+/* ...but for at most this many frames in a row: the doubles demo is busy on
+ * nearly every frame (M4-UI-03), and a menu that never finishes drawing is
+ * worse than an occasional dropped frame. */
+#define HUD_TITLE_MAX_WAITS 6
+static u8 s_title_waits;
+
+/* The prompt (a panel and its text) and the big logo each cost 60-90
+ * scanlines: they wait for a lighter frame than a menu or page row. */
+#define HUD_TITLE_PROMPT_LIMIT 110
+
+/* Nonzero when title drawing should wait for a lighter frame: the frame's
+ * work is past `limit`, and it has not waited HUD_TITLE_MAX_WAITS yet. */
+static u8 hud_title_wait(u16 limit)
+{
+    if (profile_scanline() > limit &&
+            s_title_waits < HUD_TITLE_MAX_WAITS) {
+        ++s_title_waits;
+        return 1;
+    }
+    s_title_waits = 0;
+    return 0;
+}
 
 /* Score-panel labels: at most 4 characters before the score digits. */
 static const char *const s_palette_names[PAL_COUNT] = {
@@ -475,22 +497,38 @@ static void hud_record_ladder(u8 row)
     hud_text(RECORDS_COUNT_COL + 4 - length, row, HUD_PAL_WHITE, team);
 }
 
-static void hud_title_menu(u8 choice, u8 half)
+/* One menu item; the choice is yellow with the cursor. Items overwrite
+ * their cells (the leading spaces cover the cursor). */
+static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
         "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS ", "  OPTIONS ",
         "  PRACTICE"
     };
+
+    hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
+        item == choice ? HUD_PAL_YELLOW : HUD_PAL_WHITE, items[item]);
+    if (item == choice)
+        hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + item,
+            hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
+}
+
+/* Two menu items per call (half 0, 1, or 2). */
+static void hud_title_menu(u8 choice, u8 half)
+{
     u8 i = half * 2;
     u8 last = i + 2 > TITLE_ENTRIES ? TITLE_ENTRIES : i + 2;
 
-    for (; i < last; ++i) {
-        hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + i,
-            i == choice ? HUD_PAL_YELLOW : HUD_PAL_WHITE, items[i]);
-        if (i == choice)
-            hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + i,
-                hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
-    }
+    for (; i < last; ++i)
+        hud_title_item(i, choice);
+}
+
+static void hud_title_2p_line(void)
+{
+    /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
+    hud_text(TITLE_2P_COL, TITLE_2P_ROW,
+        g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
+        g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
 }
 
 /* A court page row's value: the venue choice, or a part's preset. */
@@ -721,10 +759,7 @@ static u8 hud_title_draw_part(u8 view, u8 part)
             hud_title_menu(view & 7, part);
             return 0;
         }
-        /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
-        hud_text(TITLE_2P_COL, TITLE_2P_ROW,
-            g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
-            g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
+        hud_title_2p_line();
         return 1;
     }
     switch (part) {
@@ -774,7 +809,22 @@ static void hud_title_area_update(void)
 {
     u8 view = hud_title_view();
 
-    if (profile_scanline() > HUD_TITLE_SCANLINE_LIMIT)
+    /* A drawn menu whose cursor or 2P line changed: redraw only what
+     * changed, in place, at once (two rows are cheap, so this skips the
+     * wait for a lighter frame; no clear, so nothing flickers). */
+    if (s_title_view != view && s_title_part == 0xff &&
+            s_title_view < HUD_TITLE_VIEW_COURT &&
+            view < HUD_TITLE_VIEW_COURT) {
+        if ((s_title_view ^ view) & 7) {
+            hud_title_item(s_title_view & 7, view & 7);
+            hud_title_item(view & 7, view & 7);
+        }
+        if ((s_title_view ^ view) & 8)
+            hud_title_2p_line();
+        s_title_view = view;
+        return;
+    }
+    if (hud_title_wait(HUD_TITLE_SCANLINE_LIMIT))
         return;
 
     if (s_title_view == view) {
@@ -793,7 +843,11 @@ static void hud_title_area_update(void)
             ++s_title_part;
         return;
     }
-    if (s_title_view != HUD_TITLE_CLEARED)
+    /* Otherwise draw the whole view a part per frame. Menu to menu still
+     * needs no clear (every item overwrites its cells); a page does. */
+    if (s_title_view != HUD_TITLE_CLEARED &&
+            !(s_title_view < HUD_TITLE_VIEW_COURT &&
+              view < HUD_TITLE_VIEW_COURT))
         hud_clear_rows(TITLE_MENU_ROW, TITLE_AREA_ROWS);
     s_title_view = view;
     s_title_part = 0;
@@ -927,16 +981,26 @@ void hud_scene_update(void)
     if (!s_hud_valid || key != s_hud_scene) {
         s_prev_scene = s_hud_scene;
         s_hud_scene = key;
-        s_scene_step = HUD_STEP_CLEAR;
+        /* Title to title (the prompt blinks, a page opens): only the prompt
+         * changes; the logo stays and the area draws itself. One idle step
+         * first, so the prompt is not drawn on the frame of the input that
+         * changed the page (a recolour or a reload can share it). */
+        s_scene_step = (s_hud_valid && HUD_IS_TITLE(key) &&
+            HUD_IS_TITLE(s_prev_scene)) ? HUD_STEP_BIG : HUD_STEP_CLEAR;
     }
     /* Title steps also wait for a lighter frame (the demo runs behind). */
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
-            profile_scanline() > HUD_TITLE_SCANLINE_LIMIT) {
+            hud_title_wait(s_scene_step == HUD_STEP_CLEAR ?
+                HUD_TITLE_SCANLINE_LIMIT : HUD_TITLE_PROMPT_LIMIT)) {
         busy = 1;
     } else if (s_scene_step < HUD_STEP_DONE && !busy) {
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
-        ++s_scene_step;
+        /* The title has no story steps after its prompt. */
+        if (HUD_IS_TITLE(key) && s_scene_step == HUD_STEP_PROMPT)
+            s_scene_step = HUD_STEP_DONE;
+        else
+            ++s_scene_step;
     } else if (!busy) {
         /* Only on otherwise idle frames: keeps each frame to one redraw. */
         if (HUD_IS_TITLE(key))
@@ -960,4 +1024,5 @@ void hud_scene_initialize(void)
     s_scene_step = HUD_STEP_DONE;
     s_prev_scene = 0xff;
     s_title_view = HUD_TITLE_UNKNOWN;
+    s_title_waits = 0;
 }
