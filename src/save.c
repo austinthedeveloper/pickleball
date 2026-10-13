@@ -76,6 +76,12 @@ void save_clear(void)
     save_write();
 }
 
+void save_clear_records(void)
+{
+    memset(&g_save.records, 0, sizeof(g_save.records));
+    save_write();
+}
+
 void save_initialize(void)
 {
     static SaveData other;

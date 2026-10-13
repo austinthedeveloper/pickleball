@@ -45,6 +45,10 @@ Stadium. Each story opponent can have a home court (see below).
 
 ### Custom court colours
 
+**Started:** [ADR-022](decisions/ADR-022-court-colors.md) adds preset
+colours for the surface, surround, and lines, chosen on the title's COURT
+page and saved. The notes below are the original idea.
+
 A config screen where the player picks the ground colours (surface, kitchen,
 outer area; maybe the lines), and the choice is used for later matches.
 

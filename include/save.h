@@ -2,6 +2,7 @@
 #define SAVE_H
 
 #include "game_types.h"
+#include "court_colors.h"
 
 /*
  * Battery-backed save RAM (docs/decisions/ADR-021-battery-save.md).
@@ -12,7 +13,7 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 1,
+    SAVE_VERSION = 2,           /* 2: settings (ADR-022) */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -26,11 +27,18 @@ typedef struct {
     u16 longest_rally;          /* shots in one point, serve included */
 } SaveRecords;
 
+/* Choices that persist (ADR-022). */
+typedef struct {
+    u8 court[COURT_PARTS];      /* court colour preset per part; 0 DEFAULT */
+    u8 reserved;
+} SaveSettings;
+
 typedef struct {
     u8 magic[4];                /* "PB94" */
     u8 version;                 /* SAVE_VERSION; any other value resets */
     u8 sequence;                /* the newer copy has the higher (wrapping) */
     SaveRecords records;
+    SaveSettings settings;
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
@@ -43,6 +51,8 @@ void save_initialize(void);
 void save_write(void);
 /* Back to defaults and written to both copies. */
 void save_clear(void);
+/* Zeroes the records only (settings stay) and writes. */
+void save_clear_records(void);
 
 /* A finished human match. vs_cpu: the opponents were all CPU (1P is always
  * on team 0). Updates the records and writes. */

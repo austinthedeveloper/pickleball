@@ -139,8 +139,18 @@ static void test_records(void)
         save_record_match(MATCH_SINGLES, 1, 1, 1);
     assert(g_save.records.wins[MATCH_SINGLES] == SAVE_COUNTER_MAX);
 
+    /* Erasing records keeps the settings (ADR-022). */
+    g_save.settings.court[0] = 3;
+    save_clear_records();
+    assert(g_save.records.wins[MATCH_SINGLES] == 0);
+    assert(g_save.settings.court[0] == 3);
+    save_initialize();
+    assert(g_save.records.longest_rally == 0);
+    assert(g_save.settings.court[0] == 3);
+
     save_clear();
     assert(g_save.records.wins[MATCH_SINGLES] == 0);
+    assert(g_save.settings.court[0] == 0);
     save_initialize();
     assert(g_save.records.longest_rally == 0);
 }

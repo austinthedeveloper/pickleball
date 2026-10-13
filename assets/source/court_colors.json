@@ -1,0 +1,38 @@
+{
+  "comment": "Court colour presets (ADR-022). Each part recolours entries of BG1 palette 2 (the ground). Index 0 is DEFAULT: the colours painted in court_scene.png. Other presets give a base colour; the generator derives the part's other entries by scaling it by the painted entries' brightness relative to the painted base.",
+  "min_line_contrast": 2.5,
+  "min_ball_contrast": 2.0,
+  "ball_color": [224, 232, 48],
+  "parts": {
+    "surface": {
+      "entries": [4, 5, 15],
+      "presets": [
+        ["BLUE", [38, 92, 168]],
+        ["NAVY", [34, 52, 112]],
+        ["GREEN", [46, 122, 72]],
+        ["PURPLE", [96, 64, 140]],
+        ["CLAY", [176, 84, 52]],
+        ["SLATE", [78, 86, 98]],
+        ["RED", [150, 44, 52]]
+      ]
+    },
+    "surround": {
+      "entries": [1, 2, 3, 13, 14],
+      "presets": [
+        ["GRASS", [86, 150, 70]],
+        ["CONCRETE", [160, 160, 152]],
+        ["SAND", [226, 204, 150]],
+        ["BRICK", [150, 70, 50]],
+        ["ASPHALT", [70, 72, 78]],
+        ["SKY", [110, 170, 210]]
+      ]
+    },
+    "lines": {
+      "entries": [6, 7],
+      "presets": [
+        ["WHITE", [255, 255, 255]],
+        ["YELLOW", [250, 222, 70]]
+      ]
+    }
+  }
+}

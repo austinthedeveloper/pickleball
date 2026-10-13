@@ -13,12 +13,14 @@ void hud_scene_refresh_title(void);
 void hud_scene_update(void);
 
 /* Title menu entries (g_title_mode). */
-enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_RECORDS = 2 };
+enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_COURT = 2,
+       TITLE_RECORDS = 3, TITLE_ENTRIES = 4 };
+/* Title pages (g_title_page): the menu, or a page over it. */
+enum { TITLE_PAGE_MENU = 0, TITLE_PAGE_COURT = 1, TITLE_PAGE_RECORDS = 2 };
 
-/* Title menu choice, the records page open, and 2P joined (set by
- * main.c). */
+/* Title menu choice, the open page, and 2P joined (set by main.c). */
 extern u8 g_title_mode;
-extern u8 g_title_records;
+extern u8 g_title_page;
 extern u8 g_title_2p;
 
 #endif

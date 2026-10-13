@@ -43,7 +43,7 @@ cannot overflow.
 |---:|---|
 | 0–15 | BG3 HUD palettes 0–3 (ADR-016): 0 neutral, 1 title gold / B button, 2 left-team label, 3 right-team label. Palettes 2–3 are rewritten from the match config. |
 | 16–31 | Unused (BG3 palettes 4–7 / BG 4bpp palette 1) |
-| 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. |
+| 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. Palette 2 (the ground) is composed at runtime from the saved court colours (ADR-022). |
 | 128–255 | OBJ palettes; the layout depends on the match mode (ADR-018). In singles, OBJ 0–1 are the slot 0 and slot 2 players, 2 is the ball and spark, 3 the hit flash, and 4 the shadow (black, colour math). In doubles, OBJ 0–3 are players by slot, 4 the ball, 5 the flash, and 6 the opaque shadow, with colour math off. |
 
 Shadows use colour math: `CGWSEL = $02` (add subscreen), `CGADSUB = $50`
@@ -68,7 +68,7 @@ toward the PPU's 32-object range-over limit.
 ## ROM
 
 LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, cartridge
-type `$02` with 2 KiB battery SRAM at `$70:0000` (two 24-byte save copies at
-offsets 0 and 1024; ADR-021);
+type `$02` with 2 KiB battery SRAM at `$70:0000` (two 28-byte save copies at
+offsets 0 and 1024; ADR-021, v2 since ADR-022);
 internal checksum and complement sum to
 `0xffff`. `make dist` records the full ROM SHA-256 in the distribution report.

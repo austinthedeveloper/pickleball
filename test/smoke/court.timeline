@@ -1,0 +1,21 @@
+# Court colours (ADR-022): COURT on the title, BLUE surface, GRASS
+# surround, WHITE lines, keep with B; reopen, change, cancel with Y.
+70 71 down
+80 81 down
+shot 90
+100 101 start
+shot 120
+130 131 right
+shot 145
+150 151 down
+160 161 right
+170 171 down
+180 181 right
+shot 200
+210 211 b
+shot 230
+250 251 start
+260 261 right
+shot 280
+290 291 y
+shot 310

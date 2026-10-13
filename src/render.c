@@ -4,6 +4,7 @@
 #include "asset_frames.h"
 #include "ball.h"
 #include "court.h"
+#include "court_style.h"
 #include "fx.h"
 #include "game.h"
 #include "hud.h"
@@ -16,6 +17,7 @@
 #include "render.h"
 #include "render_internal.h"
 #include "hud_scene.h"
+#include "save.h"
 #include "serve.h"
 
 
@@ -39,6 +41,9 @@ u16 ram_copy_len;
 static u16 s_player_palettes[MAX_PLAYERS][16];
 static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
+/* BG1 palette 2 with the saved court colours (ADR-022). */
+static u16 s_ground_palette[COURT_GROUND_COLORS];
+static u8 s_ground_dirty;
 static u8 s_doubles;
 static u8 s_applied_mode;
 
@@ -177,6 +182,13 @@ void render_reset_bodies(void)
     s_active_bodies = 0xff;
 }
 
+void render_apply_court_colors(void)
+{
+    court_style_compose(s_ground_palette, (const u16 *)&court_palette,
+        g_save.settings.court);
+    s_ground_dirty = 1;
+}
+
 void render_request_palettes(void)
 {
     s_palette_dirty = 1;
@@ -283,6 +295,10 @@ void render_commit(void)
 #endif
     if (s_palette_dirty)
         render_upload_palettes();
+    if (s_ground_dirty) {
+        dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
+        s_ground_dirty = 0;
+    }
     hud_commit();
 }
 
@@ -293,6 +309,7 @@ void render_initialize(void)
     /* RAM is not cleared at power-on (real hardware or emulators that
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
+    s_ground_dirty = 0;
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
     hud_scene_initialize();
@@ -339,6 +356,9 @@ static void render_load_court(void)
         (u16)(&court_map_end - &court_map));
     dmaCopyCGram((u8 *)&court_palette, 32,
         (u16)(&court_palette_end - &court_palette));
+    render_apply_court_colors();
+    dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
+    s_ground_dirty = 0;
     bgSetDisable(1);
     /* Match palettes are composed and uploaded inside this forced blank. */
     render_apply_match_config();

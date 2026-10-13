@@ -42,6 +42,9 @@ void render_initialize(void);
  * upload happens in the next render_commit (or immediately in forced blank
  * during render_initialize). */
 void render_apply_match_config(void);
+/* Recomposes the ground palette from the saved court colours (ADR-022);
+ * uploaded in render_commit's VBlank. */
+void render_apply_court_colors(void);
 /* Mode whose palettes/colour math are currently set up. */
 u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the

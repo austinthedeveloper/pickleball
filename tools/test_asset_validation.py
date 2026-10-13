@@ -104,6 +104,17 @@ def paddle_past_bound(spec):
     return spec
 
 
+def court_lines_low_contrast(spec):
+    # Teal-ish lines on the teal court.
+    spec["parts"]["lines"]["presets"].append(["MINT", [70, 170, 160]])
+    return spec
+
+
+def court_entry_shared(spec):
+    spec["parts"]["lines"]["entries"].append(4)
+    return spec
+
+
 CASES = [
     ("scene must be 256x224", "court_scene.png", crop_scene,
      "court_scene.png must be 256x224"),
@@ -121,6 +132,10 @@ CASES = [
      "budget is 9"),
     ("paddle modifier bound (ADR-015)", "paddles.json", paddle_past_bound,
      "more than 15%"),
+    ("court line contrast (ADR-022)", "court_colors.json",
+     court_lines_low_contrast, "MINT lines on DEFAULT contrast"),
+    ("court colour entry in two parts (ADR-022)", "court_colors.json",
+     court_entry_shared, "belongs to two parts"),
 ]
 
 

@@ -20,7 +20,8 @@ the same save block.
 
 ## Save block
 
-`SaveData` (`include/save.h`), 24 bytes:
+`SaveData` (`include/save.h`), 24 bytes in version 1. Version 2 (ADR-022)
+adds a 4-byte settings block before the checksum.
 
 | Field | Bytes | Notes |
 |---|---:|---|

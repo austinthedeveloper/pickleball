@@ -8,6 +8,7 @@
 #include "profile.h"
 #include "render.h"
 #include "render_internal.h"
+#include "court_style.h"
 #include "save.h"
 
 /*
@@ -34,7 +35,7 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES / DOUBLES / RECORDS */
+#define TITLE_MENU_ROW 12           /* SINGLES / DOUBLES / COURT / RECORDS */
 #define TITLE_MENU_COL 12
 #define TITLE_2P_ROW 16
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
@@ -43,6 +44,10 @@
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 9
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
+#define COURT_PAGE_ROWS 5           /* the court box: header, gap, 3 parts */
+#define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
+#define COURT_LABEL_COL 6
+#define COURT_VALUE_COL 16          /* "<NAME    >" */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -50,10 +55,10 @@ static u16 s_hud_scene;
 static u8 s_hud_valid;
 static u8 s_sub_panel;             /* 0 none, 1 ARCADE RULES, 2 MATCH POINT */
 
-/* Title menu choice (TITLE_*), the records page, and 2P join; owned by
- * main.c's title input. */
+/* Title menu choice (TITLE_*), the open page (TITLE_PAGE_*), and 2P join;
+ * owned by main.c's title input. */
 u8 g_title_mode;
-u8 g_title_records;
+u8 g_title_page;
 u8 g_title_2p;
 /*
  * Title area (rows 12-21: the menu or the records page), drawn a part per
@@ -64,6 +69,8 @@ u8 g_title_2p;
  */
 static u8 s_title_view;
 static u8 s_title_part;
+/* Court page rows on screen: preset | cursor (bit 7); 0xff not drawn. */
+static u8 s_court_row_drawn[COURT_PARTS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
 
@@ -235,7 +242,7 @@ static u16 hud_scene_key(void)
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
-            HUD_KEY_TITLE) | (g_title_records << 1);
+            HUD_KEY_TITLE) | (g_title_page << 1);
 
     if (g_game_state.paused)
         return HUD_KEY_PAUSED;
@@ -249,7 +256,7 @@ static u16 hud_scene_key(void)
     return phase;
 }
 
-/* Title keys: 0x100 | blink (bit 0) | records page (bit 1, for its prompt).
+/* Title keys: 0x100 | blink (bit 0) | page (bits 1-2, for its prompt).
  * Bit 8 keeps them apart from phase keys: a kitchen fault point for P1 is
  * 0x44. The menu choice and 2P are drawn by hud_title_area_update. */
 #define HUD_IS_TITLE(k) (((k) & HUD_KEY_TITLE) != 0)
@@ -308,38 +315,111 @@ static void hud_record_mode_line(u8 row, const char *label, u8 mode)
     hud_count(RECORDS_COUNT_COL, row, g_save.records.losses[mode]);
 }
 
-static void hud_title_menu(u8 view)
+/* Two menu items per call (half 0 or 1); the cursor marks the choice. */
+static void hud_title_menu(u8 choice, u8 half)
 {
-    static const char *const items[3] = {
-        "  SINGLES ", "  DOUBLES ", "  RECORDS "
+    static const char *const items[TITLE_ENTRIES] = {
+        "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS "
     };
-    u8 i;
+    u8 i = half * 2;
+    u8 last = i + 2;
 
-    for (i = 0; i < 3; ++i)
+    for (; i < last; ++i) {
         hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + i,
-            i == view ? HUD_PAL_YELLOW : HUD_PAL_WHITE, items[i]);
-    hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + view,
-        hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
+            i == choice ? HUD_PAL_YELLOW : HUD_PAL_WHITE, items[i]);
+        if (i == choice)
+            hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + i,
+                hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
+    }
 }
 
-/* Title view for the area: the menu choice and 2P (bits 0-2), or the
- * records page. */
-#define HUD_TITLE_VIEW_RECORDS 0x80
+/* One court page row: cursor, part, and "<PRESET  >". */
+static void hud_court_row(u8 part)
+{
+    static const char *const labels[COURT_PARTS] = {
+        "SURFACE", "SURROUND", "LINES"
+    };
+    u8 preset = g_save.settings.court[part];
+    u8 cursor = g_court_edit.row == part;
+    const char *name = court_style_name(part, preset);
+    char text[11];
+    u8 i = 1;
+    u8 row = COURT_FIRST_ROW + part;
+
+    hud_tile(COURT_LABEL_COL - 1, row, cursor ?
+        hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
+        hud_entry(' ', HUD_PAL_WHITE));
+    hud_text(COURT_LABEL_COL, row, cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
+        labels[part]);
+    text[0] = '<';
+    while (*name)
+        text[i++] = *name++;
+    while (i < 9)
+        text[i++] = ' ';
+    text[9] = '>';
+    text[10] = 0;
+    hud_text(COURT_VALUE_COL, row, HUD_PAL_WHITE, text);
+    s_court_row_drawn[part] = preset | (cursor << 7);
+}
+
+/* Title views for the area: the menu choice and 2P (bits 0-2), or a page. */
+#define HUD_TITLE_VIEW_COURT 0x80
+#define HUD_TITLE_VIEW_RECORDS 0x81
 
 static u8 hud_title_view(void)
 {
-    if (g_title_records)
+    if (g_title_page == TITLE_PAGE_COURT)
+        return HUD_TITLE_VIEW_COURT;
+    if (g_title_page == TITLE_PAGE_RECORDS)
         return HUD_TITLE_VIEW_RECORDS;
     return g_title_mode | (g_title_2p << 2);
+}
+
+/* Court page: the box, the header, then a part per frame. */
+static u8 hud_court_draw_part(u8 part)
+{
+    if (part == 0) {
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+            COURT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        s_court_row_drawn[0] = 0xff;
+        s_court_row_drawn[1] = 0xff;
+        s_court_row_drawn[2] = 0xff;
+        return 0;
+    }
+    if (part == 1) {
+        hud_text(13, TITLE_MENU_ROW, HUD_PAL_YELLOW, "COURT");
+        return 0;
+    }
+    hud_court_row(part - 2);
+    return part - 2 == COURT_PARTS - 1;
+}
+
+/* After the court page is drawn: the first row whose preset or cursor
+ * changed (Left/Right, Up/Down), one per frame. */
+static void hud_court_refresh(void)
+{
+    u8 part;
+    u8 want;
+
+    for (part = 0; part < COURT_PARTS; ++part) {
+        want = g_save.settings.court[part] |
+            ((g_court_edit.row == part) << 7);
+        if (s_court_row_drawn[part] != want) {
+            hud_court_row(part);
+            return;
+        }
+    }
 }
 
 /* One part of the area; returns nonzero when the view is complete. One
  * row per part: the title demo leaves little frame time. */
 static u8 hud_title_draw_part(u8 view, u8 part)
 {
+    if (view == HUD_TITLE_VIEW_COURT)
+        return hud_court_draw_part(part);
     if (view != HUD_TITLE_VIEW_RECORDS) {
-        if (part == 0) {
-            hud_title_menu(view & 3);
+        if (part < 2) {
+            hud_title_menu(view & 3, part);
             return 0;
         }
         /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
@@ -389,8 +469,11 @@ static void hud_title_area_update(void)
     u8 view = hud_title_view();
 
     if (s_title_view == view) {
-        if (s_title_part == 0xff)
+        if (s_title_part == 0xff) {
+            if (view == HUD_TITLE_VIEW_COURT)
+                hud_court_refresh();
             return;
+        }
         if (hud_title_draw_part(view, s_title_part))
             s_title_part = 0xff;
         else
@@ -401,6 +484,15 @@ static void hud_title_area_update(void)
         hud_clear_rows(TITLE_MENU_ROW, TITLE_AREA_ROWS);
     s_title_view = view;
     s_title_part = 0;
+}
+
+static const char *hud_title_prompt(u8 page)
+{
+    if (page == TITLE_PAGE_COURT)
+        return "@ OK  Y CANCEL";
+    if (page == TITLE_PAGE_RECORDS)
+        return "@ BACK";
+    return "PRESS START";
 }
 
 /*
@@ -427,7 +519,7 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
         hud_clear_rows(BANNER_ROW - 1, 4);
         if (!(key & 1))
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                (key & 2) ? "@ BACK" : "PRESS START");
+                hud_title_prompt((key >> 1) & 3));
         break;
     default:
         break;

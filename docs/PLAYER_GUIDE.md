@@ -4,10 +4,18 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 (doubles), on a single outdoor court. A second player can join on
 controller 2. First to 5 points wins.
 
-On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, or
-**RECORDS**. Pressing Start on controller 2 adds a second player
+On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **COURT**,
+or **RECORDS**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
-Player Select (or the records page).
+Player Select (or the court or records page).
+
+## Court colours
+
+**COURT** sets the colours of the court surface, the ground around it, and
+the lines. Up/Down picks one, Left/Right changes it, and the court behind
+the menu shows the result straight away. B or Start keeps the colours, which
+are saved for every later match. Y puts back what you had. DEFAULT is the
+original park court.
 
 ## Records
 
@@ -18,7 +26,7 @@ included; 2P matches count for this one too). They update at the end of each
 match.
 
 On the records page, Start, B, or Y goes back. To erase every record, hold
-L and R and press X. There is no confirmation.
+L and R and press X. There is no confirmation. Court colours are kept.
 
 ## Player Select
 
