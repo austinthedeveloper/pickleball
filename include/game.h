@@ -73,7 +73,7 @@ void game_new_match(void);
 /* ATTRACT_READY: demo match with slot 0 driven by the AI. */
 void game_start_attract(void);
 /* Leaves attract and starts a human match in the given mode. */
-void game_start_match(u8 mode);
+void game_start_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 

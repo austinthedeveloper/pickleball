@@ -9,19 +9,27 @@
 #include "player.h"
 #include "profile.h"
 #include "render.h"
+#include "select.h"
 
-/* Title: Up/Down picks singles or doubles; Start/B begins the match. */
+/* The court (title, attract, match) or Player Select (ADR-020). */
+enum { SCENE_MATCH = 0, SCENE_SELECT = 1 };
+static u8 s_scene;
+static u8 s_open_select;
+
+/* Title: Up/Down picks singles or doubles, Start on pad 2 toggles 2P, and
+ * Start/B opens Player Select. */
 static void update_title(void)
 {
     u16 pressed = g_pad_snapshots[0].pressed;
 
     if (pressed & (PAD_UP | PAD_DOWN))
         g_title_mode ^= 1;
+    if (g_pad_snapshots[1].pressed & PAD_START)
+        g_title_2p ^= 1;
     if (pressed & (PAD_START | PAD_B)) {
-        game_start_match(g_title_mode ? MATCH_DOUBLES : MATCH_SINGLES);
-        /* Consume the press: it must not also pause or swing. */
-        g_player_intents[0].pause_pressed = 0;
-        g_player_intents[0].hit_pressed = 0;
+        select_begin(g_title_mode ? MATCH_DOUBLES : MATCH_SINGLES,
+            g_title_2p ? 2 : 1);
+        s_open_select = 1;
     } else if (g_loop_count & 1) {
         ai_update(0, &g_player_intents[0]);
     } else {
@@ -65,6 +73,30 @@ static void update_controllers(void)
     PROFILE_MARK(0);
 }
 
+/* One Player Select frame: 1P reads port 1, 2P port 2. */
+static void update_select(void)
+{
+    u8 result = select_input(g_pad_snapshots[g_select.current].pressed);
+
+    if (result == SELECT_STAY) {
+        render_select_prepare();
+        WaitForVBlank();
+        render_select_commit();
+        return;
+    }
+    if (result == SELECT_DONE) {
+        select_apply();
+        game_start_match();
+    } else {
+        game_start_attract();
+    }
+    /* render_open_match applies the new config itself. */
+    g_match_config_changed = 0;
+    render_open_match();
+    s_scene = SCENE_MATCH;
+    profile_resync();
+}
+
 int main(void)
 {
     input_initialize();
@@ -80,10 +112,15 @@ int main(void)
     profile_initialize();
     g_attract = 0;
     g_title_mode = 0;
+    g_title_2p = 0;
+    s_scene = SCENE_MATCH;
+    s_open_select = 0;
     g_match_config_changed = 0;
     g_demo_mode = 0;
     game_start_attract();
     render_initialize();
+    /* render_initialize applied the attract config already. */
+    g_match_config_changed = 0;
     /* Restart timing after the forced-blank uploads. */
     profile_initialize();
 
@@ -91,6 +128,18 @@ int main(void)
     while (1) {
         profile_frame_begin();
         input_capture_frame();
+        if (s_scene == SCENE_SELECT) {
+            update_select();
+            profile_frame_end();
+            continue;
+        }
+        if (s_open_select) {
+            s_open_select = 0;
+            render_select_open();
+            s_scene = SCENE_SELECT;
+            profile_resync();
+            continue;
+        }
 #ifdef RENDER_DIAGNOSTICS
         /* Select toggles the OBJ stress scene, which freezes the match. */
         if (g_pad_snapshots[0].pressed & PAD_SELECT)
@@ -102,13 +151,11 @@ int main(void)
             game_update(g_player_intents);
             PROFILE_MARK(1);
         }
-        /* Re-apply presentation only when the mode really changed: the
-         * full redraw costs a frame. Same-mode starts keep everything. */
+        /* A new attract demo or a return to the title: palettes, ponytails
+         * and HUD names follow the new config. */
         if (g_match_config_changed) {
-            if (render_match_mode_applied() != g_match_config.mode) {
-                render_apply_match_config();
-                hud_scene_invalidate();
-            }
+            render_apply_match_config();
+            hud_scene_invalidate();
             g_match_config_changed = 0;
         }
         render_prepare();

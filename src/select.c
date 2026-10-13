@@ -1,0 +1,102 @@
+#include "input.h"
+#include "player.h"
+#include "select.h"
+
+SelectState g_select;
+
+PlayerChoice *select_current(void)
+{
+    return g_select.current ? &g_select.choice[1] : &g_select.choice[0];
+}
+
+u8 select_colour_taken(u8 palette_id)
+{
+    return g_select.current == 1 &&
+        g_select.choice[0].palette_id == palette_id;
+}
+
+/* Next colour in direction step (+1/-1, wrapping) that is not taken. */
+static u8 step_colour(u8 from, s16 step)
+{
+    u8 colour = from;
+    u8 tries;
+
+    for (tries = 0; tries < PAL_COUNT; ++tries) {
+        colour = (u8)((colour + PAL_COUNT + step) % PAL_COUNT);
+        if (!select_colour_taken(colour))
+            return colour;
+    }
+    return from;
+}
+
+void select_begin(u8 mode, u8 humans)
+{
+    g_select.mode = mode;
+    g_select.humans = humans == 2 ? 2 : 1;
+    g_select.current = 0;
+    g_select.row = SELECT_ROW_COLOUR;
+    g_select.reserved = 0;
+    g_select.choice[0].palette_id = PAL_BLUE;
+    g_select.choice[0].variant = PLAYER_VARIANT_MALE;
+    g_select.choice[0].paddle_id = PADDLE_STANDARD;
+    g_select.choice[1].palette_id = PAL_RED;
+    g_select.choice[1].variant = PLAYER_VARIANT_MALE;
+    g_select.choice[1].paddle_id = PADDLE_STANDARD;
+    g_select.changed = 1;
+}
+
+static void change_value(s16 step)
+{
+    PlayerChoice *choice = select_current();
+
+    if (g_select.row == SELECT_ROW_VARIANT)
+        choice->variant = step > 0 ? PLAYER_VARIANT_FEMALE :
+            PLAYER_VARIANT_MALE;
+    else if (g_select.row == SELECT_ROW_COLOUR)
+        choice->palette_id = step_colour(choice->palette_id, step);
+    else
+        choice->paddle_id = (u8)((choice->paddle_id + PADDLE_COUNT + step) %
+            PADDLE_COUNT);
+}
+
+u8 select_input(u16 pressed)
+{
+    if (!pressed)
+        return SELECT_STAY;
+    g_select.changed = 1;
+
+    if (pressed & (PAD_B | PAD_START)) {
+        if (g_select.current == 0 && g_select.humans == 2) {
+            g_select.current = 1;
+            g_select.row = SELECT_ROW_COLOUR;
+            if (select_colour_taken(g_select.choice[1].palette_id))
+                g_select.choice[1].palette_id =
+                    step_colour(g_select.choice[1].palette_id, 1);
+            return SELECT_STAY;
+        }
+        return SELECT_DONE;
+    }
+    if (pressed & PAD_Y) {
+        if (g_select.current == 1) {
+            g_select.current = 0;
+            g_select.row = SELECT_ROW_COLOUR;
+            return SELECT_STAY;
+        }
+        return SELECT_BACK;
+    }
+    if ((pressed & PAD_UP) && g_select.row > 0)
+        --g_select.row;
+    else if ((pressed & PAD_DOWN) && g_select.row < SELECT_ROWS - 1)
+        ++g_select.row;
+    else if (pressed & PAD_LEFT)
+        change_value(-1);
+    else if (pressed & PAD_RIGHT)
+        change_value(1);
+    return SELECT_STAY;
+}
+
+void select_apply(void)
+{
+    match_config_select(g_select.mode, &g_select.choice[0],
+        g_select.humans == 2 ? &g_select.choice[1] : 0);
+}

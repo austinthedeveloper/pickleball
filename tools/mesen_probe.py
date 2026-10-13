@@ -27,7 +27,7 @@ MESEN = os.environ.get("MESEN_BIN",
                        "/Applications/Mesen.app/Contents/MacOS/Mesen")
 GOLDEN_TIMELINE = ROOT / "test" / "smoke" / "golden.timeline"
 GOLDEN_TRACE = ROOT / "build" / "golden" / "trace.txt"
-GOLDEN_FRAMES = 4200
+GOLDEN_FRAMES = 4260
 
 # Simulation state captured by golden traces. Sizes are the SNES layouts
 # (identical to the host's sizeof); each run checks them against .sym gaps.

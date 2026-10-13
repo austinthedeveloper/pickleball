@@ -42,6 +42,8 @@ static u8 s_palette_dirty;
 static u8 s_doubles;
 static u8 s_applied_mode;
 
+static void render_load_court(void);
+
 u8 render_match_mode_applied(void)
 {
     return s_applied_mode;
@@ -303,22 +305,12 @@ void render_initialize(void)
     for (i = 0; i < 128; ++i)
         render_obj_hide(i);
 
-    dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR,
-        (u16)(&court_tiles_end - &court_tiles));
-    dmaCopyVram((u8 *)&court_map, RENDER_BG1_MAP_ADDR,
-        (u16)(&court_map_end - &court_map));
     dmaCopyVram((u8 *)&hud_tiles, RENDER_BG3_TILES_ADDR,
         (u16)(&hud_tiles_end - &hud_tiles));
     dmaCopyVram((u8 *)&obj_tiles, RENDER_OBJ_TILES_ADDR,
         (u16)(&obj_tiles_end - &obj_tiles));
-
     dmaCopyCGram((u8 *)&hud_palette, 0,
         (u16)(&hud_palette_end - &hud_palette));
-    dmaCopyCGram((u8 *)&court_palette, 32,
-        (u16)(&court_palette_end - &court_palette));
-    /* Match palettes are composed and uploaded inside this forced blank. */
-    render_apply_match_config();
-    render_upload_palettes();
 
     bgSetGfxPtr(0, RENDER_BG1_TILES_ADDR);
     bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
@@ -328,15 +320,45 @@ void render_initialize(void)
 
     setMode(BG_MODE1, BG3_MODE1_PRIORITY_HIGH);
     bgSetEnable(0);
-    bgSetDisable(1);
     bgSetEnable(2);
     /* Shadows: OBJ palette 4 pixels are black and averaged with BG1 on the
      * subscreen, i.e. half-brightness court under every shadow. */
     bgSetEnableSub(0);
 
+    render_load_court();
+    setScreenOn();
+}
+
+/* Court scene into VRAM/CGRAM and the match HUD; forced blank only. Also
+ * how the match returns from the Player Select screen. */
+static void render_load_court(void)
+{
+    dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR,
+        (u16)(&court_tiles_end - &court_tiles));
+    dmaCopyVram((u8 *)&court_map, RENDER_BG1_MAP_ADDR,
+        (u16)(&court_map_end - &court_map));
+    dmaCopyCGram((u8 *)&court_palette, 32,
+        (u16)(&court_palette_end - &court_palette));
+    bgSetDisable(1);
+    /* Match palettes are composed and uploaded inside this forced blank. */
+    render_apply_match_config();
+    render_upload_palettes();
+    render_reset_bodies();
+
     hud_initialize();
     hud_scene_invalidate();
     render_prepare();
     hud_commit_all();
-    setScreenOn();
+}
+
+void render_open_match(void)
+{
+    u8 i;
+
+    render_fade(1);
+    setScreenOff();
+    for (i = 0; i < 128; ++i)
+        render_obj_hide(i);
+    render_load_court();
+    render_fade(0);
 }

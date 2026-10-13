@@ -15,6 +15,21 @@ are uploaded once during forced blank.
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
 | OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 6,656 (208 tiles) |
 
+Player Select (ADR-020) replaces the court while it is open and reuses the
+BG3 and OBJ regions:
+
+| Region | Word address | Byte range | Actual bytes |
+|---|---:|---:|---:|
+| BG1 select map | `0x0000` | `0x0000–0x07ff` | 2,048 |
+| BG2 portrait maps (male, female) | `0x0800`, `0x0c00` | `0x1000–0x1fff` | 4,096 |
+| BG1 select tiles | `0x1000` | `0x2000–0x6dbf` | 19,904 (622 tiles; budget 768) |
+| BG2 portrait tiles | `0x4000` | `0x8000–0x8ddf` | 3,552 (111 tiles; budget 256) |
+
+CGRAM during select: BG palettes 1–6 select art, 7 portrait (composed from
+palette parts), OBJ 0–3 thumbnails, 4–6 cursors and the taken silhouette;
+colour math is off. Leaving the screen reloads the court tiles, map, and
+palettes in forced blank.
+
 Regions do not overlap. `assets/generated/sizes.json` records every generated
 file's size, hash, and the tile counts above on each build.
 

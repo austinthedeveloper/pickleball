@@ -24,6 +24,7 @@ extern u16 g_stage_scanline_sum[PROFILE_STAGES];
 void profile_initialize(void);
 /* Top of the main loop. */
 void profile_frame_begin(void);
+void profile_resync(void);
 /* After all CPU work, before WaitForVBlank. */
 void profile_work_done(void);
 /* After WaitForVBlank: latches a missed frame. */

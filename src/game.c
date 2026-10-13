@@ -110,12 +110,9 @@ void game_start_attract(void)
     g_ai_slots[0].late_period = GAME_ATTRACT_LATE_PERIOD;
 }
 
-void game_start_match(u8 mode)
+/* A match from the current g_match_config (Player Select, ADR-020). */
+void game_start_match(void)
 {
-    if (mode == MATCH_DOUBLES)
-        match_config_doubles();
-    else
-        match_config_defaults();
     g_match_config_changed = 1;
     game_new_match();
     g_attract = 0;
@@ -197,15 +194,20 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
             game_start_attract();
         return;
     }
-    if (g_game_state.phase_timer >= GAME_POINT_RESULT_MIN_FRAMES &&
-        intents[0].hit_pressed)
+    if (g_game_state.phase_timer < GAME_POINT_RESULT_MIN_FRAMES)
+        return;
+    if (intents[0].pause_pressed)
+        game_start_attract();
+    else if (intents[0].hit_pressed)
         game_new_match();
 }
 
 void game_update(const PlayerIntent intents[MAX_PLAYERS])
 {
     ++g_game_state.frame_count;
-    if (intents[0].pause_pressed && !g_attract)
+    /* Start pauses; on the match result it returns to the title. */
+    if (intents[0].pause_pressed && !g_attract &&
+            g_game_state.phase != GAME_PHASE_MATCH_RESULT)
         g_game_state.paused = !g_game_state.paused;
     if (g_game_state.paused)
         return;

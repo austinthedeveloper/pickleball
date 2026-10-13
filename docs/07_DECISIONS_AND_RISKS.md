@@ -24,6 +24,7 @@ Status: **Living record**
 | [ADR-016](10_MOCKUP_DECISIONS.md#adr-016--scenery-hud-palettes-and-contact-effects) | Scenery, HUD palettes, and contact effects budget (BG1 budget raised to 28 KiB on 2026-10-12) | CGRAM overlap and worst-row budget | BG1 exceeds its character budget |
 | [ADR-018](decisions/ADR-018-doubles.md) | Arcade doubles: lanes, alternating servers, CPU lane coverage, doubles OBJ palette layout | Doubles mockup; vertical-slice priority | Full doubles serve order is implemented |
 | [ADR-019](decisions/ADR-019-shots.md) | Shot types: B standard, A drive, Y lob / dink | Pickleball's core shot variety on the reserved buttons | Paddle stats (ADR-015) land |
+| [ADR-020](decisions/ADR-020-player-select.md) | Player Select: variant, colour, paddle; paddle POWER/CONTROL/SPEED rules; 2P on port 2 | ADR-015 required a rules ADR; vertical-slice select screen | Multitap players 3–4, or paddle balance data from playtests |
 | ADR-017 | FastROM (LoROM, map mode `$30`) | 816-tcc code needs the 3.58 MHz bus. It cut title-demo overruns from about 5% to 0.2% and match overruns during live play to zero. FastROM is standard SNES hardware, not an enhancement chip. | A target cartridge cannot provide 120 ns ROM |
 
 ## Risk register
@@ -57,7 +58,7 @@ Status: **Living record**
 - Let serve policy.
 - Difficulty levels and intentional randomness.
 - Charge and special-shot controls (lob, dink, and drive: ADR-019).
-- Paddle stat effects (ADR-015; rules ADR required).
+- Paddle stat effects (resolved by ADR-020).
 
 Deferred means “do not accidentally implement inside M1–M3.” Write a new decision entry before changing the POC rule set.
 

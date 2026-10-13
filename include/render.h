@@ -44,6 +44,15 @@ void render_initialize(void);
 void render_apply_match_config(void);
 /* Mode whose palettes/colour math are currently set up. */
 u8 render_match_mode_applied(void);
+/* Scene switches with a fade (ADR-020): the court and match HUD from the
+ * current g_match_config, or the Player Select screen. */
+void render_open_match(void);
+void render_select_open(void);
+/* Player Select frame: buffers before VBlank, uploads inside it. */
+void render_select_prepare(void);
+void render_select_commit(void);
+/* Brightness fade out (1) or in (0) over a few frames. */
+void render_fade(u8 out);
 /* Builds OAM and HUD buffers; call before WaitForVBlank. */
 void render_prepare(void);
 /* VBlank-only uploads (HUD bands, pending palettes). */

@@ -25,12 +25,15 @@ Title ──Start/B──▶ Player Select (1P) ──B──▶ [Player Select 
      skipped for 2P, and its label reads `1P` (ADR-010: unique palettes).
   3. **Paddle**: WOOD, BLUE, RED, GOLD, with live POWER / CONTROL / SPEED bars.
 - CPUs take the unused colours in order BLUE, RED, GREEN, GOLD, plus the
-  standard (BLUE) paddle. Slots 1 and 3 are female and slot 2 is male.
+  standard (BLUE) paddle, so a CPU's paddle is always blue whatever its
+  shirt. Slots 1 and 3 are female and slot 2 is male.
   The attract demo keeps its fixed mockup colours.
 
 ## Paddle stats (ADR-015 open questions)
 
-Stats use a single scale of 0–6 bar segments with baseline 3. Every paddle
+Stats use a single scale of 0–5 bar segments with baseline 3. Five
+segments fit beside the stat labels on one 8-px BG3 row; the mockup's
+inconsistent maxima (6/5/6) are retired. Every paddle
 spends the same budget of **9 points**. For each stat, k = stat − 3. Each
 point is 3/64 (4.7%), so the extremes are ±14.1%, inside ADR-015's ±15%
 bound. All arithmetic is integer, so the simulation stays deterministic.
@@ -50,7 +53,7 @@ bound. All arithmetic is integer, so the simulation stays deterministic.
    long) by (64 − 3k)/64. Aim lanes and the sweet box stay the same, so
    control forgives late swings but never moves a well-timed shot.
 3. **SPEED** is swing speed, not movement. Recovery after a swing is
-   7 − k/2 frames (truncated: 6 at SPEED 5–6, 8 at SPEED 0–1). Movement
+   7 − k/2 frames (truncated: 6 at SPEED 5, 8 at SPEED 0–1). Movement
    during a swing is limited to 12 × (64 + 3k)/64 in 12.4 units. The
    4-frame windup and 3-frame active window are unchanged, so contact
    timing stays the same for every paddle.
@@ -88,3 +91,21 @@ the court the same way.
 
 The portrait switches variant by repointing BG2's map, so no VRAM upload is
 needed.
+
+## Flow details
+
+- On the match result, B rematches with the same choices and Start
+  returns to the title.
+- Fades are 16 frames each way (PVSnesLib `setFadeEffectEx`, one frame
+  per brightness step). Scene switches resynchronize the frame profiler,
+  so fades do not count as overruns.
+- The score panel shows four characters, so GREEN appears as `GRN`.
+
+## Verification
+
+- `test/test_select.c` covers rows, wrapping, 2P colour skipping,
+  confirm and back. `test/test_match.c` covers CPU colour fill, and
+  `test_collision` / `test_player` cover the paddle modifiers.
+- `make smoke SMOKE=select` drives 1P through the screen into a match.
+  The headless Mesen runner applies `emu.setInput` to port 1 whatever port
+  is passed, so 2P joining needs a manual check with a second pad.

@@ -46,6 +46,12 @@ void profile_initialize(void)
     s_last_vblank = snes_vblank_count;
 }
 
+/* After a scene switch: the frames spent fading are not overruns. */
+void profile_resync(void)
+{
+    s_last_vblank = snes_vblank_count;
+}
+
 void profile_frame_begin(void)
 {
     ++g_loop_count;

@@ -35,6 +35,7 @@
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
 #define TITLE_MENU_ROW 12           /* SINGLES / DOUBLES */
 #define TITLE_MENU_COL 12
+#define TITLE_2P_COL 9              /* 14-character 2P join line */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -42,11 +43,14 @@ static u8 s_hud_scene;
 static u8 s_hud_valid;
 static u8 s_sub_panel;             /* 0 none, 1 ARCADE RULES, 2 MATCH POINT */
 
-/* Title menu choice (0 singles, 1 doubles); owned by main.c's title input. */
+/* Title menu choice (0 singles, 1 doubles) and 2P join; owned by main.c's
+ * title input. */
 u8 g_title_mode;
+u8 g_title_2p;
 
+/* Score-panel labels: at most 4 characters before the score digits. */
 static const char *const s_palette_names[PAL_COUNT] = {
-    "BLUE", "RED", "GREEN", "GOLD"
+    "BLUE", "RED", "GRN", "GOLD"
 };
 
 static u8 hud_doubles(void)
@@ -54,17 +58,28 @@ static u8 hud_doubles(void)
     return g_match_config.mode == MATCH_DOUBLES;
 }
 
-/* Singles: P1 / CPU. Doubles: the team's palette name (ADR-010/018). */
+static u8 hud_versus_2p(void)
+{
+    return g_match_config.human[2];
+}
+
+/* Singles: P1 / CPU (or P2). Doubles: the team's palette name
+ * (ADR-010/018). */
 static const char *team_name(u8 team)
 {
     if (hud_doubles())
         return s_palette_names[match_team_palette(team)];
-    return team ? "CPU" : "P1";
+    if (team)
+        return hud_versus_2p() ? "P2" : "CPU";
+    return "P1";
 }
 
 void hud_scene_invalidate(void)
 {
     s_hud_valid = 0;
+    /* No previous scene: the staged redraw starts from scratch (a title
+     * logo is redrawn, not assumed to be on screen). */
+    s_hud_scene = 0xff;
 }
 
 static const char *fault_word(u8 fault)
@@ -177,7 +192,16 @@ static const char *hud_point_text(u8 winner)
     };
     if (hud_doubles())
         return doubles[match_team_palette(winner)];
-    return winner == 0 ? "P1 POINT" : "CPU POINT";
+    if (winner == 0)
+        return "P1 POINT";
+    return hud_versus_2p() ? "P2 POINT" : "CPU POINT";
+}
+
+static const char *hud_match_winner_text(void)
+{
+    if (hud_versus_2p())
+        return g_game_state.match_winner == 0 ? "P1 WINS" : "P2 WINS";
+    return g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS";
 }
 
 static u8 hud_scene_key(void)
@@ -186,7 +210,7 @@ static u8 hud_scene_key(void)
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
-            HUD_KEY_TITLE) | (g_title_mode << 1);
+            HUD_KEY_TITLE) | (g_title_mode << 1) | (g_title_2p << 2);
 
     if (g_game_state.paused)
         return HUD_KEY_PAUSED;
@@ -200,7 +224,7 @@ static u8 hud_scene_key(void)
     return phase;
 }
 
-/* Title keys: 0x40 | blink (bit 0) | menu choice (bit 1). */
+/* Title keys: 0x40 | blink (bit 0) | menu choice (bit 1) | 2P (bit 2). */
 #define HUD_IS_TITLE(k) (((k) & 0xF0) == HUD_KEY_TITLE)
 
 /*
@@ -221,7 +245,7 @@ static void hud_scene_step(u8 key, u8 step)
 
     if (HUD_IS_TITLE(key)) {
         if (step == HUD_STEP_CLEAR && !from_title)
-            hud_clear_rows(CENTER_BIG_ROW - 2, 9);
+            hud_clear_rows(CENTER_BIG_ROW - 2, 10);
         else if (step == HUD_STEP_BIG && !from_title) {
             hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
             hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
@@ -232,7 +256,7 @@ static void hud_scene_step(u8 key, u8 step)
                 hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
             /* The menu redraws only when entering the title or when the
              * choice changes, not on every prompt blink. */
-            if (!from_title || ((key ^ s_prev_scene) & 2)) {
+            if (!from_title || ((key ^ s_prev_scene) & 6)) {
                 hud_text(TITLE_MENU_COL, TITLE_MENU_ROW,
                     g_title_mode ? HUD_PAL_WHITE : HUD_PAL_YELLOW,
                     "  SINGLES ");
@@ -241,6 +265,10 @@ static void hud_scene_step(u8 key, u8 step)
                     "  DOUBLES ");
                 hud_tile(TITLE_MENU_COL, TITLE_MENU_ROW + g_title_mode,
                     hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
+                /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
+                hud_text(TITLE_2P_COL, TITLE_MENU_ROW + 3,
+                    g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
+                    g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
             }
         }
         return;
@@ -248,7 +276,7 @@ static void hud_scene_step(u8 key, u8 step)
 
     if (step == HUD_STEP_CLEAR) {
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 9 : 7);
+            from_title ? 10 : 7);
         hud_clear_rows(BANNER_ROW - 1, 4);
         return;
     }
@@ -277,10 +305,10 @@ static void hud_scene_step(u8 key, u8 step)
     case GAME_PHASE_MATCH_RESULT:
         if (step == HUD_STEP_BIG)
             hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
-                g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS");
+                hud_match_winner_text());
         else
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                "PRESS @ TO REMATCH");
+                "@ REMATCH  START MENU");
         break;
     default:
         break;
