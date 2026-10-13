@@ -67,7 +67,8 @@ toward the PPU's 32-object range-over limit.
 
 ## ROM
 
-LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, cartridge
+LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), 512 KiB (16 banks,
+header ROM size `$09`; 256 KiB until the sound effects filled it), NTSC, cartridge
 type `$02` with 2 KiB battery SRAM at `$70:0000` (two 28-byte save copies at
 offsets 0 and 1024; ADR-021, v2 since ADR-022);
 internal checksum and complement sum to

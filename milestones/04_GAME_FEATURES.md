@@ -31,7 +31,7 @@ ADR-024.
 - [ ] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
   - Accept: scrolling VENUE shows the backdrop (reload with a short fade, or a thumbnail) without dropped frames; Y still restores the original.
 - [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium).
-  - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (about 6 more fit in 256 KiB).
+  - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 512 KiB cart has about 300 KiB free).
 
 ## Opponents and story
 
