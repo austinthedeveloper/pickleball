@@ -114,6 +114,7 @@ void render_initialize(void)
 #endif
     render_prepare_players();
     render_prepare_ball();
+    render_prepare_hud(0);
     render_commit_hud(0);
     setScreenOn();
 }
@@ -191,7 +192,8 @@ void render_prepare_players(void)
     oamSetEx(SHADOW_OAM_ID, OBJ_SMALL, OBJ_SHOW);
 }
 
-void render_commit_hud(u8 paused)
+/* Builds the HUD in WRAM; call before WaitForVBlank so the commit is only DMA. */
+void render_prepare_hud(u8 paused)
 {
 #if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
     hud_clear();
@@ -216,6 +218,16 @@ void render_commit_hud(u8 paused)
         hud_put_text(1, 3, "REQ BOUNCE NONE");
     if (paused)
         hud_put_text(13, 1, "PAUSED");
+#else
+    (void)paused;
+#endif
+}
+
+/* VBlank-only work: VRAM writes outside VBlank are dropped by the PPU. */
+void render_commit_hud(u8 paused)
+{
+#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
+    (void)paused;
     dmaCopyVram((u8 *)hud_buffer, BG3_MAP_ADDR, sizeof(hud_buffer));
 #else
     if (paused)
@@ -224,4 +236,3 @@ void render_commit_hud(u8 paused)
         bgSetDisable(2);
 #endif
 }
-

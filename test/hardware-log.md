@@ -252,3 +252,13 @@ No M1 hardware run has been recorded yet.
   feels slower; release gameplay timing will be reassessed with the CPU return
   active, without the per-frame hardware-test HUD transfer.
 
+
+### 2026-10-12 — MesenCE headless (`make smoke SMOKE=m1`) — `0.1.0-DBG-5c87727-dirty`
+
+- Driver: `tools/mesen_smoke.lua` with `test/smoke/m1.timeline`.
+- Boot, eight-way movement, pause hold (position frozen while Right is held),
+  unpause, and resumed movement: PASS from screenshots.
+- DEFECT (fixed): the debug HUD never refreshed because the HUD buffer was
+  rebuilt after `WaitForVBlank()` and the DMA landed in active display. The
+  buffer is now built before VBlank and only the DMA runs inside it.
+- Accuracy-emulator (bsnes) pass and real hardware remain open.

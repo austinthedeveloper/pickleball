@@ -35,7 +35,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke
 
 all: debug
 
@@ -90,6 +90,22 @@ host-check:
 
 CC_HOST ?= cc
 check: host-check asset-check
+
+MESEN_BIN ?= /Applications/Mesen.app/Contents/MacOS/Mesen
+SMOKE ?= m1
+SMOKE_FRAMES ?= 600
+
+# Headless MesenCE run of test/smoke/$(SMOKE).timeline against the debug ROM;
+# screenshots land in build/smoke/$(SMOKE)/ for review.
+smoke: debug
+	@rm -rf build/smoke/$(SMOKE) && mkdir -p build/smoke/$(SMOKE)
+	@SMOKE_TIMELINE=$(CURDIR)/test/smoke/$(SMOKE).timeline \
+		SMOKE_OUT=$(CURDIR)/build/smoke/$(SMOKE) SMOKE_FRAMES=$(SMOKE_FRAMES) \
+		"$(MESEN_BIN)" --testRunner --doNotSaveSettings --noAudio \
+		--debug.scriptWindow.allowIoOsAccess=true \
+		$(CURDIR)/tools/mesen_smoke.lua \
+		$(CURDIR)/build/debug/pickleball-$(VERSION_NAME)-debug-$(BUILD_ID).sfc
+	@ls build/smoke/$(SMOKE) | wc -l | xargs echo "smoke screenshots:"
 
 clean: cleanBuildRes cleanRom cleanLogs
 	@rm -rf build dist assets/generated

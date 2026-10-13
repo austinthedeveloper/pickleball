@@ -40,6 +40,7 @@ int main(void)
         }
         render_prepare_players();
         render_prepare_ball();
+        render_prepare_hud(g_game_state.paused);
         WaitForVBlank();
         render_commit_hud(g_game_state.paused);
     }

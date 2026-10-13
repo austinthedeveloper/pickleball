@@ -1,0 +1,17 @@
+# M1 emulator smoke: boot, move all directions, pause/unpause.
+shot 30
+20 80 right
+shot 80
+81 140 down,right
+shot 140
+141 200 up
+shot 200
+201 260 left
+shot 260
+270 271 start
+shot 290
+300 360 right
+shot 360
+370 371 start
+400 460 down
+shot 460

@@ -51,6 +51,7 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
 - [x] `M1-TEST-01` Add player clamp and fixed-point host checks.
   - Accept: min/max corners, zero input, diagonals, and sign changes pass.
 - [ ] `M1-TEST-02` Run fast and accuracy-emulator smoke tests.
+  - Progress: MesenCE headless pass via `make smoke SMOKE=m1`; bsnes pass still required.
   - Accept: boot, movement, pause, reset, and visual court checks pass in both.
 - [ ] `M1-TEST-03` Run M1 real-hardware smoke and add the hardware log entry.
   - Accept: every M1 item in the test plan passes on an NTSC console.
