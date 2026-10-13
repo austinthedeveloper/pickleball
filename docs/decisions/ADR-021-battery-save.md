@@ -36,7 +36,8 @@ adds a 4-byte settings block before the checksum.
 - **Boot**: load both copies and keep the newer valid one. If neither is
   valid (blank cart, corruption, different version), write defaults to both.
 - A layout change bumps `SAVE_VERSION`, which resets saves made with the old
-  layout. Nothing has shipped, so there is no migration code.
+  layout. Nothing has shipped, so there is no migration code. *Superseded by
+  [ADR-032](ADR-032-save-migration.md): released layouts are migrated.*
 
 ## Records
 

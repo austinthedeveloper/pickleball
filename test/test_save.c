@@ -209,6 +209,99 @@ static void test_game_hooks(void)
     g_attract = 0;
 }
 
+/* The SRAM copy that does not hold the latest write. */
+static u16 s_copy_other(void)
+{
+    SaveData a;
+
+    memcpy(&a, g_host_sram, sizeof(a));
+    return a.records.wins[MATCH_SINGLES] == 40 ? SAVE_COPY_STRIDE : 0;
+}
+
+/* A v0.4.0 save block (layout 4) at an SRAM offset. */
+static void put_v4(u16 offset, u8 sequence, u8 corrupt)
+{
+    SaveV4 old;
+
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V4;
+    old.sequence = sequence;
+    old.wins[MATCH_SINGLES] = 12;
+    old.losses[MATCH_DOUBLES] = 3;
+    old.streak = 2;
+    old.best_streak = 5;
+    old.shutouts = 1;
+    old.longest_rally = 17;
+    old.court[0] = 1;           /* surface BLUE */
+    old.court[1] = 2;           /* surround CONCRETE */
+    old.court[2] = 1;           /* lines WHITE */
+    old.ladder = 3;
+    old.venue = 2;
+    old.points = 11;
+    old.difficulty = 3;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    if (corrupt)
+        old.shutouts ^= 0x40;
+    memcpy(g_host_sram + offset, &old, sizeof(old));
+}
+
+/* ADR-032: saves from released versions carry over. */
+static void test_migrate_v4(void)
+{
+    SaveData a;
+    SaveData b;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    put_v4(0, 9, 0);
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.wins[MATCH_SINGLES] == 12);
+    assert(g_save.records.losses[MATCH_DOUBLES] == 3);
+    assert(g_save.records.best_streak == 5 && g_save.records.streak == 2);
+    assert(g_save.records.shutouts == 1 && g_save.records.longest_rally == 17);
+    assert(g_save.settings.court[COURT_PART_SURFACE] == 1);
+    assert(g_save.settings.court[COURT_PART_KITCHEN] == 0);    /* new */
+    assert(g_save.settings.court[COURT_PART_SURROUND] == 2);
+    assert(g_save.settings.court[COURT_PART_LINES] == 1);
+    assert(g_save.settings.ladder == 3 && g_save.settings.venue == 2);
+    assert(g_save.settings.points == 11 && g_save.settings.difficulty == 3);
+    /* Fields that did not exist start fresh. */
+    assert(g_save.records.ladder_clears == 0);
+    assert(g_save.records.practice_best == 0);
+    assert(g_save.settings.sound == 0);
+    /* Both copies are now the current layout, so it migrates only once. */
+    memcpy(&a, g_host_sram, sizeof(a));
+    memcpy(&b, g_host_sram + SAVE_COPY_STRIDE, sizeof(b));
+    assert(save_valid(&a) && save_valid(&b));
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.records.wins[MATCH_SINGLES] == 12);
+
+    /* A torn v4 copy falls back to defaults, not garbage. */
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    put_v4(0, 9, 1);
+    save_initialize();
+    assert(g_save.records.wins[MATCH_SINGLES] == 0);
+
+    /* An old copy next to a newer current one: the newer wins. */
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    g_save.records.wins[MATCH_SINGLES] = 40;
+    save_write();                       /* current layout, sequence 3 */
+    put_v4(s_copy_other(), 1, 0);
+    save_initialize();
+    assert(g_save.records.wins[MATCH_SINGLES] == 40);
+
+    /* An unknown version (a future save, or garbage) resets. */
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    put_v4(0, 9, 0);
+    g_host_sram[4] = 99;
+    save_initialize();
+    assert(g_save.records.wins[MATCH_SINGLES] == 0);
+}
+
 int main(void)
 {
     test_blank_sram_formats();
@@ -217,6 +310,7 @@ int main(void)
     test_version_mismatch_resets();
     test_sequence_wraps();
     test_records();
+    test_migrate_v4();
     test_game_hooks();
     printf("save host checks passed\n");
     return 0;

@@ -15,7 +15,8 @@ enum {
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
     SAVE_VERSION = 7,           /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
-                                   7: practice (ADR-028) */
+                                   7: practice (ADR-028). Shipped: 4 in
+                                   v0.4.0, 7 in v0.5.0 (ADR-032). */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -44,7 +45,8 @@ typedef struct {
 
 typedef struct {
     u8 magic[4];                /* "PB94" */
-    u8 version;                 /* SAVE_VERSION; any other value resets */
+    u8 version;                 /* SAVE_VERSION, or a frozen older layout
+                                   (migrated); anything else resets */
     u8 sequence;                /* the newer copy has the higher (wrapping) */
     SaveRecords records;
     SaveSettings settings;
@@ -52,6 +54,33 @@ typedef struct {
 } SaveData;
 
 extern SaveData g_save;
+
+/*
+ * Frozen layouts of released saves (ADR-032). A valid save in one of these
+ * is migrated to SaveData on boot and written back; nothing is lost. When
+ * SAVE_VERSION is bumped, the outgoing SaveData is frozen here as
+ * SaveV<old version> and gets a migration step in save.c.
+ */
+enum { SAVE_V4 = 4 };           /* v0.4.0 */
+
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 4 */
+    u8 sequence;
+    u16 wins[2];
+    u16 losses[2];
+    u16 streak;
+    u16 best_streak;
+    u16 shutouts;
+    u16 longest_rally;
+    u8 court[3];                /* surface, surround, lines (no kitchen) */
+    u8 ladder;
+    u8 venue;
+    u8 points;
+    u8 difficulty;
+    u8 reserved;
+    u16 checksum;
+} SaveV4;
 
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */
@@ -75,6 +104,8 @@ void save_record_rally(u8 shots);
 /* Validation, exposed for the host tests. */
 u16 save_checksum(const SaveData *data);
 u8 save_valid(const SaveData *data);
+/* The checksum over any layout's bytes before its checksum field. */
+u16 save_checksum_bytes(const u8 *bytes, u16 count);
 
 #ifdef HOST_TEST
 /* Stand-in for the cartridge SRAM. */

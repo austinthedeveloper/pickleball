@@ -46,6 +46,7 @@ sources the ROM uses).
 | PAU-01 | `test_pause_menu.c`: choices, actions, Start toggling, practice pausing (ADR-030) | PASS |
 | PAU-02 | `test/smoke/pause.timeline`: pause, MAIN MENU, back to the title | PASS (MesenCE smoke) |
 | AMB-01 | `test_audio.c: test_ambience` and the MesenCE voice probe: the venue's loop at boot and after a venue change; stops with NO CROWD / OFF (ADR-031) | PASS |
+| SAV-04 | `test_save.c: test_migrate_v4` + MesenCE `.srm` boot: v0.4.0 saves migrate to the current layout (ADR-032) | PASS |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate
