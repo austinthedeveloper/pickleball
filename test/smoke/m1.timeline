@@ -9,7 +9,7 @@ shot 200
 201 260 left
 shot 260
 270 271 start
-310 311 b   # confirm Player Select (ADR-020)
+310 311 start  # confirm Player Select (ADR-020)
 shot 350
 360 420 right
 shot 420

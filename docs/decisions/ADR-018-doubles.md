@@ -31,6 +31,11 @@ all of which are already team-based.
 - Each CPU covers its lane. For an incoming ball, the teammate whose lane
   holds the predicted landing point plays it; the other recovers to its lane
   home. With no active teammate, as in singles, a CPU covers the whole half.
+- A CPU whose teammate is human never swings at a ball in the human's lane,
+  even when it could reach it.
+- Doubles aim spreads shots across both lanes (bottom, top, top, bottom by
+  shot count) instead of "away from the first opponent", which would
+  always aim away from slot 0, the human.
 - CPU time budget: a CPU tracking the ball thinks every frame. Others think
   every fourth frame (staggered by slot) and hold their last movement in
   between.

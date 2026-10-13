@@ -38,7 +38,8 @@ extern SelectState g_select;
  * first colour 1P has not taken. */
 void select_begin(u8 mode, u8 humans);
 /* One frame of the current human's newly pressed buttons (PAD_* bits).
- * Up/Down rows, Left/Right values, B/Start confirm, Y back. */
+ * Up/Down rows, Left/Right values. B steps to the next row and confirms
+ * on the paddle row; Start confirms at once; Y steps back. */
 u8 select_input(u16 pressed);
 /* Nonzero when the colour belongs to 1P while 2P is choosing. */
 u8 select_colour_taken(u8 palette_id);

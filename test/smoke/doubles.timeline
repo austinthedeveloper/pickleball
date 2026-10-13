@@ -2,7 +2,7 @@
 40 41 down
 shot 60
 80 81 start
-120 121 b   # confirm Player Select (ADR-020)
+120 121 start  # confirm Player Select (ADR-020)
 shot 170
 190 191 b
 shot 220

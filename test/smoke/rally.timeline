@@ -1,6 +1,6 @@
 # Rally soak: P1 serves, then holds B pulses while drifting up/down.
 30 31 b
-70 71 b   # confirm Player Select (ADR-020)
+70 71 start  # confirm Player Select (ADR-020)
 shot 160
 shot 460
 shot 860

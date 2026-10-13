@@ -90,8 +90,11 @@ static void test_ai_doubles_matches(void)
     u8 matches = 0;
     u8 counted = 0;
     u8 i;
+    u8 serial;
+    unsigned hits[MAX_PLAYERS] = {0, 0, 0, 0};
 
     new_doubles();
+    serial = g_game_state.shot_serial;
     g_ai_slots[0].late_period = 4;
     while (matches < 3) {
         memset(intents, 0, sizeof(intents));
@@ -107,6 +110,11 @@ static void test_ai_doubles_matches(void)
             counted = 0;
         }
         game_update(intents);
+        if (g_game_state.shot_serial != serial) {
+            serial = g_game_state.shot_serial;
+            if (g_ball.last_hitter < MAX_PLAYERS)
+                ++hits[g_ball.last_hitter];
+        }
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP && frames == 0)
             g_ai_slots[0].late_period = 4;
         /* At most one CPU per team plans to play the ball. */
@@ -115,7 +123,12 @@ static void test_ai_doubles_matches(void)
         ++frames;
         assert(frames < 60UL * 60 * 20);
     }
-    printf("doubles: 3 AI matches in %.1f s each\n", frames / 3 / 60.0);
+    printf("doubles: 3 AI matches in %.1f s each, hits by slot %u %u %u %u\n",
+        frames / 3 / 60.0, hits[0], hits[1], hits[2], hits[3]);
+    /* Slot 0 is human-owned (driven by an AI here): opponents spread their
+     * shots across both lanes and the CPU partner leaves slot 0's lane
+     * alone, so slot 0 plays a fair share of its team's balls. */
+    assert(hits[0] * 2 >= hits[1]);
 }
 
 int main(void)

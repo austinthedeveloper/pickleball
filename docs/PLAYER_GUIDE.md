@@ -10,8 +10,10 @@ leave. Start or B on controller 1 opens Player Select.
 
 ## Player Select
 
-Up/Down moves between the three rows; Left/Right changes the choice. B or
-Start confirms, and Y goes back.
+Up/Down moves between the three rows (MALE/FEMALE, colour, paddle);
+Left/Right changes the choice. B moves to the next row and, on the paddle
+row, starts the match. Start confirms everything at once. Y steps back a
+row, and from the top row returns to the title.
 
 - **MALE / FEMALE**: the female player wears a ponytail.
 - **Colour**: BLUE, RED, GREEN, or GOLD. With two players, 1P chooses
@@ -56,7 +58,8 @@ These are simplified rules; the HUD says **ARCADE RULES**.
 - Lines are in.
 - Kitchen foot faults are not called.
 - Doubles: each player covers a lane (you play the bottom half of your side,
-  your partner the top). The serving side alternates which partner serves
+  your partner the top). Your CPU partner leaves balls in your lane to you;
+  the opponents spread their shots across both lanes. The serving side alternates which partner serves
   with its score, always diagonally, and teammates never swap sides.
 
 ## Result banners

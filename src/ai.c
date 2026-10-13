@@ -6,6 +6,7 @@
 #include "court.h"
 #include "match.h"
 #include "game.h"
+#include "input.h"
 #include "serve.h"
 
 AiState g_ai;
@@ -15,6 +16,8 @@ AiState g_ai_slots[MAX_PLAYERS];
  * teammate (doubles lanes, ADR-018). Set by ai_update. */
 static u8 s_slot;
 static u8 s_has_partner;
+/* The teammate is a human: never swing at a ball in their lane. */
+static u8 s_partner_human;
 
 static s16 s_impact_vz;
 
@@ -138,7 +141,14 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
     /* First active player on the other team (slots 0-1 left, 2-3 right). */
     if (!opponent->active)
         ++opponent;
-    intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
+    if (s_has_partner)
+        /* Doubles: both opponents get the ball. Aiming away from the first
+         * one would starve slot 0 (the human). Lanes go bottom, top, top,
+         * bottom by shot count. */
+        intent->aim_y = ((g_ai.shot_counter ^ (g_ai.shot_counter >> 1)) & 1) ?
+            -1 : 1;
+    else
+        intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
     intent->aim_x = g_ai.planned_depth * court_toward_net(player->team);
     intent->shot = g_ai.planned_shot;
 }
@@ -257,6 +267,9 @@ static u8 ai_swing_connects(const Player *player)
         if (g_probe.bounces == 0 ||
             !court_x_on_side(g_probe.x, player->team))
             return 0;
+        /* A human partner's lane is theirs, even when we could reach. */
+        if (s_partner_human && !ai_owns_y(FROM_FP(g_probe.y)))
+            return 0;
         if (step == PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES)
             return 0;       /* first reachable after the window: wait */
         if (probe_in_sweet_spot())
@@ -337,6 +350,8 @@ void ai_update(u8 player_index, PlayerIntent *intent)
         s_has_partner = g_players[3].active;
     else
         s_has_partner = g_players[2].active;
+    s_partner_human = s_has_partner &&
+        g_input_owners[player_index ^ 1] == INPUT_OWNER_HUMAN;
     RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
     PROFILE_MARK(8);
     ai_think(player_index, intent);

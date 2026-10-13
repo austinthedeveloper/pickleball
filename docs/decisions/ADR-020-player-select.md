@@ -10,7 +10,7 @@ ADR-014 (accessory object), ADR-015 (paddle constraints), ADR-019 (shots).
 ## Flow
 
 ```
-Title ──Start/B──▶ Player Select (1P) ──B──▶ [Player Select (2P)] ──B──▶ Match
+Title ──Start/B──▶ Player Select (1P) ──B×3──▶ [Player Select (2P)] ──B×3──▶ Match
   ▲                     │ Y                        │ Y
   └─────────────────────┘                          └──▶ back to 1P
 ```
@@ -18,8 +18,11 @@ Title ──Start/B──▶ Player Select (1P) ──B──▶ [Player Select 
 - On the title, **Start on pad 2** toggles a second human (`2P JOINED`).
   2P plays slot 2, the left player's opponent, in both modes. In doubles
   each human gets a CPU partner. Super Multitap players 3 and 4 stay deferred.
-- The select screen has three rows. Up/Down moves the cursor between rows and
-  Left/Right changes the value. B or Start confirms, and Y goes back.
+- The select screen has three rows, and the cursor starts on the top one.
+  Up/Down moves between rows and Left/Right changes the value. B steps to
+  the next row and confirms on the paddle row, so B alone walks a new
+  player through every choice. Start confirms from any row. Y steps back up
+  a row; from the top row it returns to 1P (for 2P) or the title (for 1P).
   1. **MALE / FEMALE**: the body variant.
   2. **Colour**: BLUE, RED, GREEN, GOLD. A colour that 1P already took is
      skipped for 2P, and its label reads `1P` (ADR-010: unique palettes).

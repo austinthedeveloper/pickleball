@@ -34,7 +34,7 @@ void select_begin(u8 mode, u8 humans)
     g_select.mode = mode;
     g_select.humans = humans == 2 ? 2 : 1;
     g_select.current = 0;
-    g_select.row = SELECT_ROW_COLOUR;
+    g_select.row = SELECT_ROW_VARIANT;
     g_select.reserved = 0;
     g_select.choice[0].palette_id = PAL_BLUE;
     g_select.choice[0].variant = PLAYER_VARIANT_MALE;
@@ -65,10 +65,16 @@ u8 select_input(u16 pressed)
         return SELECT_STAY;
     g_select.changed = 1;
 
+    /* B steps down the rows and confirms on the last one; Start confirms
+     * from any row. */
+    if ((pressed & PAD_B) && g_select.row < SELECT_ROWS - 1) {
+        ++g_select.row;
+        return SELECT_STAY;
+    }
     if (pressed & (PAD_B | PAD_START)) {
         if (g_select.current == 0 && g_select.humans == 2) {
             g_select.current = 1;
-            g_select.row = SELECT_ROW_COLOUR;
+            g_select.row = SELECT_ROW_VARIANT;
             if (select_colour_taken(g_select.choice[1].palette_id))
                 g_select.choice[1].palette_id =
                     step_colour(g_select.choice[1].palette_id, 1);
@@ -76,10 +82,15 @@ u8 select_input(u16 pressed)
         }
         return SELECT_DONE;
     }
+    /* Y steps back up the rows, then to 1P, then out to the title. */
     if (pressed & PAD_Y) {
+        if (g_select.row > 0) {
+            --g_select.row;
+            return SELECT_STAY;
+        }
         if (g_select.current == 1) {
             g_select.current = 0;
-            g_select.row = SELECT_ROW_COLOUR;
+            g_select.row = SELECT_ROW_PADDLE;
             return SELECT_STAY;
         }
         return SELECT_BACK;

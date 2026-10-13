@@ -1,7 +1,7 @@
 # Golden trace input (tools/mesen_probe.py). Do not edit casually:
 # changing it invalidates recorded traces.
 200 201 start
-240 241 b   # confirm Player Select (ADR-020)
+240 241 start  # confirm Player Select (ADR-020)
 320 321 b
 339 340 b
 358 359 b
