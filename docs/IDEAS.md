@@ -154,6 +154,34 @@ food-truck chef.
 - Progress (which rung you've reached) needs saving: battery save (below),
   a password screen, or a short ladder played in one sitting.
 
+## Practice mode: ball machine
+
+A PRACTICE entry where the opponent is a ball machine on the far side. It
+feeds balls at you one after another with no scoring, so you can drill a
+shot.
+
+- **Machine settings** (a page like OPTIONS):
+  - SHOT: DRIVE, LOB, DINK, SERVE, or MIX
+  - TARGET: KITCHEN, DEEP, FOREHAND, BACKHAND, at you, or RANDOM
+  - SPEED: the difficulty ball speeds (ADR-025)
+  - RATE: the time between feeds
+- **How it works:**
+  - Each feed is a `ball_launch` from the machine's spot to the chosen
+    target, using the same shot paces as the players (ADR-019). It plays
+    like a CPU that only serves.
+  - A ball that is returned, goes out, or bounces twice ends that feed, and
+    the next one comes after RATE. Rules still call your faults, but no
+    points are scored.
+  - Feedback shows on the HUD: returns in a row, your best streak (a new
+    record for the save), and maybe a target zone to aim your return at
+    (the kitchen for a dink drill).
+- **Cost:** mostly logic. The machine needs one small OBJ graphic (a few
+  tiles; there is room in the OBJ budget), or it can be an off-screen feeder
+  with the ball appearing at the far baseline.
+- **Pairs with:**
+  - KID: the swing assist and slow ball make a gentle intro.
+  - Two-tone court: a visible kitchen to aim dinks at.
+
 ## Play modifiers
 
 Toggles that change the rules or physics for a match, e.g. big ball, fast

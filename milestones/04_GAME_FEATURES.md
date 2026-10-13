@@ -52,6 +52,11 @@ ADR-024.
   - Verified: [ADR-025](../docs/decisions/ADR-025-options.md), `test/test_options.c`, `options.timeline`.
 - [ ] `M4-OPT-02` KID auto-serve (optional): serve automatically after a short wait so a kid never needs a button.
 
+## Practice
+
+- [ ] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").
+  - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
+
 ## Play modifiers
 
 - [ ] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
