@@ -5,6 +5,7 @@
 #include "collision.h"
 #include "court.h"
 #include "match.h"
+#include "options.h"
 #include "game.h"
 #include "input.h"
 #include "serve.h"
@@ -257,6 +258,7 @@ static u8 probe_in_sweet_spot(void)
 static u8 ai_swing_connects(const Player *player)
 {
     u8 step;
+    u8 slow;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
@@ -273,9 +275,14 @@ static u8 ai_swing_connects(const Player *player)
     ai_probe_load(&g_ball);
     s_reach_x = player->x_fp;
     s_reach_y = player->y_fp;
+    /* Probe step n is the ball at frame n's contact check: it moved on
+     * frames 0..n-1 (a slow ball skips some, ADR-025). The check is skipped
+     * at normal speed: two calls per step cost 816-tcc real frame time. */
+    slow = g_match_config.difficulty < DIFFICULTY_MEDIUM;
     for (step = 1; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
             ++step) {
-        ai_probe_step();
+        if (!slow || game_ball_moves_ahead(step - 1))
+            ai_probe_step();
         if (step < PLAYER_WINDUP_FRAMES)
             continue;
         if (!probe_in_reach())
@@ -295,7 +302,8 @@ static u8 ai_swing_connects(const Player *player)
             return !g_ai.late_this_ball;   /* a late player waits it out */
         /* First contact would be stretched; take it only as a last chance. */
         while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
-            ai_probe_step();
+            if (!slow || game_ball_moves_ahead(step))
+                ai_probe_step();
             ++step;
         }
         return !probe_in_reach();
@@ -348,6 +356,30 @@ static void ai_plan_intercept(const Player *player)
 
 static void ai_think(u8 player_index, PlayerIntent *intent);
 static PlayerIntent s_held_intent[MAX_PLAYERS];
+
+/*
+ * KID swing assist (ADR-025): nonzero when a swing pressed now would meet
+ * the ball, by the CPU's own lookahead. It never swings at a ball that
+ * must bounce first (the lookahead waits for the bounce) and never lets a
+ * contact sail past: the human only has to be in the ball's path.
+ */
+u8 ai_assist_swing(u8 player_index)
+{
+    const Player *player = &g_players[player_index];
+    u8 connects;
+
+    if (g_game_state.phase != GAME_PHASE_LIVE || player_is_swinging(player) ||
+            !ball_incoming(player))
+        return 0;
+    RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
+    g_ai.late_this_ball = 0;
+    g_ai.predicted_steps = 0;       /* no early-out on a stale plan */
+    s_slot = player_index;
+    s_has_partner = 0;
+    s_partner_human = 0;
+    connects = ai_swing_connects(player);
+    return connects;
+}
 
 /* Attract demo budget: the demo P1 thinks every other frame and repeats its
  * last movement in between (the one-shot swing press is not repeated). */

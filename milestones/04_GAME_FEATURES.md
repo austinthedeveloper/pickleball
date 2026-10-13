@@ -44,12 +44,21 @@ ADR-024.
   - Accept: shown before and after ladder matches and skippable with B; portraits fit the BG2 portrait budget (ADR-020).
 - [ ] `M4-STORY-02` A ladder ending after beating CHAMPS (a champion screen, plus a "ladder clears" record).
 
+## Options
+
+- [x] `M4-OPT-01` OPTIONS page: points to win (3-21, default 5) and difficulty KID/EASY/MEDIUM/HARD.
+  - Verified: [ADR-025](../docs/decisions/ADR-025-options.md), `test/test_options.c`, `options.timeline`.
+- [ ] `M4-OPT-02` KID auto-serve (optional): serve automatically after a short wait so a kid never needs a button.
+
 ## Play modifiers
 
 - [ ] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
   - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
 
 ## Polish
+
+- [ ] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
+  - Accept: zero overruns on the doubles timeline and a 3,000-frame doubles soak, with a few scanlines of margin.
 
 - [ ] `M4-UI-01` Draw the title pages faster.
   - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.

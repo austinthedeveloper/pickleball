@@ -30,7 +30,7 @@ typedef enum {
 } GameRequiredBounce;
 
 enum {
-    GAME_POINTS_TO_WIN = 5,
+    GAME_POINTS_TO_WIN = 5,         /* the default; g_match_config decides */
     GAME_SERVE_READY_FRAMES = 20,
     GAME_POINT_RESULT_MIN_FRAMES = 20,
     GAME_POINT_RESULT_FRAMES = 90,
@@ -76,5 +76,8 @@ void game_start_attract(void);
 void game_start_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
+/* Nonzero when the ball steps `frames` frames from now (ADR-025 slow ball;
+ * 0 = during this frame's update). */
+u8 game_ball_moves_ahead(u8 frames);
 
 #endif

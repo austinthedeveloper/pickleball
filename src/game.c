@@ -6,6 +6,7 @@
 #include "fx.h"
 #include "input.h"
 #include "match.h"
+#include "options.h"
 #include "game.h"
 #include "player.h"
 #include "profile.h"
@@ -21,6 +22,14 @@ u8 g_demo_mode;
 /* shot_serial at the serve: a point's rally length is the difference.
  * Outside g_game_state, which golden traces compare byte for byte. */
 static u8 s_rally_start;
+/* Slow-ball tick (ADR-025), 0..OPTIONS_BALL_CYCLE-1; outside g_game_state. */
+static u8 s_ball_tick;
+
+u8 game_ball_moves_ahead(u8 frames)
+{
+    return options_ball_moves(g_match_config.difficulty,
+        (u8)(s_ball_tick + frames));
+}
 
 void game_set_phase(u8 phase)
 {
@@ -72,6 +81,7 @@ static void game_activate_players(void)
 
     for (i = 0; i < MAX_PLAYERS; ++i)
         active[i] = match_slot_active(i);
+    s_ball_tick = 0;
     input_assign_match(active, g_match_config.human);
     for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
         player->active = active[i];
@@ -85,6 +95,12 @@ static void game_activate_players(void)
             /* ADR-023: the slot's play style (the default CPU unless an
              * opponent is set). */
             g_ai_styles[i] = *match_slot_style(i);
+            /* ADR-025: difficulty changes the CPUs the humans play
+             * against, not a human's CPU partner. */
+            if (!g_match_config.human[i & 2] &&
+                    !g_match_config.human[(i & 2) + 1])
+                options_apply_difficulty(&g_ai_styles[i],
+                    g_match_config.difficulty);
             g_ai_slots[i].late_period = g_ai_styles[i].late_period;
             g_ai_slots[i].reaction_frames = g_ai_styles[i].reaction;
         }
@@ -153,7 +169,14 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
         if (g_game_state.phase != GAME_PHASE_LIVE)
             return;
     }
-    ball_events = ball_update(0);
+    /* ADR-025: a slow ball skips some steps; normal speed skips the call. */
+    if (g_match_config.difficulty >= DIFFICULTY_MEDIUM) {
+        ball_events = ball_update(0);
+    } else {
+        ball_events = game_ball_moves_ahead(0) ? ball_update(0) : 0;
+        if (++s_ball_tick >= OPTIONS_BALL_CYCLE)
+            s_ball_tick = 0;
+    }
     if (ball_events & BALL_EVENT_BOUNCE)
         events_emit(EVENT_BOUNCE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
             g_ball.bounce_count);
@@ -191,7 +214,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
         !intents[0].hit_pressed)
         return;
 
-    if (g_game_state.team_score[winner] >= GAME_POINTS_TO_WIN) {
+    if (g_game_state.team_score[winner] >= g_match_config.points_to_win) {
         g_game_state.match_winner = winner;
         game_set_phase(GAME_PHASE_MATCH_RESULT);
         /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match.

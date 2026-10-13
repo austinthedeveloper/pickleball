@@ -2,6 +2,7 @@
 #define PADDLE_STATS_DEFINE
 #define OPPONENTS_DEFINE
 #include "match.h"
+#include "options.h"
 #include "player.h"
 
 #ifdef HOST_TEST
@@ -15,7 +16,9 @@ MatchConfig g_match_config = {
     { PLAYER_VARIANT_MALE, PLAYER_VARIANT_FEMALE, PLAYER_VARIANT_MALE,
       PLAYER_VARIANT_FEMALE },
     { 1, 0, 0, 0 },
-    OPPONENT_NONE
+    OPPONENT_NONE,
+    OPTIONS_POINTS_DEFAULT,
+    DIFFICULTY_MEDIUM
 };
 #else
 MatchConfig g_match_config;
@@ -39,6 +42,8 @@ void match_config_defaults(void)
     g_match_config.palette_id[0] = PAL_BLUE;
     g_match_config.palette_id[2] = PAL_RED;
     g_match_config.opponent = OPPONENT_NONE;
+    g_match_config.points_to_win = OPTIONS_POINTS_DEFAULT;
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
 }
 
 void match_config_opponent(u8 opponent)

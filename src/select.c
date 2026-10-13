@@ -1,5 +1,6 @@
 #include "input.h"
 #include "player.h"
+#include "options.h"
 #include "save.h"
 #include "select.h"
 
@@ -114,4 +115,7 @@ void select_apply(void)
     /* ADR-023: against the CPU, the next opponent on the ladder. */
     if (g_select.humans == 1)
         match_config_opponent(g_save.settings.ladder);
+    /* ADR-025: the saved options. */
+    g_match_config.points_to_win = options_points(g_save.settings.points);
+    g_match_config.difficulty = options_difficulty(g_save.settings.difficulty);
 }

@@ -1,0 +1,23 @@
+# Options (ADR-025): Up wraps to OPTIONS; POINTS 5 -> 7; DIFFICULTY
+# MEDIUM -> KID; keep with B. Then a singles match on KID, first to 7,
+# where P1 only moves (no swing presses after the serve): the KID assist
+# swings.
+70 71 up
+shot 80
+90 91 start
+110 111 right
+120 121 down
+130 131 left
+140 141 left
+shot 150
+160 161 b
+shot 175
+190 191 down
+200 201 start
+240 241 start  # confirm Player Select
+shot 300
+320 321 b      # serve
+400 520 up
+600 720 down
+shot 560
+shot 900

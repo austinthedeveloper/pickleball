@@ -2,12 +2,26 @@
 
 One player against the CPU (singles), or with a CPU partner against two CPUs
 (doubles), on a single outdoor court. A second player can join on
-controller 2. First to 5 points wins.
+controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
 On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **COURT**,
-or **RECORDS**. Pressing Start on controller 2 adds a second player
+**RECORDS**, or **OPTIONS**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
-Player Select (or the court or records page).
+Player Select (or the court, records, or options page).
+
+## Options
+
+**POINTS** sets how many points win a match: 3, 5 (the default), 7, 9, 11,
+15, or 21. **DIFFICULTY** sets how hard the CPU opponents are:
+
+- **KID**: the slowest ball, and you swing automatically when the ball
+  reaches you; just run into its path. The D-pad still aims, and you can
+  still press the buttons yourself.
+- **EASY**: a slow ball and easier opponents.
+- **MEDIUM**: the normal game.
+- **HARD**: tougher opponents who make fewer mistakes and react faster.
+
+B or Start keeps your choices (they're saved); Y puts back what you had.
 
 ## Opponents
 
@@ -85,7 +99,7 @@ partner. The CPUs take the remaining colours.
 These are simplified rules; the HUD says **ARCADE RULES**.
 
 - Rally scoring: every rally scores a point, and the point winner serves next.
-- First to 5 points wins. On the result screen, B rematches with the same
+- First to 5 points wins (change it in OPTIONS). On the result screen, B rematches with the same
   players and Start returns to the title.
 - Serve diagonally into the opponent's service box. Landing in the kitchen, in the wrong box, or out loses the point, and so does hitting the net.
 - Two-bounce rule: the serve must bounce before it's returned, and the return must bounce before the server's side hits it. After that, volleys are allowed.

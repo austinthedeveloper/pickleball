@@ -24,6 +24,8 @@ typedef struct {
     u8 human[MAX_PLAYERS];        /* 1P on slot 0, 2P on slot 2 */
     u8 opponent;                  /* ADR-023 personality on slots 2-3, or
                                      OPPONENT_NONE (the default CPU) */
+    u8 points_to_win;             /* ADR-025: first to this many */
+    u8 difficulty;                /* ADR-025: Difficulty */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */

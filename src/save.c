@@ -1,5 +1,6 @@
 #include <string.h>
 #include "opponents.h"
+#include "options.h"
 #include "save.h"
 
 SaveData g_save;
@@ -60,6 +61,8 @@ static void save_defaults(void)
     memset(&g_save, 0, sizeof(g_save));
     memcpy(g_save.magic, s_magic, 4);
     g_save.version = SAVE_VERSION;
+    g_save.settings.points = OPTIONS_POINTS_DEFAULT;
+    g_save.settings.difficulty = DIFFICULTY_MEDIUM;
 }
 
 void save_write(void)

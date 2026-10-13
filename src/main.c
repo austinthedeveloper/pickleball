@@ -7,6 +7,7 @@
 #include "serve.h"
 #include "input.h"
 #include "match.h"
+#include "options.h"
 #include "player.h"
 #include "profile.h"
 #include "render.h"
@@ -56,6 +57,21 @@ static void update_title_court(u16 pressed)
     }
 }
 
+/* Options page (ADR-025): B or Start keeps (and saves), Y puts back. */
+static void update_title_options(u16 pressed)
+{
+    SaveSettings *settings = &g_save.settings;
+    u8 result = options_edit_input(&settings->points, &settings->difficulty,
+        pressed);
+
+    if (result == OPTIONS_EDIT_STAY)
+        return;
+    g_title_page = TITLE_PAGE_MENU;
+    if (result == OPTIONS_EDIT_DONE &&
+            options_edit_changed(settings->points, settings->difficulty))
+        save_write();
+}
+
 /* Title: Up/Down picks an entry, Start on pad 2 toggles 2P, and Start/B
  * opens Player Select (singles, doubles) or a page (court, records). */
 static void update_title(void)
@@ -66,6 +82,8 @@ static void update_title(void)
         update_title_records(pressed);
     else if (g_title_page == TITLE_PAGE_COURT)
         update_title_court(pressed);
+    else if (g_title_page == TITLE_PAGE_OPTIONS)
+        update_title_options(pressed);
     else {
         if (pressed & PAD_UP)
             g_title_mode = g_title_mode ? g_title_mode - 1 :
@@ -78,6 +96,10 @@ static void update_title(void)
         if (pressed & (PAD_START | PAD_B)) {
             if (g_title_mode == TITLE_RECORDS) {
                 g_title_page = TITLE_PAGE_RECORDS;
+            } else if (g_title_mode == TITLE_OPTIONS) {
+                options_edit_begin(&g_save.settings.points,
+                    &g_save.settings.difficulty);
+                g_title_page = TITLE_PAGE_OPTIONS;
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,
                     &g_save.settings.venue);
@@ -117,6 +139,17 @@ static void update_title(void)
         } \
     } while (0)
 
+/* KID (ADR-025): a human swings as soon as the swing would meet the ball.
+ * Humans play slots 0 and 2; a macro keeps the indices constant. */
+#define ASSIST_KID(slot) \
+    do { \
+        if (g_input_owners[slot] == INPUT_OWNER_HUMAN && \
+                g_players[slot].active && ai_assist_swing(slot)) { \
+            g_player_intents[slot].hit_pressed = 1; \
+            g_player_intents[slot].shot = SHOT_STANDARD; \
+        } \
+    } while (0)
+
 /* Human and CPU intents for this frame (frame pipeline steps 1-3). The pads
  * were already captured this frame. */
 static void update_controllers(void)
@@ -124,6 +157,9 @@ static void update_controllers(void)
     if (g_attract) {
         update_title();
         PROFILE_MARK(6);
+    } else if (g_match_config.difficulty == DIFFICULTY_KID) {
+        ASSIST_KID(0);
+        ASSIST_KID(2);
     }
     /* Constant slot numbers keep 816-tcc from multiplying per access. */
     UPDATE_CPU(1);

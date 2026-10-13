@@ -9,6 +9,7 @@
  *   make stats                     # defaults
  *   build/host/match_stats 4 20    # P1 mistimes every 4th shot, 20 matches
  *   build/host/match_stats 4 20 3  # ... against opponent 3 (ADR-023)
+ *   build/host/match_stats 4 20 -1 1  # ... default CPU on EASY (ADR-025)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@
 #include "ai.h"
 #include "game.h"
 #include "match.h"
+#include "options.h"
 #include "serve.h"
 #include "test_support.h"
 
@@ -29,6 +31,7 @@ int main(int argc, char **argv)
     int late = argc > 1 ? atoi(argv[1]) : 4;
     int matches = argc > 2 ? atoi(argv[2]) : 20;
     int opponent = argc > 3 ? atoi(argv[3]) : -1;
+    int difficulty = argc > 4 ? atoi(argv[4]) : DIFFICULTY_MEDIUM;
     int faults[2][7] = {{0}};
     int match = 0;
     int bot_wins = 0;
@@ -43,6 +46,7 @@ int main(int argc, char **argv)
     match_config_defaults();
     if (opponent >= 0)
         match_config_opponent((u8)opponent);
+    g_match_config.difficulty = (u8)difficulty;
     game_new_match();
     while (match < matches && frames < cap) {
         test_bot_skill((u8)late, (u8)match);
@@ -74,6 +78,7 @@ int main(int argc, char **argv)
     printf("P1 stand-in mistimes every %d shot(s); %d matches", late, match);
     if (opponent >= 0 && opponent < OPPONENT_COUNT)
         printf(" vs %s", g_opponent_captain[opponent]);
+    printf(" on %s", options_difficulty_name((u8)difficulty));
     printf("\n");
     printf("  P1 won %d of %d matches; average match %.1f s; %d points\n",
         bot_wins, match, match ? frames / 60.0 / match : 0.0, points);

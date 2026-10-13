@@ -32,6 +32,9 @@ sources the ROM uses).
 | VEN-01 | `test_court_style.c: test_venues`, `test_editor`: DEFAULT = venue ground, AUTO = opponent home, VENUE row (ADR-024) | PASS |
 | VEN-02 | Asset build: shared ground palette and tiles, per-venue budget, names, ground presets | PASS |
 | VEN-03 | `test/smoke/venue.timeline`, `lake.timeline`: SUNSET and LAKESIDE chosen on the title, a match at SUNSET | PASS (MesenCE smoke) |
+| OPT-01 | `test_options.c`: values, difficulty styles, slow-ball pattern, editor, first to 11 (ADR-025) | PASS |
+| OPT-02 | `test_options.c: test_difficulty_and_kid`: bot wins ordered KID >= EASY > MEDIUM > HARD; KID assist alone returns and wins | PASS |
+| OPT-03 | `test/smoke/options.timeline`: OPTIONS page, a KID match to 7, zero overruns | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate

@@ -81,9 +81,9 @@ asset-check: assets
 
 HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/court.c src/court_style.c src/events.c src/fx.c src/game.c \
-	src/input_state.c src/match.c src/player.c src/projection.c src/rules.c \
-	src/save.c src/select.c src/serve.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents
+	src/input_state.c src/match.c src/options.c src/player.c src/projection.c \
+	src/rules.c src/save.c src/select.c src/serve.c
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options
 
 host-check: assets
 	@mkdir -p build/host
@@ -97,15 +97,17 @@ CC_HOST ?= cc
 check: host-check asset-check
 
 # Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE, MATCHES,
-# OPPONENT (-1 the default CPU, else a ladder opponent, ADR-023).
+# OPPONENT (-1 the default CPU, else a ladder opponent, ADR-023),
+# DIFFICULTY (0 KID .. 3 HARD, ADR-025).
 LATE ?= 4
 MATCHES ?= 20
 OPPONENT ?= -1
+DIFFICULTY ?= 2
 stats: assets
 	@mkdir -p build/host
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
-	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT)
+	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY)
 
 # Golden emulator trace (docs/REFACTOR_PLAN.md R0): record before a
 # refactor, compare after; simulation state must stay identical.

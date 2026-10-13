@@ -84,6 +84,9 @@ void ai_initialize(void);
 u8 ai_predict_landing(const Ball *ball, s16 *land_x, s16 *land_y);
 /* Writes the CPU player's PlayerIntent for this frame. */
 void ai_update(u8 player_index, PlayerIntent *intent);
+/* KID difficulty (ADR-025): nonzero when a human's swing pressed now
+ * would meet the ball. */
+u8 ai_assist_swing(u8 player_index);
 /* Repeats the previous ai_update movement without a new swing press. */
 void ai_hold_intent(u8 player_index, PlayerIntent *intent);
 
