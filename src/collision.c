@@ -1,4 +1,5 @@
 #include "collision.h"
+#include "paddle_stats.h"
 
 static fx absolute_fp(fx value)
 {
@@ -60,7 +61,11 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
         }
     }
 
+    /* Paddle POWER and CONTROL (ADR-020): integer n/64 modifiers. */
+    pace = (s16)((pace * g_paddle_power_mul[player->paddle]) >> 6);
     if (!collision_ball_in_sweet_spot(player, ball)) {
+        wide = (s16)((wide * g_paddle_control_mul[player->paddle]) >> 6);
+        longer = (s16)((longer * g_paddle_control_mul[player->paddle]) >> 6);
         /* Stretched: the shot sprays toward its sideline and long. */
         if (target_y < HIT_TARGET_LANE_CENTER ||
             (target_y == HIT_TARGET_LANE_CENTER && ball->y_fp < player->y_fp))

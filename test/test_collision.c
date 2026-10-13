@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "collision.h"
+#include "paddle_stats.h"
 
 static Player players[MAX_PLAYERS];
 static Ball ball;
@@ -19,6 +20,7 @@ static void reset_fixture(void)
     memset(players, 0, sizeof(players));
     memset(&ball, 0, sizeof(ball));
     memset(intents, 0, sizeof(intents));
+    players[0].paddle = PADDLE_STANDARD;
     players[0].active = 1;
     players[0].x_fp = TO_FP(64);
     players[0].y_fp = TO_FP(112);
@@ -148,11 +150,16 @@ static void test_directional_target_lanes(void)
 
 /* Hits the fixture ball with a shot type and aim; returns flight frames to
  * the first bounce and the highest z reached. */
+static u8 s_paddle = PADDLE_STANDARD;
+static s16 s_offset_y;
+
 static u8 fly_shot(u8 team, u8 shot, s16 aim_x, fx *apex)
 {
     u8 frames = 0;
 
     reset_fixture();
+    players[0].paddle = s_paddle;
+    ball.y_fp = players[0].y_fp + TO_FP(s_offset_y);
     /* Mid-court, where lobs and drives differ most from a standard shot. */
     players[0].x_fp = TO_FP(team ? 146 : 110);
     ball.x_fp = players[0].x_fp;
@@ -206,6 +213,45 @@ static void test_shot_types(void)
     assert(ball.x_fp > TO_FP(COURT_KITCHEN_LEFT_X));
 }
 
+/* ADR-020: POWER shortens flights, CONTROL narrows the stretch spray, and
+ * the standard paddle is exactly the ADR-019 tunables. */
+static void test_paddle_stats(void)
+{
+    fx apex;
+    u8 standard;
+    u8 frames;
+    fx standard_y;
+
+    assert(g_paddle_power_mul[PADDLE_STANDARD] == 64);
+    assert(g_paddle_control_mul[PADDLE_STANDARD] == 64);
+    assert(g_paddle_swing_limit[PADDLE_STANDARD] ==
+        PLAYER_SWING_MAX_SPEED_FP);
+    assert(g_paddle_recovery[PADDLE_STANDARD] == PLAYER_RECOVERY_FRAMES);
+
+    standard = fly_shot(0, SHOT_STANDARD, 1, &apex);
+    s_paddle = PADDLE_RED;
+    frames = fly_shot(0, SHOT_STANDARD, 1, &apex);
+    assert(frames < standard);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) < TO_FP(3));
+    s_paddle = PADDLE_WOOD;
+    frames = fly_shot(0, SHOT_STANDARD, 1, &apex);
+    assert(frames > standard);
+
+    /* Stretched drive below the player sprays toward the bottom. */
+    s_offset_y = HIT_SWEET_Y + 4;
+    s_paddle = PADDLE_STANDARD;
+    fly_shot(0, SHOT_DRIVE, 0, &apex);
+    standard_y = ball.y_fp;
+    s_paddle = PADDLE_WOOD;
+    fly_shot(0, SHOT_DRIVE, 0, &apex);
+    assert(ball.y_fp < standard_y);
+    s_paddle = PADDLE_RED;
+    fly_shot(0, SHOT_DRIVE, 0, &apex);
+    assert(ball.y_fp > standard_y);
+    s_offset_y = 0;
+    s_paddle = PADDLE_STANDARD;
+}
+
 static void test_new_swing_restores_contact(void)
 {
     PlayerIntent intents[MAX_PLAYERS];
@@ -227,6 +273,7 @@ int main(void)
     test_team_direction_and_live_ball_requirement();
     test_directional_target_lanes();
     test_shot_types();
+    test_paddle_stats();
     test_new_swing_restores_contact();
     puts("collision host checks passed");
     return 0;

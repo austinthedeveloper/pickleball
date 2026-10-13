@@ -3,6 +3,7 @@
 #include <string.h>
 #include "court.h"
 #include "game.h"
+#include "paddle_stats.h"
 #include "player.h"
 
 static PlayerIntent intents[MAX_PLAYERS];
@@ -179,6 +180,26 @@ static void test_swing_movement_penalty(void)
         player_diagonal_limit(PLAYER_SWING_MAX_SPEED_FP));
 }
 
+/* ADR-020 SPEED: the gold paddle recovers a frame sooner and moves faster
+ * while swinging; windup and active frames never change. */
+static void test_paddle_speed(void)
+{
+    reset_test();
+    g_players[0].paddle = PADDLE_GOLD;
+    g_players[0].vx_fp = PLAYER_MAX_SPEED_FP;
+    intents[0].move_x = 1;
+    intents[0].hit_pressed = 1;
+    players_update(intents, 0);
+    assert(g_players[0].vx_fp == g_paddle_swing_limit[PADDLE_GOLD]);
+    assert(g_paddle_swing_limit[PADDLE_GOLD] > PLAYER_SWING_MAX_SPEED_FP);
+    intents[0].move_x = 0;
+    assert_state_for_frames(PLAYER_STATE_WINDUP, PLAYER_WINDUP_FRAMES);
+    players_update(intents, 0);
+    assert_state_for_frames(PLAYER_STATE_ACTIVE, PLAYER_ACTIVE_FRAMES);
+    players_update(intents, 0);
+    assert_state_for_frames(PLAYER_STATE_RECOVERY, PLAYER_RECOVERY_FRAMES - 1);
+}
+
 static void test_no_swing_retrigger(void)
 {
     u8 frame;
@@ -223,6 +244,7 @@ int main(void)
     test_twenty_pause_toggles();
     test_swing_state_durations();
     test_swing_movement_penalty();
+    test_paddle_speed();
     test_no_swing_retrigger();
     test_swing_freezes_while_paused();
     puts("player host checks passed");

@@ -3,6 +3,7 @@
 
 #include "game_types.h"
 #include "input.h"
+#include "paddle_stats.h"
 #include "palette_parts.h"
 
 #define MATCH_NO_PALETTE 0xff
@@ -17,8 +18,17 @@ typedef struct {
     u8 mode;
     u8 palette_id[MAX_PLAYERS];   /* PAL_BLUE..PAL_GOLD or MATCH_NO_PALETTE */
     u8 skin_id[MAX_PLAYERS];
-    u8 paddle_id[MAX_PLAYERS];
+    u8 paddle_id[MAX_PLAYERS];    /* PADDLE_* (ADR-020) */
+    u8 variant[MAX_PLAYERS];      /* PLAYER_VARIANT_* */
+    u8 human[MAX_PLAYERS];        /* 1P on slot 0, 2P on slot 2 */
 } MatchConfig;
+
+/* One human's Player Select result (ADR-020). */
+typedef struct {
+    u8 palette_id;
+    u8 variant;
+    u8 paddle_id;
+} PlayerChoice;
 
 extern MatchConfig g_match_config;
 
@@ -26,6 +36,11 @@ extern MatchConfig g_match_config;
 void match_config_defaults(void);
 /* Doubles defaults from the mockup: blue+gold (0, 1) vs red+green (2, 3). */
 void match_config_doubles(void);
+/* Config from Player Select: 1P on slot 0, optional 2P on slot 2; CPUs
+ * take the unused colours in order, the standard paddle, and the fixed
+ * variants (slots 1 and 3 female). */
+void match_config_select(u8 mode, const PlayerChoice *p1,
+    const PlayerChoice *p2);
 /* Nonzero when the slot plays in the configured mode. */
 u8 match_slot_active(u8 slot);
 /* Nonzero when every assigned palette is unique; asserted in debug builds. */

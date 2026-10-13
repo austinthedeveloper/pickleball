@@ -70,8 +70,10 @@ void input_configure(u8 multitap_present);
 /* Updates every snapshot from raw pad words and rebuilds the intents of
  * human-owned players. CPU/unowned intents are cleared for the AI layer. */
 void input_map_frame(const u16 raw[MAX_PADS]);
-/* Ownership for a match: P1 human, every other active slot CPU (ADR-018). */
-void input_assign_match(const u8 active[MAX_PLAYERS]);
+/* Ownership for a match: P1 human, 2P human on slot 2 when chosen
+ * (ADR-020), every other active slot CPU (ADR-018). */
+void input_assign_match(const u8 active[MAX_PLAYERS],
+    const u8 human[MAX_PLAYERS]);
 
 #endif
 

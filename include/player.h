@@ -27,6 +27,7 @@ typedef enum {
 enum {
     PLAYER_WINDUP_FRAMES = 4,
     PLAYER_ACTIVE_FRAMES = 3,
+    /* Standard paddle; paddle SPEED moves these two (ADR-020). */
     PLAYER_RECOVERY_FRAMES = 7,
 
     /* 12.4 units: 0.25, 0.1875, 1.5, 0.375 and 0.75 px/frame. */
@@ -41,6 +42,9 @@ enum {
 
     PLAYER_SEPARATION_X = 16,
     PLAYER_SEPARATION_Y = 12,
+
+    PLAYER_VARIANT_MALE = 0,
+    PLAYER_VARIANT_FEMALE = 1,
 
     PLAYER_IDLE_CEL_FRAMES = 20,
     PLAYER_RUN_CEL_FRAMES = 6
@@ -67,6 +71,8 @@ typedef struct {
     u8 palette;
     u8 flash_timer;
     u8 shot_type;       /* ShotType latched when the swing starts */
+    u8 variant;         /* PLAYER_VARIANT_*: ponytail accessory (ADR-014) */
+    u8 paddle;          /* PADDLE_* stats (ADR-020) */
     u8 reserved;        /* keeps the size even on host and SNES */
 } Player;
 

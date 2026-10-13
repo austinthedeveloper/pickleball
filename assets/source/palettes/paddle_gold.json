@@ -1,2 +1,2 @@
 { "_doc": "Paddle part: 11 face dark, 12 face light, 13 edge/grip.",
-  "face": [[23, 15, 2], [30, 24, 6]], "edge": [7, 5, 4] }
+  "face": [[4, 4, 6], [8, 8, 11]], "edge": [30, 23, 5] }

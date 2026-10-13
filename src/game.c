@@ -67,13 +67,15 @@ static void game_activate_players(void)
 
     for (i = 0; i < MAX_PLAYERS; ++i)
         active[i] = match_slot_active(i);
-    input_assign_match(active);
+    input_assign_match(active, g_match_config.human);
     for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
         player->active = active[i];
         player->cpu_controlled = g_input_owners[i] == INPUT_OWNER_CPU;
         player->max_speed_fp = player->cpu_controlled ?
             PLAYER_CPU_MAX_SPEED_FP : PLAYER_MAX_SPEED_FP;
         player->palette = doubles ? i : player->team;
+        player->variant = g_match_config.variant[i];
+        player->paddle = g_match_config.paddle_id[i];
         if (player->cpu_controlled)
             g_ai_slots[i].late_period = AI_LATE_SHOT_PERIOD;
     }

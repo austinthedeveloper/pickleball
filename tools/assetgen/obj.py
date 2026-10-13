@@ -9,7 +9,7 @@ def load_part(name):
     return json.loads((paths.palettes / f"{name}.json").read_text("utf-8"))
 
 
-def palette_parts_header(colors):
+def palette_parts_header(colors, paddle_names):
     """Contract v2 parts for runtime composition (ADR-013)."""
     shared = load_part("shared")
     skin = load_part("skin_light")
@@ -20,7 +20,7 @@ def palette_parts_header(colors):
     for i, name in enumerate(colors):
         lines.append(f"#define PAL_{name.upper()} {i}")
     lines += [f"#define PAL_COUNT {len(colors)}", "#define SKIN_COUNT 1",
-              "#define PADDLE_COUNT PAL_COUNT", "",
+              f"#define PADDLE_PART_COUNT {len(paddle_names)}", "",
               "#ifdef PALETTE_PARTS_DEFINE"]
 
     def arr(name, rows):
@@ -28,7 +28,7 @@ def palette_parts_header(colors):
                                + " }" for row in rows)
         return f"const u16 {name}[{len(rows)}][{len(rows[0])}] = {{\n    {body}\n}};"
     teams = [load_part(f"team_{n}") for n in colors]
-    paddles = [load_part(f"paddle_{n}") for n in colors]
+    paddles = [load_part(f"paddle_{n}") for n in paddle_names]
     lines.append(arr("g_pal_shared", [[shared["outline"], shared["highlight"]]]))
     lines.append(arr("g_pal_skin", [skin["skin"] + [skin["hair"]]]))
     lines.append(arr("g_pal_team", [t["shirt"] + t["shorts"] + [t["shoe"]]
@@ -43,7 +43,7 @@ def palette_parts_header(colors):
               "extern const u16 g_pal_shared[1][2];",
               "extern const u16 g_pal_skin[SKIN_COUNT][4];",
               "extern const u16 g_pal_team[PAL_COUNT][6];",
-              "extern const u16 g_pal_paddle[PADDLE_COUNT][3];",
+              "extern const u16 g_pal_paddle[PADDLE_PART_COUNT][3];",
               "extern const u16 g_pal_hud[PAL_COUNT][2];",
               "extern const u16 g_pal_flash[16];",
               "#endif", "", "#endif", ""]

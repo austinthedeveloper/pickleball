@@ -33,6 +33,11 @@ def write_png(path, rows, palette):
 
 
 def mutate(src, name, fn):
+    if name.endswith(".json"):
+        import json
+        path = src / name
+        path.write_text(json.dumps(fn(json.loads(path.read_text()))))
+        return
     w, h, rows, pal = generate_assets.read_png(src / name)
     rows = [list(r) for r in rows]
     rows = fn(rows)
@@ -88,6 +93,17 @@ def crop_scene(rows):
     return [row[:248] for row in rows]
 
 
+def paddle_over_budget(spec):
+    spec["paddles"][0]["power"] += 1
+    return spec
+
+
+def paddle_past_bound(spec):
+    # 5/64 per point puts a 5-point stat at 10/64, past 15%.
+    spec["step_64ths"] = 5
+    return spec
+
+
 CASES = [
     ("scene must be 256x224", "court_scene.png", crop_scene,
      "court_scene.png must be 256x224"),
@@ -101,6 +117,10 @@ CASES = [
      "PROJ-04"),
     ("OBJ tile budget", "player_sprites.png", grow_sprite_sheet,
      "OBJ uses"),
+    ("paddle budget (ADR-020)", "paddles.json", paddle_over_budget,
+     "budget is 9"),
+    ("paddle modifier bound (ADR-015)", "paddles.json", paddle_past_bound,
+     "more than 15%"),
 ]
 
 

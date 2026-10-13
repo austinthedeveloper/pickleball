@@ -33,7 +33,7 @@ GOLDEN_FRAMES = 4200
 # (identical to the host's sizeof); each run checks them against .sym gaps.
 GOLDEN_STATE = [
     ("game", "g_game_state", 16),
-    ("players", "g_players", 104),
+    ("players", "g_players", 112),
     ("ball", "g_ball", 18),
     ("serve", "g_serve_state", 10),
     ("ai", "g_ai_slots", 96),

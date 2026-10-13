@@ -1,6 +1,7 @@
 #include <string.h>
 #include "ram_copy.h"
 #include "court.h"
+#include "paddle_stats.h"
 #include "player.h"
 
 Player g_players[MAX_PLAYERS];
@@ -58,6 +59,8 @@ void players_initialize(void)
         player->palette = player->team;
         player->flash_timer = 0;
         player->shot_type = SHOT_STANDARD;
+        player->variant = PLAYER_VARIANT_MALE;
+        player->paddle = PADDLE_STANDARD;
         player->reserved = 0;
         player_place(player, 0, 0);
     }
@@ -106,7 +109,7 @@ static void player_step(const PlayerIntent *intent)
                 s_p.state_frames_remaining = PLAYER_ACTIVE_FRAMES;
             } else if (s_p.state == PLAYER_STATE_ACTIVE) {
                 s_p.state = PLAYER_STATE_RECOVERY;
-                s_p.state_frames_remaining = PLAYER_RECOVERY_FRAMES;
+                s_p.state_frames_remaining = g_paddle_recovery[s_p.paddle];
             } else {
                 s_p.state = PLAYER_STATE_IDLE;
             }
@@ -121,7 +124,7 @@ static void player_step(const PlayerIntent *intent)
     }
 
     limit = s_p.state >= PLAYER_STATE_WINDUP ?
-        PLAYER_SWING_MAX_SPEED_FP : s_p.max_speed_fp;
+        g_paddle_swing_limit[s_p.paddle] : s_p.max_speed_fp;
     accel = PLAYER_ACCEL_FP;
     if (move_x && move_y) {
         accel = PLAYER_DIAGONAL_ACCEL_FP;

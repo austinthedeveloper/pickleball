@@ -9,7 +9,7 @@
  */
 
 /* Player struct layout (include/player.h). */
-#define ASM_PLAYER_SIZE 26
+#define ASM_PLAYER_SIZE 28
 #define ASM_PLAYER_ACTIVE 0
 #define ASM_PLAYER_X 4
 #define ASM_PLAYER_Y 6
@@ -19,6 +19,7 @@
 #define ASM_PLAYER_POSE 21
 #define ASM_PLAYER_PALETTE 22
 #define ASM_PLAYER_FLASH 23
+#define ASM_PLAYER_VARIANT 25
 
 /* Player states and poses (include/player.h). */
 #define ASM_STATE_MOVE 1
