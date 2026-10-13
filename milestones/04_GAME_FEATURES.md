@@ -1,5 +1,7 @@
 # M4 — Game Features
 
+Target version: **0.4.0** (first GitHub release; see [RELEASING.md](../docs/RELEASING.md))
+
 Outcome: the POC grows into a game you return to: saved records and
 settings, themed opponents on a ladder, and several venues. Design notes for
 each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 to

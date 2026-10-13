@@ -1,6 +1,6 @@
 PVSNESLIB_HOME ?= ../pvsneslib
 CONFIG ?= debug
-VERSION_NAME := 0.3.0
+VERSION_NAME := 0.4.0
 BUILD_ID ?= $(shell id=$$(git rev-parse --short HEAD 2>/dev/null || echo dev); \
 	if test -n "$$(git status --porcelain 2>/dev/null)"; then \
 		fingerprint=$$({ git diff --binary HEAD; git status --porcelain; } | \
@@ -46,7 +46,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke repro stats golden-record golden-compare
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare
 
 all: debug
 
@@ -157,6 +157,35 @@ dist: release
 		echo "branch: $$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"; \
 		} > dist/source-revision.txt
 	@echo "Distribution written to dist/"
+
+# GitHub release of the current commit (docs/RELEASING.md): tag
+# v$(VERSION_NAME), push the tag, attach the dist ROM, checksum, build report,
+# and player guide. Needs a clean main that matches origin/main and the gh
+# CLI logged in; NOTES=file replaces the generated notes.
+TAG := v$(VERSION_NAME)
+NOTES ?=
+publish:
+	@test -z "$$(git status --porcelain)" || \
+		{ echo "publish: commit or stash your changes first"; exit 1; }
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = main || \
+		{ echo "publish: run from main"; exit 1; }
+	@git fetch -q origin
+	@test "$$(git rev-parse HEAD)" = "$$(git rev-parse origin/main)" || \
+		{ echo "publish: main must match origin/main (push or pull first)"; exit 1; }
+	@! git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null || \
+		{ echo "publish: $(TAG) exists; bump VERSION_NAME"; exit 1; }
+	@gh auth status >/dev/null 2>&1 || \
+		{ echo "publish: run 'gh auth login' first"; exit 1; }
+	@$(MAKE) --no-print-directory check
+	@$(MAKE) --no-print-directory dist
+	@python3 tools/release_notes.py --tag $(TAG) --rom dist/$(RELEASE_ROM).sfc \
+		$(if $(NOTES),--intro $(NOTES)) > dist/release-notes.md
+	@git tag -a $(TAG) -m "Pickleball '94 $(TAG)"
+	@git push -q origin $(TAG)
+	@gh release create $(TAG) --title "Pickleball '94 $(TAG)" \
+		--notes-file dist/release-notes.md \
+		dist/$(RELEASE_ROM).sfc dist/$(RELEASE_ROM).sha256 \
+		dist/build-report.md dist/README.md
 
 # M3-ASSET-05: two clean release builds must produce identical generated
 # assets and ROM bytes.
