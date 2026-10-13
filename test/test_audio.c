@@ -100,11 +100,32 @@ static void test_settings_and_attract(void)
     assert(strcmp(audio_setting_name(AUDIO_NO_CROWD), "NO CROWD") == 0);
 }
 
+/* ADR-031: the venue's ambience follows the SOUND option. */
+static void test_ambience(void)
+{
+    reset(AUDIO_ALL);
+    assert(g_audio_ambience == AUDIO_UNLOADED);
+    audio_ambience(1);
+    assert(g_audio_ambience == 1);
+    audio_ambience(2);
+    assert(g_audio_ambience == 2);
+    g_save.settings.sound = AUDIO_NO_CROWD;     /* the murmur is crowd */
+    audio_refresh();
+    assert(g_audio_ambience == AUDIO_NO_AMBIENCE);
+    g_save.settings.sound = AUDIO_OFF;
+    audio_ambience(0);
+    assert(g_audio_ambience == AUDIO_NO_AMBIENCE);
+    g_save.settings.sound = AUDIO_ALL;
+    audio_refresh();
+    assert(g_audio_ambience == 0);
+}
+
 int main(void)
 {
     test_shots_and_bounces();
     test_faults_and_crowd();
     test_settings_and_attract();
+    test_ambience();
     printf("audio host checks passed\n");
     return 0;
 }

@@ -37,6 +37,15 @@ void audio_crowd(u8 volume);
 /* Once a frame, after the frame's work: hands queued effects to the sound
  * CPU when the frame has time left (or after a few frames). */
 void audio_update(void);
+/* The venue's ambience loop (ADR-031): starts it (or keeps it) for this
+ * venue, or stops it when the SOUND option leaves out the crowd. Loading a
+ * module blocks for a moment: call it while the court loads. */
+void audio_ambience(u8 venue);
+/* Re-applies the SOUND option to the ambience (after OPTIONS changes). */
+void audio_refresh(void);
+/* Venue whose ambience is playing, or AUDIO_NO_AMBIENCE (host tests). */
+extern u8 g_audio_ambience;
+enum { AUDIO_NO_AMBIENCE = 0xff, AUDIO_UNLOADED = 0xfe };
 /* Display name of a sound setting. */
 const char *audio_setting_name(u8 setting);
 

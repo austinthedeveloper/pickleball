@@ -42,7 +42,9 @@ and B chooses. Start or Y also resumes.
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.
 
-**SOUND** is ALL, NO CROWD (effects without the applause), or OFF.
+**SOUND** is ALL, NO CROWD (effects without the applause or the
+background crowd), or OFF. With ALL, each venue has a quiet background:
+birds at the park, gulls and water by the lake, crickets at sunset.
 
 B or Start keeps your choices (they're saved); Y puts back what you had.
 

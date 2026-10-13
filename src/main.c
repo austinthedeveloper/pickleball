@@ -119,8 +119,10 @@ static void update_title_options(u16 pressed)
     g_title_page = TITLE_PAGE_MENU;
     if (result == OPTIONS_EDIT_DONE &&
             options_edit_changed(settings->points, settings->difficulty,
-                settings->sound))
+                settings->sound)) {
         save_write();
+        audio_refresh();            /* SOUND may start or stop ambience */
+    }
 }
 
 /* Practice page (ADR-028): B or Start saves any change and goes on to

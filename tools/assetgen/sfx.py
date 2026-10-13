@@ -145,23 +145,40 @@ def pcm16(values):
             for v in values]
 
 
-def it_file(effects):
+def pack_pattern(rows, events):
+    """IT pattern data. events: {row: [(channel, note, instrument,
+    volume)]}, channel 0-based, instrument 1-based, volume 0-64."""
+    data = bytearray()
+    for row in range(rows):
+        for channel, note, instrument, volume in events.get(row, ()):
+            data.append((channel + 1) | 0x80)
+            data.append(0x07)           # note, instrument, volume follow
+            data += bytes([note, instrument, volume])
+        data.append(0)                  # end of row
+    return struct.pack("<HH4x", len(data), rows) + bytes(data)
+
+
+def it_module(title, samples, patterns, orders, speed=6, tempo=125):
     """A minimal Impulse Tracker module: one 16-bit sample and one
-    instrument per effect, and one empty pattern (smconv needs a song)."""
-    count = len(effects)
-    orders = bytes([0, 255])
+    instrument per sample, and the given patterns and order list.
+    samples: (name, pcm, rate, loop) tuples; loop plays the whole sample
+    again and again."""
+    count = len(samples)
+    order_bytes = bytes(list(orders) + [255])
     header = bytearray(0xC0)
     header[0:4] = b"IMPM"
-    header[4:4 + 15] = b"PICKLEBALL SFX\0"
-    struct.pack_into("<HHHH", header, 0x20, len(orders), count, count, 1)
+    name = title.encode()[:25]
+    header[4:4 + len(name)] = name
+    struct.pack_into("<HHHH", header, 0x20, len(order_bytes), count, count,
+                     len(patterns))
     # Cwt/v, Cmwt, flags (stereo, instruments, linear slides), special.
     struct.pack_into("<HHHH", header, 0x28, 0x0214, 0x0214, 0x0D, 0)
-    header[0x30:0x36] = bytes([128, 48, 6, 125, 128, 0])
+    header[0x30:0x36] = bytes([128, 48, speed, tempo, 128, 0])
     for ch in range(64):
         header[0x40 + ch] = 32          # centre
         header[0x80 + ch] = 64
-    offsets_size = 4 * (count + count + 1)
-    cursor = 0xC0 + len(orders) + offsets_size
+    offsets_size = 4 * (count + count + len(patterns))
+    cursor = 0xC0 + len(order_bytes) + offsets_size
 
     instruments = []
     for i in range(count):
@@ -169,8 +186,8 @@ def it_file(effects):
         ins[0:4] = b"IMPI"
         ins[0x18] = 128                 # global volume
         ins[0x19] = 32 | 128            # default pan off
-        name = effects[i][0].encode()[:25]
-        ins[0x20:0x20 + len(name)] = name
+        label = samples[i][0].encode()[:25]
+        ins[0x20:0x20 + len(label)] = label
         for note in range(120):         # every note plays this sample
             ins[0x40 + note * 2] = note
             ins[0x40 + note * 2 + 1] = i + 1
@@ -182,23 +199,26 @@ def it_file(effects):
 
     sample_headers_at = cursor
     cursor += 0x50 * count
-    pattern_at = cursor
-    pattern = struct.pack("<HH4x", 64, 64) + bytes(64)   # 64 empty rows
-    cursor += len(pattern)
+    packed = [pack_pattern(rows, events) for rows, events in patterns]
+    pattern_offsets = []
+    for pat in packed:
+        pattern_offsets.append(cursor)
+        cursor += len(pat)
 
     sample_headers = []
     data = []
-    for i, (name, pcm) in enumerate(effects):
+    for name, pcm, rate, loop in samples:
         smp = bytearray(0x50)
         smp[0:4] = b"IMPS"
         smp[0x11] = 64                  # global volume
-        smp[0x12] = 0x03                # sample present, 16-bit
+        smp[0x12] = 0x03 | (0x10 if loop else 0)    # sample, 16-bit, loop
         smp[0x13] = 64                  # volume
         label = name.encode()[:25]
         smp[0x14:0x14 + len(label)] = label
         smp[0x2E] = 0x01                # signed
         smp[0x2F] = 32
-        struct.pack_into("<IIII", smp, 0x30, len(pcm), 0, 0, RATE)
+        struct.pack_into("<IIII", smp, 0x30, len(pcm), 0,
+                         len(pcm) if loop else 0, rate)
         struct.pack_into("<I", smp, 0x48, cursor)
         raw = struct.pack(f"<{len(pcm)}h", *pcm)
         data.append(raw)
@@ -207,18 +227,27 @@ def it_file(effects):
 
     smp_offsets = [sample_headers_at + 0x50 * i for i in range(count)]
     out = bytearray(header)
-    out += orders
+    out += order_bytes
     out += struct.pack(f"<{count}I", *ins_offsets)
     out += struct.pack(f"<{count}I", *smp_offsets)
-    out += struct.pack("<I", pattern_at)
+    out += struct.pack(f"<{len(patterns)}I", *pattern_offsets)
     for ins in instruments:
         out += ins
     for smp in sample_headers:
         out += smp
-    out += pattern
+    for pat in packed:
+        out += pat
     for raw in data:
         out += raw
     return bytes(out)
+
+
+def it_file(effects):
+    """The effects module: one sample per effect and one empty pattern
+    (smconv needs a song)."""
+    return it_module("PICKLEBALL SFX",
+                     [(name, pcm, RATE, False) for name, pcm in effects],
+                     [(64, {})], [0])
 
 
 def sfx_assets():

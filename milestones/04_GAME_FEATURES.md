@@ -85,7 +85,8 @@ touching the simulation.
   - Accept: rally length (already tracked for records) scales the reaction; a crowd volume or off option on the OPTIONS page.
   - Verified: ADR-029 (applause scales with the rally, loudest on the match point; OPTIONS SOUND: ALL / NO CROWD / OFF). The cheer and murmur loop are left for later.
 - [ ] `M4-AUDIO-04` Listen on real hardware (levels and mix through a TV), and tune the effects (`make sfx-preview` writes WAVs).
-- [ ] `M4-AUDIO-03` Music for the title and menus (optional).
+- [x] `M4-AUDIO-03` Subtle background sound instead of music: a venue ambience loop (murmur with birds, gulls, or crickets).
+  - Verified: [ADR-031](../docs/decisions/ADR-031-ambience.md), `test_audio.c`, MesenCE voice probe. A real tune stays optional.
 
 ## Play modifiers
 

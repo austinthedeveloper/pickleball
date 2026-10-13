@@ -5,6 +5,7 @@
 #include "asset_frames.h"
 #include "ball.h"
 #include "court.h"
+#include "audio_events.h"
 #include "court_style.h"
 #include "fx.h"
 #include "game.h"
@@ -418,6 +419,8 @@ static void render_load_court(void)
 
     s_venue = court_style_venue(g_save.settings.venue,
         g_attract ? OPPONENT_NONE : g_match_config.opponent);
+    /* The venue's ambience (ADR-031); loads only when the venue changed. */
+    audio_ambience(s_venue);
     venue = &g_venue_data[s_venue];
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,

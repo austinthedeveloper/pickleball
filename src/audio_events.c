@@ -9,8 +9,17 @@
 
 #ifndef HOST_TEST
 #include "soundbank.h"
-extern char SOUNDBANK__;
+/* Over 32 KiB the soundbank spans two banks (ADR-031). */
+extern char SOUNDBANK__0, SOUNDBANK__1;
 #endif
+
+/* Module volume for the ambience: quiet under the effects. */
+#define AUDIO_AMBIENCE_VOLUME 150
+
+u8 g_audio_ambience;
+static u8 audio_setting(void);
+/* The venue last asked for, so a SOUND change can restart it. */
+static u8 s_ambience_venue;
 
 u16 g_audio_event_counts[6];
 AudioLast g_audio_last;
@@ -42,13 +51,51 @@ void audio_events_initialize(void)
     s_rally_shots = 0;
     s_pending = 0;
     s_skipped = 0;
+    /* Nothing loaded yet: the first court load (render_load_court) loads
+     * the venue's ambience and the effects, once, keeping boot short. */
+    g_audio_ambience = AUDIO_UNLOADED;
+    s_ambience_venue = 0;
 #ifndef HOST_TEST
     spcBoot();
-    spcSetBank(&SOUNDBANK__);
+    /* Banks are given last first. */
+    spcSetBank(&SOUNDBANK__1);
+    spcSetBank(&SOUNDBANK__0);
     spcStop();
+#endif
+}
+
+void audio_ambience(u8 venue)
+{
+    u8 want = audio_setting() == AUDIO_ALL ? venue : AUDIO_NO_AMBIENCE;
+#ifndef HOST_TEST
+    u8 i;
+#endif
+
+    s_ambience_venue = venue;
+    if (want == g_audio_ambience)
+        return;
+    g_audio_ambience = want;
+#ifndef HOST_TEST
+    /* Loading a module replaces what the sound CPU holds: the effects are
+     * loaded again after it (PVSnesLib's effects-and-music order). */
+    spcStop();
+    if (want != AUDIO_NO_AMBIENCE)
+        spcLoad(MOD_AMBIENCE_0 + want);
     for (i = 0; i < SFX_COUNT; ++i)
         spcLoadEffect(i);
+    if (want != AUDIO_NO_AMBIENCE) {
+        spcPlay(0);
+        spcSetModuleVolume(AUDIO_AMBIENCE_VOLUME);
+    }
 #endif
+    /* spcPlay and the volume are queued commands: audio_update hands them
+     * over in the next frames. (spcFlush hung the boot here.) */
+    s_pending = AUDIO_PROCESS_FRAMES;
+}
+
+void audio_refresh(void)
+{
+    audio_ambience(s_ambience_venue);
 }
 
 const char *audio_setting_name(u8 setting)

@@ -25,11 +25,14 @@ SRAMSIZE := 01
 
 export ROMNAME ROMTITLE FASTROM
 
-# Sound effects (ADR-029): tools/assetgen/sfx.py writes sfx.it; smconv turns
-# it into a SNESMOD soundbank in its own ROM bank (7, the last).
-AUDIOFILES := assets/generated/sfx.it
+# Sound (ADR-029/031): tools/assetgen writes sfx.it (the effects, first) and
+# one ambience module per venue; smconv turns them into a SNESMOD soundbank
+# in the last two ROM banks (14-15; over 32 KiB, it spans two). -f checks
+# that each ambience fits sound RAM alongside the effects.
+AUDIOFILES := assets/generated/sfx.it assets/generated/ambience_0.it \
+	assets/generated/ambience_1.it assets/generated/ambience_2.it
 export SOUNDBANK := assets/generated/soundbank
-SMCONVFLAGS := -s -o $(SOUNDBANK) -b 7
+SMCONVFLAGS := -s -o $(SOUNDBANK) -b 14 -f
 
 CONFIG_TAG := $(CONFIG)
 ifeq ($(CONFIG),debug)

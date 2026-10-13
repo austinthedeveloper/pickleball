@@ -44,6 +44,7 @@ from assetgen.court_colors import court_colors_header  # noqa: E402
 from assetgen.opponents import opponents_header  # noqa: E402
 from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
+from assetgen.ambience import ambience_module  # noqa: E402
 from assetgen.sfx import sfx_assets  # noqa: E402
 from assetgen.select import portrait_assets, scene_assets  # noqa: E402
 
@@ -109,6 +110,11 @@ def generated_files():
     sfx_it, sfx_header, sfx_seconds = sfx_assets()
     files["sfx.it"] = sfx_it
     files["sfx.h"] = sfx_header.encode()
+    # ADR-031: one ambience module per venue, in venue order; the Makefile
+    # lists them after sfx.it (smconv needs the effects first).
+    venues = json.loads((paths.src / "venues.json").read_text("utf-8"))
+    for i, venue in enumerate(venues["venues"]):
+        files[f"ambience_{i}.it"] = ambience_module(venue["ambience"], 100 + i)
     budget = {"court_tiles": court_tiles, "ground_tiles": ground_tiles, "hud_tiles": hud_tiles,
               "obj_tiles": obj_tiles, "select_tiles": select_tiles,
               "portrait_tiles": portrait_tiles}
