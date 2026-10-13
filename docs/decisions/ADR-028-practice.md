@@ -37,8 +37,9 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
 - **A miss resets the streak:** a return into the net, out, or on your own
   side; a feed you let bounce twice; or a feed that runs 5 s without ending.
 - **On screen:** the score panels read `P1 <streak>`, `PRACTICE`, and
-  `BEST <best>` (up to 99), with a `START  MENU` banner. A spark and the
-  hit sound mark each feed.
+  `BEST <best>` (up to 99), with a `START  MENU` banner. A spark marks
+  each feed. Each feed also emits a HIT event, so it will sound once audio
+  exists (`M4-AUDIO-01`); the game has no sound yet (ADR-009).
 - **The machine** (`M4-PRACTICE-02`) is a 16 × 16 sprite: a grey body with a
   hopper of yellow balls, a nozzle facing P1, and wheels.
   - It is four 8 × 8 tiles in the small-object sheet (slots 7–10) and four

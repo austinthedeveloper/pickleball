@@ -66,6 +66,19 @@ ADR-024.
 - [ ] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
 
+## Sound
+
+The game is silent today (ADR-009). `src/audio_events.c` is a seam that
+counts the simulation's events (SERVE, HIT with the shot type, BOUNCE,
+FAULT, POINT) for the tests. A sound driver replaces its body without
+touching the simulation.
+
+- [ ] `M4-AUDIO-01` Sound driver and effects: paddle hits (standard, drive, and soft sound different), bounces, the net, the serve, and fault and point stings.
+  - Accept: an ADR picks the driver (PVSnesLib's SNESMOD, or a small custom SPC700 sound-effect player) and the ARAM budget (64 KiB: driver, BRR samples, echo buffer). Effects play from `audio_on_event` with no frame overruns (the main CPU only sends commands). The ROM cost of BRR samples is recorded. Effects are tested on hardware.
+- [ ] `M4-AUDIO-02` Crowd: light applause after points, louder for long rallies and match point, a cheer on the match result, and maybe a quiet murmur loop.
+  - Accept: rally length (already tracked for records) scales the reaction; a crowd volume or off option on the OPTIONS page.
+- [ ] `M4-AUDIO-03` Music for the title and menus (optional).
+
 ## Play modifiers
 
 - [ ] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
