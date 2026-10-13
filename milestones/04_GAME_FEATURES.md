@@ -50,7 +50,8 @@ ADR-024.
 
 - [x] `M4-OPT-01` OPTIONS page: points to win (3-21, default 5) and difficulty KID/EASY/MEDIUM/HARD.
   - Verified: [ADR-025](../docs/decisions/ADR-025-options.md), `test/test_options.c`, `options.timeline`.
-- [ ] `M4-OPT-02` KID auto-serve (optional): serve automatically after a short wait so a kid never needs a button.
+- [x] `M4-OPT-02` KID auto-serve: serve automatically after a short wait so a kid never needs a button.
+  - Verified: ADR-025 (amended), `test_options.c` (a P1 with no button presses serves, returns, and wins 8 of 8).
 
 ## Practice
 

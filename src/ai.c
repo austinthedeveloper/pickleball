@@ -368,6 +368,9 @@ u8 ai_assist_swing(u8 player_index)
     const Player *player = &g_players[player_index];
     u8 connects;
 
+    if (g_game_state.phase == GAME_PHASE_SERVE_SETUP)
+        return g_serve_state.server_index == player_index &&
+            g_game_state.phase_timer >= AI_ASSIST_SERVE_FRAMES;
     if (g_game_state.phase != GAME_PHASE_LIVE || player_is_swinging(player) ||
             !ball_incoming(player))
         return 0;

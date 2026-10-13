@@ -22,6 +22,9 @@ enum {
     AI_CONTACT_OFFSET_X = 10,
     AI_DEAD_ZONE = 3,
     AI_SERVE_DELAY_FRAMES = 50,
+    /* KID (ADR-025): a human's serve goes by itself after this long, which
+     * leaves time to aim with the D-pad. */
+    AI_ASSIST_SERVE_FRAMES = 90,
     /* Difficulty: every Nth return the CPU is deliberately late and takes a
      * stretched last-chance contact, which sprays the ball (no randomness). */
     AI_LATE_SHOT_PERIOD = 7,
@@ -85,7 +88,7 @@ u8 ai_predict_landing(const Ball *ball, s16 *land_x, s16 *land_y);
 /* Writes the CPU player's PlayerIntent for this frame. */
 void ai_update(u8 player_index, PlayerIntent *intent);
 /* KID difficulty (ADR-025): nonzero when a human's swing pressed now
- * would meet the ball. */
+ * would meet the ball, or when their serve has waited long enough. */
 u8 ai_assist_swing(u8 player_index);
 /* Repeats the previous ai_update movement without a new swing press. */
 void ai_hold_intent(u8 player_index, PlayerIntent *intent);

@@ -15,8 +15,9 @@ Player Select (or the court, records, or options page).
 15, or 21. **DIFFICULTY** sets how hard the CPU opponents are:
 
 - **KID**: the slowest ball, and you swing automatically when the ball
-  reaches you; just run into its path. The D-pad still aims, and you can
-  still press the buttons yourself.
+  reaches you; just run into its path. Your serve goes by itself after a
+  moment too. The D-pad still aims, and you can still press the buttons
+  yourself.
 - **EASY**: a slow ball and easier opponents.
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.

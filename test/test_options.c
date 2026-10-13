@@ -162,7 +162,8 @@ static int bot_wins(u8 difficulty, u8 late, u8 matches, u8 kid_style,
             if (ai_assist_swing(0))
                 intents[0].hit_pressed = 1;
         }
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+        /* A KID P1 presses nothing at all: the serve goes by itself. */
+        if (!kid_style && g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_serve_state.server_index == 0 && (frames & 31) == 0)
             intents[0].hit_pressed = 1;
         if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
@@ -228,9 +229,11 @@ static void test_difficulty_and_kid(void)
     assert(wins[DIFFICULTY_EASY] > wins[DIFFICULTY_MEDIUM]);
     assert(wins[DIFFICULTY_MEDIUM] > wins[DIFFICULTY_HARD]);
 
-    /* KID: a P1 that never presses a button still returns the ball. */
+    /* KID: a P1 that never presses a button still serves, returns the
+     * ball, and wins. */
     kid_wins = bot_wins(DIFFICULTY_KID, 5, 8, 1, &kid_hits);
-    printf("options: KID P1 that only moves: %d hits, %d of 8 wins\n",
+    printf("options: KID P1 that only moves (no buttons): %d hits, %d of 8 "
+        "wins\n",
         kid_hits, kid_wins);
     assert(kid_hits > 40);
     assert(kid_wins >= 4);

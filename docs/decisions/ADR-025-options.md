@@ -53,8 +53,11 @@ OPTIONS), so Up from SINGLES reaches it. It works like the COURT page:
   - The hit area is unchanged, so the kid only has to be in the ball's path.
   - The lookahead waits for the bounce, so the assist never volleys a ball
     that must bounce first (no early-volley faults).
-  - The D-pad still aims and the buttons still work (Y for a lob). The serve
-    still needs a button.
+  - The D-pad still aims and the buttons still work (Y for a lob).
+  - *Amended 2026-10-13 (M4-OPT-02):* the KID's serve also goes by itself
+    after 90 frames (1.5 s, `AI_ASSIST_SERVE_FRAMES`), which leaves time to
+    aim; a button serves sooner. A P1 that presses nothing still serves,
+    returns, and wins (`test_options.c`).
 
 ### Measured
 
