@@ -49,8 +49,10 @@ what you had.
 
 - **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
   home court. A new venue loads when you leave the page.
-- **DEFAULT** colours are the venue's own: teal on dirt at the park, green on
-  grass by the lake, and teal on brick at sunset.
+- **KITCHEN** colours the non-volley zone; SAME makes it match the surface.
+- **DEFAULT** colours are the venue's own: a teal court with a navy kitchen
+  on dirt at the park, green with a blue kitchen on grass by the lake, and
+  teal with a clay kitchen on brick at sunset.
 
 ## Records
 

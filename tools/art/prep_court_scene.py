@@ -55,20 +55,24 @@ COURT_PALETTE = [
     (24, 17, 10),   # 2 sand speckle dark
     (28, 22, 14),   # 3 sand speckle light
     (6, 17, 16),    # 4 court green
-    (4, 12, 12),    # 5 court green in shadow
+    (4, 12, 12),    # 5 kitchen in the net's shadow (ADR-027)
     (31, 29, 24),   # 6 line
     (21, 21, 18),   # 7 line in shadow
     (4, 7, 8),      # 8 net mesh
     (2, 2, 3),      # 9 post / rail
     (15, 16, 18),   # 10 post highlight
     (28, 28, 26),   # 11 net tape
-    (19, 14, 9),    # 12 sand in shadow
+    (6, 17, 16),    # 12 kitchen (painted like the court; ADR-027)
     (21, 16, 11),   # 13 fence mesh
     (12, 9, 6),     # 14 fence mesh shadow
     (8, 13, 12),    # 15 court edge dark
 ]
-SAND, SAND_D, SAND_L, GREEN, GREEN_S, LINE, LINE_S, MESH, POST, POST_H, \
-    TAPE, SAND_S, FMESH, FMESH_S, EDGE = range(1, 16)
+SAND, SAND_D, SAND_L, GREEN, KITCHEN_S, LINE, LINE_S, MESH, POST, POST_H, \
+    TAPE, KITCHEN, FMESH, FMESH_S, EDGE = range(1, 16)
+# Sand in shadow under the far fence: only in backdrop tiles (quantized into
+# palettes 3-7), so it needs no palette 2 entry.
+SAND_S = 16
+SAND_S_COLOR = (19, 14, 9)
 
 
 sys.path.insert(0, str(ROOT / "tools"))
@@ -109,6 +113,10 @@ def paint_court(c):
         x0 = project_x(left, y, c)
         x1 = project_x(right, y, c)
         idx[y, x0:x1 + 1] = GREEN
+        # The kitchen (non-volley zone) has its own entries (ADR-027).
+        k0 = project_x(c["COURT_KITCHEN_LEFT_X"], y, c)
+        k1 = project_x(c["COURT_KITCHEN_RIGHT_X"], y, c)
+        idx[y, k0:k1 + 1] = KITCHEN
     # Dark lip under the near sideline gives the slab a little depth.
     for x in range(project_x(left, bottom + 1, c),
                    project_x(right, bottom + 1, c) + 1):
@@ -118,19 +126,19 @@ def paint_court(c):
     for y in range(top + 1, bottom):
         for dx in range(4, 7):
             x = net - dx - (y - top) // 16
-            if idx[y, x] == GREEN:
-                idx[y, x] = GREEN_S
+            if idx[y, x] == KITCHEN:
+                idx[y, x] = KITCHEN_S
 
     # Lines: sidelines/centerline are 1px rows; baselines/kitchen are 2px.
     def hline(y, xa, xb):
         for x in range(project_x(xa, y, c), project_x(xb, y, c) + 1):
-            idx[y, x] = LINE_S if idx[y, x] in (GREEN_S, SAND_S) else LINE
+            idx[y, x] = LINE_S if idx[y, x] in (KITCHEN_S, SAND_S) else LINE
 
     def vline(xw):
         for y in range(top, bottom + 1):
             sx = project_x(xw, y, c)
             for x in (sx, sx + 1):
-                idx[y, x] = LINE_S if idx[y, x] in (GREEN_S, SAND_S) else LINE
+                idx[y, x] = LINE_S if idx[y, x] in (KITCHEN_S, SAND_S) else LINE
 
     hline(top, left, right)
     hline(bottom, left, right)
@@ -294,7 +302,7 @@ def main():
             (np.arange(H)[:, None] >= FENCE_TOP - 14)
     court_idx[bush] = 0
 
-    court_rgb = np.array(COURT_PALETTE, dtype=np.float64)
+    court_rgb = np.array(COURT_PALETTE + [SAND_S_COLOR], dtype=np.float64)
     final_rgb5 = rgb5.copy()
     painted = court_idx > 0
     final_rgb5[painted] = court_rgb[court_idx[painted]]
@@ -309,6 +317,8 @@ def main():
 
     out = np.zeros((H, W), dtype=np.uint8)
     for tx, ty in fixed_tiles:
+        if (court_idx[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8] > 15).any():
+            raise SystemExit(f"tile {tx},{ty}: sand shadow in a court tile")
         out[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8] = \
             2 * 16 + court_idx[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8]
     for (tx, ty), (pal, block) in index.items():

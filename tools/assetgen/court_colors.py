@@ -4,7 +4,8 @@ import json
 from .common import AssetError, paths, read_png, rgb8_to_15
 
 GROUND_PALETTE = 2              # BG1 palette 2: the court and its surround
-PARTS = ("surface", "surround", "lines")
+PARTS = ("surface", "kitchen", "surround", "lines")
+SAME = "SAME"                   # kitchen preset 1 follows the surface
 MAX_ENTRIES = 5
 
 
@@ -54,17 +55,32 @@ def load_court_colors():
         for name, base in info["presets"]:
             if len(name) > 8:
                 raise AssetError(f"court colour {name}: names fit 8 cells")
+            if base is None:
+                if part != "kitchen" or name != SAME or len(presets) != 1:
+                    raise AssetError(f"court colours {part}: only the "
+                                     f"kitchen's first preset ({SAME}) has "
+                                     "no colour")
+                # Resolved at runtime; the painted colours stand in.
+                presets.append((name, [painted(e) for e in entries]))
+                continue
             presets.append((name, [derive(tuple(base), painted(entries[0]),
                                           painted(e)) for e in entries]))
         parts.append((part, entries, presets))
     used = [e for _, entries, _ in parts for e in entries]
     if len(used) != len(set(used)):
         raise AssetError("court colours: an entry belongs to two parts")
+    # SAME maps surface preset k to kitchen preset k + 1 (ADR-027).
+    surface_names = [n for n, _ in parts[0][2]][1:]
+    kitchen_names = [n for n, _ in parts[1][2]][2:2 + len(surface_names)]
+    if kitchen_names != surface_names:
+        raise AssetError("court colours: kitchen presets after SAME must "
+                         "mirror the surface presets in order")
 
     # Readability (ADR-022): every line colour on every surface, and the
     # ball on every surface.
-    surfaces = parts[0][2]
-    lines = parts[2][2]
+    # The kitchen is court surface too: check both parts.
+    surfaces = parts[0][2] + parts[1][2][2:]
+    lines = parts[3][2]
     ball = tuple(spec["ball_color"])
     for sname, scolors in surfaces:
         for lname, lcolors in lines:
@@ -92,6 +108,8 @@ def court_colors_header():
     for i, (part, _, presets) in enumerate(parts):
         lines.append(f"#define COURT_PART_{part.upper()} {i}")
     lines.append(f"#define COURT_PARTS {len(parts)}")
+    lines.append("/* Kitchen preset that follows the surface (ADR-027). */")
+    lines.append("#define COURT_KITCHEN_SAME 1")
     lines.append(f"#define COURT_PART_MAX_ENTRIES {MAX_ENTRIES}")
     lines.append(f"#define COURT_PRESETS {total}")
     lines += ["", "#ifdef COURT_COLORS_DEFINE"]

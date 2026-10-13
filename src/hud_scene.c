@@ -46,7 +46,7 @@
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 11
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
-#define COURT_PAGE_ROWS 6           /* the court box: header, gap, 4 rows */
+#define COURT_PAGE_ROWS 7           /* the court box: header, gap, 5 rows */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
@@ -509,7 +509,7 @@ static void hud_setting_row(u8 row, const char *label, const char *name,
 static void hud_court_row(u8 index)
 {
     static const char *const labels[COURT_ROWS] = {
-        "VENUE", "SURFACE", "SURROUND", "LINES"
+        "VENUE", "SURFACE", "KITCHEN", "SURROUND", "LINES"
     };
     u8 value = hud_court_value(index);
     u8 cursor = g_court_edit.row == index;
@@ -599,13 +599,13 @@ static u8 hud_title_view(void)
 /* Court page: the box, the header, then a part per frame. */
 static u8 hud_court_draw_part(u8 part)
 {
+    u8 i;
+
     if (part == 0) {
         hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
             COURT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        s_court_row_drawn[0] = 0xff;
-        s_court_row_drawn[1] = 0xff;
-        s_court_row_drawn[2] = 0xff;
-        s_court_row_drawn[3] = 0xff;
+        for (i = 0; i < COURT_ROWS; ++i)
+            s_court_row_drawn[i] = 0xff;
         return 0;
     }
     if (part == 1) {

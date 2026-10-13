@@ -26,10 +26,12 @@ static void load_painted(void)
 static void test_default_is_painted(void)
 {
     u16 out[COURT_GROUND_COLORS];
-    u8 choice[COURT_PARTS] = { 0, 0, 0 };
+    /* Kitchen SAME (ADR-027): PARK's default kitchen is two-toned. */
+    u8 choice[COURT_PARTS] = { 0, COURT_KITCHEN_SAME, 0, 0 };
 
     /* DEFAULT presets hold the painted colours of court_scene.png, so the
-     * default choice changes nothing. */
+     * default choice (with the kitchen following the surface) changes
+     * nothing. */
     load_painted();
     court_style_compose(out, painted, choice, 0);
     assert(memcmp(out, painted, sizeof(out)) == 0);
@@ -39,7 +41,7 @@ static void test_default_is_painted(void)
 static void test_presets_replace_only_their_part(void)
 {
     u16 out[COURT_GROUND_COLORS];
-    u8 choice[COURT_PARTS] = { 1, 0, 0 };
+    u8 choice[COURT_PARTS] = { 1, 2, 0, 0 };    /* kitchen: BLUE */
     const u8 *entries = g_court_part_entries[COURT_PART_SURFACE];
     u8 i;
     u8 touched[COURT_GROUND_COLORS] = { 0 };
@@ -51,6 +53,8 @@ static void test_presets_replace_only_their_part(void)
             g_court_preset_colors[g_court_part_first[COURT_PART_SURFACE] + 1][i]);
         assert(out[entries[i]] != painted[entries[i]]);
     }
+    for (i = 0; i < g_court_part_size[COURT_PART_KITCHEN]; ++i)
+        touched[g_court_part_entries[COURT_PART_KITCHEN][i]] = 1;
     for (i = 0; i < COURT_GROUND_COLORS; ++i)
         if (!touched[i])
             assert(out[i] == painted[i]);
@@ -60,6 +64,7 @@ static void test_presets_replace_only_their_part(void)
 
     /* Out of range (a corrupted or newer save) counts as DEFAULT. */
     choice[COURT_PART_SURFACE] = 200;
+    choice[COURT_PART_KITCHEN] = COURT_KITCHEN_SAME;
     court_style_compose(out, painted, choice, 0);
     assert(memcmp(out, painted, sizeof(out)) == 0);
     assert(strcmp(court_style_name(COURT_PART_SURFACE, 200), "DEFAULT") == 0);
@@ -82,7 +87,7 @@ static void test_venues(void)
 {
     u16 out[COURT_GROUND_COLORS];
     u16 expect[COURT_GROUND_COLORS];
-    u8 choice[COURT_PARTS] = { 0, 0, 0 };
+    u8 choice[COURT_PARTS] = { 0, 0, 0, 0 };
     u8 venue;
     u8 o;
 
@@ -109,9 +114,35 @@ static void test_venues(void)
     assert(strcmp(court_style_venue_name(1), g_venue_names[0]) == 0);
 }
 
+/* ADR-027: SAME paints the kitchen with the surface's preset; any other
+ * kitchen preset gives a two-tone court. */
+static void test_kitchen(void)
+{
+    u16 out[COURT_GROUND_COLORS];
+    u8 choice[COURT_PARTS] = { 3, COURT_KITCHEN_SAME, 0, 0 };    /* GREEN */
+    u8 kitchen = g_court_part_entries[COURT_PART_KITCHEN][0];
+    u8 surface = g_court_part_entries[COURT_PART_SURFACE][0];
+    u8 v;
+
+    court_style_compose(out, painted, choice, 0);
+    assert(out[kitchen] == out[surface]);
+    choice[COURT_PART_KITCHEN] = 2;                             /* BLUE */
+    court_style_compose(out, painted, choice, 0);
+    assert(out[kitchen] != out[surface]);
+    assert(strcmp(court_style_name(COURT_PART_KITCHEN, 2),
+        court_style_name(COURT_PART_SURFACE, 1)) == 0);
+    /* Every venue's default court is two-toned. */
+    choice[COURT_PART_SURFACE] = 0;
+    choice[COURT_PART_KITCHEN] = 0;
+    for (v = 0; v < VENUE_COUNT; ++v) {
+        court_style_compose(out, painted, choice, v);
+        assert(out[kitchen] != out[surface]);
+    }
+}
+
 static void test_editor(void)
 {
-    u8 choice[COURT_PARTS] = { 0, 9, 1 };   /* surround out of range */
+    u8 choice[COURT_PARTS] = { 0, 0, 9, 1 };    /* surround out of range */
     u8 venue = 200;                         /* out of range */
     u8 surfaces = g_court_part_count[COURT_PART_SURFACE];
 
@@ -169,6 +200,7 @@ int main(void)
     test_presets_replace_only_their_part();
     test_names_fit();
     test_venues();
+    test_kitchen();
     test_editor();
     printf("court style host checks passed\n");
     return 0;

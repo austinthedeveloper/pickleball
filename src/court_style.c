@@ -19,6 +19,7 @@ void court_style_compose(u16 out[COURT_GROUND_COLORS],
 {
     u8 part;
     u8 preset;
+    u8 surface = 0;
     u8 i;
 
     if (venue >= VENUE_COUNT)
@@ -32,6 +33,12 @@ void court_style_compose(u16 out[COURT_GROUND_COLORS],
         preset = choice[part];
         if (preset == 0 || preset >= g_court_part_count[part])
             preset = g_venue_ground[venue][part];
+        /* ADR-027: SAME is the surface's preset (surface k = kitchen k + 1;
+         * the surface part comes first, so `surface` is resolved). */
+        if (part == COURT_PART_KITCHEN && preset == COURT_KITCHEN_SAME)
+            preset = surface ? surface + 1 : 0;
+        if (part == COURT_PART_SURFACE)
+            surface = preset;
         colors = g_court_preset_colors[preset_index(part, preset)];
         for (i = 0; i < g_court_part_size[part]; ++i)
             out[entries[i]] = colors[i];

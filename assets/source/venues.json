@@ -3,15 +3,15 @@
   "venues": [
     {
       "name": "PARK", "scene": "court_scene.png",
-      "ground": {"surface": "DEFAULT", "surround": "DEFAULT", "lines": "DEFAULT"}
+      "ground": {"surface": "DEFAULT", "kitchen": "NAVY", "surround": "DEFAULT", "lines": "DEFAULT"}
     },
     {
       "name": "LAKESIDE", "scene": "venue_lake.png",
-      "ground": {"surface": "GREEN", "surround": "GRASS", "lines": "WHITE"}
+      "ground": {"surface": "GREEN", "kitchen": "BLUE", "surround": "GRASS", "lines": "WHITE"}
     },
     {
       "name": "SUNSET", "scene": "venue_sunset.png",
-      "ground": {"surface": "DEFAULT", "surround": "BRICK", "lines": "DEFAULT"}
+      "ground": {"surface": "DEFAULT", "kitchen": "CLAY", "surround": "BRICK", "lines": "DEFAULT"}
     }
   ]
 }

@@ -11,7 +11,7 @@ are uploaded once during forced blank.
 |---|---:|---:|---:|
 | BG1 scene map | `0x0000` | `0x0000–0x07ff` | 1,792 (rows 0–27, per venue) |
 | BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
-| BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 20,896 (653 tiles: 257 shared ground + the venue's own; ADR-024) |
+| BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 21,152 (661 tiles: shared ground + the venue's own; ADR-024/027) |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
 | OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 6,656 (208 tiles) |
 
@@ -34,7 +34,7 @@ Regions do not overlap. `assets/generated/sizes.json` records every generated
 file's size, hash, and the tile counts above on each build.
 
 **BG1 budget.** ADR-016 (amended 2026-10-12) allows 28 KiB (896 tiles). The
-largest venue uses 653 (ADR-024). 896 tiles is the most one screen can use, so this region
+largest venue uses 661 (ADR-024/027). 896 tiles is the most one screen can use, so this region
 cannot overflow.
 
 ## CGRAM

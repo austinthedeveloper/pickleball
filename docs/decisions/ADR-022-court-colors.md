@@ -12,7 +12,7 @@ kitchen is painted in the court colour, so it follows the surface. Three
 
 | Part | Entries | Painted as |
 |---|---|---|
-| Surface | 4 (court), 5 and 15 (net shadow on the court) | teal |
+| Surface | 4 (court), 15 (lip) | teal; *ADR-027:* entry 5 moved to the kitchen |
 | Surround | 1 (ground), 2–3 (speckle), 13–14 (fence mesh against the ground) | dirt |
 | Lines | 6 (line), 7 (line in shadow) | cream |
 

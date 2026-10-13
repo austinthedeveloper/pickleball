@@ -69,6 +69,9 @@ outer area; maybe the lines), and the choice is used for later matches.
 
 ### Two-tone court: a separate kitchen colour
 
+**Done:** [ADR-027](decisions/ADR-027-two-tone-kitchen.md). The notes below
+are the original idea.
+
 Real courts are usually two-toned, with the kitchen (non-volley zone) in a
 colour that stands out. Today the kitchen is painted with the same palette
 entry as the rest of the court (entry 4, plus 5/15 for the net shadow), so it
