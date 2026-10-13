@@ -15,9 +15,9 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
   - Accept: PHY-03 and PHY-04 pass on every boundary.
 - [x] `M2-HIT-01` Implement player windup/active/recovery state machine.
   - Accept: state durations match spec; movement penalty applies; no retrigger during recovery.
-- [ ] `M2-HIT-02` Implement one-contact-per-swing hit volume.
+- [x] `M2-HIT-02` Implement one-contact-per-swing hit volume.
   - Accept: HIT-01 and HIT-02 pass; an overlapping ball cannot be hit repeatedly.
-- [ ] `M2-HIT-03` Implement directional target selection and deterministic outgoing velocity.
+- [x] `M2-HIT-03` Implement directional target selection and deterministic outgoing velocity.
   - Accept: neutral/up/down/deep/short inputs land in their intended legal lanes from fixtures.
 
 ## Serve, rules, and CPU

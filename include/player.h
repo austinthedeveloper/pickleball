@@ -45,6 +45,7 @@ typedef struct {
     u8 animation_timer;
     u8 state;
     u8 state_frames_remaining;
+    u8 contact_consumed;
 } Player;
 
 typedef struct {

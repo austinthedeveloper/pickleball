@@ -73,6 +73,7 @@ void players_initialize(void)
         g_players[i].animation_timer = 0;
         g_players[i].state = PLAYER_STATE_IDLE;
         g_players[i].state_frames_remaining = 0;
+        g_players[i].contact_consumed = 1;
     }
 
     g_players[0].active = 1;
@@ -104,6 +105,7 @@ void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
         } else if (intent->hit_pressed) {
             player->state = PLAYER_STATE_WINDUP;
             player->state_frames_remaining = PLAYER_WINDUP_FRAMES;
+            player->contact_consumed = 0;
         } else {
             player->state = (intent->move_x || intent->move_y) ?
                 PLAYER_STATE_MOVE : PLAYER_STATE_IDLE;

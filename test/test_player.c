@@ -18,6 +18,7 @@ static void test_initialization(void)
     u8 i;
     reset_test();
     assert(g_players[0].active == 1);
+    assert(g_players[0].contact_consumed == 1);
     assert(g_players[2].active == 0);
     assert(g_players[2].cpu_controlled == 1);
     for (i = 1; i < MAX_PLAYERS; ++i)

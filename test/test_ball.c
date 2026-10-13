@@ -71,13 +71,13 @@ static void test_single_bounce_event(void)
     ball.z_fp = 32;
     ball.vx_fp = 100;
     ball.vy_fp = -100;
-    ball.vz_fp = -64;
+    ball.vz_fp = -256;
 
     assert(ball_simulate_step(&ball) == BALL_EVENT_BOUNCE);
     assert(ball.z_fp == 0);
     assert(ball.vx_fp == 92);
     assert(ball.vy_fp == -92);
-    assert(ball.vz_fp == 61);
+    assert(ball.vz_fp == 140);
     assert(ball.bounce_count == 1);
 
     assert(ball_simulate_step(&ball) == 0);
@@ -177,6 +177,74 @@ static void test_pause_and_inactive(void)
     assert(memcmp(&before, &g_ball, sizeof(before)) == 0);
 }
 
+static void test_opening_ball_remains_at_rest(void)
+{
+    u16 frame;
+
+    ball_initialize();
+    for (frame = 0; frame < 600; ++frame) {
+        ball_simulate_step(&g_ball);
+        assert(g_ball.z_fp >= 0);
+    }
+    assert(g_ball.x_fp == TO_FP(BALL_START_X));
+    assert(g_ball.y_fp == TO_FP(BALL_START_Y));
+    assert(g_ball.z_fp == 0);
+    assert(g_ball.vx_fp == 0);
+    assert(g_ball.vy_fp == 0);
+    assert(g_ball.vz_fp == 0);
+}
+
+static void test_fast_ball_eventually_settles(void)
+{
+    Ball ball;
+    u16 frame;
+
+    memset(&ball, 0, sizeof(ball));
+    ball.active = 1;
+    ball.rally_state = BALL_RALLY_LIVE;
+    ball.x_fp = TO_FP(64);
+    ball.y_fp = TO_FP(112);
+    ball.vx_fp = 704;
+    ball.vz_fp = 640;
+    for (frame = 0; frame < 600; ++frame) {
+        ball_simulate_step(&ball);
+        if (ball.z_fp == 0 && ball.vz_fp == 0)
+            break;
+    }
+
+    assert(frame < 300);
+    assert(ball.z_fp == 0);
+    assert(ball.vx_fp == 0);
+    assert(ball.vy_fp == 0);
+    assert(ball.vz_fp == 0);
+}
+
+static void test_standard_shot_has_meaningful_first_flight(void)
+{
+    Ball ball;
+    u8 events = BALL_EVENT_NONE;
+    u16 frame;
+
+    memset(&ball, 0, sizeof(ball));
+    ball.active = 1;
+    ball.rally_state = BALL_RALLY_LIVE;
+    ball.x_fp = TO_FP(64);
+    ball.y_fp = TO_FP(COURT_CENTERLINE_Y);
+    ball.vx_fp = 704;
+    ball.vz_fp = 640;
+
+    for (frame = 0; frame < 60; ++frame) {
+        events = ball_simulate_step(&ball);
+        if (events & BALL_EVENT_BOUNCE)
+            break;
+    }
+
+    assert(frame == 27);
+    assert(ball.x_fp == TO_FP(64) + 19712);
+    assert(ball.x_fp > TO_FP(64 + 70));
+    assert(ball.bounce_count == 1);
+}
+
 int main(void)
 {
     test_initial_state();
@@ -187,6 +255,9 @@ int main(void)
     test_net_fault_event();
     test_inclusive_court_boundaries();
     test_pause_and_inactive();
+    test_opening_ball_remains_at_rest();
+    test_standard_shot_has_meaningful_first_flight();
+    test_fast_ball_eventually_settles();
     puts("ball host checks passed");
     return 0;
 }

@@ -133,6 +133,27 @@ void render_prepare_ball(void)
     y = FROM_FP(g_ball.y_fp);
     z = FROM_FP(g_ball.z_fp);
 
+    if (x < -4) {
+        oamSetVisible(BALL_OAM_ID, OBJ_HIDE);
+        oamSetVisible(BALL_SHADOW_OAM_ID, OBJ_HIDE);
+        return;
+    }
+    if (x > 259) {
+        oamSetVisible(BALL_OAM_ID, OBJ_HIDE);
+        oamSetVisible(BALL_SHADOW_OAM_ID, OBJ_HIDE);
+        return;
+    }
+    if (y < -4) {
+        oamSetVisible(BALL_OAM_ID, OBJ_HIDE);
+        oamSetVisible(BALL_SHADOW_OAM_ID, OBJ_HIDE);
+        return;
+    }
+    if (y > 227) {
+        oamSetVisible(BALL_OAM_ID, OBJ_HIDE);
+        oamSetVisible(BALL_SHADOW_OAM_ID, OBJ_HIDE);
+        return;
+    }
+
     oamSet(BALL_SHADOW_OAM_ID, x - 4, y + 1, 2,
         0, 0, BALL_SHADOW_TILE, 0);
     oamSetEx(BALL_SHADOW_OAM_ID, OBJ_SMALL, OBJ_SHOW);

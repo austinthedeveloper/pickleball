@@ -160,3 +160,41 @@ No M1 hardware run has been recorded yet.
   penalty while swinging. Ball contact and visible swing artwork are correctly
   deferred to `M2-HIT-02` and the later asset tasks.
 
+### 2026-10-12 — M2 one-contact swing volume
+
+- The active swing volume uses inclusive fixed-point reach boundaries of 22
+  pixels in X, 18 pixels in Y, and 18 pixels above the ground.
+- HIT-01 fixture: a ball overlapping throughout all three active frames records
+  exactly one contact and consumes that swing's contact flag.
+- HIT-02 fixture: the same overlap throughout windup records no contact.
+- A successful contact resets the bounce count and applies a temporary
+  straight opponent-side shot. Directional target selection remains
+  `M2-HIT-03`.
+- User review exposed two unsuitable behaviors in the contact fixture: the
+  ball launched automatically on reset, and gravity plus the retained minimum
+  bounce could keep it moving indefinitely. The fixture now starts at complete
+  rest. A fixed-point minimum rebound threshold and grounded rest state make a
+  contacted ball settle instead of entering a perpetual bounce cycle. Host
+  checks hold the opening ball motionless for 600 frames and require a
+  standard-speed shot to reach zero X/Y/Z velocity within five seconds.
+- A target-only false contact remained: 816-tcc miscompiled the compound
+  short-circuit collision predicate and entered the hit path while P1 was idle
+  and outside reach. Mesen WRAM tracing identified the false contact on frame
+  7. Collision eligibility now uses simple sequential branches, and players
+  initialize with contact already consumed until an explicit swing begins.
+- Follow-up visual review found a contacted ball traveled only one frame. A
+  deterministic Mesen velocity injection reproduced it: the target falsely
+  entered the ground-crossing branch with `previous_z == 0`, moved 2.75 pixels,
+  incremented the bounce count, and stopped. Remaining compound branches in
+  ball flight, net crossing, and court containment now use sequential checks;
+  the standard shot regression requires over 70 pixels before its first bounce.
+- Full-flight WRAM tracing showed the temporary straight shot from the opening
+  ball position rested beyond x=256. OAM wrapping made that opponent-side out
+  ball appear behind P1 while its simulation position remained unreachable.
+  `M2-HIT-03` replaces the temporary velocity with deterministic target-derived
+  shots: three Y lanes plus neutral, deep, and short opponent-side X targets.
+  Mesen WRAM verification placed the neutral first bounce at x=199.97 for the
+  x=200 target. Until rally rules consume later out events, off-screen ball and
+  shadow sprites are hidden so OAM coordinate wrapping cannot display them
+  behind the hitter.
+
