@@ -12,10 +12,23 @@
  * changes, and overlays are drawn in steps across frames (see below).
  */
 
-#define BANNER_ROW 24
-#define CENTER_BIG_ROW 8
-#define CENTER_PANEL_ROW 11
-#define TITLE_ROW 7
+/*
+ * BG3 layout in tile rows/columns (32x28 map). Panels are three rows tall
+ * (border, text, border); see hud_panel().
+ */
+#define SCORE_PANEL_ROW 1           /* text on row 2 */
+#define SCORE_TEXT_ROW (SCORE_PANEL_ROW + 1)
+#define LEFT_PANEL_COL 1            /* "P1    n" */
+#define CENTER_PANEL_COL 9          /* "ARCADE RULES" */
+#define RIGHT_PANEL_COL 23          /* "CPU   n" */
+#define SIDE_PANEL_WIDTH 6
+#define CENTER_PANEL_WIDTH 12
+#define LEFT_SCORE_COL 6            /* two digit cells, right-aligned */
+#define RIGHT_SCORE_COL 28
+#define TITLE_ROW 7                 /* PICKLEBALL / '94, two big rows each */
+#define CENTER_BIG_ROW 8            /* fault word or match result */
+#define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
+#define BANNER_ROW 24               /* serve / rematch / title prompt */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -69,7 +82,8 @@ static void hud_draw_score_digits(void)
         }
         text[1] = digits[score];
         text[2] = 0;
-        hud_text(team ? 28 : 6, 2, HUD_PAL_WHITE, text);
+        hud_text(team ? RIGHT_SCORE_COL : LEFT_SCORE_COL, SCORE_TEXT_ROW,
+            HUD_PAL_WHITE, text);
     }
     s_hud_score[0] = g_game_state.team_score[0];
     s_hud_score[1] = g_game_state.team_score[1];
@@ -78,16 +92,23 @@ static void hud_draw_score_digits(void)
 /* Panels and labels never change during a match; drawn on full redraws. */
 static void hud_draw_scores(void)
 {
-    hud_clear_rows(1, 3);
-    hud_panel(1, 1, 6);
-    hud_text(2, 2, team_hud_palette(0), "P1");
-    hud_panel(9, 1, 12);
-    hud_text(10, 2, HUD_PAL_YELLOW, "ARCADE RULES");
-    hud_panel(23, 1, 6);
-    hud_text(24, 2, team_hud_palette(1), "CPU");
+    hud_clear_rows(SCORE_PANEL_ROW, 3);
+    hud_panel(LEFT_PANEL_COL, SCORE_PANEL_ROW, SIDE_PANEL_WIDTH);
+    hud_text(LEFT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(0), "P1");
+    hud_panel(CENTER_PANEL_COL, SCORE_PANEL_ROW, CENTER_PANEL_WIDTH);
+    hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
+        "ARCADE RULES");
+    hud_panel(RIGHT_PANEL_COL, SCORE_PANEL_ROW, SIDE_PANEL_WIDTH);
+    hud_text(RIGHT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(1),
+        "CPU");
     hud_draw_score_digits();
 }
 
+/*
+ * Scene keys: what the overlay currently shows. A key change starts a
+ * staged redraw. Game phases use their own value (with winner/fault bits for
+ * results); these special keys sit above that range.
+ */
 #define HUD_KEY_PAUSED 0x80
 #define HUD_KEY_TITLE 0x40
 #define HUD_KEY_TITLE_BLINK 0x41
