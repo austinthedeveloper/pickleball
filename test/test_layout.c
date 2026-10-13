@@ -21,6 +21,7 @@ int main(void)
     assert(offsetof(Player, palette) == ASM_PLAYER_PALETTE);
     assert(offsetof(Player, flash_timer) == ASM_PLAYER_FLASH);
     assert(offsetof(Player, variant) == ASM_PLAYER_VARIANT);
+    assert(RENDER_OAM_ACCESSORIES == ASM_OAM_ACCESSORIES);
     assert(PLAYER_STATE_MOVE == ASM_STATE_MOVE);
     assert(PLAYER_STATE_WINDUP == ASM_STATE_WINDUP);
     assert(PLAYER_STATE_ACTIVE == ASM_STATE_ACTIVE);

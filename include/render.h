@@ -33,7 +33,7 @@ enum {
     RENDER_OAM_SHADOWS = 6,       /* 6-9: by slot */
     RENDER_OAM_SPARK = 10,        /* 10-13: impact effects reserve */
     RENDER_OAM_DEBUG_MARKER = 11,
-    RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ADR-014, unused in the POC */
+    RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
     RENDER_OAM_FIRST_HIDDEN = 18
 };
 

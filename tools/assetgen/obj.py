@@ -108,6 +108,15 @@ def obj_assets(manifest):
         slot = info["slot"]
         tile = (slot // 4) * 64 + (slot % 4) * 4
         header.append(f"#define FRAME_{name.upper()} {tile}")
+    # ADR-014 ponytail offsets, top-left in frame pixels when facing right.
+    for name, info in frames.items():
+        ax, ay = info.get("accessory", (None, None))
+        if ax is None or not (0 <= ax <= 24 and 0 <= ay <= 24):
+            raise AssetError(f"frame {name}: accessory offset missing or "
+                             "outside the 32x32 frame")
+        header.append(f"#define FRAME_{name.upper()}_SLOT {info['slot']}")
+        header.append(f"#define FRAME_{name.upper()}_ACC_X {ax}")
+        header.append(f"#define FRAME_{name.upper()}_ACC_Y {ay}")
     for name, index in manifest["objects"].items():
         header.append(f"#define OBJTILE_{name.upper()} {object_base + index}")
     header += ["", "#endif", ""]

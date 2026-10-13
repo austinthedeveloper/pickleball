@@ -346,8 +346,9 @@ FRAMES = [
     full_frame(CHEER_FULL),           # 10 cheer
 ]
 
-# 8x8 small objects, palette roles: 1 outline, 2 ball, 3 ball light,
-# 4 shadow, 5 spark, 6 spark core.
+# 8x8 small objects, object-palette roles: 1 outline, 2 ball, 3 ball light,
+# 4 shadow, 5 spark, 6 spark core. The ponytail (ADR-014) is drawn with the
+# owner's player palette instead: 1 outline, 15 hair.
 OBJECTS = [
     [  # 0 ball
         "........",
@@ -399,10 +400,31 @@ OBJECTS = [
         "........",
         "........",
     ],
+    [  # 5 ponytail: right edge sits behind the head (player palette)
+        "........",
+        "....OOOO",
+        "...OHHHH",
+        "..OHHHOO",
+        ".OHHHO..",
+        ".OHHO...",
+        ".OHO....",
+        "..O.....",
+    ],
+    [  # 6 select cursor corner (top-left; flipped for the others)
+        "OOOOOO..",
+        "O*****O.",
+        "O*OOOO..",
+        "O*O.....",
+        "O*O.....",
+        "O*O.....",
+        ".O......",
+        "........",
+    ],
 ]
-OBJ_KEY = {".": 0, "O": 1, "B": 2, "L": 3, "X": 4, "*": 5, "#": 6}
+OBJ_KEY = {".": 0, "O": 1, "B": 2, "L": 3, "X": 4, "*": 5, "#": 6, "H": 15}
 OBJ_PREVIEW = [(255, 0, 255), (40, 40, 16), (224, 232, 48), (255, 255, 200),
-               (0, 0, 0), (255, 220, 64), (255, 255, 255)]
+               (0, 0, 0), (255, 220, 64), (255, 255, 255)] + \
+    [(0, 0, 0)] * 8 + [(96, 56, 32)]
 
 
 def save_indexed(path, pixels, palette):

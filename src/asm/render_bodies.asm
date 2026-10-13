@@ -9,7 +9,9 @@
 ;     by slot); shadows take ASM_OAM_SHADOWS + slot (ADR-012);
 ;   * screen x = 128 + d + ((d * (s(y) - 256) + 128) >> 8), d = x - 128,
 ;     using the hardware 8x8 multiplier (ADR-011, src/projection.c);
-;   * frame from pose/state/animation, palette from flash or the player.
+;   * frame from pose/state/animation, palette from flash or the player;
+;   * female players add a ponytail at ASM_OAM_ACCESSORIES + slot (ADR-014),
+;     offset per frame and mirrored with the body.
 ; Outputs rb_count = number of active bodies drawn. Working variables are
 ; C globals in src/render.c (rb_*); every access is long, so the data bank
 ; and direct page are never assumed. Calls oam_write for each object.
@@ -19,9 +21,24 @@
 _rb_slot_offset:
     .dw 0, ASM_PLAYER_SIZE, ASM_PLAYER_SIZE * 2, ASM_PLAYER_SIZE * 3
 _rb_idle:
-    .dw FRAME_IDLE0, FRAME_IDLE1
+    .dw FRAME_IDLE0_SLOT, FRAME_IDLE1_SLOT
 _rb_run:
-    .dw FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3
+    .dw FRAME_RUN0_SLOT, FRAME_RUN1_SLOT, FRAME_RUN2_SLOT, FRAME_RUN3_SLOT
+; Indexed by frame slot (assets/manifest/player_frames.json order).
+_rb_tile:
+    .dw FRAME_IDLE0, FRAME_IDLE1, FRAME_RUN0, FRAME_RUN1, FRAME_RUN2
+    .dw FRAME_RUN3, FRAME_WINDUP, FRAME_SWING, FRAME_FOLLOW, FRAME_TOSS
+    .dw FRAME_CHEER
+_rb_acc_x:
+    .dw FRAME_IDLE0_ACC_X, FRAME_IDLE1_ACC_X, FRAME_RUN0_ACC_X
+    .dw FRAME_RUN1_ACC_X, FRAME_RUN2_ACC_X, FRAME_RUN3_ACC_X
+    .dw FRAME_WINDUP_ACC_X, FRAME_SWING_ACC_X, FRAME_FOLLOW_ACC_X
+    .dw FRAME_TOSS_ACC_X, FRAME_CHEER_ACC_X
+_rb_acc_y:
+    .dw FRAME_IDLE0_ACC_Y, FRAME_IDLE1_ACC_Y, FRAME_RUN0_ACC_Y
+    .dw FRAME_RUN1_ACC_Y, FRAME_RUN2_ACC_Y, FRAME_RUN3_ACC_Y
+    .dw FRAME_WINDUP_ACC_Y, FRAME_SWING_ACC_Y, FRAME_FOLLOW_ACC_Y
+    .dw FRAME_TOSS_ACC_Y, FRAME_CHEER_ACC_Y
 
 ; Depth key for one slot: y_fp when active, $8001 (sorts last) otherwise.
 .MACRO RB_DEPTH ARGS SLOT
@@ -198,25 +215,25 @@ _rb_body:
     and.w #$00FF
     cmp.w #ASM_POSE_CHEER
     bne +
-    lda.w #FRAME_CHEER
+    lda.w #FRAME_CHEER_SLOT
     bra _rb_have_tile
 +   cmp.w #ASM_POSE_TOSS
     bne +
-    lda.w #FRAME_TOSS
+    lda.w #FRAME_TOSS_SLOT
     bra _rb_have_tile
 +   lda.l g_players + ASM_PLAYER_STATE,x
     and.w #$00FF
     cmp.w #ASM_STATE_WINDUP
     bne +
-    lda.w #FRAME_WINDUP
+    lda.w #FRAME_WINDUP_SLOT
     bra _rb_have_tile
 +   cmp.w #ASM_STATE_ACTIVE
     bne +
-    lda.w #FRAME_SWING
+    lda.w #FRAME_SWING_SLOT
     bra _rb_have_tile
 +   cmp.w #ASM_STATE_RECOVERY
     bne +
-    lda.w #FRAME_FOLLOW
+    lda.w #FRAME_FOLLOW_SLOT
     bra _rb_have_tile
 +   cmp.w #ASM_STATE_MOVE
     bne _rb_idle_frame
@@ -237,7 +254,13 @@ _rb_idle_frame:
     lda.l _rb_idle,x
     plx
 _rb_have_tile:
+    sta.l rb_frame
+    asl a
+    phx
+    tax
+    lda.l _rb_tile,x
     sta.l oam_in_tile
+    plx
 
     ; --- attributes: flash or player palette, priority, facing ---
     lda.l g_players + ASM_PLAYER_FLASH,x
@@ -302,6 +325,54 @@ _rb_have_tile:
     lda.w #OBJTILE_PLAYER_SHADOW
     sta.l oam_in_tile
     jsl oam_write
+
+    ; --- ponytail (female variant), same palette and flip as the body ---
+    lda.l rb_slot
+    asl a
+    tax
+    lda.l _rb_slot_offset,x
+    tax
+    lda.l g_players + ASM_PLAYER_VARIANT,x
+    and.w #$00FF
+    beq _rb_next
+    lda.l rb_frame
+    asl a
+    tax
+    lda.l _rb_acc_x,x
+    sta.l rb_tmp
+    lda.l rb_attr
+    and.w #$0040
+    beq +
+    lda.w #24
+    sec
+    sbc.l rb_tmp
+    sta.l rb_tmp
++   lda.l rb_sx
+    sec
+    sbc.w #ASM_SPRITE_HALF_WIDTH
+    clc
+    adc.l rb_tmp
+    sta.l oam_in_x
+    lda.l rb_y
+    sec
+    sbc.w #ASM_SPRITE_FOOT_Y
+    clc
+    adc.l _rb_acc_y,x
+    sta.l oam_in_y
+    lda.w #OBJTILE_PONYTAIL
+    sta.l oam_in_tile
+    sep #$20
+    lda.l rb_slot
+    clc
+    adc.b #ASM_OAM_ACCESSORIES
+    sta.l oam_in_id
+    lda.l rb_attr
+    sta.l oam_in_attr
+    lda.b #0
+    sta.l oam_in_large
+    rep #$20
+    jsl oam_write
+_rb_next:
 
     lda.l rb_i
     inc a

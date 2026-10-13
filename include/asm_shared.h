@@ -34,6 +34,7 @@
 #define ASM_SPRITE_FOOT_Y 30
 #define ASM_OAM_BODIES 2
 #define ASM_OAM_SHADOWS 6
+#define ASM_OAM_ACCESSORIES 14
 #define ASM_OBJ_PRIORITY_ATTR 0x20
 
 /* Projection table rows (assets/generated/court_projection.h). */

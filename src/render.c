@@ -68,6 +68,11 @@ void render_apply_match_config(void)
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (match_slot_active(slot))
             match_compose_palette(slot, s_player_palettes[slot]);
+    /* Ponytails are written only for female players; park the rest. */
+    for (slot = 0; slot < MAX_PLAYERS; ++slot)
+        if (!match_slot_active(slot) ||
+                g_match_config.variant[slot] != PLAYER_VARIANT_FEMALE)
+            render_obj_hide(RENDER_OAM_ACCESSORIES + slot);
     for (team = 0; team < 2; ++team) {
         s_hud_team_colors[team][0] = g_pal_hud[match_team_palette(team)][0];
         s_hud_team_colors[team][1] = g_pal_hud[match_team_palette(team)][1];
@@ -160,6 +165,7 @@ s16 rb_prod;
 s16 rb_sx;
 u16 rb_attr;
 u16 rb_count;
+u16 rb_frame;
 extern void render_bodies(void);
 
 static u8 s_active_bodies;
