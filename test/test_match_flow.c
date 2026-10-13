@@ -5,6 +5,7 @@
 #include "game.h"
 #include "rules.h"
 #include "serve.h"
+#include "test_support.h"
 
 static PlayerIntent intents[MAX_PLAYERS];
 
@@ -35,9 +36,7 @@ static u8 s_match_index;
 
 static void bot_p1(void)
 {
-    g_ai_slots[0].late_period = s_bot_late;
-    g_ai_slots[0].reaction_frames = (u8)((s_match_index * 7) % 20);
-    g_players[0].max_speed_fp = 16 + (s_match_index % 3) * 4;
+    test_bot_skill(s_bot_late, s_match_index);
 }
 
 static void frame(u8 p1_bot, u8 press_b)
@@ -46,8 +45,7 @@ static void frame(u8 p1_bot, u8 press_b)
     if (p1_bot)
         ai_update(0, &intents[0]);
     intents[0].hit_pressed |= press_b;
-    ai_update(2, &intents[2]);
-    game_update(intents);
+    test_step(intents);
 }
 
 static void test_first_to_five(void)

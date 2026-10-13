@@ -95,7 +95,7 @@ LATE ?= 4
 MATCHES ?= 20
 stats: assets
 	@mkdir -p build/host
-	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated \
+	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
 	@build/host/match_stats $(LATE) $(MATCHES)
 

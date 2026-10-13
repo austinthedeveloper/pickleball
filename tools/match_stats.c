@@ -15,6 +15,7 @@
 #include "ai.h"
 #include "game.h"
 #include "serve.h"
+#include "test_support.h"
 
 static PlayerIntent intents[MAX_PLAYERS];
 static const char *fault_names[] = {
@@ -38,9 +39,7 @@ int main(int argc, char **argv)
 
     game_new_match();
     while (match < matches && frames < cap) {
-        g_ai_slots[0].late_period = (u8)late;
-        g_ai_slots[0].reaction_frames = (u8)((match * 7) % 20);
-        g_players[0].max_speed_fp = 16 + (match % 3) * 4;
+        test_bot_skill((u8)late, (u8)match);
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
@@ -56,8 +55,7 @@ int main(int argc, char **argv)
         } else {
             counted = 0;
         }
-        ai_update(2, &intents[2]);
-        game_update(intents);
+        test_step(intents);
         ++frames;
         if (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
             previous != GAME_PHASE_POINT_RESULT) {

@@ -5,6 +5,7 @@
 #include "court.h"
 #include "game.h"
 #include "serve.h"
+#include "test_support.h"
 
 static PlayerIntent intents[MAX_PLAYERS];
 static int verbose;
@@ -23,8 +24,7 @@ static void new_match(void)
 static void frame(const PlayerIntent *p1)
 {
     intents[0] = *p1;
-    ai_update(2, &intents[2]);
-    game_update(intents);
+    test_step(intents);
     if (verbose)
         printf("ph %d ball %d,%d,%d cpu %d,%d st %d hit %d bc %d\n",
             g_game_state.phase, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
