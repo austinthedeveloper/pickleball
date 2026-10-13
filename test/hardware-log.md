@@ -198,3 +198,16 @@ No M1 hardware run has been recorded yet.
   shadow sprites are hidden so OAM coordinate wrapping cannot display them
   behind the hitter.
 
+### 2026-10-12 — M2 serve flow and validation
+
+- Serve setup places an inactive ball 12 pixels beside P1. B starts a
+  five-frame, two-pixel-per-frame toss; contact is automatic and transitions
+  the ball into live deterministic flight.
+- The neutral P1 serve targets the opposite diagonal service box. Mesen WRAM
+  tracing observed its first bounce at approximately (199.88, 167.91), with
+  the live phase retained, no fault, and pending serve validation cleared.
+- Host fixtures and target-runtime injections classify wrong-box, kitchen-line,
+  swept-net, and outside-court landings as distinct serve faults. Pause freezes
+  the toss timer and ball height.
+- User acceptance: PASS. Manual review approved the serve setup and launch flow.
+

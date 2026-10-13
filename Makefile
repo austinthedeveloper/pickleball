@@ -79,6 +79,10 @@ host-check:
 		test/test_collision.c src/ball.c src/collision.c src/court.c src/player.c \
 		-o build/host/test_collision
 	@build/host/test_collision
+	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
+		test/test_serve.c src/ball.c src/court.c src/game.c src/player.c \
+		src/serve.c -o build/host/test_serve
+	@build/host/test_serve
 
 CC_HOST ?= cc
 check: host-check asset-check

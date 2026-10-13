@@ -5,6 +5,9 @@ GameState g_game_state;
 void game_initialize(void)
 {
     g_game_state.paused = 0;
+    g_game_state.phase = GAME_PHASE_SERVE_SETUP;
+    g_game_state.phase_timer = 0;
+    g_game_state.last_fault = GAME_FAULT_NONE;
 }
 
 void game_update_top_level(const PlayerIntent intents[MAX_PLAYERS])

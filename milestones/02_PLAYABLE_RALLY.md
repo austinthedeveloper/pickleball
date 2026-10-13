@@ -22,7 +22,7 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 
 ## Serve, rules, and CPU
 
-- [ ] `M2-SRV-01` Implement serve setup, toss, contact, and diagonal service-box validation.
+- [x] `M2-SRV-01` Implement serve setup, toss, contact, and diagonal service-box validation.
   - Accept: P1 can begin with B; legal serve reaches opposite diagonal box; wrong box/kitchen/net are faults.
 - [ ] `M2-RULE-01` Implement rally state and one-point resolution.
   - Accept: net, out, and second bounce identify one winner and stop live simulation.
