@@ -22,6 +22,9 @@ void match_config_defaults(void);
 u8 match_config_palettes_unique(void);
 /* Builds a slot's 16-colour OBJ palette from shared/team/skin/paddle parts. */
 void match_compose_palette(u8 slot, u16 out[16]);
+/* Same composition from explicit part IDs (stress scene, select screens). */
+void match_compose_parts(u8 palette_id, u8 skin_id, u8 paddle_id,
+    u16 out[16]);
 /* HUD label colour for a team: the palette of its first slot (0 or 2). */
 u8 match_team_palette(u8 team);
 

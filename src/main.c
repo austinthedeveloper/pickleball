@@ -14,6 +14,8 @@
 
 /* Main-loop iterations that missed their VBlank (frame-overrun latch). */
 u16 g_overrun_frames;
+/* Main-loop iterations since boot (diagnostics and smoke probes). */
+u16 g_loop_count;
 /* Scanline reached when the frame's CPU work finished; worst case kept. */
 u16 g_work_scanline;
 u16 g_work_scanline_max;
@@ -64,6 +66,8 @@ int main(void)
     game_new_match();
     render_initialize();
     g_overrun_frames = 0;
+    g_loop_count = 0;
+    g_work_scanline = 0;
     g_work_scanline_max = 0;
     for (now = 0; now < PROFILE_STAGES; ++now) {
         g_stage_scanline_max[now] = 0;
@@ -72,14 +76,23 @@ int main(void)
     last_vblank = snes_vblank_count;
 
     while (1) {
+        ++g_loop_count;
 #ifdef BUILD_PROFILE
         s_stage_start = read_scanline();
 #endif
         input_capture_frame();
+#ifdef RENDER_DIAGNOSTICS
+        if (g_pad_snapshots[0].pressed & PAD_SELECT)
+            render_stress_toggle();
+        if (!render_stress_active()) {
+#endif
         ai_update(2, &g_player_intents[2]);
         PROFILE_MARK(0);
         game_update(g_player_intents);
         PROFILE_MARK(1);
+#ifdef RENDER_DIAGNOSTICS
+        }
+#endif
         render_prepare();
         PROFILE_MARK(7);
         g_work_scanline = read_scanline();

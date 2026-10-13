@@ -5,8 +5,9 @@
 ; Writes one OAM shadow entry (oamMemory, uploaded by the PVSnesLib NMI) from
 ; the C globals oam_in_id, oam_in_x, oam_in_y, oam_in_tile, oam_in_attr and
 ; oam_in_large. Inputs travel through globals so no stack ABI is involved.
-; Entries outside x -32..255 / y -32..223 are parked at y = 224, which keeps
-; even 32x32 objects fully below the 224-line display. Long addressing only,
+; Entries outside x -32..255 / y -32..223 are parked as small objects at
+; y = 240: below every evaluated line, so they neither show nor count toward
+; the PPU's 32-object range-over limit. Long addressing only,
 ; so the data bank and direct page are never assumed.
 
 .SECTION ".oam_write_text" SUPERFREE
@@ -55,7 +56,7 @@ oam_write:
 
 _oam_hide:
     sep #$20
-    lda.b #$E0
+    lda.b #$F0
     sta.l oamMemory+1,x
     lda.b #0
     sta.l oam_tmp_bits

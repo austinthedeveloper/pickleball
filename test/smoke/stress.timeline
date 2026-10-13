@@ -1,0 +1,8 @@
+# OBJ stress scene: Select toggles it in debug/hardware-test builds.
+60 61 select
+shot 100
+shot 180
+shot 260
+shot 330
+340 341 select
+shot 380

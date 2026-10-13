@@ -23,6 +23,7 @@ static void hud_mark(u8 row)
 
 void hud_initialize(void)
 {
+    hud_dirty = 0;
     hud_clear_rows(0, HUD_ROWS);
 }
 
@@ -145,17 +146,32 @@ void hud_big_text(u8 col, u8 row, u8 palette, const char *text)
     hud_mark(row + 1);
 }
 
+/* At most this many 256-byte bands per VBlank, alongside the NMI's OAM DMA;
+ * anything left over stays dirty for the next frame. */
+#define HUD_MAX_BANDS_PER_COMMIT 3
+
 void hud_commit(void)
 {
     u8 band;
+    u8 sent = 0;
 
     if (!hud_dirty)
         return;
-    for (band = 0; band < HUD_BANDS; ++band) {
-        if (hud_dirty & (1 << band))
+    for (band = 0; band < HUD_BANDS && sent < HUD_MAX_BANDS_PER_COMMIT;
+            ++band) {
+        if (hud_dirty & (1 << band)) {
             dmaCopyVram((u8 *)&hud_map[(u16)band * 32 * HUD_BAND_ROWS],
                 RENDER_BG3_MAP_ADDR + (u16)band * 32 * HUD_BAND_ROWS,
                 32 * HUD_BAND_ROWS * 2);
+            hud_dirty &= (u8)~(1 << band);
+            ++sent;
+        }
     }
-    hud_dirty = 0;
+}
+
+/* Forced-blank only: uploads every dirty band at once. */
+void hud_commit_all(void)
+{
+    while (hud_dirty)
+        hud_commit();
 }

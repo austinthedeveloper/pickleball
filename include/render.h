@@ -45,4 +45,14 @@ void render_prepare(void);
 /* VBlank-only uploads (HUD bands, pending palettes). */
 void render_commit(void);
 
+/* Frames on which the PPU reported OBJ range/time over ($213E bits 6/7). */
+extern u16 g_obj_overflow_frames;
+
+#if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
+#define RENDER_DIAGNOSTICS 1
+/* OBJ stress scene (M3-OBJ-01): toggled with Select in diagnostic builds. */
+void render_stress_toggle(void);
+u8 render_stress_active(void);
+#endif
+
 #endif

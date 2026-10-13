@@ -37,9 +37,16 @@ u8 match_config_palettes_unique(void)
  * 14 highlight, 15 hair. */
 void match_compose_palette(u8 slot, u16 out[16])
 {
-    const u16 *team = g_pal_team[g_match_config.palette_id[slot] & 3];
-    const u16 *skin = g_pal_skin[g_match_config.skin_id[slot] % SKIN_COUNT];
-    const u16 *paddle = g_pal_paddle[g_match_config.paddle_id[slot] & 3];
+    match_compose_parts(g_match_config.palette_id[slot],
+        g_match_config.skin_id[slot], g_match_config.paddle_id[slot], out);
+}
+
+void match_compose_parts(u8 palette_id, u8 skin_id, u8 paddle_id,
+    u16 out[16])
+{
+    const u16 *team = g_pal_team[palette_id & 3];
+    const u16 *skin = g_pal_skin[skin_id % SKIN_COUNT];
+    const u16 *paddle = g_pal_paddle[paddle_id & 3];
     u8 i;
 
     out[0] = 0;

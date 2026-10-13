@@ -33,6 +33,10 @@ static const u16 s_idle_frames[2] = { FRAME_IDLE0, FRAME_IDLE1 };
 static const u16 s_run_frames[4] = {
     FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3
 };
+u16 g_obj_overflow_frames;
+
+#define REG_STAT77_FLAGS (*(vuint8 *)0x213E)
+
 static u16 s_player_palettes[2][16];
 static u16 s_hud_team_colors[2][2];
 static u8 s_palette_dirty;
@@ -73,6 +77,21 @@ static void render_upload_palettes(void)
     s_palette_dirty = 0;
 }
 
+/* M3-OBJ-02: OAM ranges from docs/03 cannot overlap; a violation fails the
+ * build with a negative array size. */
+typedef char oam_bodies_after_ball[
+    (RENDER_OAM_BODIES > RENDER_OAM_BALL_SHADOW) ? 1 : -1];
+typedef char oam_shadows_after_bodies[
+    (RENDER_OAM_SHADOWS >= RENDER_OAM_BODIES + MAX_PLAYERS) ? 1 : -1];
+typedef char oam_effects_after_shadows[
+    (RENDER_OAM_SPARK >= RENDER_OAM_SHADOWS + MAX_PLAYERS) ? 1 : -1];
+typedef char oam_effects_within_reserve[
+    (RENDER_OAM_DEBUG_MARKER < RENDER_OAM_SPARK + 4) ? 1 : -1];
+typedef char oam_accessories_after_effects[
+    (RENDER_OAM_ACCESSORIES >= RENDER_OAM_SPARK + 4) ? 1 : -1];
+typedef char oam_hidden_after_accessories[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
+
 /* Inputs for oam_write (src/asm/oam_write.asm). */
 u8 oam_in_id;
 s16 oam_in_x;
@@ -101,7 +120,7 @@ static void obj_put(u8 id, s16 x, s16 y, u16 tile, u8 attr, u8 large)
 static void obj_hide(u8 id)
 {
     oam_in_id = id;
-    oam_in_y = 224;
+    oam_in_y = 240;
     oam_write();
 }
 
@@ -155,7 +174,7 @@ static void render_player(const Player *player, u8 body_id, u8 shadow_id)
  * the nearer player draws on top; shadows keep fixed per-slot IDs 6-9.
  */
 static s16 s_depth[MAX_PLAYERS];
-static u8 s_active_bodies = 0xff;
+static u8 s_active_bodies;
 
 static void render_players(void)
 {
@@ -414,17 +433,114 @@ static void render_hud(void)
 #if defined(BUILD_DEBUG) || defined(BUILD_HARDWARE_TEST)
     hud_draw_debug();
     if (key == 0x80 && !s_hud_debug_build_shown) {
+        hud_text(0, 26, HUD_PAL_WHITE,
+            g_multitap_present ? "MULTITAP: YES" : "MULTITAP: NO");
         hud_text(0, 27, HUD_PAL_WHITE, BUILD_ID_STRING);
         s_hud_debug_build_shown = 1;
     } else if (key != 0x80 && s_hud_debug_build_shown) {
-        hud_clear_rows(27, 1);
+        hud_clear_rows(26, 2);
         s_hud_debug_build_shown = 0;
     }
 #endif
 }
 
+#ifdef RENDER_DIAGNOSTICS
+/*
+ * OBJ stress scene (M3-OBJ-01/02, M3-ASSET-03). Every object below overlaps
+ * screen row 148, the worst planned row from ADR-014:
+ *   4 bodies x 4 slivers (OAM 2-5)          16
+ *   4 player shadows (OAM 6-9)               4
+ *   4 accessory placeholders (OAM 14-17)     4
+ *   ball + ball shadow (OAM 0-1)             2
+ *   4 impact effects (OAM 10-13)             4
+ *                                    total  30 of 34
+ * Bodies use OBJ palettes 0-3 loaded with all four composed team palettes
+ * (one shared tile set), rotate palettes every 64 frames, flip every 32,
+ * and step through every frame slot. The PPU's range/time-over flags are
+ * latched in g_obj_overflow_frames.
+ */
+#define STRESS_ROW 150
+static u8 s_stress;
+static u8 s_stress_timer;
+static u16 s_stress_palettes[4][16];
+static const u16 s_stress_frames[11] = {
+    FRAME_IDLE0, FRAME_IDLE1, FRAME_RUN0, FRAME_RUN1, FRAME_RUN2, FRAME_RUN3,
+    FRAME_WINDUP, FRAME_SWING, FRAME_FOLLOW, FRAME_TOSS, FRAME_CHEER
+};
+static const s16 s_stress_x[4] = { 40, 96, 152, 208 };
+
+u8 render_stress_active(void)
+{
+    return s_stress;
+}
+
+void render_stress_toggle(void)
+{
+    u8 i;
+
+    s_stress = !s_stress;
+    s_stress_timer = 0;
+    for (i = 0; i < RENDER_OAM_FIRST_HIDDEN; ++i)
+        obj_hide(i);
+    for (i = 0; i < 4; ++i)
+        match_compose_parts(i, 0, i, s_stress_palettes[i]);
+    s_palette_dirty = 1;
+    s_active_bodies = 0xff;
+    s_hud_valid = 0;
+    hud_clear_rows(4, 24);
+    g_obj_overflow_frames = 0;
+}
+
+static void render_stress(void)
+{
+    u8 i;
+    u8 pal;
+    u8 frame;
+    s16 x;
+
+    ++s_stress_timer;
+    for (i = 0; i < 4; ++i) {
+        x = s_stress_x[i];
+        pal = (u8)((i + (s_stress_timer >> 6)) & 3);
+        frame = (u8)(((s_stress_timer >> 3) + i * 3) % 11);
+        obj_put(RENDER_OAM_BODIES + i, x - PLAYER_SPRITE_HALF_WIDTH,
+            STRESS_ROW - PLAYER_SPRITE_FOOT_Y, s_stress_frames[frame],
+            OBJ_ATTR(pal, ((s_stress_timer >> 5) + i) & 1), 1);
+        obj_put(RENDER_OAM_SHADOWS + i, x - 4, STRESS_ROW - 4,
+            OBJTILE_PLAYER_SHADOW, OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
+        obj_put(RENDER_OAM_ACCESSORIES + i, x + 10, STRESS_ROW - 6,
+            OBJTILE_SPARK_SMALL, OBJ_ATTR(pal, 0), 0);
+        obj_put(RENDER_OAM_SPARK + i, x + 18, STRESS_ROW - 6,
+            (s_stress_timer & 4) ? OBJTILE_SPARK : OBJTILE_SPARK_SMALL,
+            OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+    }
+    obj_put(RENDER_OAM_BALL, 120, STRESS_ROW - 6, OBJTILE_BALL,
+        OBJ_ATTR(RENDER_OBJPAL_OBJECTS, 0), 0);
+    obj_put(RENDER_OAM_BALL_SHADOW, 124, STRESS_ROW - 4, OBJTILE_BALL_SHADOW,
+        OBJ_ATTR(RENDER_OBJPAL_SHADOW, 0), 0);
+
+    if (!s_hud_valid) {
+        hud_clear_rows(4, 24);
+        hud_center_prompt(5, HUD_PAL_YELLOW, "OBJ STRESS 30/34");
+        hud_text(2, 22, HUD_PAL_WHITE, "4 PALETTES, 1 TILE SET");
+        hud_text(2, 24, HUD_PAL_WHITE, "SELECT: BACK TO GAME");
+        s_hud_valid = 1;
+    }
+    hud_text(2, 9, HUD_PAL_WHITE,
+        g_obj_overflow_frames ? "OBJ OVERFLOW: YES" : "OBJ OVERFLOW: NO ");
+    hud_text(2, 10, HUD_PAL_WHITE,
+        g_multitap_present ? "MULTITAP: YES" : "MULTITAP: NO ");
+}
+#endif
+
 void render_prepare(void)
 {
+#ifdef RENDER_DIAGNOSTICS
+    if (s_stress) {
+        render_stress();
+        return;
+    }
+#endif
     render_players();
     PROFILE_MARK(2);
     render_ball();
@@ -435,6 +551,22 @@ void render_prepare(void)
 
 void render_commit(void)
 {
+    /* Range/time-over flags describe the frame just drawn; they clear at
+     * the end of VBlank. */
+    if (REG_STAT77_FLAGS & 0xC0)
+        ++g_obj_overflow_frames;
+#ifdef RENDER_DIAGNOSTICS
+    if (s_palette_dirty && s_stress) {
+        dmaCopyCGram((u8 *)s_stress_palettes, CGRAM_OBJ, 4 * 32);
+        s_palette_dirty = 0;
+    } else if (s_palette_dirty && !s_stress) {
+        /* Leaving the stress scene restores objects and flash too. */
+        dmaCopyCGram((u8 *)&objects_palette,
+            CGRAM_OBJ + RENDER_OBJPAL_OBJECTS * 16, 32);
+        dmaCopyCGram((u8 *)g_pal_flash,
+            CGRAM_OBJ + RENDER_OBJPAL_FLASH * 16, 32);
+    }
+#endif
     if (s_palette_dirty)
         render_upload_palettes();
     hud_commit();
@@ -443,6 +575,19 @@ void render_commit(void)
 void render_initialize(void)
 {
     u8 i;
+
+    /* RAM is not cleared at power-on (real hardware or emulators that
+     * randomize it), so every piece of renderer state is set explicitly. */
+    s_palette_dirty = 0;
+    s_hud_valid = 0;
+    s_hud_scene = 0;
+    s_active_bodies = 0xff;
+    g_obj_overflow_frames = 0;
+#ifdef RENDER_DIAGNOSTICS
+    s_hud_debug_build_shown = 0;
+    s_stress = 0;
+    s_stress_timer = 0;
+#endif
 
     setScreenOff();
     oamInit();
@@ -489,6 +634,6 @@ void render_initialize(void)
     hud_initialize();
     s_hud_valid = 0;
     render_prepare();
-    hud_commit();
+    hud_commit_all();
     setScreenOn();
 }

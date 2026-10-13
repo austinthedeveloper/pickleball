@@ -20,12 +20,14 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 
 ## Reusable asset pipeline
 
-- [ ] `M3-ASSET-01` Make asset conversion non-interactive and part of `assets`/normal builds.
+- [x] `M3-ASSET-01` Make asset conversion non-interactive and part of `assets`/normal builds.
   - Accept: clean regeneration succeeds with pinned tools.
+  - Verified: `make` runs `tools/generate_assets.py` (stdlib only) before every build; Pillow is needed only for the authoring tools under `tools/art/`.
 - [ ] `M3-ASSET-02` Validate indexed color roles, dimensions, frame order, anchors, and tile budget.
   - Accept: deliberate invalid fixtures fail with useful messages.
-- [ ] `M3-ASSET-03` Export four player palettes against one player tile set.
+- [x] `M3-ASSET-03` Export four player palettes against one player tile set.
   - Accept: stress scene cycles four clearly distinguishable variants without duplicate graphics bytes.
+  - Verified: the stress scene composes all four palettes from parts onto OBJ palettes 0-3 and rotates them over the single player tile set.
 - [ ] `M3-ASSET-04` Produce asset manifest/build report.
   - Accept: report lists each generated file’s byte size, tiles/frames, palettes, and total OBJ budget.
 - [ ] `M3-ASSET-05` Verify clean-build reproducibility.
@@ -33,14 +35,18 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 
 ## Four-player-ready seams
 
-- [ ] `M3-IN-01` Add boot-time Multitap detection through the input wrapper.
+- [x] `M3-IN-01` Add boot-time Multitap detection through the input wrapper.
   - Accept: hardware-test screen shows detected/not detected; standard port-2 pad still works when absent.
-- [ ] `M3-IN-02` Validate all four logical player intents with injected pad fixtures.
+  - Verified (MesenCE, no Multitap): `detectMPlay5()` at boot; pause screen of debug/hardware-test builds shows `MULTITAP: NO`; port-2 pad still reads (`test_poc_ownership_without_multitap`).
+- [x] `M3-IN-02` Validate all four logical player intents with injected pad fixtures.
   - Accept: simultaneous directions and hit edges remain independent across four slots.
-- [ ] `M3-OBJ-01` Implement four-player object stress scene.
+  - Verified: `test/test_input.c` drives four human slots from injected pad words.
+- [x] `M3-OBJ-01` Implement four-player object stress scene.
   - Accept: 4 bodies + 4 shadows + ball + ball shadow + 4 effects display on shared rows without dropout.
-- [ ] `M3-OBJ-02` Record OAM order and worst-row 30-sliver plan beside the stress test.
+  - Verified (MesenCE): Select in debug/hardware-test builds opens the stress scene; the PPU range/time-over flags ($213E) stayed clear (`OBJ OVERFLOW: NO`). Real-hardware run pending under M3-QA-03.
+- [x] `M3-OBJ-02` Record OAM order and worst-row 30-sliver plan beside the stress test.
   - Accept: effects cannot consume unreserved object IDs in review/build assertions.
+  - Verified: row plan in the comment above `render_stress()` in `src/render.c`; compile-time checks there fail the build if OAM ranges overlap.
 - [ ] `M3-IN-03` **OPTIONAL if hardware unavailable:** Validate physical Super Multitap detection and four pads.
   - Accept: each of four game slots displays independent held/pressed state on a real console.
 
