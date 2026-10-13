@@ -120,17 +120,17 @@ For later characters, prefer this order:
 
 ## Asset review checklist
 
-- [ ] Player is legible at 32×32 on a nearest-neighbor 2× preview.
-- [ ] Ball remains visible over every court tile and line color.
-- [ ] Shadow is visibly distinct from the ball and uses one 8×8 object.
-- [ ] Four palettes work with the exact same player tile bytes.
-- [ ] Flipped racket/pose does not create an anatomical or handedness problem.
-- [ ] Every frame uses only declared palette roles.
-- [ ] Frame anchors do not jitter.
-- [ ] Worst-row object count remains at or below 30 planned slivers.
+- [x] Player is legible at 32×32 on a nearest-neighbor 2× preview.
+- [x] Ball remains visible over every court tile and line color.
+- [x] Shadow is visibly distinct from the ball and uses one 8×8 object.
+- [x] Four palettes work with the exact same player tile bytes.
+- [ ] Flipped racket/pose does not create an anatomical or handedness problem. (Open: a left-facing player holds the paddle in the other hand; see KNOWN_ISSUES #7.)
+- [x] Every frame uses only declared palette roles.
+- [x] Frame anchors do not jitter.
+- [x] Worst-row object count remains at or below 30 planned slivers.
 - [ ] Each accessory is one 8×8 object in its owner's palette (hair index 15) at OAM 14–17, with a per-frame offset that mirrors around the body anchor under horizontal flip.
-- [ ] Asset conversion can be repeated from a clean checkout.
-- [ ] Manifest report records tile, palette, and byte totals.
+- [x] Asset conversion can be repeated from a clean checkout.
+- [x] Manifest report records tile, palette, and byte totals.
 
 ## Placeholder policy
 

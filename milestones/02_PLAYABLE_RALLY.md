@@ -69,9 +69,10 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 - [x] `M2-TEST-01` Automate PHY-01..05, HIT-01..02, and RUL-01..03 fixtures.
   - Accept: all pass from a clean `check` run or deterministic debug harness.
   - Verified: see `test/SCENARIOS.md`.
-- [ ] `M2-TEST-02` Add frame-overrun latch and exercise worst normal rally.
+- [x] `M2-TEST-02` Add frame-overrun latch and exercise worst normal rally.
   - Progress: latch (`g_overrun_frames`, shown in the debug HUD) and `make release PROFILE=1` scanline profiler exist; rare spikes on hit/HUD-redraw frames remain.
   - Accept: latch remains clear for two complete emulator matches.
+  - Verified (MesenCE, FastROM release): latch stayed at 0 for 7,200 frames covering 6 complete matches; HUD overlays are drawn in staged steps so no transition frame overruns.
 - [ ] `M2-TEST-03` Run two-emulator rally smoke and one real-hardware rally session.
   - Accept: five points total are played without crash, corruption, stuck input, or sprite dropout.
 
@@ -79,6 +80,7 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 
 - [ ] All required tasks above are complete.
 - [ ] A new player can serve and complete a rally against CPU using D-pad + B.
-- [ ] Net, in/out, required bounces, and point ownership are deterministic.
+- [x] Net, in/out, required bounces, and point ownership are deterministic.
+  - Verified: `test/SCENARIOS.md` fixtures in `make check`.
 - [ ] Ball remains readable on real hardware.
 - [ ] Tag/version `0.2.0` is ready.

@@ -22,8 +22,10 @@ This is the only cross-milestone status sheet. Detailed tasks live in the linked
 
 - [x] `GATE-DOCS` Product, gameplay, technical, asset, input, and test documents exist in the repo.
 - [x] `GATE-REPRO` A clean checkout produces identical generated asset sizes and a bootable ROM.
-- [ ] `GATE-REUSE` Four palette variants use one player graphics data set.
-- [ ] `GATE-BUDGET` Actual VRAM, ROM, OAM, and generated-asset sizes are recorded for the M3 build.
+- [x] `GATE-REUSE` Four palette variants use one player graphics data set.
+  - Verified: OBJ stress scene composes four palettes over one tile set (M3-ASSET-03).
+- [x] `GATE-BUDGET` Actual VRAM, ROM, OAM, and generated-asset sizes are recorded for the M3 build.
+  - Verified: `dist/build-report.md` (M3-QA-04).
 - [ ] `GATE-HW` Hardware log records console, cartridge, controller, build ID, duration, and result.
 
 ## Completion procedure

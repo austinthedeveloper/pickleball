@@ -379,52 +379,74 @@ static u8 hud_scene_key(void)
     return phase;
 }
 
-static void hud_draw_scene(u8 key)
+#define HUD_IS_TITLE(k) ((k) == HUD_KEY_TITLE || (k) == HUD_KEY_TITLE_BLINK)
+
+/*
+ * Scene overlays are drawn in three steps on consecutive frames (clear, big
+ * text, prompt). Doing all three on the frame a point ends made that one
+ * frame overrun; spread out, no frame does more than one step.
+ */
+enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
+       HUD_STEP_DONE = 3 };
+
+static u8 s_scene_step;
+static u8 s_prev_scene;
+
+static void hud_scene_step(u8 key, u8 step)
 {
     u8 winner = g_game_state.point_winner;
+    u8 from_title = HUD_IS_TITLE(s_prev_scene);
 
-    if (key == HUD_KEY_TITLE || key == HUD_KEY_TITLE_BLINK) {
-        /* Only the prompt blinks; the logo is drawn once. */
-        if (!s_hud_valid ||
-            (s_hud_scene != HUD_KEY_TITLE && s_hud_scene != HUD_KEY_TITLE_BLINK)) {
+    if (HUD_IS_TITLE(key)) {
+        if (step == HUD_STEP_CLEAR && !from_title)
             hud_clear_rows(CENTER_BIG_ROW - 2, 9);
+        else if (step == HUD_STEP_BIG && !from_title) {
             hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
             hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
+        } else if (step == HUD_STEP_PROMPT) {
+            /* Only the prompt blinks; the logo stays. */
+            hud_clear_rows(BANNER_ROW - 1, 4);
+            if (key == HUD_KEY_TITLE)
+                hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
         }
-        hud_clear_rows(BANNER_ROW - 1, 4);
-        if (key == HUD_KEY_TITLE)
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS START");
         return;
     }
-    if (s_hud_scene == HUD_KEY_TITLE || s_hud_scene == HUD_KEY_TITLE_BLINK)
-        hud_clear_rows(CENTER_BIG_ROW - 2, 9);
-    hud_clear_rows(CENTER_BIG_ROW, 7);
-    hud_clear_rows(BANNER_ROW - 1, 4);
-    PROFILE_MARK(12);
 
+    if (step == HUD_STEP_CLEAR) {
+        hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
+            from_title ? 9 : 7);
+        hud_clear_rows(BANNER_ROW - 1, 4);
+        return;
+    }
     if (key == 0x80) {
-        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, "PAUSED");
+        if (step == HUD_STEP_PROMPT)
+            hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, "PAUSED");
         return;
     }
     switch (g_game_state.phase) {
     case GAME_PHASE_SERVE_SETUP:
+        if (step != HUD_STEP_PROMPT)
+            break;
         if (g_game_state.serving_team == 0)
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS @ TO SERVE");
         else
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "CPU TO SERVE");
         break;
     case GAME_PHASE_POINT_RESULT:
-        hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
-            fault_word(g_game_state.last_fault));
-        PROFILE_MARK(13);
-        hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
-            winner == 0 ? "P1 POINT" : "CPU POINT");
-        PROFILE_MARK(14);
+        if (step == HUD_STEP_BIG)
+            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
+                fault_word(g_game_state.last_fault));
+        else
+            hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
+                winner == 0 ? "P1 POINT" : "CPU POINT");
         break;
     case GAME_PHASE_MATCH_RESULT:
-        hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
-            g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS");
-        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS @ TO REMATCH");
+        if (step == HUD_STEP_BIG)
+            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
+                g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS");
+        else
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+                "PRESS @ TO REMATCH");
         break;
     default:
         break;
@@ -468,17 +490,26 @@ static void render_hud(void)
 
     /* Spread big redraws over frames: a score change and a scene change on
      * the same frame (every point) would overrun 816-tcc's budget. */
+    u8 busy = 0;
+
     if (!s_hud_valid)
         hud_draw_scores();
     else if (s_hud_score[0] != g_game_state.team_score[0] ||
-             s_hud_score[1] != g_game_state.team_score[1])
+             s_hud_score[1] != g_game_state.team_score[1]) {
         hud_draw_score_digits();
+        busy = 1;               /* the scene step waits one frame */
+    }
 
     key = hud_scene_key();
     if (!s_hud_valid || key != s_hud_scene) {
-        PROFILE_MARK(15);
-        hud_draw_scene(key);
+        s_prev_scene = s_hud_valid ? s_hud_scene : 0xff;
         s_hud_scene = key;
+        s_scene_step = HUD_STEP_CLEAR;
+    }
+    if (s_scene_step < HUD_STEP_DONE && !busy) {
+        PROFILE_MARK(15);
+        hud_scene_step(key, s_scene_step);
+        ++s_scene_step;
     }
     s_hud_valid = 1;
 
@@ -633,6 +664,8 @@ void render_initialize(void)
     s_palette_dirty = 0;
     s_hud_valid = 0;
     s_hud_scene = 0;
+    s_scene_step = HUD_STEP_DONE;
+    s_prev_scene = 0xff;
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
 #ifdef RENDER_DIAGNOSTICS

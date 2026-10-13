@@ -61,7 +61,8 @@ Outcome: a stable ROM boots on real hardware and lets one player move around a c
 ## Exit criteria
 
 - [ ] All required tasks above are complete.
-- [ ] Debug and release ROMs build cleanly from a clean checkout.
+- [x] Debug and release ROMs build cleanly from a clean checkout.
+  - Verified: `make repro` (two clean builds, identical hashes) and `make debug`.
 - [ ] P1 can move and pause on a correctly lined static court on real hardware.
 - [ ] No observed sprite dropout, corrupt tiles, stuck input, or frame-overrun latch.
 - [ ] Tag/version `0.1.0` is ready.
