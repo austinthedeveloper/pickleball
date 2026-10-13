@@ -127,8 +127,8 @@ static void test_neutral_serves_land_diagonal(void)
     assert(g_game_state.last_fault == GAME_FAULT_NONE);
 
     reset_fixture(0);
-    intents[0].move_x = 1;
-    intents[0].move_y = -1;
+    intents[0].aim_x = 1;
+    intents[0].aim_y = -1;
     serve_now(0);
     fly_to_first_bounce();
     assert(g_ball.x_fp > TO_FP(SERVE_TARGET_DEEP_RIGHT - 3));

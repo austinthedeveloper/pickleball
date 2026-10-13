@@ -38,6 +38,8 @@ void input_initialize(void)
         g_pad_snapshots[n].released = previous & (u16)~current; \
         g_player_intents[n].move_x = 0; \
         g_player_intents[n].move_y = 0; \
+        g_player_intents[n].aim_x = 0; \
+        g_player_intents[n].aim_y = 0; \
         g_player_intents[n].hit_pressed = 0; \
         g_player_intents[n].pause_pressed = 0; \
     } while (0)
@@ -62,6 +64,8 @@ void input_capture_frame(void)
     else if (held & KEY_DOWN)
         g_player_intents[0].move_y = 1;
 
+    g_player_intents[0].aim_x = g_player_intents[0].move_x;
+    g_player_intents[0].aim_y = g_player_intents[0].move_y;
     g_player_intents[0].hit_pressed =
         (g_pad_snapshots[0].pressed & KEY_B) != 0;
     g_player_intents[0].pause_pressed =

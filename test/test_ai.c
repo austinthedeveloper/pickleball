@@ -92,7 +92,7 @@ static u8 cpu_returns_serve(s16 aim_y)
     p1.hit_pressed = 1;
     frame(&p1);
     p1.hit_pressed = 0;
-    p1.move_y = aim_y;
+    p1.aim_y = aim_y;
     for (n = 0; n < 400; ++n) {
         frame(&p1);
         if (g_ball.last_hitter == 2)

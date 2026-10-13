@@ -54,10 +54,6 @@ int main(void)
     u16 now;
 
     input_initialize();
-    players_initialize();
-    ball_initialize();
-    serve_initialize();
-    ai_initialize();
     match_config_defaults();
 #ifdef BUILD_DEBUG
     /* ADR-010: every active player has a unique palette. */

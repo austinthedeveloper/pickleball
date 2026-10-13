@@ -112,7 +112,11 @@ On contact, the hitter’s opponent-side target is selected from current D-pad i
 - toward opponent: deeper target and slightly more pace;
 - away from opponent: shorter target and slightly more arc.
 
-The physics module derives velocity from start, target, and a fixed flight duration. Randomness is excluded from POC shot physics.
+The physics module derives velocity from start, target, and flight duration. Flight duration is horizontal distance divided by pace: 3.0 px/frame deep, 2.75 neutral, 2.5 short. It is clamped to 24–46 frames, which keeps lobs below the HUD (apex about 50 px) and inside the AI's 60-step prediction. Randomness is excluded from POC shot physics.
+
+**Contact timing.** A swing contacts the ball on the first active frame with the ball inside the reach volume. If that contact is inside the sweet box (|dx| ≤ 14 px, |dy| ≤ 10 px from the player's ground point), the shot goes where it was aimed. Otherwise it is *stretched*: the target moves 20 px toward its sideline and 16 px deeper, which usually lands out. Swinging too early or too late therefore costs the point. That is the skill the one-button control asks for.
+
+The shot direction is the intent's aim (`aim_x/aim_y`). For a human it is the D-pad at contact, the same input that moves the player. The CPU can aim without moving.
 
 ## Simplified POC rules
 
@@ -135,11 +139,15 @@ UI must label this mode “ARCADE RULES” so the simplifications are explicit.
 
 The CPU is intentionally legible, not optimal.
 
-1. Predict the next ground intersection using the same ball constants, capped at 60 simulated steps.
-2. Clamp the target to the CPU half and add a fixed difficulty offset, not random jitter.
+1. Predict the next ground intersection using the same ball constants, capped at 60 simulated steps. Balls predicted to land out are left alone.
+2. Aim to meet the ball near the top of its first bounce, standing 10 px behind the contact point. The CPU always lets the ball bounce once.
 3. Move toward the target with 80% of player maximum speed.
-4. Swing when the ball is approaching and predicted to enter the active reach volume within the windup horizon.
-5. After a hit, recover toward `(208, 130)`.
+4. Swing when a swing pressed now would make its first contact inside the sweet box during the active frames, or as a last chance before the ball leaves reach. Once committed, plant the feet.
+5. Difficulty is a fixed offset, not random jitter. On every 8th incoming shot (`AI_LATE_SHOT_PERIOD`) the CPU is deliberately late and takes a stretched last-chance contact.
+6. Aim away from the opponent's half of the court: mostly deep, a drop shot every 4th shot.
+7. After a hit, recover toward `(208, 130)`.
+
+Measured with host simulations (`test/test_match_flow.c`): a stand-in player that mistimes every 2nd shot wins 1 of 20 matches, and one that mistimes every 10th shot wins 19 of 20. Simulated matches last 45–85 s. Human novice matches still decide the final tuning.
 
 In debug builds, show predicted landing as one background marker. The CPU must not read future player input or alter ball physics.
 

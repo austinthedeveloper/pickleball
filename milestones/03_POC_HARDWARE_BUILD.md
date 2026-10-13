@@ -5,14 +5,18 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 
 ## Match loop
 
-- [ ] `M3-MATCH-01` Implement rally scoring, first to 5, and point-winner serves.
+- [x] `M3-MATCH-01` Implement rally scoring, first to 5, and point-winner serves.
   - Accept: every fault path awards exactly one point; SCR-01 passes.
-- [ ] `M3-MATCH-02` Add point result, next-serve setup, and match result transitions.
+  - Verified: `test/test_match_flow.c` SCR-01 (first to 5 reaches the match result; winner serves via `game_begin_serve`).
+- [x] `M3-MATCH-02` Add point result, next-serve setup, and match result transitions.
   - Accept: state timers and B-to-advance behavior match the gameplay spec.
-- [ ] `M3-MATCH-03` Add rematch reset without console reset.
+  - Verified: result timers (20-frame minimum, 90-frame auto-advance, B to skip) and MATCH_RESULT waiting for B are covered in `test_first_to_five`.
+- [x] `M3-MATCH-03` Add rematch reset without console reset.
   - Accept: RST-01 passes and 20 consecutive rematches do not accumulate state.
+  - Verified: RST-01 compares every simulation struct against a fresh match after 20 consecutive bot-played rematches.
 - [ ] `M3-MATCH-04` Tune CPU and core constants for a two-to-four-minute typical match.
   - Accept: three novice test matches finish; CPU can return but remains beatable; final constants are documented.
+  - Progress: CPU difficulty is deterministic (late-shot period 8, contact timing sweet spot; see `docs/01_GAMEPLAY_SPEC.md`). Simulated bots that mistime every 2nd shot win 1/20 matches; every 10th, 19/20 (`test_cpu_is_beatable_but_not_trivial`). Simulated matches run 45–85 s; three human novice matches still required.
 
 ## Reusable asset pipeline
 

@@ -51,6 +51,8 @@ typedef struct {
     u8 serving_team;
     u8 match_winner;
     u8 hit_stop;
+    /* Increments on every serve and contact; lets controllers see a new shot. */
+    u8 shot_serial;
     u8 spark_timer;
     s16 spark_x;
     s16 spark_y;

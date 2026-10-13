@@ -1,3 +1,4 @@
+#include "ai.h"
 #include "ball.h"
 #include "collision.h"
 #include "game.h"
@@ -25,6 +26,7 @@ void game_initialize(void)
     g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
     g_game_state.serving_team = 0;
     g_game_state.hit_stop = 0;
+    g_game_state.shot_serial = 0;
     g_game_state.spark_timer = 0;
     g_game_state.spark_x = 0;
     g_game_state.spark_y = 0;
@@ -41,10 +43,17 @@ static void game_begin_serve(u8 serving_team)
     game_set_phase(GAME_PHASE_SERVE_SETUP);
 }
 
+/* Fresh match without a console reset (RST-01): every simulation module is
+ * re-initialized, so nothing from the previous match carries over. */
 void game_new_match(void)
 {
+    players_initialize();
+    ball_initialize();
+    serve_initialize();
+    ai_initialize();
     game_initialize();
     g_players[2].active = 1;
+    g_ai_slots[2].late_period = AI_LATE_SHOT_PERIOD;
     game_begin_serve(0);
 }
 
@@ -52,6 +61,7 @@ static void game_on_contact(u8 player_index)
 {
     Player *player = &g_players[player_index];
 
+    ++g_game_state.shot_serial;
     player->flash_timer = GAME_HIT_FLASH_FRAMES;
     g_game_state.spark_timer = GAME_SPARK_FRAMES;
     g_game_state.spark_x = FROM_FP(g_ball.x_fp);

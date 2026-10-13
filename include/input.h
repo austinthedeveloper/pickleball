@@ -21,6 +21,9 @@ typedef struct {
 typedef struct {
     s16 move_x;
     s16 move_y;
+    /* Shot direction read at contact; humans aim with the D-pad (= move). */
+    s16 aim_x;
+    s16 aim_y;
     u8 hit_pressed;
     u8 pause_pressed;
 } PlayerIntent;

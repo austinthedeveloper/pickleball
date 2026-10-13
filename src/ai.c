@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ai.h"
 #include "collision.h"
 #include "court.h"
@@ -5,19 +6,18 @@
 #include "serve.h"
 
 AiState g_ai;
+AiState g_ai_slots[MAX_PLAYERS];
 
 static s16 s_impact_vz;
 
 void ai_initialize(void)
 {
-    g_ai.has_target = 0;
-    g_ai.target_x = AI_RECOVER_X;
-    g_ai.target_y = AI_RECOVER_Y;
-    g_ai.predicted_land_x = 0;
-    g_ai.predicted_land_y = 0;
-    g_ai.predicted_steps = 0;
-    g_ai.shot_counter = 0;
+    u8 i;
+
+    memset(&g_ai, 0, sizeof(g_ai));
     g_ai.plan_key = 0xff;
+    for (i = 0; i < MAX_PLAYERS; ++i)
+        memcpy(&g_ai_slots[i], &g_ai, sizeof(g_ai));
 }
 
 /*
@@ -80,19 +80,25 @@ static u8 ball_incoming(const Player *player)
 /* Aim: away from the opponent's y, mostly deep, a drop shot every 4th. */
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
-    const Player *opponent = &g_players[0];
+    const Player *opponent = &g_players[player->team ? 0 : 2];
     s16 toward_opponent = player->team ? -1 : 1;
 
-    intent->move_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
+    intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
     if ((g_ai.shot_counter & 3) == 3)
-        intent->move_x = -toward_opponent;
+        intent->aim_x = -toward_opponent;
     else if (g_ai.shot_counter & 1)
-        intent->move_x = toward_opponent;
+        intent->aim_x = toward_opponent;
     else
-        intent->move_x = 0;
+        intent->aim_x = 0;
 }
 
-/* Would a swing started now meet the ball during its active frames? */
+/*
+ * Swing decision. Pressed now, the swing is ACTIVE on frames +4..+6 and each
+ * of those frames' collision check sees the ball after that many updates;
+ * contact happens on the first of them with the ball in reach. Swing when
+ * that first contact is in the sweet spot, or when it is the last chance
+ * (the ball is out of reach one frame after the window).
+ */
 static u8 ai_swing_connects(const Player *player)
 {
     Ball probe;
@@ -103,21 +109,28 @@ static u8 ai_swing_connects(const Player *player)
     if (dx > 64 || dx < -64)
         return 0;
     probe = g_ball;
-
-    /* Pressed now, the swing is ACTIVE on frames +4..+6, and each of those
-     * frames' collision check sees the ball after that many updates. */
-    for (step = 1; step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
+    for (step = 1; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
             ++step) {
         ball_simulate_step(&probe);
         if (step < PLAYER_WINDUP_FRAMES)
             continue;
-        /* Let every incoming ball bounce once: legal and readable. */
-        if (probe.bounce_count == 0)
+        if (!collision_ball_in_player_reach(player, &probe))
             continue;
-        if (!ball_on_team_side(probe.x_fp, player->team))
-            continue;
-        if (collision_ball_in_player_reach(player, &probe))
-            return 1;
+        /* This frame would be the contact. Let every incoming ball bounce
+         * once first (legal and readable), and never reach over the net. */
+        if (probe.bounce_count == 0 ||
+            !ball_on_team_side(probe.x_fp, player->team))
+            return 0;
+        if (step == PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES)
+            return 0;       /* first reachable after the window: wait */
+        if (collision_ball_in_sweet_spot(player, &probe))
+            return !g_ai.late_this_ball;   /* a late player waits it out */
+        /* First contact would be stretched; take it only as a last chance. */
+        while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
+            ball_simulate_step(&probe);
+            ++step;
+        }
+        return !collision_ball_in_player_reach(player, &probe);
     }
     return 0;
 }
@@ -164,7 +177,16 @@ static void ai_plan_intercept(const Player *player)
     g_ai.has_target = 1;
 }
 
+static void ai_think(u8 player_index, PlayerIntent *intent);
+
 void ai_update(u8 player_index, PlayerIntent *intent)
+{
+    memcpy(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
+    ai_think(player_index, intent);
+    memcpy(&g_ai_slots[player_index], &g_ai, sizeof(g_ai));
+}
+
+static void ai_think(u8 player_index, PlayerIntent *intent)
 {
     Player *player = &g_players[player_index];
     s16 x;
@@ -173,6 +195,8 @@ void ai_update(u8 player_index, PlayerIntent *intent)
 
     intent->move_x = 0;
     intent->move_y = 0;
+    intent->aim_x = 0;
+    intent->aim_y = 0;
     intent->hit_pressed = 0;
     intent->pause_pressed = 0;
 
@@ -198,15 +222,30 @@ void ai_update(u8 player_index, PlayerIntent *intent)
     x = FROM_FP(player->x_fp);
     y = FROM_FP(player->y_fp);
 
-    if (player->state == PLAYER_STATE_ACTIVE) {
+    /* Committed to a swing: plant the feet (the swing check assumed the
+     * current position) and hold the aim through the active frames. */
+    if (player_is_swinging(player)) {
         ai_choose_aim(player, intent);
         return;
     }
 
-    if (ball_incoming(player)) {
+    if (ball_incoming(player) && g_ai.incoming_frames < 255)
+        ++g_ai.incoming_frames;
+    else if (!ball_incoming(player))
+        g_ai.incoming_frames = 0;
+
+    if (ball_incoming(player) &&
+            g_ai.incoming_frames > g_ai.reaction_frames) {
         /* Replan only when a hit or bounce changed the trajectory, or while
          * chasing a bounced ball (cheap linear lookahead). */
         key = (u8)((g_ball.last_hitter << 4) | (g_ball.bounce_count & 15));
+        if (g_game_state.shot_serial != g_ai.seen_shot) {
+            /* A new incoming shot: decide once whether we are late. */
+            g_ai.seen_shot = g_game_state.shot_serial;
+            ++g_ai.returns;
+            g_ai.late_this_ball = g_ai.late_period &&
+                (g_ai.returns % g_ai.late_period) == 0;
+        }
         if (key != g_ai.plan_key || g_ball.bounce_count > 0) {
             ai_plan_intercept(player);
             g_ai.plan_key = key;
@@ -222,7 +261,7 @@ void ai_update(u8 player_index, PlayerIntent *intent)
     }
 
     if (!g_ai.has_target) {
-        g_ai.target_x = AI_RECOVER_X;
+        g_ai.target_x = player->team ? AI_RECOVER_X : 256 - AI_RECOVER_X;
         g_ai.target_y = AI_RECOVER_Y;
     }
     intent->move_x = move_toward(x, g_ai.target_x);

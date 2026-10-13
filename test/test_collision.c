@@ -123,25 +123,25 @@ static void test_directional_target_lanes(void)
 
     reset_fixture();
     players[0].state = PLAYER_STATE_ACTIVE;
-    intents[0].move_y = -1;
+    intents[0].aim_y = -1;
     collision_resolve_player_hits(&ball, players, intents, MAX_PLAYERS);
     assert_lands_near(HIT_TARGET_NEUTRAL_RIGHT, HIT_TARGET_LANE_TOP);
 
     reset_fixture();
     players[0].state = PLAYER_STATE_ACTIVE;
-    intents[0].move_y = 1;
+    intents[0].aim_y = 1;
     collision_resolve_player_hits(&ball, players, intents, MAX_PLAYERS);
     assert_lands_near(HIT_TARGET_NEUTRAL_RIGHT, HIT_TARGET_LANE_BOTTOM);
 
     reset_fixture();
     players[0].state = PLAYER_STATE_ACTIVE;
-    intents[0].move_x = 1;
+    intents[0].aim_x = 1;
     collision_resolve_player_hits(&ball, players, intents, MAX_PLAYERS);
     assert_lands_near(HIT_TARGET_DEEP_RIGHT, HIT_TARGET_LANE_CENTER);
 
     reset_fixture();
     players[0].state = PLAYER_STATE_ACTIVE;
-    intents[0].move_x = -1;
+    intents[0].aim_x = -1;
     collision_resolve_player_hits(&ball, players, intents, MAX_PLAYERS);
     assert_lands_near(HIT_TARGET_SHORT_RIGHT, HIT_TARGET_LANE_CENTER);
 }

@@ -35,23 +35,23 @@ static void serve_select_target(const Player *server,
         box_y = (COURT_SIDELINE_TOP + COURT_CENTERLINE_Y) / 2;
     else
         box_y = (COURT_CENTERLINE_Y + COURT_SIDELINE_BOTTOM) / 2;
-    if (intent->move_y < 0)
+    if (intent->aim_y < 0)
         box_y -= SERVE_TARGET_LANE_SHIFT;
-    else if (intent->move_y > 0)
+    else if (intent->aim_y > 0)
         box_y += SERVE_TARGET_LANE_SHIFT;
     g_serve_state.aim_y = box_y;
 
     if (server->team == 0) {
-        if (intent->move_x > 0)
+        if (intent->aim_x > 0)
             g_serve_state.aim_x = SERVE_TARGET_DEEP_RIGHT;
-        else if (intent->move_x < 0)
+        else if (intent->aim_x < 0)
             g_serve_state.aim_x = SERVE_TARGET_SHORT_RIGHT;
         else
             g_serve_state.aim_x = SERVE_TARGET_NEUTRAL_RIGHT;
     } else {
-        if (intent->move_x < 0)
+        if (intent->aim_x < 0)
             g_serve_state.aim_x = SERVE_TARGET_DEEP_LEFT;
-        else if (intent->move_x > 0)
+        else if (intent->aim_x > 0)
             g_serve_state.aim_x = SERVE_TARGET_SHORT_LEFT;
         else
             g_serve_state.aim_x = SERVE_TARGET_NEUTRAL_LEFT;
@@ -68,6 +68,7 @@ static void serve_contact(const PlayerIntent *intent)
     g_ball.last_hitter = g_serve_state.server_index;
     g_ball.bounce_count = 0;
     g_ball.rally_state = BALL_RALLY_LIVE;
+    ++g_game_state.shot_serial;
     g_serve_state.landing_pending = 1;
     g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_SERVE;
     server->contact_consumed = 1;
