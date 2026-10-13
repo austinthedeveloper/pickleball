@@ -23,15 +23,18 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 - [x] `M3-ASSET-01` Make asset conversion non-interactive and part of `assets`/normal builds.
   - Accept: clean regeneration succeeds with pinned tools.
   - Verified: `make` runs `tools/generate_assets.py` (stdlib only) before every build; Pillow is needed only for the authoring tools under `tools/art/`.
-- [ ] `M3-ASSET-02` Validate indexed color roles, dimensions, frame order, anchors, and tile budget.
+- [x] `M3-ASSET-02` Validate indexed color roles, dimensions, frame order, anchors, and tile budget.
   - Accept: deliberate invalid fixtures fail with useful messages.
+  - Verified: `tools/test_asset_validation.py` (run by `make check`) breaks scene size, foot anchor, colour index, BG palette 0, a projected court line (PROJ-04), and the OBJ tile budget; each fails with a specific message.
 - [x] `M3-ASSET-03` Export four player palettes against one player tile set.
   - Accept: stress scene cycles four clearly distinguishable variants without duplicate graphics bytes.
   - Verified: the stress scene composes all four palettes from parts onto OBJ palettes 0-3 and rotates them over the single player tile set.
-- [ ] `M3-ASSET-04` Produce asset manifest/build report.
+- [x] `M3-ASSET-04` Produce asset manifest/build report.
   - Accept: report lists each generated file’s byte size, tiles/frames, palettes, and total OBJ budget.
-- [ ] `M3-ASSET-05` Verify clean-build reproducibility.
+  - Verified: `make dist` writes `dist/build-report.md` with every generated file's size and hash, tile counts, palettes, and OBJ budget.
+- [x] `M3-ASSET-05` Verify clean-build reproducibility.
   - Accept: two clean builds from identical sources produce identical generated asset hashes and ROM hash, or documented non-gameplay metadata is the only difference.
+  - Verified: `make repro` does two clean release builds; generated-asset and ROM hashes are identical.
 
 ## Four-player-ready seams
 
@@ -58,14 +61,17 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
   - Accept: no blocker/major defects and frame-overrun latch remains clear.
 - [ ] `M3-QA-03` Run NTSC real-hardware certification.
   - Accept: 15-minute soak, at least 3 matches, reset, pause, rematch, and cold boot pass.
-- [ ] `M3-QA-04` Review object, VRAM, ROM, stack/static-RAM, and generated-asset budgets.
+- [x] `M3-QA-04` Review object, VRAM, ROM, stack/static-RAM, and generated-asset budgets.
   - Accept: actual values appear in `dist/build-report.md`; no overlap/overflow warning.
+  - Verified: `dist/build-report.md` records ROM bank usage, VRAM map, OAM plan, tile budgets, and static RAM span; no overlap. Open item: BG1 uses 625 tiles against ADR-016's 512 plan (docs/09).
 - [ ] `M3-QA-05` Confirm internal ROM header and checksum/complement.
   - Accept: ROM inspection tool and hardware both recognize and boot the image.
+  - Progress: `tools/build_report.py` verifies title, LoROM/SlowROM, NTSC, no SRAM, and recomputes the checksum; MesenCE boots it. Real-hardware boot pending (M3-QA-03).
 - [ ] `M3-QA-06` Close or document every defect.
   - Accept: zero blockers/majors; every accepted minor has reproduction and reason to defer.
-- [ ] `M3-DIST-01` Produce distribution bundle.
+- [x] `M3-DIST-01` Produce distribution bundle.
   - Accept: versioned ROM, checksum, build report, controls/rules readme, source revision, and hardware log are present.
+  - Verified: `make dist` bundles the versioned ROM, SHA-256, build report, player guide (controls/rules), source revision, and hardware log.
 
 ## Exit criteria
 

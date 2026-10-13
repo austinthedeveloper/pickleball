@@ -46,24 +46,29 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 
 Every implementation task lives on exactly one milestone sheet. Mark a task `[x]` in the same commit that satisfies its acceptance check. Do not mark parent exit criteria complete until every required child task and test is complete.
 
-## Build the M1 ROM
+## Build and play
 
-The repository now contains the M1 bootable-court implementation. With the
-pinned PVSnesLib 4.6.0 sibling install shown in `toolchain/README.md`:
+With the pinned PVSnesLib 4.6.0 sibling install described in `toolchain/README.md`:
 
 ```sh
-make check
-make debug
-make release
-make hardware-test
-make dist
+make check          # host tests, asset validation fixtures, PROJ checks
+make release        # build/release/pickleball-0.3.0-release-<id>.sfc
+make debug          # adds the debug overlay, landing marker, and stress scene
+make dist           # dist/: ROM, SHA-256, build report, player guide, hardware log
+make repro          # two clean builds must produce identical hashes
+make smoke SMOKE=m2 # headless MesenCE run of test/smoke/m2.timeline
+make release PROFILE=1  # per-stage scanline profiler (see include/profile.h)
 ```
 
-Debug and hardware-test builds show the build ID, P1 coordinates, and pause
-state on BG3. Use the D-pad to move P1 and Start to pause. Build artifacts are
-written below `build/`; the canonical ROM to load in an emulator or flash cart
-is the release `.sfc` below `dist/`. Root-level ROM files are temporary
-PVSnesLib linker outputs and are ignored by Git.
+The ROM boots into a CPU-vs-CPU demo behind the title; Start begins a match.
+Controls and rules are in [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md). In
+debug and hardware-test builds, pausing shows the build ID and Multitap
+status, and Select opens the OBJ stress scene. Build artifacts are written
+below `build/`; the canonical ROM is the release `.sfc` in `dist/`.
+
+Art sources live in `assets/source/` as indexed PNGs plus palette part files.
+`tools/art/` holds the authoring scripts that created them (Pillow required);
+normal builds need only the Python standard library.
 
 ## POC success test
 

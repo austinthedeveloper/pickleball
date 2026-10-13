@@ -1,6 +1,6 @@
 PVSNESLIB_HOME ?= ../pvsneslib
 CONFIG ?= debug
-VERSION_NAME := 0.1.0
+VERSION_NAME := 0.3.0
 BUILD_ID ?= $(shell id=$$(git rev-parse --short HEAD 2>/dev/null || echo dev); \
 	if test -n "$$(git status --porcelain 2>/dev/null)"; then \
 		fingerprint=$$({ git diff --binary HEAD; git status --porcelain; } | \
@@ -9,7 +9,7 @@ BUILD_ID ?= $(shell id=$$(git rev-parse --short HEAD 2>/dev/null || echo dev); \
 	else echo "$$id"; fi)
 ROMNAME := pickleball-$(VERSION_NAME)-$(CONFIG)-$(BUILD_ID)
 RELEASE_ROM := pickleball-$(VERSION_NAME)-release-$(BUILD_ID)
-ROMTITLE := PICKLEBALL 94 M1
+ROMTITLE := PICKLEBALL 94
 
 export ROMNAME ROMTITLE
 
@@ -38,7 +38,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke
+.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist smoke repro
 
 all: debug
 
@@ -68,6 +68,7 @@ assets:
 
 asset-check: assets
 	@python3 tools/generate_assets.py --check
+	@python3 tools/test_asset_validation.py
 
 HOST_CORE := src/ai.c src/ball.c src/collision.c src/court.c src/game.c \
 	src/input_state.c src/match.c src/player.c src/projection.c src/rules.c \
@@ -107,13 +108,33 @@ clean: cleanBuildRes cleanRom cleanLogs
 
 dist: release
 	@mkdir -p dist
-	@rm -f dist/pickleball-*.sfc dist/pickleball-*.sym dist/pickleball-*.map \
-		dist/pickleball-*.sha256 dist/pickleball-*-build.txt
+	@rm -f dist/pickleball-* dist/README.md dist/hardware-log.md
 	@cp build/release/$(RELEASE_ROM).sfc dist/$(RELEASE_ROM).sfc
 	@cp build/release/$(RELEASE_ROM).sym dist/$(RELEASE_ROM).sym
 	@cp build/release/$(RELEASE_ROM).map dist/$(RELEASE_ROM).map
-	@shasum -a 256 dist/$(RELEASE_ROM).sfc > dist/$(RELEASE_ROM).sha256
+	@cd dist && shasum -a 256 $(RELEASE_ROM).sfc > $(RELEASE_ROM).sha256
 	@python3 tools/build_report.py --config release --build-id $(BUILD_ID) \
-		--rom dist/$(RELEASE_ROM).sfc --output dist/$(RELEASE_ROM)-build.txt
+		--rom dist/$(RELEASE_ROM).sfc --output dist/build-report.md
+	@cp docs/PLAYER_GUIDE.md dist/README.md
+	@cp test/hardware-log.md dist/hardware-log.md
+	@{ echo "version: $(VERSION_NAME)"; echo "build_id: $(BUILD_ID)"; \
+		echo "commit: $$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
+		echo "branch: $$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"; \
+		} > dist/source-revision.txt
 	@echo "Distribution written to dist/"
+
+# M3-ASSET-05: two clean release builds must produce identical generated
+# assets and ROM bytes.
+repro:
+	@$(MAKE) --no-print-directory clean >/dev/null
+	@$(MAKE) --no-print-directory release >/dev/null
+	@mkdir -p build-repro && shasum -a 256 assets/generated/* \
+		build/release/*.sfc | sed 's|build/release/.*sfc|ROM|' > build-repro/a.txt
+	@$(MAKE) --no-print-directory clean >/dev/null
+	@$(MAKE) --no-print-directory release >/dev/null
+	@shasum -a 256 assets/generated/* build/release/*.sfc | \
+		sed 's|build/release/.*sfc|ROM|' > build-repro/b.txt
+	@diff build-repro/a.txt build-repro/b.txt && \
+		echo "reproducible: generated assets and ROM hashes match"; \
+		status=$$?; rm -rf build-repro; exit $$status
 

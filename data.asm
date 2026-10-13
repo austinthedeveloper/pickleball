@@ -25,9 +25,6 @@ hud_palette_end:
 obj_tiles:
 .incbin "assets/generated/obj.pic"
 obj_tiles_end:
-player_palettes:
-.incbin "assets/generated/player.pal"
-player_palettes_end:
 objects_palette:
 .incbin "assets/generated/objects.pal"
 objects_palette_end:

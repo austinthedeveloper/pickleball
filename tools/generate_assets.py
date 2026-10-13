@@ -526,9 +526,21 @@ def generated_files():
 
 
 def main():
+    global SRC, PALETTE_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--source", type=Path,
+                        help="alternate assets/source (validation fixtures)")
+    parser.add_argument("--validate-only", action="store_true",
+                        help="run every validation without writing outputs")
     args = parser.parse_args()
+    if args.source:
+        SRC = args.source
+        PALETTE_DIR = SRC / "palettes"
+    if args.validate_only:
+        generated_files()
+        print("asset validation passed")
+        return
     expected, budget = generated_files()
     OUT.mkdir(parents=True, exist_ok=True)
     if args.check:
