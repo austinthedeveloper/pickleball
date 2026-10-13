@@ -35,7 +35,8 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 4. [Sprite and Asset Pipeline](docs/03_SPRITE_ASSET_PIPELINE.md)
 5. [Input and Multitap Plan](docs/04_INPUT_MULTITAP_PLAN.md)
 6. [Repository Bootstrap](docs/06_REPO_BOOTSTRAP.md)
-7. [Master Checklist](milestones/00_MASTER_CHECKLIST.md)
+7. [Mockup Conflict Decisions](docs/10_MOCKUP_DECISIONS.md)
+8. [Master Checklist](milestones/00_MASTER_CHECKLIST.md)
 
 ## Milestone sheets
 

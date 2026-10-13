@@ -20,19 +20,23 @@ Solve sprite reuse structurally: one body tile set, palette-defined variants, ho
 
 Every player frame uses the same indexed color roles:
 
-| Index | Role |
-|---:|---|
-| 0 | Transparent; never used for visible pixels |
-| 1 | Outline |
-| 2–4 | Skin ramp |
-| 5–7 | Shirt/team ramp |
-| 8–10 | Shorts/accent ramp |
-| 11–12 | Shoe/racket dark/light |
-| 13 | Highlight |
-| 14 | Impact flash-compatible light |
-| 15 | Reserved |
+Contract v2 ([ADR-013](10_MOCKUP_DECISIONS.md#adr-013--palette-contract-v2-and-runtime-palette-composition)):
 
-The first four variants are `P1_BLUE`, `P2_RED`, `P3_GREEN`, and `P4_GOLD`. Skin and equipment indices may remain identical across palettes; team ramps change. Each palette is 16 SNES colors/32 bytes and shares transparency at index 0.
+| Index | Role | Source part |
+|---:|---|---|
+| 0 | Transparent | — |
+| 1 | Outline | Shared |
+| 2–4 | Skin ramp | Skin part |
+| 5–7 | Shirt/team ramp (also cap) | Team part |
+| 8–9 | Shorts ramp (was 3 colors) | Team part |
+| 10 | Shoe accent | Team part |
+| 11–13 | Paddle face dark / face light / edge-grip | Paddle part |
+| 14 | Highlight and impact-flash light (was 13 + 14) | Shared |
+| 15 | Hair | Skin part |
+
+Each player's 16-color OBJ palette is composed at match start from the shared, team, skin, and paddle parts and uploaded once during the match-setup forced blank. The POC uses one skin part and one standard paddle part per team color, so its output equals fixed palettes.
+
+The first four variants are `PAL_BLUE`, `PAL_RED`, `PAL_GREEN`, and `PAL_GOLD`. Palettes are assigned per match; slot number never implies color ([ADR-010](10_MOCKUP_DECISIONS.md#adr-010--palette-decoupled-from-player-slot)). Each palette is 16 SNES colors/32 bytes and shares transparency at index 0.
 
 ## Required player frames
 
@@ -56,7 +60,9 @@ assets/
     player_master.aseprite
     court_master.tmx
     palettes/
-      players.gpl
+      team_*.json
+      skin_*.json
+      paddle_*.json
   export/
     player_indexed.png
     court_indexed.png
@@ -70,7 +76,6 @@ assets/
     asset_manifest.h
   manifest/
     player_frames.json
-    palettes.json
 ```
 
 Only `source`, `export`, and manifests are authored. `generated` is reproducible and may be cleaned. If the chosen tool produces differently named binary extensions, document the mapping without changing the conceptual split.
@@ -94,10 +99,11 @@ Reserve stable IDs so draw order and overflow behavior are reviewable:
 |---|---|
 | 0 | Ball |
 | 1 | Ball shadow |
-| 2–5 | Player bodies 1–4 |
+| 2–5 | Player bodies, sorted nearest-first each frame ([ADR-012](10_MOCKUP_DECISIONS.md#adr-012--depth-sorted-player-bodies-in-oam)) |
 | 6–9 | Player shadows 1–4 |
 | 10–13 | Impact effects reserve |
-| 14–127 | Hidden/reserved |
+| 14–17 | Accessories 1–4 ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)) |
+| 18–127 | Hidden/reserved |
 
 Confirm whether the selected PVSnesLib API expects byte offsets (`0, 4, 8...`) or logical indices at each call site. Wrap library calls in `render_obj_*` helpers so the game never mixes conventions.
 
@@ -121,7 +127,8 @@ For later characters, prefer this order:
 - [ ] Flipped racket/pose does not create an anatomical or handedness problem.
 - [ ] Every frame uses only declared palette roles.
 - [ ] Frame anchors do not jitter.
-- [ ] Worst-row object count remains at or below 26 planned slivers.
+- [ ] Worst-row object count remains at or below 30 planned slivers.
+- [ ] Each accessory is one 8×8 object in its owner's palette (hair index 15) at OAM 14–17, with a per-frame offset that mirrors around the body anchor under horizontal flip.
 - [ ] Asset conversion can be repeated from a clean checkout.
 - [ ] Manifest report records tile, palette, and byte totals.
 

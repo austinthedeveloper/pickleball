@@ -2,7 +2,7 @@
 
 Status: **POC rules locked**
 
-## Screen and world coordinates
+## World coordinates (rules space)
 
 Simulation uses signed 8.8 fixed-point values. Whole-pixel court anchors:
 
@@ -19,6 +19,24 @@ Simulation uses signed 8.8 fixed-point values. Whole-pixel court anchors:
 | Net height | z = 12 px at crossing |
 
 These are initial tuning values. Constants belong in one court-definition module; background construction, player clamps, serve boxes, line calls, and AI must read from the same definitions.
+
+## Screen projection
+
+Gameplay never leaves the rectangular world coordinates above; only presentation projects them into a trapezoidal screen court ([ADR-011](10_MOCKUP_DECISIONS.md#adr-011--perspective-court-with-world-to-screen-projection)).
+
+```text
+s(y)      = per-row horizontal scale, 8.8 fixed point, from a ROM lookup table
+screen_x  = 128 + (((world_x - 128) * s(world_y)) >> 8)    // 32-bit intermediate
+screen_y  = world_y                                         // no vertical foreshortening in POC
+ball draw = (screen_x, screen_y - z)                        // z unscaled in POC
+shadow    = (screen_x, screen_y)
+```
+
+- `s` is linear in `y`: 0.84 (215/256) at the far sideline y=60 and 1.00 (256/256) at the near sideline y=195. Rows outside the court extrapolate linearly and clamp at y 0..223.
+- The net plane x = 128 maps to screen x = 128 on every row, so the net stays a vertical divider.
+- The asset generator emits the table as `assets/generated/court_projection.h` and rasterizes the court lines through it; the game includes the same header. Both round half up after the shift.
+- Input stays in world space: Up moves along world −y even though that path slants slightly on screen.
+- Players and ball do not scale with depth; hit reach is identical in world space.
 
 ## Controls
 
@@ -68,7 +86,7 @@ Per frame:
 3. If `z <= 0`, set `z = 0`, resolve a court bounce, and increment the side’s bounce count.
 4. When the x segment crosses the net plane, fault if interpolated z is below net height.
 5. When the ground position leaves the court, call out at the first ground contact, not while airborne.
-6. Draw the shadow at `(x, y)` and the ball at `(x, y - z)`.
+6. Project `(x, y)` to screen space; draw the shadow at the projected `(screen_x, screen_y)` and the ball at `(screen_x, screen_y - z)`.
 
 Suggested starting tunables:
 

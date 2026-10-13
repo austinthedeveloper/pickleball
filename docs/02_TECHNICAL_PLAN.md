@@ -31,7 +31,7 @@ The order is fixed so behavior remains deterministic:
 5. Update serve or live ball physics.
 6. Resolve ball/player, net, ground, and court events.
 7. Apply score/state transitions.
-8. Select animation frames and build shadow/player/ball OAM entries.
+8. Project world positions to screen space, select animation frames, and build shadow/player/ball OAM entries.
 9. Queue only required VRAM/CGRAM/OAM work.
 10. Wait for VBlank and commit presentation work.
 
@@ -51,6 +51,7 @@ No gameplay mutation occurs from rendering functions.
 | `src/serve.c/.h` | Serve setup, toss, diagonal validation |
 | `src/rules.c/.h` | Two-bounce tracking, faults, scoring |
 | `src/ai.c/.h` | Landing prediction and CPU intent |
+| `src/projection.c/.h` | World-to-screen projection over the generated `court_projection.h` table (may be header-only) |
 | `src/render.c/.h` | Background setup and OAM construction |
 | `src/hud.c/.h` | Score, state banners, debug overlay |
 | `src/audio_events.c/.h` | No-op POC event seam |
@@ -68,7 +69,7 @@ MAX_BALLS = 1
 MAX_HUMAN_PADS = 4
 ```
 
-Each player has an active flag, team, logical input slot, CPU flag, fixed-point position/velocity, facing, state, state timer, palette ID, animation/frame, and “contact already consumed” flag. POC activates player slots 0 and 2, leaving 1 and 3 inactive so doubles positions can be added without renumbering teams.
+Each player has an active flag, team, logical input slot, CPU flag, fixed-point position/velocity, facing, state, state timer, palette ID, animation/frame, and “contact already consumed” flag. The palette is assigned from match config, never derived from slot; uniqueness is asserted in debug builds ([ADR-010](10_MOCKUP_DECISIONS.md#adr-010--palette-decoupled-from-player-slot)). POC activates player slots 0 and 2, leaving 1 and 3 inactive so doubles positions can be added without renumbering teams.
 
 ## Fixed-point and arithmetic rules
 
@@ -83,18 +84,18 @@ Each player has an active flag, team, logical input slot, CPU flag, fixed-point 
 
 The hardware can hold 128 objects but only 32 objects and 34 8-pixel-wide object slivers can survive on one scanline. Design to the sliver limit.
 
-Worst intended gameplay row with four future players aligned:
+Worst intended gameplay row with four future players aligned ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)):
 
-| Object | Count | Width | Slivers each | Total |
-|---|---:|---:|---:|---:|
-| Players | 4 | 32 px | 4 | 16 |
-| Player shadows | 4 | 8 px | 1 | 4 |
-| Ball | 1 | 8 px | 1 | 1 |
-| Ball shadow | 1 | 8 px | 1 | 1 |
-| Impact effects reserve | 4 | 8 px | 1 | 4 |
-| **Worst planned total** | **14** |  |  | **26** |
+| Object | Count | Slivers |
+|---|---:|---:|
+| Players | 4 | 16 |
+| Player shadows | 4 | 4 |
+| Accessories | 4 | 4 |
+| Ball + shadow | 2 | 2 |
+| Impact reserve | 4 | 4 |
+| **Total** | **18** | **30 / 34** |
 
-That leaves eight slivers of safety. HUD and court lines are backgrounds, never objects. Debug overlays use BG3. If an effect needs more than this reserve, it must document its worst-row calculation.
+That leaves four slivers of safety. HUD and court lines are backgrounds, never objects. Debug overlays use BG3. If an effect needs more than this reserve, it must document its worst-row calculation.
 
 Assign low OAM indices to ball and player bodies before cosmetic effects. Hide unused objects with the library’s supported hide operation; do not park them at the problematic offscreen X value `$100`.
 
@@ -139,3 +140,15 @@ This is a planning budget, not permission to overlap regions. Record actual link
 | `hardware-test` | Release behavior plus build ID and compact test screen |
 
 Every ROM filename includes project, semantic version, configuration, and short commit ID where available.
+
+## Host checks
+
+In addition to the physics, rules, and asset checks in `05_TEST_PLAN.md`, `make check` runs the projection checks from [ADR-011](10_MOCKUP_DECISIONS.md#adr-011--perspective-court-with-world-to-screen-projection):
+
+| ID | Check | Expected |
+|---|---|---|
+| PROJ-01 | Host: table monotonic, `s(y)` within [0.75, 1.10] | Pass |
+| PROJ-02 | Host: net x = 128 maps to 128 on every row | Pass |
+| PROJ-03 | Host: every projected court corner within x 8..247 | Pass |
+| PROJ-04 | Host: every line pixel in exported court art equals projected constant ±0 px | Pass |
+| PROJ-05 | Emulator: PHY-03 ball landing on a line draws its shadow on the painted line | Visual pass |

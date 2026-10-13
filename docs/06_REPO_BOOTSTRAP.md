@@ -11,12 +11,18 @@ Status: **Ready to execute**
   Makefile
   .gitignore
   docs/
-    product-brief.md
-    gameplay.md
-    technical.md
-    assets.md
-    testing.md
-    decisions/
+    00_PRODUCT_BRIEF.md
+    01_GAMEPLAY_SPEC.md
+    02_TECHNICAL_PLAN.md
+    03_SPRITE_ASSET_PIPELINE.md
+    04_INPUT_MULTITAP_PLAN.md
+    05_TEST_PLAN.md
+    06_REPO_BOOTSTRAP.md
+    07_DECISIONS_AND_RISKS.md
+    08_SOURCES.md
+    09_M1_VRAM_AND_BUILD.md
+    10_MOCKUP_DECISIONS.md
+    decisions/        # future standalone ADRs
   src/
   include/
   assets/

@@ -35,7 +35,7 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
   - Accept: simultaneous directions and hit edges remain independent across four slots.
 - [ ] `M3-OBJ-01` Implement four-player object stress scene.
   - Accept: 4 bodies + 4 shadows + ball + ball shadow + 4 effects display on shared rows without dropout.
-- [ ] `M3-OBJ-02` Record OAM order and worst-row 26-sliver plan beside the stress test.
+- [ ] `M3-OBJ-02` Record OAM order and worst-row 30-sliver plan beside the stress test.
   - Accept: effects cannot consume unreserved object IDs in review/build assertions.
 - [ ] `M3-IN-03` **OPTIONAL if hardware unavailable:** Validate physical Super Multitap detection and four pads.
   - Accept: each of four game slots displays independent held/pressed state on a real console.
