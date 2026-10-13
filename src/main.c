@@ -63,12 +63,12 @@ int main(void)
         while (1)
             ;
 #endif
-    g_attract = 0;
-    game_start_attract();
-    render_initialize();
     g_overrun_frames = 0;
     g_loop_count = 0;
     g_work_scanline = 0;
+    g_attract = 0;
+    game_start_attract();
+    render_initialize();
     g_work_scanline_max = 0;
     for (now = 0; now < PROFILE_STAGES; ++now) {
         g_stage_scanline_max[now] = 0;

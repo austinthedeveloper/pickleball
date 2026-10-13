@@ -66,8 +66,9 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 
 ## Verification
 
-- [ ] `M2-TEST-01` Automate PHY-01..05, HIT-01..02, and RUL-01..03 fixtures.
+- [x] `M2-TEST-01` Automate PHY-01..05, HIT-01..02, and RUL-01..03 fixtures.
   - Accept: all pass from a clean `check` run or deterministic debug harness.
+  - Verified: see `test/SCENARIOS.md`.
 - [ ] `M2-TEST-02` Add frame-overrun latch and exercise worst normal rally.
   - Progress: latch (`g_overrun_frames`, shown in the debug HUD) and `make release PROFILE=1` scanline profiler exist; rare spikes on hit/HUD-redraw frames remain.
   - Accept: latch remains clear for two complete emulator matches.

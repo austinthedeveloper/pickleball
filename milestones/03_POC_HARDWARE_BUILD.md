@@ -55,8 +55,9 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 
 ## Robustness and packaging
 
-- [ ] `M3-QA-01` Complete all deterministic scenarios in the test plan.
+- [x] `M3-QA-01` Complete all deterministic scenarios in the test plan.
   - Accept: results are recorded against the candidate build ID.
+  - Verified: `test/SCENARIOS.md` maps every scenario to its fixture; all pass in `make check`.
 - [ ] `M3-QA-02` Run two complete matches on each of two accuracy-focused emulator families.
   - Accept: no blocker/major defects and frame-overrun latch remains clear.
 - [ ] `M3-QA-03` Run NTSC real-hardware certification.
@@ -69,6 +70,7 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
   - Progress: `tools/build_report.py` verifies title, LoROM/SlowROM, NTSC, no SRAM, and recomputes the checksum; MesenCE boots it. Real-hardware boot pending (M3-QA-03).
 - [ ] `M3-QA-06` Close or document every defect.
   - Accept: zero blockers/majors; every accepted minor has reproduction and reason to defer.
+  - Progress: `docs/KNOWN_ISSUES.md` lists open items; #1 (frame overruns) and #2 (BG1 budget) need a decision.
 - [x] `M3-DIST-01` Produce distribution bundle.
   - Accept: versioned ROM, checksum, build report, controls/rules readme, source revision, and hardware log are present.
   - Verified: `make dist` bundles the versioned ROM, SHA-256, build report, player guide (controls/rules), source revision, and hardware log.

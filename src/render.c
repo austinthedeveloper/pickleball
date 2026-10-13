@@ -123,6 +123,7 @@ extern void oam_write(void);
 static void obj_hide(u8 id)
 {
     oam_in_id = id;
+    oam_in_x = 0;
     oam_in_y = 240;
     oam_write();
 }

@@ -15,6 +15,8 @@ s16 ball_retain(s16 value, s16 fraction_256)
 
 void ball_initialize(void)
 {
+    /* Zero padding bytes too: the struct is copied whole every step. */
+    memset(&g_ball, 0, sizeof(g_ball));
     g_ball.active = 1;
     g_ball.x_fp = TO_FP(BALL_START_X);
     g_ball.y_fp = TO_FP(BALL_START_Y);
