@@ -81,8 +81,8 @@ void render_apply_match_config(void)
                 g_match_config.variant[slot] != PLAYER_VARIANT_FEMALE)
             render_obj_hide(RENDER_OAM_ACCESSORIES + slot);
     for (team = 0; team < 2; ++team) {
-        s_hud_team_colors[team][0] = g_pal_hud[match_team_palette(team)][0];
-        s_hud_team_colors[team][1] = g_pal_hud[match_team_palette(team)][1];
+        s_hud_team_colors[team][0] = match_team_hud_colors(team)[0];
+        s_hud_team_colors[team][1] = match_team_hud_colors(team)[1];
     }
     s_palette_dirty = 1;
 }

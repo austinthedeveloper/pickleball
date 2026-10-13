@@ -30,7 +30,7 @@ typedef struct {
 /* Choices that persist (ADR-022). */
 typedef struct {
     u8 court[COURT_PARTS];      /* court colour preset per part; 0 DEFAULT */
-    u8 reserved;
+    u8 ladder;                  /* next opponent (ADR-023) */
 } SaveSettings;
 
 typedef struct {
@@ -57,6 +57,9 @@ void save_clear_records(void);
 /* A finished human match. vs_cpu: the opponents were all CPU (1P is always
  * on team 0). Updates the records and writes. */
 void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against);
+/* A win over a ladder opponent: the next one is up (after the last, the
+ * first again). Written with the match. */
+void save_advance_ladder(void);
 /* A finished point with this many shots; written with the match. */
 void save_record_rally(u8 shots);
 

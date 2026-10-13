@@ -11,6 +11,9 @@
 
 AiState g_ai;
 AiState g_ai_slots[MAX_PLAYERS];
+AiStyle g_ai_styles[MAX_PLAYERS];
+/* Style of the slot being updated (set by ai_update). */
+static const AiStyle *s_style;
 
 /* Slot being updated, and whether it shares its half with an active
  * teammate (doubles lanes, ADR-018). Set by ai_update. */
@@ -27,8 +30,11 @@ void ai_initialize(void)
 
     memset(&g_ai, 0, sizeof(g_ai));
     g_ai.plan_key = 0xff;
-    for (i = 0; i < MAX_PLAYERS; ++i)
+    for (i = 0; i < MAX_PLAYERS; ++i) {
         memcpy(&g_ai_slots[i], &g_ai, sizeof(g_ai));
+        g_ai_styles[i] = g_ai_default_style;
+    }
+    s_style = &g_ai_styles[0];
 }
 
 /*
@@ -110,30 +116,37 @@ static u8 ai_opponent_at_net(u8 team, s16 distance)
 /*
  * Shot choice at the swing press (ADR-019), deterministic: put-away drive
  * on a high ball near the net, lob over an opponent at the net, a dink as
- * every 4th shot, otherwise a standard shot that alternates deep and
- * neutral. contact_z is the ball height at contact.
+ * every Nth shot, otherwise a standard shot that alternates deep and
+ * neutral (or is always deep). The thresholds and periods are the slot's
+ * style (ADR-023); the default style is 14 px / 48 px, 44 px, every 4th.
+ * contact_z is the ball height at contact.
  */
 static void ai_plan_shot(const Player *player, fx contact_z)
 {
     u8 n = g_ai.shot_counter;
+    u8 dink = s_style->dink_period;
     s16 to_net = abs_s16(FROM_FP(player->x_fp) - COURT_NET_X);
 
-    if (contact_z >= TO_FP(AI_PUTAWAY_Z) && to_net < AI_PUTAWAY_NET_DISTANCE) {
+    if (contact_z >= TO_FP(s_style->putaway_z) &&
+            to_net < s_style->putaway_distance) {
         g_ai.planned_shot = SHOT_DRIVE;
         g_ai.planned_depth = 0;
-    } else if (ai_opponent_at_net(player->team, AI_LOB_NET_DISTANCE)) {
+    } else if (s_style->lob_distance &&
+            ai_opponent_at_net(player->team, s_style->lob_distance)) {
         g_ai.planned_shot = SHOT_SOFT;
         g_ai.planned_depth = 1;
-    } else if ((n & 3) == 3) {
+    } else if (dink && (n % dink) == dink - 1) {
         g_ai.planned_shot = SHOT_SOFT;
         g_ai.planned_depth = -1;
     } else {
         g_ai.planned_shot = SHOT_STANDARD;
-        g_ai.planned_depth = (n & 1) ? 1 : 0;
+        g_ai.planned_depth = (s_style->depth == AI_DEPTH_DEEP || (n & 1)) ?
+            1 : 0;
     }
 }
 
-/* Aim: away from the opponent's y, depth from the planned shot. */
+/* Aim (singles, by style): away from the opponent's y, at them, or a mixed
+ * pattern; depth from the planned shot. */
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
     const Player *opponent = &g_players[player->team ? 0 : 2];
@@ -147,8 +160,14 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
          * bottom by shot count. */
         intent->aim_y = ((g_ai.shot_counter ^ (g_ai.shot_counter >> 1)) & 1) ?
             -1 : 1;
-    else
+    else if (s_style->aim == AI_AIM_MIX)
+        intent->aim_y = ((g_ai.shot_counter ^ (g_ai.shot_counter >> 2)) & 1) ?
+            -1 : 1;
+    else {
         intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
+        if (s_style->aim == AI_AIM_BODY)
+            intent->aim_y = -intent->aim_y;
+    }
     intent->aim_x = g_ai.planned_depth * court_toward_net(player->team);
     intent->shot = g_ai.planned_shot;
 }
@@ -342,14 +361,19 @@ void ai_update(u8 player_index, PlayerIntent *intent)
 {
     s_slot = player_index;
     /* Constant indices (816-tcc multiplies for g_players[variable]). */
-    if (player_index == 0)
+    if (player_index == 0) {
         s_has_partner = g_players[1].active;
-    else if (player_index == 1)
+        s_style = &g_ai_styles[0];
+    } else if (player_index == 1) {
         s_has_partner = g_players[0].active;
-    else if (player_index == 2)
+        s_style = &g_ai_styles[1];
+    } else if (player_index == 2) {
         s_has_partner = g_players[3].active;
-    else
+        s_style = &g_ai_styles[2];
+    } else {
         s_has_partner = g_players[2].active;
+        s_style = &g_ai_styles[3];
+    }
     s_partner_human = s_has_partner &&
         g_input_owners[player_index ^ 1] == INPUT_OWNER_HUMAN;
     RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
@@ -450,7 +474,9 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     }
 
     if (!g_ai.has_target) {
-        g_ai.target_x = player->team ? AI_RECOVER_X : 256 - AI_RECOVER_X;
+        /* Home: the style's distance behind the net (default 80, x 208). */
+        g_ai.target_x = player->team ? COURT_NET_X + s_style->recover :
+            COURT_NET_X - s_style->recover;
         if (!s_has_partner)
             g_ai.target_y = AI_RECOVER_Y;
         else if (match_slot_lane_top(player_index))

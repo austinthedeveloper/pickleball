@@ -9,17 +9,18 @@ Inputs (authored, committed):
   assets/manifest/player_frames.json  frame order/names and team palettes.
   assets/source/paddles.json       paddle stats (ADR-020).
   assets/source/court_colors.json  court colour presets (ADR-022).
+  assets/source/opponents.json     CPU personalities (ADR-023).
   assets/source/select_scene.png   256x224 Player Select BG1 art (palettes 1-6).
   assets/source/select_portraits.png 192x96 BG2 portraits in palette roles.
 
 Outputs (disposable, assets/generated/): court.pic/.map/.pal, hud.pic/.pal,
 obj.pic, objects.pal, asset_frames.h, hud_tiles.h, palette_parts.h,
-paddle_stats.h, court_colors.h, select.pic/.map/.pal, portrait.pic, portrait_m/_f.map,
+paddle_stats.h, court_colors.h, opponents.h, select.pic/.map/.pal, portrait.pic, portrait_m/_f.map,
 court_projection.h, sizes.json.
 
 Validation (fails the build): tile budgets, frame anchors and palette roles,
-BG1 never using 4bpp palette 0 (ADR-016), PROJ-01..04 (ADR-011), and court
-colour contrast (ADR-022).
+BG1 never using 4bpp palette 0 (ADR-016), PROJ-01..04 (ADR-011), court
+colour contrast (ADR-022), and opponent style ranges (ADR-023).
 """
 import argparse
 import hashlib
@@ -37,6 +38,7 @@ from assetgen.hud import (HUD_TILE_BALL_ICON, HUD_TILE_BAR_OFF,  # noqa: E402
                           HUD_TILE_PANEL_TL, hud_assets)
 from assetgen.obj import obj_assets, palette_parts_header  # noqa: E402
 from assetgen.court_colors import court_colors_header  # noqa: E402
+from assetgen.opponents import opponents_header  # noqa: E402
 from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
 from assetgen.select import portrait_assets, scene_assets  # noqa: E402
@@ -92,6 +94,7 @@ def generated_files():
             manifest["palettes"], paddle_names).encode(),
         "paddle_stats.h": paddle_header.encode(),
         "court_colors.h": court_colors_header().encode(),
+        "opponents.h": opponents_header().encode(),
         "court_projection.h": projection.encode(),
         "asm_shared.inc": asm_include(header).encode(),
         "select.pic": select_pic,

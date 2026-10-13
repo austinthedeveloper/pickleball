@@ -62,6 +62,12 @@ outer area; maybe the lines), and the choice is used for later matches.
 
 ## Story mode: CPU personalities
 
+**Started:** [ADR-023](decisions/ADR-023-cpu-personalities.md) adds eight
+opponents (looks from palette parts, play styles, a saved ladder). Story
+screens (intro cards, portraits, trash talk) are not built yet. The notes
+below are the original plan; the shipped ladder order and tuning are in the
+ADR.
+
 A ladder of themed opponents. Each one is **data, not new code**: a look, a
 home court, and a set of play-style numbers fed into the existing CPU.
 

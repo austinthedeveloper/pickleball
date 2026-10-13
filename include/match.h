@@ -3,6 +3,7 @@
 
 #include "game_types.h"
 #include "input.h"
+#include "opponents.h"
 #include "paddle_stats.h"
 #include "palette_parts.h"
 
@@ -21,6 +22,8 @@ typedef struct {
     u8 paddle_id[MAX_PLAYERS];    /* PADDLE_* (ADR-020) */
     u8 variant[MAX_PLAYERS];      /* PLAYER_VARIANT_* */
     u8 human[MAX_PLAYERS];        /* 1P on slot 0, 2P on slot 2 */
+    u8 opponent;                  /* ADR-023 personality on slots 2-3, or
+                                     OPPONENT_NONE (the default CPU) */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */
@@ -41,6 +44,16 @@ void match_config_doubles(void);
  * variants (slots 1 and 3 female). */
 void match_config_select(u8 mode, const PlayerChoice *p1,
     const PlayerChoice *p2);
+/* The right team's CPUs become an opponent's captain (slot 2) and partner
+ * (slot 3): look, body variant, and paddle (ADR-023). Only when no human
+ * plays on that team; OPPONENT_NONE keeps the default CPU. */
+void match_config_opponent(u8 opponent);
+/* The opponent member (0 captain, 1 partner) playing the slot, or 0xff. */
+u8 match_slot_member(u8 slot);
+/* Play style of a CPU slot: its opponent member's, or the default. */
+const AiStyle *match_slot_style(u8 slot);
+/* BG3 label colours 1-2 for a team. */
+const u16 *match_team_hud_colors(u8 team);
 /* Nonzero when the slot plays in the configured mode. */
 u8 match_slot_active(u8 slot);
 /* Nonzero when every assigned palette is unique; asserted in debug builds. */

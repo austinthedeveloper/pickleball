@@ -1,5 +1,6 @@
 #include "input.h"
 #include "player.h"
+#include "save.h"
 #include "select.h"
 
 SelectState g_select;
@@ -110,4 +111,7 @@ void select_apply(void)
 {
     match_config_select(g_select.mode, &g_select.choice[0],
         g_select.humans == 2 ? &g_select.choice[1] : 0);
+    /* ADR-023: against the CPU, the next opponent on the ladder. */
+    if (g_select.humans == 1)
+        match_config_opponent(g_save.settings.ladder);
 }

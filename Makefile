@@ -82,7 +82,7 @@ HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/court.c src/court_style.c src/events.c src/fx.c src/game.c \
 	src/input_state.c src/match.c src/player.c src/projection.c src/rules.c \
 	src/save.c src/select.c src/serve.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents
 
 host-check: assets
 	@mkdir -p build/host
@@ -95,14 +95,16 @@ host-check: assets
 CC_HOST ?= cc
 check: host-check asset-check
 
-# Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE, MATCHES.
+# Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE, MATCHES,
+# OPPONENT (-1 the default CPU, else a ladder opponent, ADR-023).
 LATE ?= 4
 MATCHES ?= 20
+OPPONENT ?= -1
 stats: assets
 	@mkdir -p build/host
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
-	@build/host/match_stats $(LATE) $(MATCHES)
+	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT)
 
 # Golden emulator trace (docs/REFACTOR_PLAN.md R0): record before a
 # refactor, compare after; simulation state must stay identical.
@@ -115,10 +117,15 @@ MESEN_BIN ?= /Applications/Mesen.app/Contents/MacOS/Mesen
 SMOKE ?= m1
 SMOKE_FRAMES ?= 600
 
+MESEN_SAVES ?= $(HOME)/Library/Application Support/MesenCE/Saves
+
 # Headless MesenCE run of test/smoke/$(SMOKE).timeline against the debug ROM;
-# screenshots land in build/smoke/$(SMOKE)/ for review.
+# screenshots land in build/smoke/$(SMOKE)/ for review. The run starts from a
+# blank battery save (ADR-021/023) unless KEEP_SAVE=1.
 smoke: debug
 	@rm -rf build/smoke/$(SMOKE) && mkdir -p build/smoke/$(SMOKE)
+	@test "$(KEEP_SAVE)" = 1 || rm -f \
+		"$(MESEN_SAVES)/pickleball-$(VERSION_NAME)-debug-$(BUILD_ID).srm"
 	@SMOKE_TIMELINE=$(CURDIR)/test/smoke/$(SMOKE).timeline \
 		SMOKE_OUT=$(CURDIR)/build/smoke/$(SMOKE) SMOKE_FRAMES=$(SMOKE_FRAMES) \
 		"$(MESEN_BIN)" --testRunner --doNotSaveSettings --noAudio \

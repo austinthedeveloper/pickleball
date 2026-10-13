@@ -115,6 +115,16 @@ def court_entry_shared(spec):
     return spec
 
 
+def opponent_default_drift(spec):
+    spec["default_style"]["late_period"] += 1
+    return spec
+
+
+def opponent_too_fast(spec):
+    spec["opponents"][0]["players"][0]["style"]["speed"] = 30
+    return spec
+
+
 CASES = [
     ("scene must be 256x224", "court_scene.png", crop_scene,
      "court_scene.png must be 256x224"),
@@ -136,6 +146,10 @@ CASES = [
      court_lines_low_contrast, "MINT lines on DEFAULT contrast"),
     ("court colour entry in two parts (ADR-022)", "court_colors.json",
      court_entry_shared, "belongs to two parts"),
+    ("opponent default style = shipped CPU (ADR-023)", "opponents.json",
+     opponent_default_drift, "!= shipped CPU"),
+    ("opponent style range (ADR-023)", "opponents.json", opponent_too_fast,
+     "speed 30 outside"),
 ]
 
 

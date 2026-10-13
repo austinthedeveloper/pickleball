@@ -25,8 +25,11 @@ sources the ROM uses).
 | SAV-02 | `test_save.c: test_records`, `test_game_hooks`: record rules, once per human match, never in attract | PASS |
 | CRT-01 | `test_court_style.c`: DEFAULT equals the painted palette, presets touch only their part, editor wrap/cancel/keep (ADR-022) | PASS |
 | CRT-02 | Asset build: line and ball contrast on every surface (`tools/assetgen/court_colors.py`) | PASS |
-| CRT-03 | `test/smoke/court.timeline`: live preview, keep, cancel; persists into the next boot and a match | PASS (MesenCE smoke) |
-| SAV-03 | `test/smoke/records.timeline`: records page, erase, persistence across MesenCE runs (`.srm`) | PASS (MesenCE smoke) |
+| CRT-03 | `test/smoke/court.timeline`: live preview, keep, cancel; persists into the next boot (`KEEP_SAVE=1`) and a match | PASS (MesenCE smoke) |
+| OPP-01 | `test_opponents.c`: default style = shipped constants, config/looks/styles, Player Select takes the rung (ADR-023) | PASS |
+| OPP-02 | `test_opponents.c: test_ladder`: advance on a win, stay on a loss, wrap, saved, never in attract | PASS |
+| OPP-03 | `test_opponents.c: test_difficulty_order`: the first rung is beaten clearly more than the last | PASS |
+| SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
 
 ## Candidate
 

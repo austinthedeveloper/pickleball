@@ -3,8 +3,14 @@
 
 #include "ball.h"
 #include "input.h"
+#include "opponents.h"
 #include "player.h"
 
+/*
+ * The default CPU. Recover x, the late period, and the shot thresholds are
+ * also the default AiStyle (ADR-023); tools/assetgen/opponents.py fails the
+ * build if opponents.json's default_style drifts from them.
+ */
 enum {
     AI_PREDICT_MAX_STEPS = 60,
     AI_RECOVER_X = 208,           /* right team; mirrored for the left */
@@ -54,6 +60,9 @@ typedef struct {
  * each slot's state persists in g_ai_slots between frames. */
 extern AiState g_ai;
 extern AiState g_ai_slots[MAX_PLAYERS];
+/* Play style per slot (ADR-023), set when a match starts; outside AiState,
+ * which golden traces compare byte for byte. */
+extern AiStyle g_ai_styles[MAX_PLAYERS];
 
 /* Swing lookahead probe (exposed for test_ai.c's equivalence check). */
 typedef struct {

@@ -1,4 +1,5 @@
 #include <string.h>
+#include "opponents.h"
 #include "save.h"
 
 SaveData g_save;
@@ -107,6 +108,13 @@ static void save_bump(u16 *counter)
 {
     if (*counter < SAVE_COUNTER_MAX)
         ++*counter;
+}
+
+void save_advance_ladder(void)
+{
+    u8 next = g_save.settings.ladder + 1;
+
+    g_save.settings.ladder = next >= OPPONENT_COUNT ? 0 : next;
 }
 
 void save_record_rally(u8 shots)

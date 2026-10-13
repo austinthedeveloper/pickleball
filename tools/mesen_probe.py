@@ -61,7 +61,15 @@ def symbols(rom):
     return table
 
 
+# MesenCE keeps battery saves (ADR-021) per ROM file name. Runs start from
+# a blank save: the saved ladder (ADR-023) picks the CPU opponent.
+MESEN_SAVES = Path(os.environ.get(
+    "MESEN_SAVES",
+    Path.home() / "Library" / "Application Support" / "MesenCE" / "Saves"))
+
+
 def run(rom, timeline, frames, probes, every=False, shots_dir=None):
+    (MESEN_SAVES / (rom.stem + ".srm")).unlink(missing_ok=True)
     env = dict(os.environ, SMOKE_TIMELINE=str(timeline),
                SMOKE_FRAMES=str(frames), SMOKE_PROBES=",".join(probes),
                SMOKE_OUT=shots_dir or tempfile.gettempdir(),

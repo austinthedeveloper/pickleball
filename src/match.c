@@ -1,5 +1,6 @@
 #define PALETTE_PARTS_DEFINE
 #define PADDLE_STATS_DEFINE
+#define OPPONENTS_DEFINE
 #include "match.h"
 #include "player.h"
 
@@ -13,7 +14,8 @@ MatchConfig g_match_config = {
     { PADDLE_STANDARD, PADDLE_STANDARD, PADDLE_STANDARD, PADDLE_STANDARD },
     { PLAYER_VARIANT_MALE, PLAYER_VARIANT_FEMALE, PLAYER_VARIANT_MALE,
       PLAYER_VARIANT_FEMALE },
-    { 1, 0, 0, 0 }
+    { 1, 0, 0, 0 },
+    OPPONENT_NONE
 };
 #else
 MatchConfig g_match_config;
@@ -36,6 +38,47 @@ void match_config_defaults(void)
     g_match_config.human[0] = 1;
     g_match_config.palette_id[0] = PAL_BLUE;
     g_match_config.palette_id[2] = PAL_RED;
+    g_match_config.opponent = OPPONENT_NONE;
+}
+
+void match_config_opponent(u8 opponent)
+{
+    u8 slot;
+    u8 member;
+
+    g_match_config.opponent = OPPONENT_NONE;
+    if (opponent >= OPPONENT_COUNT || g_match_config.human[2] ||
+            g_match_config.human[3])
+        return;
+    g_match_config.opponent = opponent;
+    for (slot = 2; slot < MAX_PLAYERS; ++slot) {
+        member = slot - 2;
+        g_match_config.variant[slot] = g_opponent_variant[opponent][member];
+        g_match_config.paddle_id[slot] = g_opponent_paddle[opponent][member];
+    }
+}
+
+u8 match_slot_member(u8 slot)
+{
+    if (g_match_config.opponent == OPPONENT_NONE || slot < 2)
+        return 0xff;
+    return slot - 2;
+}
+
+const AiStyle *match_slot_style(u8 slot)
+{
+    u8 member = match_slot_member(slot);
+
+    if (member == 0xff)
+        return &g_ai_default_style;
+    return &g_opponent_styles[g_match_config.opponent][member];
+}
+
+const u16 *match_team_hud_colors(u8 team)
+{
+    if (team && g_match_config.opponent != OPPONENT_NONE)
+        return g_opponent_hud[g_match_config.opponent];
+    return g_pal_hud[match_team_palette(team)];
 }
 
 void match_config_doubles(void)
@@ -117,6 +160,16 @@ u8 match_config_palettes_unique(void)
  * 14 highlight, 15 hair. */
 void match_compose_palette(u8 slot, u16 out[16])
 {
+    u8 member = match_slot_member(slot);
+    u8 i;
+
+    if (member != 0xff) {
+        const u16 *look = g_opponent_palettes[g_match_config.opponent][member];
+
+        for (i = 0; i < 16; ++i)
+            out[i] = look[i];
+        return;
+    }
     match_compose_parts(g_match_config.palette_id[slot],
         g_match_config.skin_id[slot], g_match_config.paddle_id[slot], out);
 }

@@ -77,12 +77,17 @@ static void game_activate_players(void)
         player->active = active[i];
         player->cpu_controlled = g_input_owners[i] == INPUT_OWNER_CPU;
         player->max_speed_fp = player->cpu_controlled ?
-            PLAYER_CPU_MAX_SPEED_FP : PLAYER_MAX_SPEED_FP;
+            match_slot_style(i)->speed : PLAYER_MAX_SPEED_FP;
         player->palette = doubles ? i : player->team;
         player->variant = g_match_config.variant[i];
         player->paddle = g_match_config.paddle_id[i];
-        if (player->cpu_controlled)
-            g_ai_slots[i].late_period = AI_LATE_SHOT_PERIOD;
+        if (player->cpu_controlled) {
+            /* ADR-023: the slot's play style (the default CPU unless an
+             * opponent is set). */
+            g_ai_styles[i] = *match_slot_style(i);
+            g_ai_slots[i].late_period = g_ai_styles[i].late_period;
+            g_ai_slots[i].reaction_frames = g_ai_styles[i].reaction;
+        }
     }
 }
 
@@ -189,7 +194,11 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     if (g_game_state.team_score[winner] >= GAME_POINTS_TO_WIN) {
         g_game_state.match_winner = winner;
         game_set_phase(GAME_PHASE_MATCH_RESULT);
-        /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match. */
+        /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match.
+         * ADR-023: beating the ladder opponent brings on the next. */
+        if (!g_attract && winner == 0 &&
+                g_match_config.opponent != OPPONENT_NONE)
+            save_advance_ladder();
         if (!g_attract)
             save_record_match(g_match_config.mode,
                 !g_match_config.human[2], winner == 0,

@@ -9,6 +9,16 @@ or **RECORDS**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
 Player Select (or the court or records page).
 
+## Opponents
+
+Against the CPU you climb a ladder of eight opponents, each with their own
+look and style: the Hendersons, the Snowbirds, the Gym Bros, the Pirates,
+the Goth Club, the Surf Crew, the Twins, and the Champs. In singles you play
+the team's captain (the HUD shows `VS DAD`, for example); in doubles you and
+a CPU partner play the whole team. Win to face the next opponent the next
+time you start a match; lose and you face them again. After the Champs the
+ladder starts over. The records page shows your place.
+
 ## Court colours
 
 **COURT** sets the colours of the court surface, the ground around it, and

@@ -42,7 +42,7 @@
 #define TITLE_AREA_ROWS 10          /* menu or records: rows 12-21 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
 #define RECORDS_WIDTH 24
-#define RECORDS_ROWS 9
+#define RECORDS_ROWS 10
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
 #define COURT_PAGE_ROWS 5           /* the court box: header, gap, 3 parts */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
@@ -89,11 +89,16 @@ static u8 hud_versus_2p(void)
     return g_match_config.human[2];
 }
 
+static u8 hud_opponent_team(u8 team)
+{
+    return team && g_match_config.opponent != OPPONENT_NONE;
+}
+
 /* Singles: P1 / CPU (or P2). Doubles: the team's palette name
- * (ADR-010/018). */
+ * (ADR-010/018), or CPU for a ladder opponent (ADR-023). */
 static const char *team_name(u8 team)
 {
-    if (hud_doubles())
+    if (hud_doubles() && !hud_opponent_team(team))
         return s_palette_names[match_team_palette(team)];
     if (team)
         return hud_versus_2p() ? "P2" : "CPU";
@@ -163,6 +168,23 @@ static void hud_draw_score_digits(void)
     s_hud_score[1] = g_game_state.team_score[1];
 }
 
+/* "VS NAME" centred in a 12-cell panel interior (ADR-023): singles names
+ * the captain, doubles the team. */
+static void hud_versus(u8 row)
+{
+    const char *name = hud_doubles() ?
+        g_opponent_team[g_match_config.opponent] :
+        g_opponent_captain[g_match_config.opponent];
+    u8 length = 0;
+    u8 col;
+
+    while (name[length])
+        ++length;
+    col = CENTER_PANEL_COL + 1 + (CENTER_PANEL_WIDTH - 3 - length) / 2;
+    hud_text(col, row, HUD_PAL_WHITE, "VS");
+    hud_text(col + 3, row, HUD_PAL_TEAM_RIGHT, name);
+}
+
 /* Panels and labels never change during a match; drawn on full redraws. */
 static void hud_draw_scores(void)
 {
@@ -171,8 +193,11 @@ static void hud_draw_scores(void)
     hud_text(LEFT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(0),
         team_name(0));
     hud_panel(CENTER_PANEL_COL, SCORE_PANEL_ROW, CENTER_PANEL_WIDTH);
-    hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
-        hud_doubles() ? "  DOUBLES" : "ARCADE RULES");
+    if (!g_attract && !hud_doubles() && hud_opponent_team(1))
+        hud_versus(SCORE_TEXT_ROW);
+    else
+        hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
+            hud_doubles() ? "  DOUBLES" : "ARCADE RULES");
     hud_panel(RIGHT_PANEL_COL, SCORE_PANEL_ROW, SIDE_PANEL_WIDTH);
     hud_text(RIGHT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(1),
         team_name(1));
@@ -207,8 +232,11 @@ static void hud_draw_sub_panel(u8 wanted)
     hud_clear_rows(SUB_PANEL_ROW, 3);
     if (wanted == 1) {
         hud_panel(CENTER_PANEL_COL, SUB_PANEL_ROW, CENTER_PANEL_WIDTH);
-        hud_text(CENTER_PANEL_COL + 1, SUB_PANEL_ROW + 1, HUD_PAL_WHITE,
-            "ARCADE RULES");
+        if (hud_opponent_team(1))
+            hud_versus(SUB_PANEL_ROW + 1);
+        else
+            hud_text(CENTER_PANEL_COL + 1, SUB_PANEL_ROW + 1, HUD_PAL_WHITE,
+                "ARCADE RULES");
     } else if (wanted == 2) {
         hud_panel(CENTER_PANEL_COL, SUB_PANEL_ROW, CENTER_PANEL_WIDTH);
         hud_text(CENTER_PANEL_COL + 1, SUB_PANEL_ROW + 1, HUD_PAL_WHITE,
@@ -222,7 +250,7 @@ static const char *hud_point_text(u8 winner)
     static const char *const doubles[PAL_COUNT] = {
         "BLUE POINT", "RED POINT", "GREEN POINT", "GOLD POINT"
     };
-    if (hud_doubles())
+    if (hud_doubles() && !hud_opponent_team(winner))
         return doubles[match_team_palette(winner)];
     if (winner == 0)
         return "P1 POINT";
@@ -316,6 +344,28 @@ static void hud_record_mode_line(u8 row, const char *label, u8 mode)
 }
 
 /* Two menu items per call (half 0 or 1); the cursor marks the choice. */
+/* " LADDER 4/8       PIRATES ": the rung and the team up next (ADR-023). */
+static void hud_record_ladder(u8 row)
+{
+    u8 rung = g_save.settings.ladder;
+    const char *team;
+    char text[4];
+    u8 length = 0;
+
+    if (rung >= OPPONENT_COUNT)
+        rung = 0;
+    team = g_opponent_team[rung];
+    text[0] = (char)('1' + rung);
+    text[1] = '/';
+    text[2] = (char)('0' + OPPONENT_COUNT);
+    text[3] = 0;
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "LADDER");
+    hud_text(RECORDS_COL + 8, row, HUD_PAL_YELLOW, text);
+    while (team[length])
+        ++length;
+    hud_text(RECORDS_COUNT_COL + 4 - length, row, HUD_PAL_WHITE, team);
+}
+
 static void hud_title_menu(u8 choice, u8 half)
 {
     static const char *const items[TITLE_ENTRIES] = {
@@ -455,9 +505,12 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         hud_record_line(TITLE_MENU_ROW + 7, "SHUTOUTS",
             g_save.records.shutouts);
         return 0;
-    default:
+    case 7:
         hud_record_line(TITLE_MENU_ROW + 8, "LONGEST RALLY",
             g_save.records.longest_rally);
+        return 0;
+    default:
+        hud_record_ladder(TITLE_MENU_ROW + 9);
         return 1;
     }
 }
