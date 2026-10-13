@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ai.h"
 #include "ball.h"
 #include "collision.h"
@@ -20,6 +21,8 @@ void game_set_phase(u8 phase)
 
 void game_initialize(void)
 {
+    /* Zero padding too: the struct is compared whole by RST-01 and traces. */
+    memset(&g_game_state, 0, sizeof(g_game_state));
     g_game_state.paused = 0;
     g_game_state.last_fault = GAME_FAULT_NONE;
     g_game_state.point_winner = GAME_NO_TEAM;
