@@ -1,12 +1,12 @@
 # Known Issues
 
 Open defects and accepted minors for the M3 candidate (`M3-QA-06`). None
-are blockers. Items 1 and 2 need a decision before M3 sign-off.
+are blockers.
 
 | # | Severity | Issue | Reproduction | Status / reason |
 |---|---|---|---|---|
-| 1 | Major (if sustained) | Occasional single-frame CPU overruns: about 1.5% of frames in a match and about 5% in the attract demo on SlowROM. Spikes come from hit frames and HUD redraws. | Release ROM, play rallies; the debug overlay's `O` counter climbs. Measure with `make release PROFILE=1`. | Mitigated by 12.4 math, scratch structs, and the asm OAM writer. A FastROM build measured about 1.8% in the demo. Decide: FastROM (cartridge must support 120 ns ROM) or more assembly. |
-| 2 | Minor | BG1 scene needs 625 tiles, against ADR-016's 512-tile plan. | `dist/build-report.md`. | VRAM has room (docs/09). Decide: raise the budget, move scenery to BG2, or merge tiles. |
+| 1 | Minor | One-frame hitch when a point ends or a serve is set up, while the banner and HUD redraw (about 10 per 2,000 match frames). Zero overruns during live rallies; about 0.2% of frames in the title demo. | Release ROM; the debug overlay's `O` counter steps once per point. | Resolved for play by FastROM (ADR-017), the asm HUD fill, and cheaper HUD drawing. The remaining transition hitch is accepted: the screen is changing on that frame anyway. |
+| 2 | Resolved | BG1 scene used 625 tiles against the 512-tile plan. | — | BG1 budget raised to 28 KiB / 896 tiles (ADR-016 amended). |
 | 3 | Minor | Toss frame is rough (cheer redrawn 2026-10-12). | Watch the serve toss. | Placeholder art, allowed through M3 (docs/03). |
 | 4 | Minor | Doubles needs a new OBJ palette plan: only OBJ palettes 0–3 are exempt from shadow colour math. | — | Recorded in docs/09; vertical-slice work. |
 | 5 | Minor | A ball passing behind a far player still draws in front of them. | — | Accepted by ADR-012 (readability). |

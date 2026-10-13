@@ -37,9 +37,11 @@ void game_initialize(void)
 
 static void game_begin_serve(u8 serving_team)
 {
+    Player *player = g_players;
     u8 i;
-    for (i = 0; i < MAX_PLAYERS; ++i)
-        g_players[i].pose = PLAYER_POSE_NONE;
+
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player)
+        player->pose = PLAYER_POSE_NONE;
     serve_setup(serving_team);
     game_set_phase(GAME_PHASE_SERVE_SETUP);
 }
@@ -102,18 +104,26 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
     rules_process_ball_events(ball_events);
 }
 
+/* Walks a pointer: 816-tcc multiplies for every variable g_players[i]. */
+static void game_freeze_players(u8 winner)
+{
+    Player *player = g_players;
+    u8 i;
+
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
+        if (!player->active)
+            continue;
+        player->frozen = 1;
+        player->pose = player->team == winner ?
+            PLAYER_POSE_CHEER : PLAYER_POSE_NONE;
+    }
+}
+
 static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
 {
     u8 winner = g_game_state.point_winner;
-    u8 i;
 
-    for (i = 0; i < MAX_PLAYERS; ++i) {
-        if (!g_players[i].active)
-            continue;
-        g_players[i].frozen = 1;
-        g_players[i].pose = g_players[i].team == winner ?
-            PLAYER_POSE_CHEER : PLAYER_POSE_NONE;
-    }
+    game_freeze_players(winner);
 
     if (g_game_state.phase_timer < GAME_POINT_RESULT_MIN_FRAMES)
         return;
@@ -131,15 +141,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
 
 static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 {
-    u8 i;
-
-    for (i = 0; i < MAX_PLAYERS; ++i) {
-        if (!g_players[i].active)
-            continue;
-        g_players[i].frozen = 1;
-        g_players[i].pose = g_players[i].team == g_game_state.match_winner ?
-            PLAYER_POSE_CHEER : PLAYER_POSE_NONE;
-    }
+    game_freeze_players(g_game_state.match_winner);
     if (g_attract) {
         if (g_game_state.phase_timer >= GAME_ATTRACT_RESULT_FRAMES)
             game_start_attract();

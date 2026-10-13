@@ -12,7 +12,7 @@ An arcade pickleball game with the readable, physical feel of 16-bit dodgeball g
 
 - NTSC, 256×224, 60 Hz target.
 - Real unmodified SNES/Super Famicom compatibility.
-- Standard cartridge hardware only: no enhancement chip and no mandatory SRAM.
+- Standard cartridge hardware only: no enhancement chip and no mandatory SRAM. FastROM (120 ns ROM) is required; see ADR-017.
 - PVSnesLib with C first and assembly only after profiling proves a need.
 - One human on the left versus one CPU player on the right.
 - Static court with recognizable pickleball lines.

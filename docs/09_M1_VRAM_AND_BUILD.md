@@ -18,11 +18,9 @@ are uploaded once during forced blank.
 Regions do not overlap. `assets/generated/sizes.json` records every generated
 file's size, hash, and the tile counts above on each build.
 
-**Open budget item.** ADR-016 plans 16 KiB (512 tiles) of BG1 character data.
-The mock-derived scene needs 625 unique tiles (19.5 KiB) after flip-aware
-deduplication. VRAM has room for it, so nothing overlaps, but the plan and
-the art disagree. The options are to raise the BG1 budget, to move scenery to
-BG2 (which saves no VRAM), or to merge near-duplicate scene tiles.
+**BG1 budget.** ADR-016 (amended 2026-10-12) allows 28 KiB (896 tiles). The
+scene uses 625. 896 tiles is the most one screen can use, so this region
+cannot overflow.
 
 ## CGRAM
 
@@ -54,10 +52,12 @@ Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball, 1 ball shadow, 2–5 bodies
 sorted nearest-first, 6–9 shadows by slot (one 8×8 each), 10 spark, 11 debug
 landing marker (debug builds), 14–17 accessories (unused in the POC),
 18–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
-high-table X bit for negative x and parks hidden objects at y = 224 so a
-32×32 object cannot wrap to the top of the screen.
+high-table X bit for negative x and parks hidden objects as small objects at
+y = 240. That is below every evaluated line, so they never show and never count
+toward the PPU's 32-object range-over limit.
 
 ## ROM
 
-LoROM, SlowROM, NTSC, no SRAM; internal checksum and complement sum to
+LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), NTSC, no SRAM;
+internal checksum and complement sum to
 `0xffff`. `make dist` records the full ROM SHA-256 in the distribution report.

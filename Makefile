@@ -11,7 +11,11 @@ ROMNAME := pickleball-$(VERSION_NAME)-$(CONFIG)-$(BUILD_ID)
 RELEASE_ROM := pickleball-$(VERSION_NAME)-release-$(BUILD_ID)
 ROMTITLE := PICKLEBALL 94
 
-export ROMNAME ROMTITLE
+# FastROM (ADR-017): code runs from banks $80+ at 3.58 MHz with MEMSEL set by
+# the PVSnesLib FastROM runtime. Cartridges need 120 ns (or faster) ROM.
+FASTROM := 1
+
+export ROMNAME ROMTITLE FASTROM
 
 CONFIG_TAG := $(CONFIG)
 ifeq ($(CONFIG),debug)

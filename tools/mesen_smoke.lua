@@ -81,6 +81,7 @@ emu.addEventCallback(function()
         print(string.format("frame %d %s", frame, probeLine()))
     end
     if shots[frame] then
+        if os.getenv("SMOKE_NOSHOT") then frame = frame + 1; if frame >= total then emu.stop(0) end; return end
         local file = assert(io.open(
             string.format("%s/frame-%05d.png", out, frame), "wb"))
         file:write(emu.takeScreenshot())

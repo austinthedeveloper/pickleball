@@ -21,7 +21,8 @@ Status: **Living record**
 | [ADR-013](10_MOCKUP_DECISIONS.md#adr-013--palette-contract-v2-and-runtime-palette-composition) | Palette contract v2 with runtime palette composition | Hair role and independent paddle colors | — |
 | [ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object) | Body variants via an 8×8 accessory object | Female variant without a second body tile set | Distinct silhouette becomes a readability need |
 | [ADR-015](10_MOCKUP_DECISIONS.md#adr-015--paddle-selection-with-gameplay-stats-post-poc) | Paddle selection with gameplay stats (post-POC) | Player Select mockup; gated by a rules ADR | — |
-| [ADR-016](10_MOCKUP_DECISIONS.md#adr-016--scenery-hud-palettes-and-contact-effects) | Scenery, HUD palettes, and contact effects budget | CGRAM overlap and worst-row budget | BG1 exceeds its character budget |
+| [ADR-016](10_MOCKUP_DECISIONS.md#adr-016--scenery-hud-palettes-and-contact-effects) | Scenery, HUD palettes, and contact effects budget (BG1 budget raised to 28 KiB on 2026-10-12) | CGRAM overlap and worst-row budget | BG1 exceeds its character budget |
+| ADR-017 | FastROM (LoROM, map mode `$30`) | 816-tcc code needs the 3.58 MHz bus. It cut title-demo overruns from about 5% to 0.2% and match overruns during live play to zero. FastROM is standard SNES hardware, not an enhancement chip. | A target cartridge cannot provide 120 ns ROM |
 
 ## Risk register
 
@@ -37,6 +38,14 @@ Status: **Living record**
 | Coordinate art and rules diverge | Medium | High | Generator and game share one generated projection table; PROJ-04 enforced in `make check` | Line call disagrees with visible line |
 | PVSnesLib API changes | Medium | Medium | Pin release, wrap platform calls | Clean build breaks after tool update |
 | Player palette swap reduces skin diversity | Low (mitigated) | Medium | Mitigated by ADR-013: skin is an independent palette part chosen at select | Variants are hard to distinguish |
+
+### ADR-017 — FastROM
+
+**Decision.** Build LoROM FastROM: header map mode `$30`, code linked at banks `$80+`, and `MEMSEL` set by the PVSnesLib FastROM runtime. The ROM is still a plain cartridge with no enhancement chip and no SRAM.
+
+**Real-hardware requirement.** Every SNES and Super Famicom console supports FastROM access; it is a standard memory speed. The cartridge must have 120 ns or faster ROM. Common flash carts (FXPak/SD2SNES, EverDrive) and fast EPROM or flash reproduction boards meet this. A 150–200 ns EPROM board does not, and would crash or corrupt on real hardware even though emulators run it. Record the cartridge type in `test/hardware-log.md` for every hardware run.
+
+**Fallback.** `make release FASTROM=` builds SlowROM. It runs correctly but drops frames more often (about 1.5% of match frames).
 
 ## Deferred rule decisions
 

@@ -1,7 +1,7 @@
 # Hardware Test Log
 
 Use an unmodified NTSC SNES/Super Famicom and record console revision, flash
-cartridge, ROM checksum, duration, and every result from `docs/05_TEST_PLAN.md`.
+cartridge (it must support FastROM / 120 ns ROM; see ADR-017), ROM checksum, duration, and every result from `docs/05_TEST_PLAN.md`.
 
 No M1 hardware run has been recorded yet.
 

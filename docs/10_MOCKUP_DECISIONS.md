@@ -185,7 +185,9 @@ Four slivers remain. The OAM stress scene adds four accessories and must stay dr
 
 ## ADR-016 — Scenery, HUD palettes, and contact effects
 
-**Scenery.** Trees, fence, spectators, and sky share BG1 with the court within the 16 KiB character budget. The generator deduplicates tiles (including flipped matches) and the manifest reports the unique count. If scenery pushes BG1 over budget, it moves to BG2. In that case the debug landing marker moves to BG3. Spectators are static background tiles, never objects.
+**Scenery.** Trees, fence, spectators, and sky share BG1 with the court within the BG1 character budget. The generator deduplicates tiles (including flipped matches) and the manifest reports the unique count. If scenery pushes BG1 over budget, it moves to BG2. In that case the debug landing marker moves to BG3. Spectators are static background tiles, never objects.
+
+*Amended 2026-10-12:* the BG1 character budget is raised from 16 KiB (512 tiles) to 28 KiB (896 tiles, VRAM bytes `0x2000–0x8FFF`; see `09_M1_VRAM_AND_BUILD.md`). The mock-derived scene needs 625 unique tiles. 896 tiles is the most a single 256×224 screen can use, so BG1 cannot overflow its region. Moving scenery to BG2 would save no VRAM.
 
 **HUD palettes (CGRAM rule).** In Mode 1, BG3's eight 2bpp palettes occupy CGRAM 0–31, which overlaps 4bpp BG palettes 0 and 1. M1 already places the court in BG palette 1 (CGRAM 16–31). Therefore:
 - The HUD uses BG3 palettes 0–3 (CGRAM 0–15). Examples: title gold, team-left color, team-right color, neutral banner.

@@ -8,7 +8,7 @@ Status: **Implementation baseline**
 |---|---|
 | Console | Unmodified NTSC SNES/Super Famicom |
 | Toolchain | PVSnesLib, pinned release, C with optional isolated 65C816 assembly |
-| ROM | LoROM, no enhancement chip, no SRAM in POC |
+| ROM | LoROM FastROM (map mode $30, 120 ns ROM; ADR-017), no enhancement chip, no SRAM in POC |
 | Video | 256×224, Mode 1, non-interlaced |
 | Timing | Fixed 60 Hz simulation target; one VBlank-synchronized presentation per frame |
 | BG1 | 4bpp court tiles and markings |
@@ -105,7 +105,7 @@ Initial VRAM addresses are provisional and must be confirmed with the selected P
 
 | Region | Budget | Content |
 |---|---:|---|
-| BG1 character data | 16 KiB | Court tiles |
+| BG1 character data | 28 KiB (896 tiles; ADR-016 as amended) | Court and scenery tiles |
 | BG1 map | 2 KiB | 32×32 tilemap |
 | BG3 character data | 4 KiB | HUD font/icons |
 | BG3 map | 2 KiB | HUD/debug tilemap |

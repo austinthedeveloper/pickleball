@@ -1,4 +1,5 @@
 #include <snes.h>
+#include <string.h>
 #include "hud.h"
 #include "hud_tiles.h"
 #include "render.h"
@@ -8,13 +9,19 @@
 #define HUD_VFLIP 0x8000
 #define HUD_SPACE 32
 
-static u16 hud_map[32 * HUD_ROWS];
+/* Global so src/asm/hud_fill.asm can reach it. */
+u16 g_hud_map[32 * HUD_ROWS];
 static u8 hud_dirty;
 
-static u16 hud_entry(u16 tile, u8 palette)
-{
-    return tile | ((u16)palette << 10) | HUD_PRIORITY;
-}
+/* Inputs for hud_fill (src/asm/hud_fill.asm). */
+u16 hud_fill_index;
+u16 hud_fill_count;
+u16 hud_fill_value;
+extern void hud_fill(void);
+
+/* A macro: a 816-tcc call per tile made full redraws overrun the frame. */
+#define hud_entry(tile, palette) \
+    ((u16)(tile) | ((u16)(palette) << 10) | HUD_PRIORITY)
 
 static void hud_mark(u8 row)
 {
@@ -29,21 +36,24 @@ void hud_initialize(void)
 
 void hud_clear_rows(u8 first_row, u8 count)
 {
-    u16 i;
-    u16 end;
     u8 row;
 
-    i = (u16)first_row * 32;
-    end = i + (u16)count * 32;
-    for (; i < end; ++i)
-        hud_map[i] = HUD_TILE_CLEAR;
-    for (row = first_row; row < first_row + count; ++row)
+#ifdef HOST_TEST
+    memset(&g_hud_map[(u16)first_row * 32], 0, (u16)count * 64);
+#else
+    hud_fill_index = (u16)first_row * 32;
+    hud_fill_count = (u16)count * 32;
+    hud_fill_value = HUD_TILE_CLEAR;
+    hud_fill();
+#endif
+    for (row = first_row; row < first_row + count; row += HUD_BAND_ROWS)
         hud_mark(row);
+    hud_mark(first_row + count - 1);
 }
 
 void hud_tile(u8 col, u8 row, u16 entry)
 {
-    hud_map[(u16)row * 32 + col] = entry;
+    g_hud_map[(u16)row * 32 + col] = entry;
     hud_mark(row);
 }
 
@@ -57,7 +67,7 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
             c -= 'a' - 'A';
         if (c < 32 || c > 95)
             c = '?';
-        hud_map[index++] = hud_entry(c, palette);
+        g_hud_map[index++] = hud_entry(c, palette);
         ++col;
     }
     hud_mark(row);
@@ -66,10 +76,10 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
 void hud_number(u8 col, u8 row, u8 palette, u8 value)
 {
     if (value >= 10) {
-        hud_map[(u16)row * 32 + col] = hud_entry('0' + value / 10, palette);
+        g_hud_map[(u16)row * 32 + col] = hud_entry('0' + value / 10, palette);
         ++col;
     }
-    hud_map[(u16)row * 32 + col] = hud_entry('0' + value % 10, palette);
+    g_hud_map[(u16)row * 32 + col] = hud_entry('0' + value % 10, palette);
     hud_mark(row);
 }
 
@@ -81,33 +91,34 @@ void hud_panel(u8 col, u8 row, u8 inner_cols)
     u16 mid = top + 32;
     u16 bottom = mid + 32;
 
-    hud_map[top + col] = hud_entry(HUD_TILE_PANEL_TL, 0);
-    hud_map[top + right] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP;
-    hud_map[bottom + col] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_VFLIP;
-    hud_map[bottom + right] =
+    g_hud_map[top + col] = hud_entry(HUD_TILE_PANEL_TL, 0);
+    g_hud_map[top + right] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP;
+    g_hud_map[bottom + col] = hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_VFLIP;
+    g_hud_map[bottom + right] =
         hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP | HUD_VFLIP;
-    hud_map[mid + col] = hud_entry(HUD_TILE_PANEL_L, 0);
-    hud_map[mid + right] = hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
+    g_hud_map[mid + col] = hud_entry(HUD_TILE_PANEL_L, 0);
+    g_hud_map[mid + right] = hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
     for (x = col + 1; x < right; ++x) {
-        hud_map[top + x] = hud_entry(HUD_TILE_PANEL_T, 0);
-        hud_map[mid + x] = hud_entry(HUD_SPACE, 0);
-        hud_map[bottom + x] = hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP;
+        g_hud_map[top + x] = hud_entry(HUD_TILE_PANEL_T, 0);
+        g_hud_map[mid + x] = hud_entry(HUD_SPACE, 0);
+        g_hud_map[bottom + x] = hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP;
     }
     hud_mark(row);
     hud_mark(row + 1);
     hud_mark(row + 2);
 }
 
+/* Index into HUD_BIG_CHARS ("A-Z0-9'!") without searching. */
 static s16 hud_big_index(u8 c)
 {
-    const char *chars = HUD_BIG_CHARS;
-    s16 i = 0;
-
-    while (chars[i]) {
-        if ((u8)chars[i] == c)
-            return i;
-        ++i;
-    }
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A';
+    if (c >= '0' && c <= '9')
+        return 26 + (c - '0');
+    if (c == '\'')
+        return 36;
+    if (c == '!')
+        return 37;
     return -1;
 }
 
@@ -129,16 +140,16 @@ void hud_big_text(u8 col, u8 row, u8 palette, const char *text)
     while ((c = (u8)*text++) != 0 && col < 31) {
         index = hud_big_index(c);
         if (index < 0) {
-            hud_map[top + col] = HUD_TILE_CLEAR;
-            hud_map[top + col + 1] = HUD_TILE_CLEAR;
-            hud_map[top + 32 + col] = HUD_TILE_CLEAR;
-            hud_map[top + 32 + col + 1] = HUD_TILE_CLEAR;
+            g_hud_map[top + col] = HUD_TILE_CLEAR;
+            g_hud_map[top + col + 1] = HUD_TILE_CLEAR;
+            g_hud_map[top + 32 + col] = HUD_TILE_CLEAR;
+            g_hud_map[top + 32 + col + 1] = HUD_TILE_CLEAR;
         } else {
             tile = HUD_TILE_BIG_BASE + (u16)index * 4;
-            hud_map[top + col] = hud_entry(tile, palette);
-            hud_map[top + col + 1] = hud_entry(tile + 1, palette);
-            hud_map[top + 32 + col] = hud_entry(tile + 2, palette);
-            hud_map[top + 32 + col + 1] = hud_entry(tile + 3, palette);
+            g_hud_map[top + col] = hud_entry(tile, palette);
+            g_hud_map[top + col + 1] = hud_entry(tile + 1, palette);
+            g_hud_map[top + 32 + col] = hud_entry(tile + 2, palette);
+            g_hud_map[top + 32 + col + 1] = hud_entry(tile + 3, palette);
         }
         col += 2;
     }
@@ -160,7 +171,7 @@ void hud_commit(void)
     for (band = 0; band < HUD_BANDS && sent < HUD_MAX_BANDS_PER_COMMIT;
             ++band) {
         if (hud_dirty & (1 << band)) {
-            dmaCopyVram((u8 *)&hud_map[(u16)band * 32 * HUD_BAND_ROWS],
+            dmaCopyVram((u8 *)&g_hud_map[(u16)band * 32 * HUD_BAND_ROWS],
                 RENDER_BG3_MAP_ADDR + (u16)band * 32 * HUD_BAND_ROWS,
                 32 * HUD_BAND_ROWS * 2);
             hud_dirty &= (u8)~(1 << band);

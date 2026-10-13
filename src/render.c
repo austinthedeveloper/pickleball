@@ -294,21 +294,40 @@ static u8 team_hud_palette(u8 team)
     return team ? HUD_PAL_TEAM_RIGHT : HUD_PAL_TEAM_LEFT;
 }
 
+/* Score digits only; tens are drawn as a leading digit or a blank. */
+static void hud_draw_score_digits(void)
+{
+    static const char digits[] = "0123456789";
+    char text[3];
+    u8 team;
+    u8 score;
+
+    for (team = 0; team < 2; ++team) {
+        score = g_game_state.team_score[team];
+        text[0] = ' ';
+        while (score >= 10) {      /* no 816-tcc division */
+            score -= 10;
+            text[0] = text[0] == ' ' ? '1' : text[0] + 1;
+        }
+        text[1] = digits[score];
+        text[2] = 0;
+        hud_text(team ? 28 : 6, 2, HUD_PAL_WHITE, text);
+    }
+    s_hud_score[0] = g_game_state.team_score[0];
+    s_hud_score[1] = g_game_state.team_score[1];
+}
+
+/* Panels and labels never change during a match; drawn on full redraws. */
 static void hud_draw_scores(void)
 {
     hud_clear_rows(1, 3);
     hud_panel(1, 1, 6);
     hud_text(2, 2, team_hud_palette(0), "P1");
-    hud_number(g_game_state.team_score[0] >= 10 ? 6 : 7, 2, HUD_PAL_WHITE,
-        g_game_state.team_score[0]);
     hud_panel(9, 1, 12);
     hud_text(10, 2, HUD_PAL_YELLOW, "ARCADE RULES");
     hud_panel(23, 1, 6);
     hud_text(24, 2, team_hud_palette(1), "CPU");
-    hud_number(g_game_state.team_score[1] >= 10 ? 28 : 29, 2, HUD_PAL_WHITE,
-        g_game_state.team_score[1]);
-    s_hud_score[0] = g_game_state.team_score[0];
-    s_hud_score[1] = g_game_state.team_score[1];
+    hud_draw_score_digits();
 }
 
 static void hud_center_big(u8 row, u8 palette, const char *text)
@@ -381,6 +400,7 @@ static void hud_draw_scene(u8 key)
         hud_clear_rows(CENTER_BIG_ROW - 2, 9);
     hud_clear_rows(CENTER_BIG_ROW, 7);
     hud_clear_rows(BANNER_ROW - 1, 4);
+    PROFILE_MARK(12);
 
     if (key == 0x80) {
         hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, "PAUSED");
@@ -396,8 +416,10 @@ static void hud_draw_scene(u8 key)
     case GAME_PHASE_POINT_RESULT:
         hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
             fault_word(g_game_state.last_fault));
+        PROFILE_MARK(13);
         hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
             winner == 0 ? "P1 POINT" : "CPU POINT");
+        PROFILE_MARK(14);
         break;
     case GAME_PHASE_MATCH_RESULT:
         hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
@@ -444,13 +466,17 @@ static void render_hud(void)
 {
     u8 key;
 
-    if (!s_hud_valid ||
-        s_hud_score[0] != g_game_state.team_score[0] ||
-        s_hud_score[1] != g_game_state.team_score[1])
+    /* Spread big redraws over frames: a score change and a scene change on
+     * the same frame (every point) would overrun 816-tcc's budget. */
+    if (!s_hud_valid)
         hud_draw_scores();
+    else if (s_hud_score[0] != g_game_state.team_score[0] ||
+             s_hud_score[1] != g_game_state.team_score[1])
+        hud_draw_score_digits();
 
     key = hud_scene_key();
     if (!s_hud_valid || key != s_hud_scene) {
+        PROFILE_MARK(15);
         hud_draw_scene(key);
         s_hud_scene = key;
     }

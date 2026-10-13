@@ -29,8 +29,9 @@ header = data[0x7FC0:0x8000]
 title = header[:21].rstrip(b"\0 ")
 if title != EXPECTED_TITLE:
     raise SystemExit(f"unexpected internal ROM title {title!r}")
-if header[0x15] != 0x20 or header[0x16] != 0x00:
-    raise SystemExit("ROM is not a standard slow LoROM cartridge")
+if header[0x15] != 0x30 or header[0x16] != 0x00:
+    raise SystemExit("ROM is not a standard LoROM FastROM cartridge (map "
+                     "mode $30, ROM only)")
 if header[0x18] != 0x00 or header[0x19] != 0x01:
     raise SystemExit("ROM must have no SRAM and use the NTSC region code")
 complement, checksum = struct.unpack_from("<HH", header, 0x1C)
@@ -82,7 +83,8 @@ lines = [
     f"- Build ID: `{args.build_id}`",
     "- PVSnesLib: 4.6.0",
     f"- ROM: `{args.rom.name}`, {len(data):,} bytes",
-    "- Header: LoROM / SlowROM, NTSC, no SRAM, title `PICKLEBALL 94`",
+    "- Header: LoROM / FastROM (map mode $30, 120 ns ROM), NTSC, no SRAM, "
+    "title `PICKLEBALL 94`",
     f"- Internal checksum: `{checksum:04x}` (complement `{complement:04x}`, verified)",
     f"- SHA-256: `{hashlib.sha256(data).hexdigest()}`",
     "",
@@ -101,7 +103,7 @@ for name in sorted(sizes):
                  f"`{sizes[name]['sha256'][:16]}` |")
 lines += ["", "## Tile and palette budgets", "",
           "| Resource | Used | Budget |", "|---|---:|---:|",
-          f"| BG1 scene tiles | {budget.get('court_tiles')} | 512 planned (ADR-016; see docs/09 open item), 896 hard limit |",
+          f"| BG1 scene tiles | {budget.get('court_tiles')} | 896 (28 KiB, ADR-016 as amended) |",
           f"| BG3 HUD tiles | {budget.get('hud_tiles')} | 512 |",
           f"| OBJ tiles | {budget.get('obj_tiles')} | 256 (first name table) |",
           "| Player frames | 11 | 14 (docs/03) |",
