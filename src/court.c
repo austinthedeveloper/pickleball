@@ -41,3 +41,35 @@ u8 court_contains_ground_fp(fx x_fp, fx y_fp)
         return 0;
     return 1;
 }
+
+s16 court_toward_net(u8 team)
+{
+    return team ? -1 : 1;
+}
+
+u8 court_side_of_x(fx x_fp)
+{
+    return x_fp < TO_FP(COURT_NET_X) ? 0 : 1;
+}
+
+u8 court_x_on_side(fx x_fp, u8 team)
+{
+    if (team == 0)
+        return x_fp < TO_FP(COURT_NET_X);
+    return x_fp > TO_FP(COURT_NET_X);
+}
+
+s16 court_aim_depth(u8 team, s16 aim_x)
+{
+    s16 toward = aim_x * court_toward_net(team);
+    if (toward > 0)
+        return 1;
+    if (toward < 0)
+        return -1;
+    return 0;
+}
+
+s16 court_target_x(u8 team, s16 left_hitter_x)
+{
+    return team ? COURT_MIRROR_X(left_hitter_x) : left_hitter_x;
+}

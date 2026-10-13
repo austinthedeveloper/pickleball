@@ -29,6 +29,8 @@ static void serve_select_target(const Player *server,
     const PlayerIntent *intent)
 {
     s16 box_y;
+    s16 depth;
+    s16 x;
 
     /* Diagonal box: a server on the bottom half serves to the top box. */
     if (g_serve_state.server_y_fp >= TO_FP(COURT_CENTERLINE_Y))
@@ -41,21 +43,14 @@ static void serve_select_target(const Player *server,
         box_y += SERVE_TARGET_LANE_SHIFT;
     g_serve_state.aim_y = box_y;
 
-    if (server->team == 0) {
-        if (intent->aim_x > 0)
-            g_serve_state.aim_x = SERVE_TARGET_DEEP_RIGHT;
-        else if (intent->aim_x < 0)
-            g_serve_state.aim_x = SERVE_TARGET_SHORT_RIGHT;
-        else
-            g_serve_state.aim_x = SERVE_TARGET_NEUTRAL_RIGHT;
-    } else {
-        if (intent->aim_x < 0)
-            g_serve_state.aim_x = SERVE_TARGET_DEEP_LEFT;
-        else if (intent->aim_x > 0)
-            g_serve_state.aim_x = SERVE_TARGET_SHORT_LEFT;
-        else
-            g_serve_state.aim_x = SERVE_TARGET_NEUTRAL_LEFT;
-    }
+    depth = court_aim_depth(server->team, intent->aim_x);
+    if (depth > 0)
+        x = SERVE_TARGET_DEEP_RIGHT;
+    else if (depth < 0)
+        x = SERVE_TARGET_SHORT_RIGHT;
+    else
+        x = SERVE_TARGET_NEUTRAL_RIGHT;
+    g_serve_state.aim_x = court_target_x(server->team, x);
 }
 
 static void serve_contact(const PlayerIntent *intent)

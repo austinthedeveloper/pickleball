@@ -42,6 +42,24 @@ enum {
     PLAYER_RIGHT_CLAMP_MAX_X = COURT_BASELINE_RIGHT + PLAYER_RUNOFF_BACK
 };
 
+/*
+ * Side helpers (docs/REFACTOR_PLAN.md R6). The court is symmetric about the
+ * net, so values defined for the left team mirror to the right team.
+ */
+#define COURT_MIRROR_X(x) (2 * COURT_NET_X - (x))
+
+/* +1 for the left team (toward the net is +x), -1 for the right team. */
+s16 court_toward_net(u8 team);
+/* Team whose half contains x; the net plane itself counts as the right. */
+u8 court_side_of_x(fx x_fp);
+/* Nonzero when x is strictly inside that team's half. */
+u8 court_x_on_side(fx x_fp, u8 team);
+/* Shot depth from an aim: +1 deep (toward the opponent), -1 short, 0. */
+s16 court_aim_depth(u8 team, s16 aim_x);
+/* A target given for a left-team hitter (right half), mirrored for the
+ * right team. */
+s16 court_target_x(u8 team, s16 left_hitter_x);
+
 /* Clamp a ground position to the legal half for the given team (0 = left). */
 fx court_clamp_x_fp(fx x_fp, u8 team);
 fx court_clamp_y_fp(fx y_fp);

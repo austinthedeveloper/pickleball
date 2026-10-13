@@ -12,41 +12,20 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
     s16 target_y = HIT_TARGET_LANE_CENTER;
     s16 flight_frames;
     s16 distance;
-    u8 aiming_deep = 0;
-    u8 aiming_short = 0;
+    s16 depth = court_aim_depth(player->team, intent->aim_x);
 
     if (intent->aim_y < 0)
         target_y = HIT_TARGET_LANE_TOP;
     else if (intent->aim_y > 0)
         target_y = HIT_TARGET_LANE_BOTTOM;
 
-    if (player->team == 0) {
-        if (intent->aim_x > 0)
-            aiming_deep = 1;
-        else if (intent->aim_x < 0)
-            aiming_short = 1;
-    } else {
-        if (intent->aim_x < 0)
-            aiming_deep = 1;
-        else if (intent->aim_x > 0)
-            aiming_short = 1;
-    }
-
-    if (player->team == 0) {
-        if (aiming_deep)
-            target_x = HIT_TARGET_DEEP_RIGHT;
-        else if (aiming_short)
-            target_x = HIT_TARGET_SHORT_RIGHT;
-        else
-            target_x = HIT_TARGET_NEUTRAL_RIGHT;
-    } else {
-        if (aiming_deep)
-            target_x = HIT_TARGET_DEEP_LEFT;
-        else if (aiming_short)
-            target_x = HIT_TARGET_SHORT_LEFT;
-        else
-            target_x = HIT_TARGET_NEUTRAL_LEFT;
-    }
+    /* Chosen as if the hitter were on the left, then mirrored. */
+    if (depth > 0)
+        target_x = HIT_TARGET_DEEP_RIGHT;
+    else if (depth < 0)
+        target_x = HIT_TARGET_SHORT_RIGHT;
+    else
+        target_x = HIT_TARGET_NEUTRAL_RIGHT;
 
     if (!collision_ball_in_sweet_spot(player, ball)) {
         /* Stretched: the shot sprays toward its sideline and long. */
@@ -55,13 +34,14 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
             target_y -= HIT_STRETCH_WIDE;
         else
             target_y += HIT_STRETCH_WIDE;
-        target_x += player->team ? -HIT_STRETCH_LONG : HIT_STRETCH_LONG;
+        target_x += HIT_STRETCH_LONG;
     }
+    target_x = court_target_x(player->team, target_x);
 
     distance = absolute_fp(TO_FP(target_x) - ball->x_fp);
-    if (aiming_deep)
+    if (depth > 0)
         flight_frames = distance / HIT_PACE_DEEP_FP;
-    else if (aiming_short)
+    else if (depth < 0)
         flight_frames = distance / HIT_PACE_SHORT_FP;
     else
         flight_frames = distance / HIT_PACE_NEUTRAL_FP;

@@ -61,13 +61,6 @@ static s16 move_toward(s16 from, s16 to)
     return 0;
 }
 
-static u8 ball_on_team_side(fx x_fp, u8 team)
-{
-    if (team == 0)
-        return x_fp < TO_FP(COURT_NET_X);
-    return x_fp > TO_FP(COURT_NET_X);
-}
-
 static u8 ball_incoming(const Player *player)
 {
     if (g_ball.rally_state != BALL_RALLY_LIVE)
@@ -82,7 +75,7 @@ static u8 ball_incoming(const Player *player)
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
     const Player *opponent = &g_players[player->team ? 0 : 2];
-    s16 toward_opponent = player->team ? -1 : 1;
+    s16 toward_opponent = court_toward_net(player->team);
 
     intent->aim_y = (opponent->y_fp < TO_FP(COURT_CENTERLINE_Y)) ? 1 : -1;
     if ((g_ai.shot_counter & 3) == 3)
@@ -126,7 +119,7 @@ static u8 ai_swing_connects(const Player *player)
         /* This frame would be the contact. Let every incoming ball bounce
          * once first (legal and readable), and never reach over the net. */
         if (probe.bounce_count == 0 ||
-            !ball_on_team_side(probe.x_fp, player->team))
+            !court_x_on_side(probe.x_fp, player->team))
             return 0;
         if (step == PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES)
             return 0;       /* first reachable after the window: wait */
@@ -150,10 +143,10 @@ static void ai_plan_intercept(const Player *player)
     s16 vx;
     s16 vy;
     u8 rise;
-    s16 behind = player->team ? AI_CONTACT_OFFSET_X : -AI_CONTACT_OFFSET_X;
+    s16 behind = -court_toward_net(player->team) * AI_CONTACT_OFFSET_X;
 
     if (g_ball.bounce_count > 0 &&
-        ball_on_team_side(g_ball.x_fp, player->team)) {
+        court_x_on_side(g_ball.x_fp, player->team)) {
         /* Already bounced on our side: chase where it is heading. */
         g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * 6) + behind;
         g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * 6);
@@ -166,7 +159,7 @@ static void ai_plan_intercept(const Player *player)
     g_ai.predicted_land_y = land_y;
 
     if (!court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) ||
-        !ball_on_team_side(TO_FP(land_x), player->team)) {
+        !court_x_on_side(TO_FP(land_x), player->team)) {
         /* Out (or short of the net): let it go and hold the middle. */
         g_ai.has_target = 0;
         return;

@@ -41,13 +41,6 @@ void rules_resolve_point(u8 losing_team, u8 fault)
     g_ball.vz_fp = 0;
 }
 
-static u8 ball_court_team(void)
-{
-    if (g_ball.x_fp < TO_FP(COURT_NET_X))
-        return 0;
-    return 1;
-}
-
 void rules_process_player_hit(u8 player_index)
 {
     u8 player_team;
@@ -93,11 +86,12 @@ void rules_process_ball_events(u8 events)
          * rally against the side it rests on. */
         if (g_ball.z_fp == 0 && g_ball.vz_fp == 0 && g_ball.vx_fp == 0 &&
             g_ball.vy_fp == 0 && g_ball.bounce_count > 0)
-            rules_resolve_point(ball_court_team(), GAME_FAULT_SECOND_BOUNCE);
+            rules_resolve_point(court_side_of_x(g_ball.x_fp),
+                GAME_FAULT_SECOND_BOUNCE);
         return;
     }
 
-    side = ball_court_team();
+    side = court_side_of_x(g_ball.x_fp);
     if (g_ball.bounce_count >= 2) {
         /* The receiving side failed to return a ball that landed in. */
         rules_resolve_point(opposing_team(hitter), GAME_FAULT_SECOND_BOUNCE);
