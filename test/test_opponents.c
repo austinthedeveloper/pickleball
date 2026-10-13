@@ -156,6 +156,9 @@ static int bot_wins(u8 opponent, u8 late, u8 matches)
             counted = 0;
         }
         test_step(intents);
+        /* Measuring one opponent: a win's B rematches them here. */
+        if (g_next_opponent)
+            game_new_match();
         ++frames;
     }
     return wins;
@@ -175,12 +178,50 @@ static void test_difficulty_order(void)
     assert(first > last + 8);
 }
 
+/* B on the result: after a ladder win, the next opponent is asked for
+ * (main.c sets it up); after a loss, a rematch. */
+static void test_result_buttons(void)
+{
+    PlayerIntent intents[MAX_PLAYERS];
+    u16 f;
+
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    g_attract = 0;
+    match_config_defaults();
+    match_config_opponent(0);
+    play_match(1);
+    assert(g_save.settings.ladder == 1);
+    memset(intents, 0, sizeof(intents));
+    for (f = 0; f < GAME_POINT_RESULT_MIN_FRAMES + 2; ++f)
+        game_update(intents);
+    intents[0].hit_pressed = 1;
+    game_update(intents);
+    assert(g_next_opponent);
+    assert(g_game_state.phase == GAME_PHASE_MATCH_RESULT);
+    /* What main.c does with it. */
+    match_config_opponent(g_save.settings.ladder);
+    game_new_match();
+    assert(!g_next_opponent && g_match_config.opponent == 1);
+
+    play_match(0);                      /* a loss: B is a rematch */
+    memset(intents, 0, sizeof(intents));
+    for (f = 0; f < GAME_POINT_RESULT_MIN_FRAMES + 2; ++f)
+        game_update(intents);
+    intents[0].hit_pressed = 1;
+    game_update(intents);
+    assert(!g_next_opponent);
+    assert(g_game_state.phase == GAME_PHASE_SERVE_SETUP);
+    assert(g_match_config.opponent == 1);
+}
+
 int main(void)
 {
     test_default_style_is_shipped_cpu();
     test_config();
     test_select_uses_ladder();
     test_ladder();
+    test_result_buttons();
     test_difficulty_order();
     match_config_defaults();
     printf("opponents host checks passed\n");

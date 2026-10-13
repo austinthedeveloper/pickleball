@@ -46,8 +46,8 @@ Against the CPU you climb a ladder of eight opponents, each with their own
 look and style: the Hendersons, the Snowbirds, the Gym Bros, the Pirates,
 the Goth Club, the Surf Crew, the Twins, and the Champs. In singles you play
 the team's captain (the HUD shows `VS DAD`, for example); in doubles you and
-a CPU partner play the whole team. Win to face the next opponent the next
-time you start a match; lose and you face them again. After the Champs the
+a CPU partner play the whole team. Win and press B to face the next opponent
+straight away; lose and B is a rematch. After the Champs the
 ladder starts over. The records page shows your place.
 
 Before a ladder match, the opponent introduces themselves (press B to

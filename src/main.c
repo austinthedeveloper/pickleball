@@ -35,6 +35,20 @@ static void ui_sounds(u16 pressed)
         audio_ui(SFX_BLIP);
 }
 
+/* B after a ladder win (ADR-023): the next opponent, with their intro card
+ * and (on AUTO) their home court. */
+static void start_next_opponent(void)
+{
+    g_next_opponent = 0;
+    match_config_opponent(g_save.settings.ladder);
+    game_start_match();
+    story_begin_intro();
+    /* render_open_match applies the new config itself. */
+    g_match_config_changed = 0;
+    render_open_match();
+    profile_resync();
+}
+
 /* Records page (ADR-021): Start, B, or Y closes it; holding L+R and
  * pressing X erases the records (court colours stay). */
 static void update_title_records(u16 pressed)
@@ -269,6 +283,7 @@ int main(void)
     s_practice_pending = 0;
     g_match_config_changed = 0;
     g_demo_mode = 0;
+    g_next_opponent = 0;
     game_start_attract();
     render_initialize();
     /* render_initialize applied the attract config already. */
@@ -312,6 +327,8 @@ int main(void)
                     audio_ui(SFX_BLIP);
                 game_update(g_player_intents);
             }
+            if (g_next_opponent)
+                start_next_opponent();
             PROFILE_MARK(1);
         }
         /* A new attract demo or a return to the title: palettes, ponytails

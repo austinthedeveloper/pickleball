@@ -66,6 +66,9 @@ int main(int argc, char **argv)
             counted = 0;
         }
         test_step(intents);
+        /* Measuring one opponent: a win's B rematches them here. */
+        if (g_next_opponent)
+            game_new_match();
         ++frames;
         if (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
             previous != GAME_PHASE_POINT_RESULT) {

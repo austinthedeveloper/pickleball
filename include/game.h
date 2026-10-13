@@ -62,6 +62,9 @@ extern u8 g_attract;
  * presentation (palettes, colour math) and clears it. */
 extern u8 g_match_config_changed;
 extern u8 g_demo_mode;
+/* Set when B on the result of a ladder win asks for the next opponent
+ * (ADR-023): main.c sets them up, reloads the court, and clears it. */
+extern u8 g_next_opponent;
 
 enum {
     GAME_ATTRACT_RESULT_FRAMES = 150,

@@ -89,9 +89,13 @@ wins out of 180: 30 matches at each bot mistake period from 3 to 8.
   rung. With 2P versus, there is no opponent. In doubles, the opponent pair
   fills slots 2–3, and 1P's partner (slot 1) is the default CPU.
 - **Winning** a match against the opponent advances the ladder; after CHAMPS
-  it goes back to HENDERSON. A loss keeps the rung. A rematch (B on the
-  result) plays the same opponent; the next one comes on the next match from
-  the title.
+  it goes back to HENDERSON. A loss keeps the rung.
+- *Amended 2026-10-13:* after a win, **B goes on to the next opponent**
+  (`@ NEXT` on the result banner). The game sets `g_next_opponent`, and
+  `main.c` sets up the next rung, shows its intro card, and reloads the
+  court (their home court on AUTO). After a loss, B is a rematch. Before
+  this, B after a win replayed the same opponent, which looked like the
+  ladder never moved.
 - The attract demo and the default config never set an opponent.
 
 ## HUD

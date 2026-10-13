@@ -961,7 +961,9 @@ static void hud_scene_step(u16 key, u8 step)
                 hud_match_winner_text());
         else
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                "@ REMATCH  START MENU");
+                (g_game_state.match_winner == 0 &&
+                 g_match_config.opponent != OPPONENT_NONE) ?
+                    "@ NEXT  START MENU" : "@ REMATCH  START MENU");
         break;
     default:
         break;
