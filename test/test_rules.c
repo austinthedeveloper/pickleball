@@ -82,6 +82,50 @@ static void test_resolution_is_idempotent(void)
     assert(g_game_state.team_score[1] == 1);
 }
 
+static void test_legal_required_bounce_sequence(void)
+{
+    reset_live_fixture();
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_SERVE;
+
+    g_ball.x_fp = TO_FP(200);
+    g_ball.bounce_count = 1;
+    rules_process_ball_events(BALL_EVENT_BOUNCE);
+    assert(g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_RETURN);
+    assert(g_game_state.phase == GAME_PHASE_LIVE);
+
+    g_ball.last_hitter = 2;
+    rules_process_player_hit(2);
+    assert(g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_RETURN);
+    assert(g_game_state.phase == GAME_PHASE_LIVE);
+
+    g_ball.x_fp = TO_FP(56);
+    g_ball.bounce_count = 1;
+    rules_process_ball_events(BALL_EVENT_BOUNCE);
+    assert(g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_NONE);
+    assert(g_game_state.phase == GAME_PHASE_LIVE);
+
+    g_ball.last_hitter = 0;
+    rules_process_player_hit(0);
+    assert(g_game_state.phase == GAME_PHASE_LIVE);
+}
+
+static void test_serve_volley_before_bounce_loses_point(void)
+{
+    reset_live_fixture();
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_SERVE;
+    rules_process_player_hit(2);
+    assert_stopped_with_winner(0, GAME_FAULT_EARLY_VOLLEY);
+}
+
+static void test_return_volley_before_bounce_loses_point(void)
+{
+    reset_live_fixture();
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_RETURN;
+    g_ball.last_hitter = 2;
+    rules_process_player_hit(0);
+    assert_stopped_with_winner(1, GAME_FAULT_EARLY_VOLLEY);
+}
+
 int main(void)
 {
     test_net_penalizes_last_hitter();
@@ -89,6 +133,9 @@ int main(void)
     test_second_bounce_penalizes_court_team();
     test_serve_fault_resolves_point();
     test_resolution_is_idempotent();
+    test_legal_required_bounce_sequence();
+    test_serve_volley_before_bounce_loses_point();
+    test_return_volley_before_bounce_loses_point();
     puts("rules host checks passed");
     return 0;
 }

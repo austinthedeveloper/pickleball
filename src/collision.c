@@ -99,7 +99,7 @@ u8 collision_resolve_player_hits(Ball *ball, Player players[MAX_PLAYERS],
         ball->last_hitter = i;
         ball->bounce_count = 0;
         collision_apply_targeted_shot(ball, player, &intents[i]);
-        return 1;
+        return i + 1;
     }
 
     return 0;

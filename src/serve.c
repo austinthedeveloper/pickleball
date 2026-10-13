@@ -65,6 +65,7 @@ static void serve_contact(void)
     g_ball.bounce_count = 0;
     g_ball.rally_state = BALL_RALLY_LIVE;
     g_serve_state.landing_pending = 1;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_SERVE;
     server->contact_consumed = 1;
     g_game_state.phase = GAME_PHASE_LIVE;
     g_game_state.phase_timer = 0;

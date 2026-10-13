@@ -1,6 +1,7 @@
 #include <snes.h>
 #include "ball.h"
 #include "court.h"
+#include "game.h"
 #include "input.h"
 #include "player.h"
 #include "render.h"
@@ -207,6 +208,12 @@ void render_commit_hud(u8 paused)
     hud_put_text(15, 2, "R");
     hud_put_hex4(16, 2, g_pad_snapshots[0].released);
 #endif
+    if (g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_SERVE)
+        hud_put_text(1, 3, "REQ BOUNCE SERVE");
+    else if (g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_RETURN)
+        hud_put_text(1, 3, "REQ BOUNCE RETURN");
+    else
+        hud_put_text(1, 3, "REQ BOUNCE NONE");
     if (paused)
         hud_put_text(13, 1, "PAUSED");
     dmaCopyVram((u8 *)hud_buffer, BG3_MAP_ADDR, sizeof(hud_buffer));

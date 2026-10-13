@@ -26,7 +26,7 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
   - Accept: P1 can begin with B; legal serve reaches opposite diagonal box; wrong box/kitchen/net are faults.
 - [x] `M2-RULE-01` Implement rally state and one-point resolution.
   - Accept: net, out, and second bounce identify one winner and stop live simulation.
-- [ ] `M2-RULE-02` Implement required serve bounce and required return bounce.
+- [x] `M2-RULE-02` Implement required serve bounce and required return bounce.
   - Accept: RUL-01 and RUL-02 pass; debug HUD exposes remaining required bounce state.
 - [ ] `M2-AI-01` Activate P3 as CPU through `PlayerIntent`.
   - Accept: human and CPU movement share the same player update path.

@@ -233,3 +233,22 @@ No M1 hardware run has been recorded yet.
 - User acceptance: PASS. Manual review confirmed that the revised two-bounce
   trajectory is visibly clear.
 
+### 2026-10-12 — M2 required serve and return bounces
+
+- Added an explicit required-bounce state with `NONE`, `SERVE`, and `RETURN`
+  stages. Serve contact begins the `SERVE` stage; a legal serve landing advances
+  it to `RETURN`; the receiver's return landing on the server's court clears it.
+- A contact by the receiving team before the serve bounce, or by the serving
+  team before the return bounce, now resolves once as an early-volley fault.
+- Host checks cover the legal sequence and both illegal-volley sides.
+- An automated Mesen fixture on the release ROM observed the serve bounce at
+  frame 69, a legal receiver hit at frame 70, the required return bounce at
+  frame 103, and a legal volley at frame 104. A separate early return-volley
+  contact at frame 105 produced fault 6, awarded Team 1 once, cleared the
+  requirement, and stopped the ball.
+- Debug and hardware-test HUDs expose `REQ BOUNCE NONE`, `SERVE`, or `RETURN`.
+- User acceptance: PASS. Manual review confirmed that all three required-bounce
+  HUD states appear correctly. The tester noted that this instrumented build
+  feels slower; release gameplay timing will be reassessed with the CPU return
+  active, without the per-frame hardware-test HUD transfer.
+

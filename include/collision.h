@@ -24,6 +24,7 @@ enum {
 };
 
 u8 collision_ball_in_player_reach(const Player *player, const Ball *ball);
+/* Returns the contacting player index plus one, or zero for no contact. */
 u8 collision_resolve_player_hits(Ball *ball, Player players[MAX_PLAYERS],
     const PlayerIntent intents[MAX_PLAYERS], u8 player_count);
 

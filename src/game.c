@@ -11,6 +11,7 @@ void game_initialize(void)
     g_game_state.point_winner = 0xff;
     g_game_state.team_score[0] = 0;
     g_game_state.team_score[1] = 0;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
 }
 
 void game_update_top_level(const PlayerIntent intents[MAX_PLAYERS])

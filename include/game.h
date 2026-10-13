@@ -18,8 +18,15 @@ typedef enum {
     GAME_FAULT_KITCHEN = 2,
     GAME_FAULT_WRONG_BOX = 3,
     GAME_FAULT_OUT = 4,
-    GAME_FAULT_SECOND_BOUNCE = 5
+    GAME_FAULT_SECOND_BOUNCE = 5,
+    GAME_FAULT_EARLY_VOLLEY = 6
 } GameFault;
+
+typedef enum {
+    GAME_REQUIRED_BOUNCE_NONE = 0,
+    GAME_REQUIRED_BOUNCE_SERVE = 1,
+    GAME_REQUIRED_BOUNCE_RETURN = 2
+} GameRequiredBounce;
 
 typedef struct {
     u8 paused;
@@ -28,6 +35,7 @@ typedef struct {
     u8 last_fault;
     u8 point_winner;
     u8 team_score[2];
+    u8 required_bounce;
 } GameState;
 
 extern GameState g_game_state;

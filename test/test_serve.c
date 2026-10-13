@@ -36,6 +36,7 @@ static void test_setup_and_toss(void)
     assert(g_ball.rally_state == BALL_RALLY_LIVE);
     assert(g_ball.last_hitter == 0);
     assert(g_serve_state.landing_pending == 1);
+    assert(g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_SERVE);
 }
 
 static void test_neutral_serve_lands_diagonal(void)
