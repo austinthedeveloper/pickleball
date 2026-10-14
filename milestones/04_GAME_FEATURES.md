@@ -128,6 +128,7 @@ touching the simulation.
 
 - [ ] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033).
   - Progress: the plain ladder match drops none (`doubles_ladder.timeline`, budget 0); all four modifiers drop 7-14 (`modifiers_doubles.timeline`, budget 20). See `docs/REFACTOR_PLAN.md` R15.
+  - Progress: a doubles ladder loss dropped 2-3 frames on the result screen: the prompt and the opponent's taunt (up to 28 characters, about 130 scanlines of text) each drew in one step on a frame already at about 115. The result now draws a panel and its text on separate frames, the taunt in halves (`hud_center_prompt_panel`, `_half`). `doubles_ladder.timeline` reaches it now (the CPUs win 5-0) and drops none.
   - Accept: zero overruns on that timeline, without changing the golden trace. Pairs with `M4-UI-03` (the same four-player AI cost).
 
 - [ ] `M4-UI-01` Draw the title pages faster.

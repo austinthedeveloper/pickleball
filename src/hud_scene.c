@@ -395,7 +395,10 @@ static u16 hud_scene_key(void)
 enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
        /* Story cards (intro, match result): one panel per frame. */
        HUD_STEP_EXTRA = 3, HUD_STEP_EXTRA2 = 4,
-       HUD_STEP_DONE = 5 };
+       /* The match result only: a panel and its text on separate frames
+        * (other scenes go from EXTRA2 to DONE). */
+       HUD_STEP_EXTRA3 = 5, HUD_STEP_EXTRA4 = 6, HUD_STEP_EXTRA5 = 7,
+       HUD_STEP_DONE = 8 };
 
 static u8 s_scene_step;
 static u16 s_prev_scene;
@@ -440,6 +443,16 @@ static void hud_intro_step(u8 step)
 
 /* Under the match result (ADR-026): the opponent's line (EXTRA), and
  * after a win the next opponent or the ladder cleared (EXTRA2). */
+static const char *hud_result_prompt(void)
+{
+    if (g_match_config.open_play)
+        return "@ PARK  START MENU";
+    if (g_game_state.match_winner == 0 &&
+            g_match_config.opponent != OPPONENT_NONE)
+        return "@ NEXT  START MENU";
+    return "@ REMATCH  START MENU";
+}
+
 static void hud_result_story(u8 step)
 {
     static char next[] = "NEXT UP: 123456789";
@@ -450,11 +463,19 @@ static void hud_result_story(u8 step)
 
     if (g_match_config.opponent == OPPONENT_NONE)
         return;
-    if (step == HUD_STEP_EXTRA) {
+    if (step <= HUD_STEP_EXTRA4) {
         /* Separate steps: 816-tcc fails (ICE 2) on a ternary as the index. */
         lines = g_opponent_lines[g_match_config.opponent];
-        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_TEAM_RIGHT,
-            won ? lines[OPPONENT_LINE_CONCEDE] : lines[OPPONENT_LINE_TAUNT]);
+        if (won)
+            lines += OPPONENT_LINE_CONCEDE;
+        else
+            lines += OPPONENT_LINE_TAUNT;
+        /* The panel, then the line in halves: each half is a frame. */
+        if (step == HUD_STEP_EXTRA2)
+            hud_center_prompt_panel(CENTER_PANEL_ROW, *lines);
+        else
+            hud_center_prompt_half(CENTER_PANEL_ROW, HUD_PAL_TEAM_RIGHT,
+                *lines, step == HUD_STEP_EXTRA4);
         return;
     }
     /* Open play (ADR-034) is off the ladder: no next-up line. */
@@ -1083,11 +1104,22 @@ static void hud_scene_step(u16 key, u8 step)
         hud_pause_step(step);
         return;
     }
-    if (step >= HUD_STEP_EXTRA) {
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT && !g_attract)
+    if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
+            step >= HUD_STEP_PROMPT) {
+        /* The prompt's panel, then its text, then the story card
+         * (hud_result_story): each on its own frame. Together they
+         * overran the doubles result frame. */
+        if (step == HUD_STEP_PROMPT)
+            hud_center_prompt_panel(BANNER_ROW, hud_result_prompt());
+        else if (step == HUD_STEP_EXTRA)
+            hud_center_prompt_text(BANNER_ROW, HUD_PAL_WHITE,
+                hud_result_prompt());
+        else if (!g_attract)
             hud_result_story(step);
         return;
     }
+    if (step >= HUD_STEP_EXTRA)
+        return;
     switch (g_game_state.phase) {
     case GAME_PHASE_SERVE_SETUP:
         if (step != HUD_STEP_PROMPT)
@@ -1109,12 +1141,6 @@ static void hud_scene_step(u16 key, u8 step)
         if (step == HUD_STEP_BIG)
             hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
                 hud_match_winner_text());
-        else
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
-                g_match_config.open_play ? "@ PARK  START MENU" :
-                (g_game_state.match_winner == 0 &&
-                 g_match_config.opponent != OPPONENT_NONE) ?
-                    "@ NEXT  START MENU" : "@ REMATCH  START MENU");
         break;
     default:
         break;
@@ -1166,8 +1192,9 @@ void hud_scene_update(void)
                 s_scene_step == HUD_STEP_EXTRA ? HUD_STEP_PROMPT :
                 s_scene_step == HUD_STEP_PROMPT ? HUD_STEP_DONE :
                 s_scene_step + 1;
-        else
-            ++s_scene_step;
+        else if (++s_scene_step == HUD_STEP_EXTRA3 &&
+                g_game_state.phase != GAME_PHASE_MATCH_RESULT)
+            s_scene_step = HUD_STEP_DONE;
     } else if (!busy) {
         /* Only on otherwise idle frames: keeps each frame to one redraw. */
         if (HUD_IS_TITLE(key))

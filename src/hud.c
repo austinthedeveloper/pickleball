@@ -193,6 +193,16 @@ void hud_center_big(u8 row, u8 palette, const char *text)
 }
 
 /* Centered three-row panel with a B button glyph replacing '@'. */
+static u8 hud_prompt_col(const char *text, u8 *len)
+{
+    const char *p = text;
+
+    *len = 0;
+    while (*p++)
+        ++*len;
+    return (u8)(16 - (*len + 2) / 2);
+}
+
 void hud_center_prompt(u8 row, u8 palette, const char *text)
 {
     u8 len = 0;
@@ -203,6 +213,52 @@ void hud_center_prompt(u8 row, u8 palette, const char *text)
         ++len;
     col = (u8)(16 - (len + 2) / 2);
     hud_panel(col, row, len);
+    hud_text(col + 1, row + 1, palette, text);
+    p = text;
+    while (*p) {
+        if (*p == '@')
+            hud_tile(col + 1 + (u8)(p - text), row + 1,
+                hud_entry(HUD_TILE_BUTTON_B, HUD_PAL_YELLOW));
+        ++p;
+    }
+}
+
+void hud_center_prompt_panel(u8 row, const char *text)
+{
+    u8 len;
+    u8 col = hud_prompt_col(text, &len);
+
+    hud_panel(col, row, len);
+}
+
+/* Half of the text (part 0, the first half; 1, the rest): a 28-character
+ * line costs 816-tcc about 130 scanlines. */
+void hud_center_prompt_half(u8 row, u8 palette, const char *text, u8 part)
+{
+    u8 len;
+    u8 col = hud_prompt_col(text, &len);
+    u8 from = part ? len >> 1 : 0;
+    u8 to = part ? len : len >> 1;
+    u16 index = (u16)(row + 1) * 32 + col + 1 + from;
+    u8 c;
+
+    for (; from < to; ++from) {
+        c = (u8)text[from];
+        if (c == '@')
+            g_hud_map[index++] = hud_entry(HUD_TILE_BUTTON_B, HUD_PAL_YELLOW);
+        else
+            g_hud_map[index++] = hud_entry(c < 32 || c > 95 ? '?' : c,
+                palette);
+    }
+    hud_mark(row + 1);
+}
+
+void hud_center_prompt_text(u8 row, u8 palette, const char *text)
+{
+    u8 len;
+    u8 col = hud_prompt_col(text, &len);
+    const char *p;
+
     hud_text(col + 1, row + 1, palette, text);
     p = text;
     while (*p) {
