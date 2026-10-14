@@ -39,6 +39,7 @@ extern char objects_palette;
 #define PARK_ATTR(palette, flip) OBJ_ATTR(palette, flip)
 
 #define PARK_PANEL_ROW 1            /* the message panel, rows 1-3 */
+#define PARK_LEVEL_ROW 4            /* each court's skill level */
 #define PARK_SCORE_ROW 5            /* over the courts (court top 48) */
 #define PARK_RESULT_FRAMES 240      /* "YOU WON" after a match */
 
@@ -488,6 +489,16 @@ void render_park_open(void)
     bgSetDisable(1);
 
     hud_initialize();
+    /* The skill levels, centred over their courts; they never change. */
+    for (i = 0; i < OPEN_COURTS; ++i) {
+        const char *level = open_court_level_name(i);
+        u8 length = 0;
+
+        while (level[length])
+            ++length;
+        hud_text((u8)((open_court_left(i) + OPEN_COURT_W / 2) / 8 -
+            length / 2), PARK_LEVEL_ROW, HUD_PAL_WHITE, level);
+    }
     s_message = PARK_MSG_NONE;
     s_big_shown = 0;
     for (i = 0; i < OPEN_COURTS; ++i) {

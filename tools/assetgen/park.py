@@ -6,7 +6,10 @@ from .common import ROOT, AssetError
 from .select import indexed_scene
 
 PARK_TILE_BUDGET = 768      # BG1 tiles at VRAM word 0x1000..0x3fff
-SUB = 1                     # BG palette 1 (0 is the HUD's)
+SUB = 1                     # BG palette 1 (0 is the HUD's); court n: 1 + n
+# Each court's apron shows its skill level (<3.5, 3.5-4.5, 4.5+): the
+# court's tiles use their own copy of the palette with this apron colour.
+LEVEL_APRONS = [(52, 150, 120), (190, 150, 60), (176, 66, 60)]
 
 # One 15-colour palette, so no tile ever mixes palettes.
 COLORS = {
@@ -119,7 +122,22 @@ def park_assets():
         rect(rx - 4, ry - 12, rx + 5, ry - 11, "metal")
         rect(rx - 2, ry + 2, rx + 3, ry + 3, "dark")
 
+    # Each court's tile cells take that court's palette (same indices).
+    courts = lay["OPEN_COURTS"]
+    if len(LEVEL_APRONS) != courts:
+        raise AssetError("park.py: one apron colour per court")
+    for c in range(courts):
+        left = lay["OPEN_COURT_LEFT0"] + c * lay["OPEN_COURT_PITCH"]
+        for ty in range(top // 8, (top + court_h - 1) // 8 + 1):
+            for tx in range(left // 8, (left + court_w - 1) // 8 + 1):
+                for y in range(ty * 8, ty * 8 + 8):
+                    for x in range(tx * 8, tx * 8 + 8):
+                        rows[y][x] += 16 * (1 + c)
+
     palette = [(0, 0, 0)] * (SUB * 16)
     palette += [(0, 0, 0)] + [COLORS[name] for name in NAMES]
+    for apron in LEVEL_APRONS:
+        palette += [(0, 0, 0)] + [apron if name == "apron" else COLORS[name]
+                                  for name in NAMES]
     return indexed_scene("park", rows, palette, PARK_TILE_BUDGET,
-                         first_sub=SUB, last_sub=SUB)
+                         first_sub=SUB, last_sub=SUB + courts)

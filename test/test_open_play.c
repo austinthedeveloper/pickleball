@@ -3,6 +3,7 @@
 #include <string.h>
 #include "open_play.h"
 #include "opponents.h"
+#include "options.h"
 
 /* ADR-034 open play: the park's stacks, games, walking, and your turn. */
 
@@ -47,12 +48,17 @@ static void check_population(void)
 static void test_begin(void)
 {
     u8 c;
+    u8 side;
 
     open_play_begin(1234);
     for (c = 0; c < OPEN_COURTS; ++c) {
         assert(g_open_play.court[c].state == OPEN_COURT_PLAYING);
         assert(g_open_play.court[c].score[0] < OPEN_GAME_POINTS);
     }
+    /* Every team starts at its level's court. */
+    for (c = 0; c < OPEN_COURTS; ++c)
+        for (side = 0; side < 2; ++side)
+            assert(open_team_court(g_open_play.court[c].playing[side]) == c);
     assert(g_open_play.your_court == OPEN_NONE);
     assert(g_open_play.called == OPEN_NONE);
     assert(open_walkable(g_open_play.x_fp, g_open_play.y_fp));
@@ -142,6 +148,7 @@ static void test_your_turn(void)
     assert(called_court == c);
     opponent = g_open_play.opponent;
     assert(opponent < OPPONENT_COUNT);
+    assert(open_team_court(opponent) == c);     /* a team of that level */
     assert(g_open_play.court[c].state == OPEN_COURT_YOURS);
     assert(g_open_play.your_court == OPEN_NONE);
     /* The call shows for a while, input ignored, then the match. */
@@ -167,14 +174,15 @@ static void test_your_turn(void)
 static void test_soak(void)
 {
     u16 games[OPEN_COURTS] = { 0, 0, 0 };
-    u8 moved = 0;
-    u8 first = OPEN_NONE;
+    u8 away = 0;
+    u8 side;
+    u8 e;
     unsigned long f;
     u8 c;
     u8 before[OPEN_COURTS];
 
     open_play_begin(4321);
-    first = g_open_play.court[0].playing[0];
+
     for (f = 0; f < 60UL * 60 * 20; ++f) {
         for (c = 0; c < OPEN_COURTS; ++c)
             before[c] = g_open_play.court[c].state;
@@ -183,9 +191,12 @@ static void test_soak(void)
             if (before[c] == OPEN_COURT_CHANGEOVER &&
                     g_open_play.court[c].state == OPEN_COURT_PLAYING)
                 ++games[c];
-            if (c && (g_open_play.court[c].playing[0] == first ||
-                    g_open_play.court[c].playing[1] == first))
-                moved = 1;
+            /* Teams only play at their own level. */
+            for (side = 0; side < 2; ++side) {
+                e = g_open_play.court[c].playing[side];
+                if (e < OPPONENT_COUNT && open_team_court(e) != c)
+                    away = 1;
+            }
         }
         if ((f & 255) == 0)
             check_population();
@@ -194,11 +205,26 @@ static void test_soak(void)
         games[1], games[2]);
     for (c = 0; c < OPEN_COURTS; ++c)
         assert(games[c] >= 15);
-    assert(moved);              /* court 0's first team played elsewhere */
+    assert(!away);
+}
+
+/* The levels: ladder order, names, and the difficulty of your game. */
+static void test_levels(void)
+{
+    assert(open_team_court(0) == 0 && open_team_court(2) == 0);
+    assert(open_team_court(3) == 1 && open_team_court(5) == 1);
+    assert(open_team_court(6) == 2 && open_team_court(7) == 2);
+    assert(strcmp(open_court_level_name(0), "<3.5") == 0);
+    assert(strcmp(open_court_level_name(2), "4.5+") == 0);
+    assert(open_court_difficulty(0, DIFFICULTY_HARD) == DIFFICULTY_EASY);
+    assert(open_court_difficulty(1, DIFFICULTY_EASY) == DIFFICULTY_MEDIUM);
+    assert(open_court_difficulty(2, DIFFICULTY_MEDIUM) == DIFFICULTY_HARD);
+    assert(open_court_difficulty(2, DIFFICULTY_KID) == DIFFICULTY_KID);
 }
 
 int main(void)
 {
+    test_levels();
     test_begin();
     test_walking();
     test_stacking();

@@ -12,7 +12,10 @@ Player Select (or the park, or the court, records, options, or modifiers page).
 ## Open play
 
 **OPEN PLAY** takes you to a park with three courts, a game going on each,
-just like open play at a real park.
+just like open play at a real park. The courts are skill levels, marked
+over each court and by its colour: **<3.5** (teal, an EASY game),
+**3.5-4.5** (gold, MEDIUM), and **4.5+** (red, HARD). Each team plays at
+its own level. On KID, every court is KID.
 
 - Walk with the D-pad. The paddles hanging on a court's rack are the
   players waiting for that court; yours is the coloured one.
@@ -20,7 +23,8 @@ just like open play at a real park.
   back). Walk past a court to see who's playing.
 - When a game ends, everyone comes off and the next paddles go on. When
   it's yours: **YOUR GAME!** You and a partner play doubles against the
-  team you were drawn with, with your OPTIONS and MODIFIERS.
+  team you were drawn with, at that court's level, with your POINTS and
+  MODIFIERS.
 - After the game, **B** takes you back to the park. **Start** in the park
   goes back to the title.
 

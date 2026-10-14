@@ -17,7 +17,8 @@ wait, and play when your turn comes.
 COURT, RECORDS, OPTIONS, MODIFIERS, PRACTICE). It opens the **park**, a
 scene of its own, like Player Select:
 
-- **Three courts** seen from above, each with a game going: the people
+- **Three courts** seen from above, at three skill levels (see Skill
+  levels), each with a game going: the people
   rally, the score shows over the court, and a game is first to 7. Points
   come every 1 to 3 seconds, so a game takes about half a minute.
 - **Paddle stacks:** each court has a rack at its gate, and the paddles
@@ -25,11 +26,10 @@ scene of its own, like Player Select:
   your colours; the others are grey.
 - **The people** are the eight ladder teams (ADR-023), in their captains'
   colours. Six play while two wait.
-- **Rotation:** when a game ends, all four players come off and the top
-  two entries in that court's stack go on. If that stack is short, the
-  front team of the longest other stack comes over (never your paddle).
-  The teams coming off join the back of the shortest stack, picked from a
-  random court on ties, so teams move around the park.
+- **Rotation:** when a game ends, all four players come off and rejoin
+  their own court's stack, then the top two entries go on. A team only
+  goes to another court's stack if its own is full, and a short stack
+  borrows the front team of the longest other one (never your paddle).
 - **You** walk the park with the D-pad. You can't walk into the courts:
   the fences are solid, and you slide along them.
   - **B at a rack** stacks your paddle, or takes it back if it's already
@@ -44,7 +44,7 @@ scene of its own, like Player Select:
   - you and a regular partner (the default CPU) against the team drawn
     with you
   - at the park (AUTO venue)
-  - with the saved points, difficulty, and modifiers
+  - with the saved points and modifiers, at the court's difficulty
   - no intro card, no ladder change, and no CHAMPION!
   - records count it as a doubles game against the CPU
 - **After it:** the result says "@ PARK  START MENU". B takes you back,
@@ -52,6 +52,30 @@ scene of its own, like Player Select:
   changes over.
 - The park is fresh each time you enter it from the title. It waits while
   you play.
+
+## Skill levels
+
+*Amended 2026-10-13:* the courts are skill levels, each with its own
+colour and a label over it:
+
+| Court | Label | Apron | Teams (ladder order, ADR-023) | Your game |
+|---|---|---|---|---|
+| 1 | `<3.5` | teal | HENDERSON, SNOWBIRDS, GYM BROS | EASY |
+| 2 | `3.5-4.5` | gold | PIRATES, GOTH CLUB, SURF CREW | MEDIUM |
+| 3 | `4.5+` | red | TWINS, CHAMPS | HARD |
+
+- Your game's difficulty comes from the court, not OPTIONS. KID stays
+  KID, so its swing assist works on every court.
+- Teams play at their level. They start there, and a team coming off
+  rejoins its own court's stack. The two coming off join first, then the
+  top two go on.
+  - On the 4.5+ court, with two teams, those two keep playing until
+    someone stacks there.
+  - Anyone already waiting is ahead of the two coming off, so a paddle
+    you stack plays at the next changeover if it's in the top two.
+- Art: each court's tiles use their own copy of the park palette (BG
+  palettes 1-3), differing only in the apron. The tile count is the same
+  (47), since tiles are shared across palettes. The HUD font gained a `+`.
 
 ## How
 
@@ -61,8 +85,8 @@ scene of its own, like Player Select:
     frame. It returns an event: STACKED, UNSTACKED, FULL, CALLED, or PLAY.
   - `open_play_return(won, for, against)` takes you back after your game.
   - The layout constants are shared with the art. `tools/assetgen/park.py`
-    reads them from the header and paints the park (BG1, 47 tiles, one
-    15-colour palette) through `indexed_scene`. That function is the Player
+    reads them from the header and paints the park (BG1, 47 tiles, a
+    15-colour palette per court) through `indexed_scene`. That function is the Player
     Select converter, now shared.
 - `src/render_park.c`: the scene.
   - **OBJ:** each person is 8x16, two small objects with the player
@@ -115,10 +139,13 @@ frame over the singles demo.
   - the starting park
   - fences, sliding, and facing
   - stacking, taking back, moving your paddle, and a full stack
-  - your turn: stack, the call (about 20 s), the call frames with input
-    ignored, PLAY, the return, and the changeover
-  - a 20-minute soak: about 48 games per court, teams moving between
-    courts
+  - your turn: stack, the call (about 20 s) against a team of that
+    court's level, the call frames with input ignored, PLAY, the return,
+    and the changeover
+  - the levels: each team's court, the labels, and each court's
+    difficulty (KID kept)
+  - a 20-minute soak: about 48 games per court, each team only ever at
+    its own level
   - every few frames throughout, every team in exactly one place (on a
     court or in one stack), and you in at most one stack
 - `test/smoke/open_play.timeline`: in from the title, walk to court 2's

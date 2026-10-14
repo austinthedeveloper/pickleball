@@ -1,4 +1,5 @@
 #include "open_play.h"
+#include "options.h"
 #include "opponents.h"
 
 OpenPlay g_open_play;
@@ -22,6 +23,34 @@ static const s16 s_court_left[OPEN_COURTS] = {
     OPEN_COURT_LEFT0 + 2 * OPEN_COURT_PITCH
 };
 typedef char open_court_table_is_3[OPEN_COURTS == 3 ? 1 : -1];
+
+/* Skill levels: the ladder's first three teams, the next three, the last
+ * two (the ladder is ordered by difficulty, ADR-023). */
+static const u8 s_team_court[OPPONENT_COUNT] = { 0, 0, 0, 1, 1, 1, 2, 2 };
+typedef char open_team_table_is_8[OPPONENT_COUNT == 8 ? 1 : -1];
+
+u8 open_team_court(u8 team)
+{
+    return team < OPPONENT_COUNT ? s_team_court[team] : 0;
+}
+
+const char *open_court_level_name(u8 court)
+{
+    static const char *const names[OPEN_COURTS] = {
+        "<3.5", "3.5-4.5", "4.5+"
+    };
+    return names[court < OPEN_COURTS ? court : 0];
+}
+
+u8 open_court_difficulty(u8 court, u8 saved_difficulty)
+{
+    static const u8 levels[OPEN_COURTS] = {
+        DIFFICULTY_EASY, DIFFICULTY_MEDIUM, DIFFICULTY_HARD
+    };
+    if (saved_difficulty == DIFFICULTY_KID)
+        return DIFFICULTY_KID;
+    return levels[court < OPEN_COURTS ? court : 0];
+}
 
 s16 open_court_left(u8 court)
 {
@@ -136,8 +165,8 @@ static u8 stack_remove(OpenCourt *court, u8 entry)
     return 0;
 }
 
-/* A team coming off joins the shortest stack (ties: from a random court,
- * so teams move around the park). */
+/* A team coming off joins its own court's stack (its skill level); if that
+ * is full, the shortest stack (ties: from a random court). */
 static void stack_join(u8 entry)
 {
     /* Walking pointers and no %: 816-tcc multiplies for each court[c] and
@@ -151,6 +180,12 @@ static void stack_join(u8 entry)
 
     if (entry == OPEN_NONE || entry == OPEN_YOU)
         return;
+    court = &g_open_play.court[open_team_court(entry)];
+    if (court->stack_count < OPEN_STACK_MAX) {
+        court->stack[court->stack_count++] = entry;
+        ++g_open_play.stacks;
+        return;
+    }
     court = first;
     for (n = start; n && n < OPEN_COURTS; --n)
         ++court;
@@ -203,11 +238,16 @@ static u8 court_start_game(u8 c)
     u8 off1 = court->playing[1];
     u8 side;
 
+    /* The two off go to the back of their stacks first, so a court whose
+     * stack is short keeps its own level playing (the 4.5+ court has two
+     * teams); anyone waiting is ahead of them. */
     ++g_open_play.lineup;
-    court->playing[0] = next_entry(c);
-    court->playing[1] = next_entry(c);
+    court->playing[0] = OPEN_NONE;
+    court->playing[1] = OPEN_NONE;
     stack_join(off0);
     stack_join(off1);
+    court->playing[0] = next_entry(c);
+    court->playing[1] = next_entry(c);
     court->score[0] = 0;
     court->score[1] = 0;
     if (court->playing[0] == OPEN_NONE || court->playing[1] == OPEN_NONE) {
@@ -270,18 +310,22 @@ void open_play_begin(u16 seed)
     for (c = 0; c < OPEN_COURTS; ++c) {
         court = &g_open_play.court[c];
         court->state = OPEN_COURT_PLAYING;
-        court->playing[0] = entry++;
-        court->playing[1] = entry++;
+        court->playing[0] = OPEN_NONE;
+        court->playing[1] = OPEN_NONE;
         court->score[0] = (u8)(open_random() & 3);
         court->score[1] = (u8)(open_random() & 3);
         court->stack_count = 0;
         court_next_point(court);
     }
-    /* The rest wait: one each on the first courts. */
-    for (c = 0; entry < OPPONENT_COUNT; ++entry, c = (u8)((c + 1) %
-            OPEN_COURTS)) {
-        court = &g_open_play.court[c];
-        court->stack[court->stack_count++] = entry;
+    /* Each team at its level's court: the first two play, the rest wait. */
+    for (entry = 0; entry < OPPONENT_COUNT; ++entry) {
+        court = &g_open_play.court[open_team_court(entry)];
+        if (court->playing[0] == OPEN_NONE)
+            court->playing[0] = entry;
+        else if (court->playing[1] == OPEN_NONE)
+            court->playing[1] = entry;
+        else
+            court->stack[court->stack_count++] = entry;
     }
     g_open_play.x_fp = TO_FP(OPEN_START_X);
     g_open_play.y_fp = TO_FP(OPEN_START_Y);

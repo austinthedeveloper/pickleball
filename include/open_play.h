@@ -12,6 +12,10 @@
  * the players coming off join the back of a stack. You walk the park, put
  * your paddle in a court's stack, and play when your turn comes. Pure:
  * render_park.c draws it and main.c runs the match.
+ *
+ * The courts are skill levels (ADR-034, amended): <3.5, 3.5-4.5, and 4.5+.
+ * Each ladder team calls one home (the ladder's order is its difficulty),
+ * and your game there is EASY, MEDIUM, or HARD.
  */
 
 enum {
@@ -103,6 +107,14 @@ u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed);
 /* Back from your match: you won or lost by this score; your court's game
  * ends and the next one starts. */
 void open_play_return(u8 won, u8 points_for, u8 points_against);
+
+/* A court's skill level as text ("<3.5", "3.5-4.5", "4.5+"), and the
+ * difficulty (ADR-025) of your game there: EASY, MEDIUM, HARD; KID (the
+ * saved difficulty) stays KID, for its swing assist. */
+const char *open_court_level_name(u8 court);
+u8 open_court_difficulty(u8 court, u8 saved_difficulty);
+/* The court a ladder team plays at. */
+u8 open_team_court(u8 team);
 
 /* Court geometry and lookups (render_park.c and the HUD). */
 s16 open_court_left(u8 court);
