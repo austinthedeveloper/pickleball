@@ -136,7 +136,8 @@ Start keeps your choices, which are saved for every later match; Y puts back
 what you had.
 
 - **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
-  home court. A new venue loads when you leave the page.
+  home court. Stop on a venue for a moment and it loads behind the page,
+  so you can see it; Y puts the old one back.
 - **KITCHEN** colours the non-volley zone; SAME makes it match the surface.
 - **DEFAULT** colours are the venue's own: a teal court with a navy kitchen
   on dirt at the park, green with a blue kitchen on grass by the lake, and

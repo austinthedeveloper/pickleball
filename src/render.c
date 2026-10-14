@@ -75,6 +75,8 @@ static u8 s_ground_waits;
 static u8 s_ground_dirty;
 /* Venue on screen (ADR-024). */
 static u8 s_venue;
+/* A preview keeps the ambience that plays (render_preview_court). */
+static u8 s_keep_ambience;
 /* The LAVA kitchen is on the ground palette (ADR-033). */
 static u8 s_lava_shown;
 u8 g_render_busy;
@@ -416,7 +418,7 @@ void render_initialize(void)
     /* RAM is not cleared at power-on (real hardware or emulators that
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
-    s_bust_shown = 0;
+    s_keep_ambience = 0;
     s_ground_dirty = 0;
     s_ground_pending = 0;
     s_ground_waits = 0;
@@ -503,7 +505,8 @@ static void render_load_court(void)
         (g_attract || g_match_config.open_play) ? OPPONENT_NONE :
             g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */
-    audio_ambience(s_venue);
+    if (!s_keep_ambience)
+        audio_ambience(s_venue);
     venue = &g_venue_data[s_venue];
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
@@ -527,6 +530,18 @@ static void render_load_court(void)
     hud_scene_invalidate();
     render_prepare();
     hud_commit_all();
+}
+
+u8 render_court_venue(void)
+{
+    return s_venue;
+}
+
+void render_preview_court(void)
+{
+    s_keep_ambience = 1;
+    render_open_match();
+    s_keep_ambience = 0;
 }
 
 void render_open_match(void)

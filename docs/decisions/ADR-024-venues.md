@@ -117,6 +117,26 @@ golden, doubles-match, and 3,000-frame timelines. The doubles demo keeps its
 own rate (`M4-UI-03`). `test/smoke/menu.timeline` scrolls fast during the
 doubles demo.
 
+*Amended 2026-10-14 (M4-VENUE-02: preview).* A venue no longer waits for
+the page to close:
+
+- **Resting** on a VENUE value for 20 frames (`COURT_PREVIEW_REST_FRAMES`)
+  loads it behind the page with the short fade, so scrolling past venues
+  loads none. AUTO previews the title's court (PARK, as there is no
+  opponent).
+- **The preview skips the ambience** (`render_preview_court`): loading a
+  sound module and the effects took about 45 black frames, so a preview
+  is about 25 frames (fade out, load, fade in). Closing the page on a
+  previewed venue loads its ambience once, under a fade.
+- **Closing:** B or Start keeps the venue and loads it only if it isn't
+  showing. Y puts the saved venue back and reloads it only if a preview
+  changed the court. A court kept from a match (the title shows the last
+  match's venue) is replaced only by a preview, then Y gives the saved
+  venue's court, not that match's.
+
+Zero overruns on `venue.timeline` and `venue_preview.timeline`; the golden
+trace is unchanged.
+
 ## Tests
 
 - `test/test_court_style.c` (host):

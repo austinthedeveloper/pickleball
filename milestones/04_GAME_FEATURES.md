@@ -28,8 +28,9 @@ ADR-024.
   - Accept: the kitchen paints with its own palette-2 entries; a KITCHEN row (with SAME as an option) previews live; every kitchen preset passes the line contrast check; venues can set a default kitchen.
 - [x] `M4-VENUE-01` Venues PARK, LAKESIDE, and SUNSET with shared ground tiles and home courts.
   - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md), `venue.timeline`, `lake.timeline`.
-- [ ] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
+- [x] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
   - Accept: scrolling VENUE shows the backdrop (reload with a short fade, or a thumbnail) without dropped frames; Y still restores the original.
+  - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md) (amended): a rested VENUE reloads behind the page in about 25 frames (the ambience waits for the page to close); `venue_preview.timeline` with zero overruns in `make perf`; golden trace identical.
 - [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium).
   - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 512 KiB cart has about 300 KiB free).
 

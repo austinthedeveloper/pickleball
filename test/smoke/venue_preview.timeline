@@ -1,0 +1,21 @@
+# Venue preview (M4-VENUE-02): on the COURT page, VENUE AUTO -> SUNSET
+# (Left wraps) loads behind the page once the cursor rests (about 25
+# frames of fade, no ambience). LAKESIDE, scrolled past, loads nothing;
+# PARK, rested on, loads. Back to SUNSET, then Y restores AUTO (PARK), and
+# closing loads its ambience only if it changed.
+70 71 down
+75 76 down     # past OPEN PLAY (ADR-034)
+80 81 down
+100 101 start
+120 121 left   # SUNSET
+shot 135       # still the park: the cursor hasn't rested
+shot 190       # SUNSET behind the page
+200 201 left   # LAKESIDE
+206 207 left   # PARK, before LAKESIDE rests
+shot 220       # still SUNSET
+shot 280       # PARK
+290 291 right  # LAKESIDE
+296 297 right  # SUNSET
+shot 360       # SUNSET
+370 371 y      # back to AUTO: PARK
+shot 430

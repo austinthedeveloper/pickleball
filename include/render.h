@@ -57,6 +57,11 @@ u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the
  * current g_match_config, or the Player Select screen. */
 void render_open_match(void);
+/* The venue the court shows (resolved: never AUTO). */
+u8 render_court_venue(void);
+/* render_open_match without the venue's ambience (M4-VENUE-02): loading a
+ * sound module takes about 45 frames, too long for a preview. */
+void render_preview_court(void);
 void render_select_open(void);
 /* Player Select frame: buffers before VBlank, uploads inside it. */
 void render_select_prepare(void);
