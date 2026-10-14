@@ -26,6 +26,22 @@ static u8 s_partner_human;
 
 static s16 s_impact_vz;
 
+/*
+ * Landing cache: a flight is fixed from a hit or a bounce to the next one,
+ * so its landing is predicted once and shared. Every CPU on the receiving
+ * team plans the same flight within a few frames of the shot, and each
+ * prediction steps up to AI_PREDICT_MAX_STEPS (M4-UI-03/04). The cached
+ * landing is exact: x and y are linear in steps, and the steps left are
+ * the cached count less the steps flown since (g_ball_steps).
+ */
+static u8 s_land_valid;
+static u8 s_land_serial;        /* g_game_state.shot_serial */
+static u8 s_land_bounces;       /* g_ball.bounce_count */
+static u16 s_land_step;         /* g_ball_steps at the landing */
+static s16 s_land_x;
+static s16 s_land_y;
+static s16 s_land_impact_vz;
+
 void ai_initialize(void)
 {
     u8 i;
@@ -37,17 +53,29 @@ void ai_initialize(void)
         g_ai_styles[i] = g_ai_default_style;
     }
     s_style = &g_ai_styles[0];
+    s_land_valid = 0;
 }
 
 /*
  * Ground contact prediction using the ball's own constants. x/y are linear
  * until the bounce, so only z is stepped; the loop is capped so a bad state
  * can never hang the frame.
+ *
+ * Eight steps at a time while the ball stays up: after k steps z is
+ * z + k*vz + g*k(k-1)/2 and vz is vz + k*g, exactly. A falling parabola is
+ * below zero only past its one crossing, so a block that ends above ground
+ * never touched it, and the block that lands is stepped singly: the same
+ * result as one step at a time, in about an eighth of the loop (a single
+ * step cost 816-tcc about a scanline; M4-UI-03/04).
  */
+#define AI_PREDICT_BLOCK 8
+#define AI_PREDICT_BLOCK_FALL (28 * BALL_GRAVITY_FP)    /* g * 8 * 7 / 2 */
+
 u8 ai_predict_landing(const Ball *ball, s16 *land_x, s16 *land_y)
 {
     fx z = ball->z_fp;
     s16 vz = ball->vz_fp;
+    s16 rise;
     u8 steps = 0;
 
     s_impact_vz = 0;
@@ -55,6 +83,17 @@ u8 ai_predict_landing(const Ball *ball, s16 *land_x, s16 *land_y)
         *land_x = FROM_FP(ball->x_fp);
         *land_y = FROM_FP(ball->y_fp);
         return 0;
+    }
+    while (steps + AI_PREDICT_BLOCK <= AI_PREDICT_MAX_STEPS) {
+        rise = vz + vz;                 /* 8 * vz, without a multiply */
+        rise += rise;
+        rise += rise;
+        rise += AI_PREDICT_BLOCK_FALL;
+        if (z + rise <= 0)
+            break;
+        z += rise;
+        vz += AI_PREDICT_BLOCK * BALL_GRAVITY_FP;
+        steps += AI_PREDICT_BLOCK;
     }
     while (steps < AI_PREDICT_MAX_STEPS) {
         z += vz;
@@ -257,10 +296,15 @@ static u8 probe_in_sweet_spot(void)
         g_hit_box.sweet_y_span);
 }
 
+/* The swing window's first contact check is after this many probe steps;
+ * the steps before it are skipped as one block when they can be. */
+typedef char ai_windup_skip_is_3[PLAYER_WINDUP_FRAMES - 1 == 3 ? 1 : -1];
+
 static u8 ai_swing_connects(const Player *player)
 {
-    u8 step;
+    u8 step = 1;
     u8 n;
+    s16 rise;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
@@ -280,9 +324,23 @@ static u8 ai_swing_connects(const Player *player)
     /* Probe step n is the ball at frame n's contact check: it moved on
      * frames 0..n-1 (a slow ball skips some, ADR-025; a fast one takes
      * extra steps, ADR-033). At a steady pace the pace check is skipped:
-     * two calls per step cost 816-tcc real frame time. */
-    for (step = 1; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
-            ++step) {
+     * two calls per step cost 816-tcc real frame time.
+     *
+     * At a steady pace, steps 1-3 only move the ball. When it stays off
+     * the ground they are one exact block (as in ai_predict_landing: three
+     * steps add 3 vz and 3 g to z): a third of the lookahead, which runs
+     * every frame of a swing window (M4-UI-03/04). */
+    if (!g_ball_paced && (g_probe.z != 0 || g_probe.vz > 0)) {
+        rise = g_probe.vz + g_probe.vz + g_probe.vz + 3 * BALL_GRAVITY_FP;
+        if (g_probe.z + rise > 0) {
+            g_probe.z += rise;
+            g_probe.vz += 3 * BALL_GRAVITY_FP;
+            g_probe.x += g_probe.vx + g_probe.vx + g_probe.vx;
+            g_probe.y += g_probe.vy + g_probe.vy + g_probe.vy;
+            step = PLAYER_WINDUP_FRAMES;
+        }
+    }
+    for (; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES; ++step) {
         if (!g_ball_paced)
             ai_probe_step();
         else
@@ -349,7 +407,23 @@ static void ai_plan_intercept(const Player *player)
         return;
     }
 
-    steps = ai_predict_landing(&g_ball, &land_x, &land_y);
+    if (s_land_valid && s_land_serial == g_game_state.shot_serial &&
+            s_land_bounces == g_ball.bounce_count) {
+        steps = (u8)(s_land_step - g_ball_steps);
+        land_x = s_land_x;
+        land_y = s_land_y;
+        s_impact_vz = s_land_impact_vz;
+    } else {
+        steps = ai_predict_landing(&g_ball, &land_x, &land_y);
+        /* Only a found landing: a capped prediction would change. */
+        s_land_valid = steps != 0 && steps < AI_PREDICT_MAX_STEPS;
+        s_land_serial = g_game_state.shot_serial;
+        s_land_bounces = g_ball.bounce_count;
+        s_land_step = g_ball_steps + steps;
+        s_land_x = land_x;
+        s_land_y = land_y;
+        s_land_impact_vz = s_impact_vz;
+    }
     /* FAST BALL takes an extra step every 3rd frame, so N steps take at
      * least N - N/4 - 1 frames: the swing early-out stays safe. A slow ball
      * (ADR-025) only takes longer, so its steps are a safe count. */
@@ -522,7 +596,11 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
             ++g_ai.plan_age;
         }
         PROFILE_MARK(10);
-        if (!player_is_swinging(player) && ai_swing_connects(player)) {
+        /* Doubles: only the teammate whose lane holds the ball looks ahead
+         * for a swing; the other covers its lane. Two lookaheads on one
+         * frame were the doubles frame drops (M4-UI-04). */
+        if ((!s_has_partner || g_ai.has_target) &&
+                !player_is_swinging(player) && ai_swing_connects(player)) {
             ai_plan_shot(player, s_contact_z);
             ai_choose_aim(player, intent);
             intent->hit_pressed = 1;

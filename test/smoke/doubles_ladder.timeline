@@ -1,0 +1,9 @@
+# Doubles against the ladder's first team (DAD and MOM), P1 serving and then
+# standing back while the CPU partner plays: three CPUs on court, the
+# heaviest human match (M4-UI-04). make perf holds it to zero overruns.
+70 71 down
+250 251 start
+290 291 start  # confirm Player Select
+370 371 b      # close the intro card
+400 401 b      # serve
+shot 460

@@ -118,6 +118,8 @@ default CPU, 12 matches each:
   previous build (KNOWN_ISSUES #14). FAST BALL adds the most: the swing
   lookahead probes up to 10 ball steps instead of 7, and its heaviest stage
   grows from 46 to 57 scanlines.
+  *Since then (R15 notes in docs/REFACTOR_PLAN.md):* 7-14, budget 20; the
+  same match without modifiers drops none.
 - **Back to the title:** after MAIN MENU, the logo waits for a frame under
   `HUD_TITLE_PROMPT_LIMIT`. The demo's light frames there reach about 110,
   the old limit, so whether the logo drew in time or was forced onto a

@@ -29,6 +29,7 @@ static u8 s_rally_start;
 u8 g_ball_tick;
 u8 g_ball_paced;
 u8 g_ball_pace[GAME_BALL_PACE_TICKS];
+u16 g_ball_steps;
 
 #define GAME_SCORE_WINS(score, other) \
     MODIFIERS_SCORE_WINS(score, other, g_match_config.points_to_win, \
@@ -99,6 +100,7 @@ static void game_activate_players(void)
     for (i = 0; i < MAX_PLAYERS; ++i)
         active[i] = match_slot_active(i);
     g_ball_tick = 0;
+    g_ball_steps = 0;
     g_ball_paced = g_match_config.difficulty < DIFFICULTY_MEDIUM ||
         (g_match_config.modifiers & MODIFIER_FAST_BALL);
     if (g_ball_paced)
@@ -198,10 +200,14 @@ u8 game_step_ball(void)
     /* ADR-025: a slow ball skips some steps, and FAST BALL (ADR-033) takes
      * an extra one; a steady pace skips the call. Two steps report both
      * steps' events. */
-    if (!g_ball_paced)
+    if (!g_ball_paced) {
+        ++g_ball_steps;
         return ball_update(0);
-    for (steps = GAME_BALL_STEPS_AHEAD(0); steps; --steps)
+    }
+    for (steps = GAME_BALL_STEPS_AHEAD(0); steps; --steps) {
+        ++g_ball_steps;
         events |= ball_update(0);
+    }
     if (++g_ball_tick >= OPTIONS_BALL_CYCLE)
         g_ball_tick = 0;
     return events;

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "hud.h"
 #include "hud_tiles.h"
+#include "ram_copy.h"
 #include "render.h"
 
 #define HUD_HFLIP 0x4000
@@ -42,6 +43,21 @@ void hud_clear_rows(u8 first_row, u8 count)
     hud_fill_value = HUD_TILE_CLEAR;
     hud_fill();
 #endif
+    for (row = first_row; row < first_row + count; row += HUD_BAND_ROWS)
+        hud_mark(row);
+    hud_mark(first_row + count - 1);
+}
+
+void hud_save_rows(u8 first_row, u8 count, u16 *out)
+{
+    RAM_COPY(out, &g_hud_map[(u16)first_row * 32], (u16)count * 64);
+}
+
+void hud_restore_rows(u8 first_row, u8 count, const u16 *in)
+{
+    u8 row;
+
+    RAM_COPY(&g_hud_map[(u16)first_row * 32], in, (u16)count * 64);
     for (row = first_row; row < first_row + count; row += HUD_BAND_ROWS)
         hud_mark(row);
     hud_mark(first_row + count - 1);

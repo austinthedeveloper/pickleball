@@ -97,13 +97,15 @@ touching the simulation.
 ## Polish
 
 - [ ] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
+  - Progress: 4-9 overruns over the demo (was 160): the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 12, `menu.timeline` 10.
   - Accept: zero overruns over a full doubles demo (about frames 4,300-9,300 from boot), without changing human matches or the golden trace.
 
 - [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
   - Verified: ADR-026; `hud_panel` now uses the assembly fill, and doubles has zero overruns.
   - Accept: zero overruns on the doubles timeline and a 3,000-frame doubles soak, with a few scanlines of margin.
 
-- [ ] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033). `make perf` holds `modifiers_doubles.timeline` to a budget of 60.
+- [ ] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033).
+  - Progress: the plain ladder match drops none (`doubles_ladder.timeline`, budget 0); all four modifiers drop 7-14 (`modifiers_doubles.timeline`, budget 20). See `docs/REFACTOR_PLAN.md` R15.
   - Accept: zero overruns on that timeline, without changing the golden trace. Pairs with `M4-UI-03` (the same four-player AI cost).
 
 - [ ] `M4-UI-01` Draw the title pages faster.

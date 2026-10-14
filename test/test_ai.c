@@ -64,6 +64,51 @@ static void test_prediction_matches_simulation(void)
         AI_PREDICT_MAX_STEPS);
 }
 
+/* The blocked landing prediction matches stepping one frame at a time
+ * (steps and landing; the impact speed follows from the same steps), over
+ * every height and climb a shot can have, and past the cap. */
+static void test_predict_blocks_exact(void)
+{
+    Ball ball;
+    s16 land_x;
+    s16 land_y;
+    fx z;
+    s16 vz;
+    fx sz;
+    s16 svz;
+    u8 steps;
+    u8 want;
+
+    memset(&ball, 0, sizeof(ball));
+    ball.x_fp = TO_FP(60);
+    ball.y_fp = TO_FP(120);
+    ball.vx_fp = 37;
+    ball.vy_fp = -11;
+    for (z = 0; z <= TO_FP(64); z += 3) {
+        for (vz = -120; vz <= 260; vz += 1) {
+            ball.z_fp = z;
+            ball.vz_fp = vz;
+            steps = ai_predict_landing(&ball, &land_x, &land_y);
+            if (z <= 0 && vz <= 0) {
+                assert(steps == 0);
+                continue;
+            }
+            sz = z;
+            svz = vz;
+            for (want = 0; want < AI_PREDICT_MAX_STEPS; ) {
+                sz += svz;
+                svz += BALL_GRAVITY_FP;
+                ++want;
+                if (sz <= 0)
+                    break;
+            }
+            assert(steps == want);
+            assert(land_x == FROM_FP(ball.x_fp + ball.vx_fp * want));
+            assert(land_y == FROM_FP(ball.y_fp + ball.vy_fp * want));
+        }
+    }
+}
+
 /* The AI's lightweight probe must match ball_simulate_step exactly. */
 static void test_probe_matches_ball(void)
 {
@@ -155,6 +200,7 @@ int main(int argc, char **argv)
         return 0;
     }
     test_prediction_matches_simulation();
+    test_predict_blocks_exact();
     test_probe_matches_ball();
     test_cpu_uses_shared_player_path_and_bounds();
     test_cpu_returns_standard_serves();

@@ -37,7 +37,34 @@ gameplay.
 | R12 | Split `src/hud_scene.c` (1,064 lines) into the match HUD (score panels, banners, pause menu) and the title (logo, menu, COURT/OPTIONS/PRACTICE/RECORDS pages); move title input (`update_title*`, ~120 lines of `main.c`) into a host-tested `title.c` | The title grew a page per feature; its input is the only menu logic without host tests | Medium | Planned |
 | R13 | One settings-page component: rows of (label, value names, count) with Up/Down rows, Left/Right wrapping values, B/Start keep, Y restore, and one HUD row renderer | `court_edit_input`, `options_edit_input`, and `practice_edit_input` repeat the same editor; their HUD pages repeat the row drawing | Medium | Planned |
 | R14 | One frame-budget helper: "defer if past scanline N, at most M frames in a row" | The same wait logic is written three times: `hud_title_wait` (hud_scene.c), `render_update_ground` (render.c), and `audio_update` (audio_events.c) | Low | Planned |
-| R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Planned |
+| R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Partly done: 160 → 4-9 overruns in the doubles demo (see R15 notes) |
+
+### R15 notes
+
+First pass (`feature/cld-doubles-perf`), all results unchanged (host
+outcomes, the golden trace, and a step-by-step check of the blocked
+prediction in `test_ai.c`). Release build, frames 4,300-9,400 from boot
+(the doubles demo), and a 2,400-frame doubles ladder match:
+
+| Change | Demo overruns | Ladder match |
+|---|---:|---:|
+| Before | 160 | 17 |
+| Only the ball's lane owner runs the swing lookahead | 150 | 7 |
+| A server thinks every frame only while serving; the demo P1 on its own fourth frame | 103 | 5 |
+| One landing prediction per flight, shared (cache keyed by shot and bounce) | 59 | 6 |
+| The title prompt's rows are kept and restored on each blink, not redrawn | 18 | 6 |
+| The logo in two steps; no wait for steps that draw nothing | 21 | 6 |
+| The landing prediction steps 8 frames at a time (exact) | 4-9 | 0 |
+
+- How it was found: per-frame AI counters in a scratch release build,
+  lined up with `g_work_scanline`: each CPU think cost about 17 scanlines
+  and a swing lookahead 35-40 more. The prompt blink and the logo were
+  ~100-scanline draws that waited for a light frame the doubles demo
+  rarely has, then were forced onto a heavy one.
+- Left: frames where a hit, a point, or the owner's lookahead coincide
+  with a second think. Four player updates (~56 scanlines) and the body
+  render (~33) are the largest fixed costs; an assembly `player_step` is
+  the next lever.
 
 ### R11 notes
 

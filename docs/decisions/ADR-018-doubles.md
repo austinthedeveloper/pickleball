@@ -39,6 +39,12 @@ all of which are already team-based.
 - CPU time budget: a CPU tracking the ball thinks every frame. Others think
   every fourth frame (staggered by slot) and hold their last movement in
   between.
+  - *Amended 2026-10-13 (M4-UI-03/04):* only the teammate whose lane holds
+    the ball runs the swing lookahead. A server thinks every frame only
+    while serving (the rule had kept the last server on every frame
+    through the rally). In the doubles demo, P1 follows the same rule on
+    the fourth frame no other slot uses, not every other frame. Every
+    frame now has at most one lane cover thinking beside the ball's owner.
 
 ## Palettes and shadows
 

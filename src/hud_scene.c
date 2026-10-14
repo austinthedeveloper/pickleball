@@ -104,6 +104,15 @@ static u8 s_title_waits;
  * frame (235 scanlines, a dropped frame). 116 + 98 still ends by 214. */
 #define HUD_TITLE_PROMPT_LIMIT 116
 
+/* The title prompt's rows (BANNER_ROW - 1 and its panel) as last drawn, for
+ * TITLE_PAGE_* s_prompt_page (0xff: none yet). Its blink brings it back
+ * every 64 frames; redrawing cost about 100 scanlines, which the doubles
+ * demo rarely had, so it was forced onto a heavy frame after
+ * HUD_TITLE_MAX_WAITS: most of its dropped frames (M4-UI-03). */
+#define HUD_PROMPT_ROWS 4
+static u16 s_prompt_rows[HUD_PROMPT_ROWS * 32];
+static u8 s_prompt_page;
+
 /* Nonzero when title drawing should wait for a lighter frame: the frame's
  * work is past `limit`, and it has not waited HUD_TITLE_MAX_WAITS yet. */
 static u8 hud_title_wait(u16 limit)
@@ -940,6 +949,19 @@ static void hud_title_area_update(void)
     s_title_part = 0;
 }
 
+/* The scanline a title step waits under: a prompt drawn from scratch needs
+ * a light frame; a logo row, a clear, or a restored prompt only an
+ * ordinary one; the logo steps between two title views draw nothing. */
+static u16 hud_title_step_limit(u16 key, u8 step)
+{
+    if (step == HUD_STEP_BIG || step == HUD_STEP_EXTRA)
+        return HUD_IS_TITLE(s_prev_scene) ? 0xffff : HUD_TITLE_SCANLINE_LIMIT;
+    if (step == HUD_STEP_PROMPT && !(key & 1) &&
+            s_prompt_page != ((key >> 1) & 7))
+        return HUD_TITLE_PROMPT_LIMIT;
+    return HUD_TITLE_SCANLINE_LIMIT;
+}
+
 static const char *hud_title_prompt(u8 page)
 {
     if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS ||
@@ -954,8 +976,10 @@ static const char *hud_title_prompt(u8 page)
 
 /*
  * Title steps: CLEAR wipes the match overlays (coming from a match), BIG
- * draws the logo, and PROMPT the blinking prompt. Only the prompt blinks;
- * the logo stays.
+ * and then EXTRA draw the logo's two rows, and PROMPT the blinking prompt.
+ * Only the prompt blinks; the logo stays. The logo in one step (about 100
+ * scanlines) fit only a light frame, which the demos rarely have; forced
+ * onto an ordinary one after HUD_TITLE_MAX_WAITS, it dropped a frame.
  */
 static void hud_title_step(u16 key, u8 step, u8 from_title)
 {
@@ -967,16 +991,25 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
         }
         break;
     case HUD_STEP_BIG:
-        if (!from_title) {
+        if (!from_title)
             hud_center_big(TITLE_ROW, HUD_PAL_YELLOW, "PICKLEBALL");
+        break;
+    case HUD_STEP_EXTRA:
+        if (!from_title)
             hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
-        }
         break;
     case HUD_STEP_PROMPT:
-        hud_clear_rows(BANNER_ROW - 1, 4);
-        if (!(key & 1))
+        if (!(key & 1) && s_prompt_page == ((key >> 1) & 7)) {
+            hud_restore_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
+            break;
+        }
+        hud_clear_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS);
+        if (!(key & 1)) {
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
                 hud_title_prompt((key >> 1) & 7));
+            hud_save_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
+            s_prompt_page = (key >> 1) & 7;
+        }
         break;
     default:
         break;
@@ -1103,15 +1136,17 @@ void hud_scene_update(void)
     }
     /* Title steps also wait for a lighter frame (the demo runs behind). */
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
-            hud_title_wait(s_scene_step == HUD_STEP_CLEAR ?
-                HUD_TITLE_SCANLINE_LIMIT : HUD_TITLE_PROMPT_LIMIT)) {
+            hud_title_wait(hud_title_step_limit(key, s_scene_step))) {
         busy = 1;
     } else if (s_scene_step < HUD_STEP_DONE && !busy) {
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
-        /* The title has no story steps after its prompt. */
-        if (HUD_IS_TITLE(key) && s_scene_step == HUD_STEP_PROMPT)
-            s_scene_step = HUD_STEP_DONE;
+        /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT. */
+        if (HUD_IS_TITLE(key))
+            s_scene_step = s_scene_step == HUD_STEP_BIG ? HUD_STEP_EXTRA :
+                s_scene_step == HUD_STEP_EXTRA ? HUD_STEP_PROMPT :
+                s_scene_step == HUD_STEP_PROMPT ? HUD_STEP_DONE :
+                s_scene_step + 1;
         else
             ++s_scene_step;
     } else if (!busy) {
@@ -1139,4 +1174,5 @@ void hud_scene_initialize(void)
     s_title_view = HUD_TITLE_UNKNOWN;
     s_title_part = 0;
     s_title_waits = 0;
+    s_prompt_page = 0xff;
 }

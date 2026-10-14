@@ -165,6 +165,13 @@ static void update_title_practice(u16 pressed)
     s_open_select = 1;
 }
 
+/* The slot is serving: the serve setup and toss only. server_index keeps
+ * the last server through the rally, and a lane cover thinking every frame
+ * there put a third think on most rally frames (M4-UI-03/04). */
+#define SERVING(slot) \
+    (g_serve_state.server_index == (slot) && \
+     g_game_state.phase <= GAME_PHASE_SERVE_TOSS)
+
 /* Title: Up/Down picks an entry, Start on pad 2 toggles 2P, and Start/B
  * opens Player Select (singles, doubles) or a page (court, records). */
 static void update_title(void)
@@ -221,7 +228,15 @@ static void update_title(void)
     }
     if (s_open_select)
         return;
-    if (g_loop_count & 1)
+    /* The demo P1: in singles every other frame (KNOWN_ISSUES #9). In
+     * doubles, every frame while the ball is in its lane, else on the one
+     * frame in four no other slot covers (UPDATE_CPU), serving included:
+     * its serve waits a few frames anyway. Every other frame there put two
+     * lane covers on one frame and three or four thinks in all, which
+     * dropped frames (M4-UI-03). */
+    if (g_match_config.mode == MATCH_DOUBLES ?
+            (g_ai_slots[0].has_target || ((u8)g_loop_count & 3) == 0) :
+            (g_loop_count & 1))
         ai_update(0, &g_player_intents[0]);
     else
         ai_hold_intent(0, &g_player_intents[0]);
@@ -240,7 +255,7 @@ static void update_title(void)
                 g_players[slot].active) { \
             if (!g_players[(slot) ^ 1].active || \
                     g_ai_slots[slot].has_target || \
-                    g_serve_state.server_index == (slot) || \
+                    SERVING(slot) || \
                     ((u8)g_loop_count & 3) == (slot)) \
                 ai_update(slot, &g_player_intents[slot]); \
             else \

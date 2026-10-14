@@ -26,6 +26,10 @@ enum {
 
 void hud_initialize(void);
 void hud_clear_rows(u8 first_row, u8 count);
+/* Whole map rows to and from a buffer of count * 32 entries; restoring
+ * marks them for upload. A block copy, far cheaper than redrawing. */
+void hud_save_rows(u8 first_row, u8 count, u16 *out);
+void hud_restore_rows(u8 first_row, u8 count, const u16 *in);
 void hud_text(u8 col, u8 row, u8 palette, const char *text);
 /* Single digit or two digits when value >= 10. */
 void hud_number(u8 col, u8 row, u8 palette, u8 value);

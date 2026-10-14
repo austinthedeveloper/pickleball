@@ -92,6 +92,9 @@ extern u8 g_ball_tick;
 /* Ball steps `frames` frames from now (0 = during this frame's update;
  * at most OPTIONS_BALL_CYCLE): 0, 1, or 2. Only when g_ball_paced. */
 #define GAME_BALL_STEPS_AHEAD(frames) g_ball_pace[g_ball_tick + (frames)]
+/* Ball physics steps taken this match: the CPUs' landing cache (ai.c)
+ * counts the steps a cached flight has already flown. */
+extern u16 g_ball_steps;
 /* This frame's ball steps at the match's pace; BallEvent bits. */
 u8 game_step_ball(void);
 /* Nonzero when the team has won the match (POINTS, and WIN BY 2). */
