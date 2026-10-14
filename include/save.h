@@ -17,7 +17,7 @@ enum {
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033). Shipped: 4 in v0.4.0, 7 in
-                                   v0.5.0 (ADR-032). */
+                                   v0.5.0, 8 in v0.6.0 (ADR-032). */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
