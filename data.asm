@@ -55,3 +55,16 @@ portrait_f_map:
 .incbin "assets/generated/portrait_f.map"
 portrait_f_map_end:
 .ends
+
+; Open play park (ADR-034): loaded in forced blank when the park opens.
+.section ".rodata_park" superfree
+park_tiles:
+.incbin "assets/generated/park.pic"
+park_tiles_end:
+park_map:
+.incbin "assets/generated/park.map"
+park_map_end:
+park_palette:
+.incbin "assets/generated/park.pal"
+park_palette_end:
+.ends

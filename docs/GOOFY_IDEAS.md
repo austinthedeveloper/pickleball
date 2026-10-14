@@ -14,17 +14,6 @@ whistle button.
 - Notes: the Multitap gives five pads (port 1 plus four on port 2;
   docs/04_INPUT_MULTITAP_PLAN.md), so the fifth pad is free in doubles.
 
-## Open play
-
-The real-life open-play experience. Your player arrives at a park with
-several courts and has to wait for a match to finish. You might wander the
-grounds, peek at other courts, and put your paddle in a court's **paddle
-stack**. When your turn comes, you play.
-
-- Notes: needs a walkable overworld (scrolling, or screen-by-screen) and
-  courts as places. Venues (ADR-024) and the CPU personalities (ADR-023)
-  could populate it.
-
 ## Dramatic replay of a long rally that goes out
 
 When a long rally ends with a ball just out, cut to a **close-up camera** on

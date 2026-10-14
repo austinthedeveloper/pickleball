@@ -9,6 +9,7 @@
 #include "input.h"
 #include "match.h"
 #include "modifiers.h"
+#include "open_play.h"
 #include "options.h"
 #include "pause_menu.h"
 #include "practice.h"
@@ -20,10 +21,12 @@
 #include "select.h"
 #include "story.h"
 
-/* The court (title, attract, match) or Player Select (ADR-020). */
-enum { SCENE_MATCH = 0, SCENE_SELECT = 1 };
+/* The court (title, attract, match), Player Select (ADR-020), or the open
+ * play park (ADR-034). */
+enum { SCENE_MATCH = 0, SCENE_SELECT = 1, SCENE_PARK = 2 };
 static u8 s_scene;
 static u8 s_open_select;
+static u8 s_open_park;
 /* Player Select is open on the way to practice (ADR-028). */
 static u8 s_practice_pending;
 /* This frame set up a new match (a scene switch for the overrun latch). */
@@ -57,6 +60,67 @@ static u8 update_pause_menu(u16 pressed)
         game_start_attract();
     }
     return 1;
+}
+
+/* Your game in the park is up (ADR-034): doubles with a regular partner
+ * (the default CPU) against the team drawn with you, on the saved options
+ * and modifiers. No intro card, and the ladder stays where it is. */
+static void start_open_play_match(void)
+{
+    match_config_doubles();
+    match_config_opponent(g_open_play.opponent);
+    g_match_config.points_to_win = options_points(g_save.settings.points);
+    g_match_config.difficulty = options_difficulty(g_save.settings.difficulty);
+    g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
+    g_match_config.open_play = 1;
+    game_start_match();
+    g_match_config_changed = 0;
+    render_open_match();
+    s_scene = SCENE_MATCH;
+    profile_resync();
+}
+
+/* The park, from the title or back from your game. */
+static void open_park(void)
+{
+    render_park_open();
+    s_scene = SCENE_PARK;
+    profile_resync();
+}
+
+/* One park frame (ADR-034): the D-pad walks, B stacks or takes your
+ * paddle, Start leaves for the title. */
+static void update_park(void)
+{
+    u16 held = g_pad_snapshots[0].held;
+    u16 pressed = g_pad_snapshots[0].pressed;
+    s16 move_x = (held & PAD_RIGHT) ? 1 : (held & PAD_LEFT) ? -1 : 0;
+    s16 move_y = (held & PAD_DOWN) ? 1 : (held & PAD_UP) ? -1 : 0;
+    u8 event;
+
+    if ((pressed & PAD_START) && g_open_play.called == OPEN_NONE) {
+        audio_ui(SFX_BACK);
+        game_start_attract();
+        g_match_config_changed = 0;
+        render_open_match();
+        s_scene = SCENE_MATCH;
+        profile_resync();
+        return;
+    }
+    event = open_play_update(move_x, move_y, (pressed & PAD_B) != 0);
+    if (event == OPEN_EVENT_STACKED || event == OPEN_EVENT_CALLED)
+        audio_ui(SFX_CONFIRM);
+    else if (event == OPEN_EVENT_UNSTACKED || event == OPEN_EVENT_FULL)
+        audio_ui(SFX_BACK);
+    if (event == OPEN_EVENT_PLAY) {
+        start_open_play_match();
+        return;
+    }
+    render_park_prepare();
+    profile_work_done();
+    audio_update();
+    WaitForVBlank();
+    render_park_commit();
 }
 
 /* B after a ladder win (ADR-023): the next opponent, with their intro card
@@ -205,6 +269,10 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
+            } else if (g_title_mode == TITLE_OPEN_PLAY) {
+                open_play_begin(g_game_state.frame_count);
+                s_open_park = 1;
+                return;
             } else if (g_title_mode == TITLE_MODIFIERS) {
                 modifiers_edit_begin(&g_save.settings.modifiers);
                 g_title_page = TITLE_PAGE_MODIFIERS;
@@ -226,7 +294,7 @@ static void update_title(void)
             }
         }
     }
-    if (s_open_select)
+    if (s_open_select || s_open_park)
         return;
     /* The demo P1: in singles every other frame (KNOWN_ISSUES #9). In
      * doubles, every frame while the ball is in its lane, else on the one
@@ -346,6 +414,7 @@ int main(void)
     g_title_2p = 0;
     s_scene = SCENE_MATCH;
     s_open_select = 0;
+    s_open_park = 0;
     s_practice_pending = 0;
     s_switched = 0;
     g_match_config_changed = 0;
@@ -365,6 +434,16 @@ int main(void)
         if (s_scene == SCENE_SELECT) {
             update_select();
             profile_frame_end();
+            continue;
+        }
+        if (s_scene == SCENE_PARK) {
+            update_park();
+            profile_frame_end();
+            continue;
+        }
+        if (s_open_park) {
+            s_open_park = 0;
+            open_park();
             continue;
         }
         if (s_open_select) {
@@ -404,6 +483,16 @@ int main(void)
             }
             if (g_next_opponent)
                 start_next_opponent();
+            /* B after an open play game (ADR-034): back to the park. */
+            if (g_back_to_park) {
+                g_back_to_park = 0;
+                open_play_return(g_game_state.match_winner == 0,
+                    g_game_state.team_score[0], g_game_state.team_score[1]);
+                game_start_attract();
+                g_match_config_changed = 0;
+                open_park();
+                continue;
+            }
             PROFILE_MARK(1);
         }
         /* A new attract demo or a return to the title: palettes, ponytails

@@ -1,0 +1,140 @@
+# ADR-034 — Open Play
+
+Status: **Accepted 2026-10-13** (first version)
+Depends on: ADR-018 (doubles), ADR-020 (scenes), ADR-023 (opponents),
+ADR-025 (options), ADR-033 (modifiers).
+From: `docs/GOOFY_IDEAS.md`, "Open play".
+
+## The idea
+
+The real open-play experience: you show up at a park with several courts,
+put your paddle in a court's **paddle stack**, watch the games while you
+wait, and play when your turn comes.
+
+## What it is
+
+**OPEN PLAY** is the third title entry (SINGLES, DOUBLES, OPEN PLAY,
+COURT, RECORDS, OPTIONS, MODIFIERS, PRACTICE). It opens the **park**, a
+scene of its own, like Player Select:
+
+- **Three courts** seen from above, each with a game going: the people
+  rally, the score shows over the court, and a game is first to 7. Points
+  come every 1 to 3 seconds, so a game takes about half a minute.
+- **Paddle stacks:** each court has a rack at its gate, and the paddles
+  hanging on it are the next in line (next first, up to four). Yours is in
+  your colours; the others are grey.
+- **The people** are the eight ladder teams (ADR-023), in their captains'
+  colours. Six play while two wait.
+- **Rotation:** when a game ends, all four players come off and the top
+  two entries in that court's stack go on. If that stack is short, the
+  front team of the longest other stack comes over (never your paddle).
+  The teams coming off join the back of the shortest stack, picked from a
+  random court on ties, so teams move around the park.
+- **You** walk the park with the D-pad. You can't walk into the courts:
+  the fences are solid, and you slide along them.
+  - **B at a rack** stacks your paddle, or takes it back if it's already
+    there. Stacking at another court moves it.
+  - Near a court, the panel names who's playing ("PIRATES VS TWINS").
+  - Once stacked, it says "YOU'RE NEXT ON COURT 2" or "WAITING ON
+    COURT 2".
+  - **Start** goes back to the title.
+- **Your game:** when your paddle reaches the top of the stack at a
+  changeover, the park calls you ("YOUR GAME!", "COURT 2 VS PIRATES") for
+  2.5 seconds. Then it starts a **doubles match**:
+  - you and a regular partner (the default CPU) against the team drawn
+    with you
+  - at the park (AUTO venue)
+  - with the saved points, difficulty, and modifiers
+  - no intro card, no ladder change, and no CHAMPION!
+  - records count it as a doubles game against the CPU
+- **After it:** the result says "@ PARK  START MENU". B takes you back,
+  where the park shows "YOU WON 5-3" or "YOU LOST 2-5" and your court
+  changes over.
+- The park is fresh each time you enter it from the title. It waits while
+  you play.
+
+## How
+
+- `src/open_play.c`, `include/open_play.h`: the rules, pure and
+  host-tested.
+  - `open_play_begin`, then `open_play_update(move_x, move_y, b)` each
+    frame. It returns an event: STACKED, UNSTACKED, FULL, CALLED, or PLAY.
+  - `open_play_return(won, for, against)` takes you back after your game.
+  - The layout constants are shared with the art. `tools/assetgen/park.py`
+    reads them from the header and paints the park (BG1, 47 tiles, one
+    15-colour palette) through `indexed_scene`. That function is the Player
+    Select converter, now shared.
+- `src/render_park.c`: the scene.
+  - **OBJ:** each person is 8x16, two small objects with the player
+    palette roles. The second row of `objects.png` holds the new tiles:
+    person top and legs, a stepping frame, a paddle, a mini ball, and its
+    shadow. OBJ tiles: 224 of 256.
+  - **OBJ palettes:** 0 you (P1 blue), 1-6 the teams on court (court × 2 +
+    side), 7 the objects palette.
+  - **OAM:** you 0-1, court people 2-25, balls 26-28, shadows 29-31, and
+    rack paddles 32-43.
+  - **BG3:** the message panel (rows 1-3), the scores over the courts (row
+    5), and "YOUR GAME!" (rows 11-12).
+- `main.c`: `SCENE_PARK`.
+  - The title opens it; PLAY starts the match.
+  - B on the match result (`g_back_to_park`, set by `game.c` when
+    `MatchConfig.open_play`) comes back.
+  - `render_load_court` treats open play as OPPONENT_NONE for AUTO, so it
+    picks the park.
+
+## Frame budget
+
+The first build ran the park at half speed: an 8x16 person, a ball, and a
+rack paddle each cost 816-tcc about three scanlines to write. Each court's
+animation also divided per frame, and every court lookup multiplied. Now:
+
+- **Animation tables** (track and arc), and the ball's landing x once per
+  rally end. Court edges come from a table, and the stack helpers walk
+  pointers.
+- **An OAM cache:** an object is written only when its position, tile, or
+  attribute changed.
+- **Staggered drawing:** each court animates on every third frame. The
+  racks redraw only when a stack changes (`g_open_play.stacks`), and the
+  team palettes only when someone comes on or off (`.lineup`).
+- **One heavy job per frame:** new palettes, a message step (clear, the
+  panel, the big text: separate frames), or a court's animation.
+- **No `%`** on a changeover frame: masks and a wrap.
+
+Result: about 88 scanlines a frame on average, at most about 207, and
+`open_play.timeline` has zero overruns over 2,800 frames (`make perf`,
+budget 0).
+
+On the title, moving the cursor now repaints the new item on the press
+frame and the old one on the next. The pair on one frame cost about 140
+scanlines, and the eighth entry's extra Up in `venue.timeline` dropped a
+frame over the singles demo.
+
+## Tests
+
+- `test/test_open_play.c` (host):
+  - the starting park
+  - fences, sliding, and facing
+  - stacking, taking back, moving your paddle, and a full stack
+  - your turn: stack, the call (about 20 s), the call frames with input
+    ignored, PLAY, the return, and the changeover
+  - a 20-minute soak: about 48 games per court, teams moving between
+    courts
+  - every few frames throughout, every team in exactly one place (on a
+    court or in one stack), and you in at most one stack
+- `test/smoke/open_play.timeline`: in from the title, walk to court 2's
+  rack, stack, and wait. It shows the court scores and the peek, "YOU'RE
+  NEXT ON COURT 2", the call, and the match (MesenCE). A longer scratch run
+  played the match and came back to the park.
+- The court, records, venue, and lake timelines press Down once more
+  (OPEN PLAY is new above COURT); venue presses Up once more.
+
+## Not yet
+
+- The park resets on each visit. The other players only take turns
+  between courts; you never see them walk.
+- Your partner is always the default CPU. Partnering with someone from the
+  stack (and their looks) would need per-slot opponent members in
+  `MatchConfig`.
+- No bench crowd, no wandering people, and a single screen with no
+  scrolling to a bigger park.
+- 2P: the second player can't stack a paddle.

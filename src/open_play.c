@@ -1,0 +1,389 @@
+#include "open_play.h"
+#include "opponents.h"
+
+OpenPlay g_open_play;
+
+/* xorshift16: no multiply (816-tcc calls a routine for one). */
+static u16 open_random(void)
+{
+    u16 x = g_open_play.seed;
+
+    x ^= x << 7;
+    x ^= x >> 9;
+    x ^= x << 8;
+    g_open_play.seed = x;
+    return x;
+}
+
+/* A table: the walking and rack checks ask for court edges many times a
+ * frame, and 816-tcc calls a routine for each multiply. */
+static const s16 s_court_left[OPEN_COURTS] = {
+    OPEN_COURT_LEFT0, OPEN_COURT_LEFT0 + OPEN_COURT_PITCH,
+    OPEN_COURT_LEFT0 + 2 * OPEN_COURT_PITCH
+};
+typedef char open_court_table_is_3[OPEN_COURTS == 3 ? 1 : -1];
+
+s16 open_court_left(u8 court)
+{
+    return s_court_left[court < OPEN_COURTS ? court : 0];
+}
+
+s16 open_rack_x(u8 court)
+{
+    return open_court_left(court) + OPEN_RACK_DX;
+}
+
+static s16 abs_s16(s16 v)
+{
+    return v < 0 ? -v : v;
+}
+
+u8 open_rack_near(void)
+{
+    s16 x = FROM_FP(g_open_play.x_fp);
+    s16 y = FROM_FP(g_open_play.y_fp);
+    u8 c;
+
+    for (c = 0; c < OPEN_COURTS; ++c)
+        if (abs_s16(x - open_rack_x(c)) <= OPEN_RACK_REACH &&
+                abs_s16(y - OPEN_RACK_Y) <= OPEN_RACK_REACH)
+            return c;
+    return OPEN_NONE;
+}
+
+u8 open_court_near(void)
+{
+    s16 x = FROM_FP(g_open_play.x_fp);
+    s16 y = FROM_FP(g_open_play.y_fp);
+    s16 left;
+    u8 c;
+
+    for (c = 0; c < OPEN_COURTS; ++c) {
+        left = open_court_left(c);
+        if (x >= left - OPEN_PEEK_REACH / 2 &&
+                x <= left + OPEN_COURT_W + OPEN_PEEK_REACH / 2 &&
+                y >= OPEN_COURT_TOP - OPEN_PEEK_REACH &&
+                y <= OPEN_COURT_TOP + OPEN_COURT_H + OPEN_PEEK_REACH)
+            return c;
+    }
+    return OPEN_NONE;
+}
+
+u8 open_walkable(fx x_fp, fx y_fp)
+{
+    s16 x = FROM_FP(x_fp);
+    s16 y = FROM_FP(y_fp);
+    s16 left;
+    u8 c;
+
+    if (x < OPEN_WALK_LEFT || x > OPEN_WALK_RIGHT ||
+            y < OPEN_WALK_TOP || y > OPEN_WALK_BOTTOM)
+        return 0;
+    for (c = 0; c < OPEN_COURTS; ++c) {
+        left = open_court_left(c);
+        if (x > left - OPEN_FENCE_MARGIN &&
+                x < left + OPEN_COURT_W + OPEN_FENCE_MARGIN &&
+                y > OPEN_COURT_TOP - OPEN_FENCE_MARGIN &&
+                y < OPEN_COURT_TOP + OPEN_COURT_H + OPEN_FENCE_MARGIN)
+            return 0;
+    }
+    return 1;
+}
+
+u8 open_your_wait(void)
+{
+    const OpenCourt *court;
+    u8 i;
+
+    if (g_open_play.your_court == OPEN_NONE)
+        return OPEN_NONE;
+    court = &g_open_play.court[g_open_play.your_court];
+    for (i = 0; i < court->stack_count; ++i)
+        if (court->stack[i] == OPEN_YOU)
+            return i >> 1;
+    return OPEN_NONE;
+}
+
+static u8 stack_pop(OpenCourt *court)
+{
+    u8 entry;
+    u8 i;
+
+    if (!court->stack_count)
+        return OPEN_NONE;
+    entry = court->stack[0];
+    ++g_open_play.stacks;
+    for (i = 1; i < court->stack_count; ++i)
+        court->stack[i - 1] = court->stack[i];
+    --court->stack_count;
+    return entry;
+}
+
+static u8 stack_remove(OpenCourt *court, u8 entry)
+{
+    u8 i;
+    u8 j;
+
+    for (i = 0; i < court->stack_count; ++i) {
+        if (court->stack[i] != entry)
+            continue;
+        for (j = i + 1; j < court->stack_count; ++j)
+            court->stack[j - 1] = court->stack[j];
+        --court->stack_count;
+        ++g_open_play.stacks;
+        return 1;
+    }
+    return 0;
+}
+
+/* A team coming off joins the shortest stack (ties: from a random court,
+ * so teams move around the park). */
+static void stack_join(u8 entry)
+{
+    /* Walking pointers and no %: 816-tcc multiplies for each court[c] and
+     * divides in a routine, and this runs on a changeover frame. */
+    u8 start = (u8)(open_random() & 3);
+    OpenCourt *const first = g_open_play.court;
+    OpenCourt *const end = first + OPEN_COURTS;
+    OpenCourt *court;
+    OpenCourt *best = 0;
+    u8 n;
+
+    if (entry == OPEN_NONE || entry == OPEN_YOU)
+        return;
+    court = first;
+    for (n = start; n && n < OPEN_COURTS; --n)
+        ++court;
+    for (n = 0; n < OPEN_COURTS; ++n) {
+        if (court->stack_count < OPEN_STACK_MAX &&
+                (!best || court->stack_count < best->stack_count))
+            best = court;
+        if (++court == end)
+            court = first;
+    }
+    if (best) {
+        best->stack[best->stack_count++] = entry;
+        ++g_open_play.stacks;
+    }
+}
+
+/* The next entry for a court: its own stack, else the front team of the
+ * longest other stack (never your paddle: it waits where you put it). */
+static u8 next_entry(u8 c)
+{
+    OpenCourt *court = &g_open_play.court[c];
+    OpenCourt *other = g_open_play.court;
+    OpenCourt *best = 0;
+    u8 o;
+
+    if (court->stack_count)
+        return stack_pop(court);
+    for (o = 0; o < OPEN_COURTS; ++o, ++other) {
+        if (other == court || !other->stack_count ||
+                other->stack[0] == OPEN_YOU)
+            continue;
+        if (!best || other->stack_count > best->stack_count)
+            best = other;
+    }
+    return best ? stack_pop(best) : OPEN_NONE;
+}
+
+static void court_next_point(OpenCourt *court)
+{
+    court->timer = OPEN_POINT_MIN_FRAMES +
+        (u16)(open_random() & (OPEN_POINT_SPAN_FRAMES - 1));
+    court->rally = 0;
+}
+
+/* Changeover over: the next two on, then the two off join stacks. */
+static u8 court_start_game(u8 c)
+{
+    OpenCourt *court = &g_open_play.court[c];
+    u8 off0 = court->playing[0];
+    u8 off1 = court->playing[1];
+    u8 side;
+
+    ++g_open_play.lineup;
+    court->playing[0] = next_entry(c);
+    court->playing[1] = next_entry(c);
+    stack_join(off0);
+    stack_join(off1);
+    court->score[0] = 0;
+    court->score[1] = 0;
+    if (court->playing[0] == OPEN_NONE || court->playing[1] == OPEN_NONE) {
+        /* Not enough players yet: wait for the next changeover. */
+        stack_join(court->playing[0]);
+        stack_join(court->playing[1]);
+        court->playing[0] = OPEN_NONE;
+        court->playing[1] = OPEN_NONE;
+        court->state = OPEN_COURT_CHANGEOVER;
+        court->timer = OPEN_CHANGEOVER_FRAMES;
+        return OPEN_EVENT_NONE;
+    }
+    for (side = 0; side < 2; ++side) {
+        if (court->playing[side] != OPEN_YOU)
+            continue;
+        court->state = OPEN_COURT_YOURS;
+        g_open_play.your_court = OPEN_NONE;
+        g_open_play.called = c;
+        g_open_play.call_timer = 0;
+        g_open_play.opponent = court->playing[side ^ 1];
+        return OPEN_EVENT_CALLED;
+    }
+    court->state = OPEN_COURT_PLAYING;
+    court_next_point(court);
+    return OPEN_EVENT_NONE;
+}
+
+static u8 court_update(u8 c)
+{
+    OpenCourt *court = &g_open_play.court[c];
+    u8 side;
+
+    if (court->state == OPEN_COURT_YOURS)
+        return OPEN_EVENT_NONE;
+    if (court->timer)
+        --court->timer;
+    if (court->state == OPEN_COURT_CHANGEOVER)
+        return court->timer ? OPEN_EVENT_NONE : court_start_game(c);
+    ++court->rally;
+    if (court->timer)
+        return OPEN_EVENT_NONE;
+    side = (u8)(open_random() & 1);
+    if (++court->score[side] >= OPEN_GAME_POINTS) {
+        court->state = OPEN_COURT_CHANGEOVER;
+        court->timer = OPEN_CHANGEOVER_FRAMES;
+        return OPEN_EVENT_NONE;
+    }
+    court_next_point(court);
+    return OPEN_EVENT_NONE;
+}
+
+void open_play_begin(u16 seed)
+{
+    OpenCourt *court;
+    u8 c;
+    u8 entry = 0;
+
+    g_open_play.seed = seed ? seed : 0xace1;
+    ++g_open_play.lineup;
+    for (c = 0; c < OPEN_COURTS; ++c) {
+        court = &g_open_play.court[c];
+        court->state = OPEN_COURT_PLAYING;
+        court->playing[0] = entry++;
+        court->playing[1] = entry++;
+        court->score[0] = (u8)(open_random() & 3);
+        court->score[1] = (u8)(open_random() & 3);
+        court->stack_count = 0;
+        court_next_point(court);
+    }
+    /* The rest wait: one each on the first courts. */
+    for (c = 0; entry < OPPONENT_COUNT; ++entry, c = (u8)((c + 1) %
+            OPEN_COURTS)) {
+        court = &g_open_play.court[c];
+        court->stack[court->stack_count++] = entry;
+    }
+    g_open_play.x_fp = TO_FP(OPEN_START_X);
+    g_open_play.y_fp = TO_FP(OPEN_START_Y);
+    g_open_play.facing_left = 0;
+    g_open_play.walking = 0;
+    g_open_play.step = 0;
+    g_open_play.your_court = OPEN_NONE;
+    g_open_play.called = OPEN_NONE;
+    g_open_play.call_timer = 0;
+    g_open_play.opponent = OPEN_NONE;
+    g_open_play.last_won = OPEN_NONE;
+    g_open_play.last_score[0] = 0;
+    g_open_play.last_score[1] = 0;
+}
+
+static u8 open_press_rack(u8 rack)
+{
+    OpenCourt *court = &g_open_play.court[rack];
+
+    if (g_open_play.your_court == rack) {
+        stack_remove(court, OPEN_YOU);
+        g_open_play.your_court = OPEN_NONE;
+        return OPEN_EVENT_UNSTACKED;
+    }
+    if (court->stack_count >= OPEN_STACK_MAX)
+        return OPEN_EVENT_FULL;
+    if (g_open_play.your_court != OPEN_NONE)
+        stack_remove(&g_open_play.court[g_open_play.your_court], OPEN_YOU);
+    court->stack[court->stack_count++] = OPEN_YOU;
+    ++g_open_play.stacks;
+    g_open_play.your_court = rack;
+    return OPEN_EVENT_STACKED;
+}
+
+static void open_walk(s16 move_x, s16 move_y)
+{
+    fx x = g_open_play.x_fp + move_x * OPEN_WALK_FP;
+    fx y = g_open_play.y_fp + move_y * OPEN_WALK_FP;
+
+    /* Each axis on its own, so you slide along a fence. */
+    if (move_x && open_walkable(x, g_open_play.y_fp))
+        g_open_play.x_fp = x;
+    if (move_y && open_walkable(g_open_play.x_fp, y))
+        g_open_play.y_fp = y;
+    if (move_x)
+        g_open_play.facing_left = move_x < 0;
+    g_open_play.walking = move_x || move_y;
+    if (g_open_play.walking)
+        ++g_open_play.step;
+}
+
+u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed)
+{
+    u8 event = OPEN_EVENT_NONE;
+    u8 result;
+    u8 rack;
+    u8 c;
+
+    for (c = 0; c < OPEN_COURTS; ++c) {
+        result = court_update(c);
+        if (result != OPEN_EVENT_NONE)
+            event = result;
+    }
+    if (g_open_play.called != OPEN_NONE) {
+        g_open_play.walking = 0;
+        if (event == OPEN_EVENT_CALLED)
+            return event;
+        if (++g_open_play.call_timer >= OPEN_CALL_FRAMES) {
+            g_open_play.call_timer = OPEN_CALL_FRAMES;
+            return OPEN_EVENT_PLAY;
+        }
+        return OPEN_EVENT_NONE;
+    }
+    open_walk(move_x, move_y);
+    if (b_pressed) {
+        rack = open_rack_near();
+        if (rack != OPEN_NONE)
+            event = open_press_rack(rack);
+    }
+    return event;
+}
+
+void open_play_return(u8 won, u8 points_for, u8 points_against)
+{
+    u8 c = g_open_play.called;
+    OpenCourt *court;
+
+    g_open_play.last_won = won ? 1 : 0;
+    g_open_play.last_score[0] = points_for;
+    g_open_play.last_score[1] = points_against;
+    g_open_play.called = OPEN_NONE;
+    if (c >= OPEN_COURTS)
+        return;
+    court = &g_open_play.court[c];
+    /* You leave; the court's next game starts after a changeover. */
+    if (court->playing[0] == OPEN_YOU)
+        court->playing[0] = OPEN_NONE;
+    if (court->playing[1] == OPEN_YOU)
+        court->playing[1] = OPEN_NONE;
+    court->state = OPEN_COURT_CHANGEOVER;
+    court->timer = OPEN_CHANGEOVER_FRAMES;
+    ++g_open_play.lineup;
+    g_open_play.x_fp = TO_FP(open_rack_x(c));
+    g_open_play.y_fp = TO_FP(OPEN_RACK_Y + 8);
+}

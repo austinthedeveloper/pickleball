@@ -440,8 +440,10 @@ static void render_load_court(void)
     u16 ground = (u16)(&court_tiles_end - &court_tiles);
     const VenueData *venue;
 
+    /* Open play (ADR-034) is at the park: AUTO gives the first venue. */
     s_venue = court_style_venue(g_save.settings.venue,
-        g_attract ? OPPONENT_NONE : g_match_config.opponent);
+        (g_attract || g_match_config.open_play) ? OPPONENT_NONE :
+            g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */
     audio_ambience(s_venue);
     venue = &g_venue_data[s_venue];

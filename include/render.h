@@ -55,6 +55,11 @@ void render_select_open(void);
 /* Player Select frame: buffers before VBlank, uploads inside it. */
 void render_select_prepare(void);
 void render_select_commit(void);
+/* The open play park (ADR-034): opens with a fade; a frame's buffers
+ * before VBlank, uploads inside it. */
+void render_park_open(void);
+void render_park_prepare(void);
+void render_park_commit(void);
 /* Brightness fade out (1) or in (0) over a few frames. */
 void render_fade(u8 out);
 /* Builds OAM and HUD buffers; call before WaitForVBlank. */

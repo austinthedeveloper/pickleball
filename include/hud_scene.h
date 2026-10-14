@@ -13,9 +13,9 @@ void hud_scene_refresh_title(void);
 void hud_scene_update(void);
 
 /* Title menu entries (g_title_mode). */
-enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_COURT = 2,
-       TITLE_RECORDS = 3, TITLE_OPTIONS = 4, TITLE_MODIFIERS = 5,
-       TITLE_PRACTICE = 6, TITLE_ENTRIES = 7 };
+enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_OPEN_PLAY = 2,
+       TITLE_COURT = 3, TITLE_RECORDS = 4, TITLE_OPTIONS = 5,
+       TITLE_MODIFIERS = 6, TITLE_PRACTICE = 7, TITLE_ENTRIES = 8 };
 /* Title pages (g_title_page): the menu, or a page over it. */
 enum { TITLE_PAGE_MENU = 0, TITLE_PAGE_COURT = 1, TITLE_PAGE_RECORDS = 2,
        TITLE_PAGE_OPTIONS = 3, TITLE_PAGE_PRACTICE = 4,

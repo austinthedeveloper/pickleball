@@ -85,15 +85,17 @@ def obj_assets(manifest):
             raise AssetError(f"frame {name} foot row {foot} != "
                              f"{manifest['foot_row']}")
     ow, oh, orows, _ = read_png(paths.src / "objects.png")
-    if (ow, oh) != (128, 8):
-        raise AssetError("objects.png must be 128x8")
+    if ow != 128 or oh % 8 or not 8 <= oh <= 16:
+        raise AssetError("objects.png must be 128x8 or 128x16 (rows of "
+                         "sixteen 8x8 objects)")
     tiles = []
     for ty in range(height // 8):
         for tx in range(16):
             tiles.append(encode_tile(block(rows, tx * 8, ty * 8), 4))
     object_base = len(tiles)
-    for tx in range(16):
-        tiles.append(encode_tile(block(orows, tx * 8, 0), 4))
+    for ty in range(oh // 8):
+        for tx in range(16):
+            tiles.append(encode_tile(block(orows, tx * 8, ty * 8), 4))
     if len(tiles) > OBJ_TILE_BUDGET:
         raise AssetError(f"OBJ uses {len(tiles)} tiles > {OBJ_TILE_BUDGET}")
     for name, info in frames.items():

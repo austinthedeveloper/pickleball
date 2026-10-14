@@ -4,10 +4,25 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 (doubles), on a single outdoor court. A second player can join on
 controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
-On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **COURT**,
-**RECORDS**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
+On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **OPEN PLAY**,
+**COURT**, **RECORDS**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
-Player Select (or the court, records, options, or modifiers page).
+Player Select (or the park, or the court, records, options, or modifiers page).
+
+## Open play
+
+**OPEN PLAY** takes you to a park with three courts, a game going on each,
+just like open play at a real park.
+
+- Walk with the D-pad. The paddles hanging on a court's rack are the
+  players waiting for that court; yours is the coloured one.
+- Press **B** at a rack to put your paddle in its stack (B again takes it
+  back). Walk past a court to see who's playing.
+- When a game ends, everyone comes off and the next paddles go on. When
+  it's yours: **YOUR GAME!** You and a partner play doubles against the
+  team you were drawn with, with your OPTIONS and MODIFIERS.
+- After the game, **B** takes you back to the park. **Start** in the park
+  goes back to the title.
 
 ## Practice
 

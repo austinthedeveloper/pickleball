@@ -41,9 +41,9 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-18) */
+#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-19) */
 #define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
-#define TITLE_2P_ROW 19
+#define TITLE_2P_ROW 20
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
 #define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
@@ -78,6 +78,9 @@ u8 g_title_2p;
  */
 static u8 s_title_view;
 static u8 s_title_part;
+/* A menu item that lost the cursor and still shows it, redrawn on the
+ * frame after the move (0xff: none). */
+static u8 s_title_stale;
 /* Court and options page rows on screen: value | cursor (bit 7); 0xff not
  * drawn. */
 static u8 s_court_row_drawn[COURT_ROWS];
@@ -347,6 +350,7 @@ static const char *hud_match_winner_text(void)
 {
     /* ADR-026: beating the last ladder opponent. */
     if (g_game_state.match_winner == 0 && !g_attract &&
+            !g_match_config.open_play &&
             g_match_config.opponent == OPPONENT_COUNT - 1)
         return "CHAMPION!";
     if (hud_versus_2p())
@@ -453,7 +457,8 @@ static void hud_result_story(u8 step)
             won ? lines[OPPONENT_LINE_CONCEDE] : lines[OPPONENT_LINE_TAUNT]);
         return;
     }
-    if (!won)
+    /* Open play (ADR-034) is off the ladder: no next-up line. */
+    if (!won || g_match_config.open_play)
         return;
     if (g_match_config.opponent == OPPONENT_COUNT - 1) {
         hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW,
@@ -539,8 +544,8 @@ static void hud_record_ladder(u8 row)
 static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
-        "  SINGLES  ", "  DOUBLES  ", "  COURT    ", "  RECORDS  ",
-        "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
+        "  SINGLES  ", "  DOUBLES  ", "  OPEN PLAY", "  COURT    ",
+        "  RECORDS  ", "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
     };
 
     hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
@@ -903,12 +908,23 @@ static void hud_title_area_update(void)
     /* A drawn menu whose cursor or 2P line changed: redraw only what
      * changed, in place, at once (two rows are cheap, so this skips the
      * wait for a lighter frame; no clear, so nothing flickers). */
+    /* The item the cursor left, a frame after the move: the two items on
+     * one frame cost about 140 scanlines, which the title demo's frames do
+     * not always have (M4-UI-03). */
+    if (s_title_stale != 0xff) {
+        /* Coloured by the choice now, so another move since is fine. */
+        if (s_title_part == 0xff && s_title_view < HUD_TITLE_VIEW_COURT &&
+                view < HUD_TITLE_VIEW_COURT)
+            hud_title_item(s_title_stale, view & 7);
+        s_title_stale = 0xff;
+        return;
+    }
     if (s_title_view != view && s_title_part == 0xff &&
             s_title_view < HUD_TITLE_VIEW_COURT &&
             view < HUD_TITLE_VIEW_COURT) {
         if ((s_title_view ^ view) & 7) {
-            hud_title_item(s_title_view & 7, view & 7);
             hud_title_item(view & 7, view & 7);
+            s_title_stale = s_title_view & 7;
         }
         if ((s_title_view ^ view) & 8)
             hud_title_2p_line();
@@ -1095,6 +1111,7 @@ static void hud_scene_step(u16 key, u8 step)
                 hud_match_winner_text());
         else
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+                g_match_config.open_play ? "@ PARK  START MENU" :
                 (g_game_state.match_winner == 0 &&
                  g_match_config.opponent != OPPONENT_NONE) ?
                     "@ NEXT  START MENU" : "@ REMATCH  START MENU");
@@ -1175,4 +1192,5 @@ void hud_scene_initialize(void)
     s_title_part = 0;
     s_title_waits = 0;
     s_prompt_page = 0xff;
+    s_title_stale = 0xff;
 }

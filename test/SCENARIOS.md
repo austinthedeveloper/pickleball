@@ -50,8 +50,10 @@ sources the ROM uses).
 | MOD-01 | `test_modifiers.c`: editor, Player Select copies, fast steps and arc, big reach, WIN BY 2 through deuce, LAVA faults and colours, no CPU in the lava across the ladder (ADR-033) | PASS |
 | MOD-02 | `test/smoke/modifiers.timeline`: all four on, the lava preview, a big-ball singles match, LAVA! when P1 walks into the kitchen | PASS (MesenCE smoke) |
 | SAV-05 | `test_save.c: test_migrate_v7` + MesenCE `.srm` boot: v0.5.0 saves migrate to layout 8 (ADR-033) | PASS |
+| OPN-01 | `test_open_play.c`: start, fences and sliding, stack / take back / move / full, your call and return, a 20-minute soak with every team in exactly one place (ADR-034) | PASS |
+| OPN-02 | `test/smoke/open_play.timeline`: the park, stacking at court 2, the call, the match at the park | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
-| PRF-01 | `make perf` (`test/perf.json`): 18 timelines with no dropped frames, the doubles ladder match included (the doubles demo, fast menu scrolling over it, and the doubles modifiers match within their `M4-UI-03` / `M4-UI-04` budgets), the main loop running, and effects and ambience voices sounding | PASS (MesenCE) |
+| PRF-01 | `make perf` (`test/perf.json`): 19 timelines with no dropped frames, the doubles ladder match included (the doubles demo, fast menu scrolling over it, and the doubles modifiers match within their `M4-UI-03` / `M4-UI-04` budgets), the main loop running, and effects and ambience voices sounding | PASS (MesenCE) |
 
 ## Candidate
 

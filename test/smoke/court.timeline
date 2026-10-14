@@ -2,6 +2,7 @@
 # SURFACE, KITCHEN, SURROUND, LINES. BLUE surface, NAVY kitchen, GRASS
 # surround, WHITE lines; keep with B; reopen, change, cancel with Y.
 70 71 down
+75 76 down     # past OPEN PLAY (ADR-034)
 80 81 down
 shot 90
 100 101 start

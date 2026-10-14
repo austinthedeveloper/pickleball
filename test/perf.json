@@ -16,6 +16,7 @@
     {"timeline": "pause.timeline", "frames": 390},
     {"timeline": "modifiers.timeline", "frames": 1500},
     {"timeline": "doubles_ladder.timeline", "frames": 2400},
+    {"timeline": "open_play.timeline", "frames": 2800},
     {"timeline": "modifiers_doubles.timeline", "frames": 2400, "overruns": 20,
      "note": "all four modifiers: 7-14 by power-on state (M4-UI-04)"},
     {"timeline": "menu.timeline", "frames": 605, "overruns": 10,

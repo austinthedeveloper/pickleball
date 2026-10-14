@@ -66,6 +66,9 @@ extern u8 g_demo_mode;
 /* Set when B on the result of a ladder win asks for the next opponent
  * (ADR-023): main.c sets them up, reloads the court, and clears it. */
 extern u8 g_next_opponent;
+/* Set when B on an open play game's result asks for the park (ADR-034):
+ * main.c goes back and clears it. */
+extern u8 g_back_to_park;
 
 enum {
     GAME_ATTRACT_RESULT_FRAMES = 150,

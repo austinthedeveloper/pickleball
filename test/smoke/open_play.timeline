@@ -1,0 +1,21 @@
+# Open play (ADR-034): OPEN PLAY on the title (Down twice), into the park;
+# walk up to court 2's rack, stack your paddle with B, step back, and wait
+# for your game; the call, then a doubles match at the park.
+70 71 down
+80 81 down
+90 91 start
+shot 150
+160 178 up
+shot 185
+190 191 b
+shot 200
+205 215 down
+shot 230
+shot 600
+shot 900
+shot 1200
+shot 1500
+shot 1800
+shot 2100
+shot 2400
+shot 2700

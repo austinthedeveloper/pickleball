@@ -17,10 +17,12 @@ def select_layout():
     return {k: int(v) for k, v in re.findall(r"#define (SEL_\w+) (\d+)", text)}
 
 
-def scene_assets():
-    width, height, rows, palette = read_png(paths.src / "select_scene.png")
-    if (width, height) != (256, 224):
-        raise AssetError("select_scene.png must be 256x224")
+def indexed_scene(name, rows, palette, budget, first_sub=1, last_sub=6):
+    """A 256x224 indexed picture as deduplicated BG tiles (flips included),
+    a 32x32 map, and BG palettes first_sub..last_sub (slots 16..111 for
+    1-6). Each tile uses one sub-palette (index // 16)."""
+    if len(rows) != 224 or any(len(row) != 256 for row in rows):
+        raise AssetError(f"{name} must be 256x224")
     tiles, lookup, tilemap = [], {}, []
     for ty in range(32):
         for tx in range(32):
@@ -31,12 +33,12 @@ def scene_assets():
             subs = {v // 16 for row in px for v in row}
             if len(subs) != 1:
                 raise AssetError(
-                    f"select_scene.png tile {tx},{ty} mixes palettes {subs}")
+                    f"{name} tile {tx},{ty} mixes palettes {subs}")
             sub = subs.pop()
-            if not 1 <= sub <= 6:
-                raise AssetError(f"select tile {tx},{ty} uses palette {sub}; "
-                                 "BG1 may use 1-6 (0 is the HUD's, 7 the "
-                                 "portrait's)")
+            if not first_sub <= sub <= last_sub:
+                raise AssetError(f"{name} tile {tx},{ty} uses palette {sub}; "
+                                 f"BG1 may use {first_sub}-{last_sub} (0 is "
+                                 "the HUD's)")
             local = [[v % 16 for v in row] for row in px]
             variants = (
                 (local, 0),
@@ -56,13 +58,21 @@ def scene_assets():
                 entry = len(tiles)
                 tiles.append(key)
             tilemap.append(entry | (sub << 10))
-    if len(tiles) > SELECT_TILE_BUDGET:
-        raise AssetError(f"select scene uses {len(tiles)} tiles > "
-                         f"{SELECT_TILE_BUDGET}")
+    if len(tiles) > budget:
+        raise AssetError(f"{name} uses {len(tiles)} tiles > {budget}")
+    count = (last_sub - first_sub + 1) * 16
     pal = [rgb8_to_15(palette[slot]) if slot < len(palette) else 0
-           for slot in range(16, 112)]
+           for slot in range(first_sub * 16, first_sub * 16 + count)]
     return b"".join(tiles), struct.pack("<1024H", *tilemap), \
-        struct.pack("<96H", *pal), len(tiles)
+        struct.pack(f"<{count}H", *pal), len(tiles)
+
+
+def scene_assets():
+    width, height, rows, palette = read_png(paths.src / "select_scene.png")
+    if (width, height) != (256, 224):
+        raise AssetError("select_scene.png must be 256x224")
+    return indexed_scene("select_scene.png", rows, palette,
+                         SELECT_TILE_BUDGET)
 
 
 def portrait_assets():

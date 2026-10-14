@@ -22,6 +22,7 @@ u8 g_match_config_changed;
 /* Mode of the next attract demo; boot starts with singles. */
 u8 g_demo_mode;
 u8 g_next_opponent;
+u8 g_back_to_park;
 /* shot_serial at the serve: a point's rally length is the difference.
  * Outside g_game_state, which golden traces compare byte for byte. */
 static u8 s_rally_start;
@@ -145,6 +146,7 @@ static void game_activate_players(void)
 void game_new_match(void)
 {
     g_next_opponent = 0;
+    g_back_to_park = 0;
     players_initialize();
     ball_initialize();
     serve_initialize();
@@ -293,7 +295,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
         game_set_phase(GAME_PHASE_MATCH_RESULT);
         /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match.
          * ADR-023: beating the ladder opponent brings on the next. */
-        if (!g_attract && winner == 0 &&
+        if (!g_attract && winner == 0 && !g_match_config.open_play &&
                 g_match_config.opponent != OPPONENT_NONE)
             save_advance_ladder();
         if (!g_attract)
@@ -317,6 +319,8 @@ static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
         return;
     if (intents[0].pause_pressed)
         game_start_attract();
+    else if (intents[0].hit_pressed && g_match_config.open_play)
+        g_back_to_park = 1;             /* ADR-034: back to the park */
     else if (intents[0].hit_pressed && g_match_config.opponent != OPPONENT_NONE &&
             g_game_state.match_winner == 0)
         g_next_opponent = 1;            /* a ladder win: on to the next */

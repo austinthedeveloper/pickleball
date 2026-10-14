@@ -62,6 +62,14 @@ ADR-024.
 - [x] `M4-PAUSE-01` Pause menu: RESUME, RESTART, MAIN MENU in matches and practice.
   - Verified: [ADR-030](../docs/decisions/ADR-030-pause-menu.md), `test/test_pause_menu.c`, `pause.timeline`.
 
+## Open play
+
+- [x] `M4-OPEN-01` Open play (from GOOFY_IDEAS.md): a park with three courts, paddle stacks, and your turn as a doubles match.
+  - Accept: walk the park, stack and take back your paddle, watch the games rotate, get called and play, come back; host tests for the rules (nobody lost or doubled in a long soak); the park holds the frame budget.
+  - Verified: [ADR-034](../docs/decisions/ADR-034-open-play.md), `test/test_open_play.c`, `open_play.timeline` (zero overruns in `make perf`).
+- [ ] `M4-OPEN-02` A bigger park: scrolling or more screens, people walking between courts and to the racks, a bench crowd.
+- [ ] `M4-OPEN-03` Partners from the stack: play with the person stacked with you (their looks and style), not a fixed regular.
+
 ## Practice
 
 - [x] `M4-PRACTICE-01` Practice mode with a ball machine (see IDEAS.md, "Practice mode").

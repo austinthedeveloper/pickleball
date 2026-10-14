@@ -190,6 +190,17 @@ shot.
   - KID: the swing assist and slow ball make a gentle intro.
   - Two-tone court: a visible kitchen to aim dinks at.
 
+## Open play
+
+**Started:** [ADR-034](decisions/ADR-034-open-play.md) adds the park: three
+courts with games going, paddle stacks, and your turn as a doubles match.
+The original idea (from GOOFY_IDEAS.md): your player arrives at a park with
+several courts and has to wait for a match to finish. You wander the
+grounds, peek at other courts, and put your paddle in a court's **paddle
+stack**. When your turn comes, you play. Still to come: a bigger,
+scrolling park, people walking between courts, and partners from the
+stack.
+
 ## Play modifiers
 
 **Started:** [ADR-033](decisions/ADR-033-modifiers.md) adds the MODIFIERS

@@ -13,7 +13,7 @@ are uploaded once during forced blank.
 | BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
 | BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 21,152 (661 tiles: shared ground + the venue's own; ADR-024/027) |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
-| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 6,656 (208 tiles) |
+| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 7,168 (224 tiles: the second objects row holds open play's people, ADR-034) |
 
 Player Select (ADR-020) replaces the court while it is open and reuses the
 BG3 and OBJ regions:
@@ -65,6 +65,15 @@ landing marker (debug builds), 14–17 accessories (ponytails, ADR-014),
 high-table X bit for negative x and parks hidden objects as small objects at
 y = 240. That is below every evaluated line, so they never show and never count
 toward the PPU's 32-object range-over limit.
+
+## Open play park (ADR-034)
+
+The park loads in forced blank like Player Select: BG1 park tiles (47) and
+map at the same addresses as the court, BG palette 1, BG2 off, colour math
+off. OBJ palettes: 0 you, 1–6 the teams on court, 7 the objects palette.
+OAM: you 0–1, court people 2–25 (8×16, two small objects each), balls
+26–28, ball shadows 29–31, rack paddles 32–43. The match reloads the court
+on the way back.
 
 ## ROM
 
