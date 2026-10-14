@@ -99,7 +99,7 @@ so singles is as before:
 
 | Partner | late period |
 |---|---|
-| CHAD (GYM BROS) | 8 (was 6) |
+| CHAD (GYM BROS) | 7 (was 6; with M4-OPP-03's BRAD) |
 | VLAD (GOTH CLUB) | 3 (was 4), no footwork |
 | LANI (SURF CREW) | 3 (was 7), no footwork |
 | MIA (TWINS) | 5 (was 7) |
@@ -111,7 +111,7 @@ OPPONENT=-2 MODE=1` and `MODE=3`:
 |---|---:|---:|---:|---:|
 | HENDERSON | 59 | 59 | 60 | 60 |
 | SNOWBIRDS | 44 | 44 | 59 | 59 |
-| GYM BROS | 47 | 37 | 50 | 35 |
+| GYM BROS | 47 | 36 | 50 | 42 |
 | PIRATES | 26 | 26 | 29 | 29 |
 | GOTH CLUB | 5 | 25 | 9 | 26 |
 | SURF CREW | 0 | 15 | 0 | 21 |

@@ -77,6 +77,17 @@ wins out of 180: 30 matches at each bot mistake period from 3 to 8.
 - BRAD's matches are mostly balls hit out, so the result stays near a coin
   flip whatever his settings. He sits third, and his rung is about equal to
   PETE's.
+- *Amended 2026-10-14 (M4-OPP-03).* BRAD was deliberately late every 2nd
+  shot, so his points were balls hit out whatever the bot did: P1 won 17,
+  12, 11, 13, 12, 12 of 30 at bot periods 3 to 8, flat. Now he is late every
+  4th shot but slow to react (16 frames, was 10) and on his feet (speed 13,
+  was 15): fewer gifts, and a better player beats him more (11, 16, 17, 19,
+  13, 20). Bot wins of 180, same method: MARGE 123, **BRAD 96 (was 80)**,
+  PETE 79, so his rung sits between theirs. Re-measured, the later rungs
+  have moved since this table (ADR-035 to ADR-039): RAVEN 21, KAI 31, MAX 0,
+  ACE 0, so RAVEN is now harder than KAI in singles; left for a singles
+  pass. In doubles CHAD went to late every 7th (ADR-038 amendment) to keep
+  GYM BROS between SNOWBIRDS and PIRATES.
 - Doubles partners copy their captain's tuned values except where the
   character differs (Kiddo). They were not measured; the balance tool is
   singles only.

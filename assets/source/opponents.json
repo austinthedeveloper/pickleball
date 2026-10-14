@@ -93,10 +93,10 @@
           "hair": [6, 4, 2],
           "shirt": [[10, 10, 12], [16, 16, 18], [24, 24, 26]],
           "shorts": [[4, 4, 6], [8, 8, 10]], "shoe": [28, 6, 6],
-          "style": {"late_period": 2, "reaction": 10, "dink_period": 0,
+          "style": {"late_period": 4, "reaction": 16, "dink_period": 0,
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
-                    "speed": 15,
+                    "speed": 13,
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0}
         },
         {
@@ -104,7 +104,7 @@
           "hair": [28, 22, 10],
           "shirt": [[6, 18, 2], [12, 26, 4], [22, 31, 10]],
           "shorts": [[4, 4, 6], [8, 8, 10]], "shoe": [28, 6, 6],
-          "style": {"late_period": 8, "reaction": 10, "dink_period": 0,
+          "style": {"late_period": 7, "reaction": 10, "dink_period": 0,
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
                     "speed": 15,
