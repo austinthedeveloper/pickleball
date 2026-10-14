@@ -23,18 +23,18 @@ static void test_intro_card(void)
     story_begin_intro();
     assert(g_story.card == STORY_CARD_INTRO);
     /* A held button cannot skip it at once... */
-    assert(story_update(PAD_B));
+    assert(story_update(PAD_B, 0));
     /* ...but B ends it after the minimum. */
     for (f = 1; f < STORY_INTRO_MIN_FRAMES; ++f)
-        assert(story_update(0));
-    assert(!story_update(PAD_B));
+        assert(story_update(0, 0));
+    assert(!story_update(PAD_B, 0));
     assert(g_story.card == STORY_CARD_NONE);
 
     /* Untouched, it goes by itself. */
     story_begin_intro();
     for (f = 1; f < STORY_INTRO_FRAMES; ++f)
-        assert(story_update(0));
-    assert(!story_update(0));
+        assert(story_update(0, 0));
+    assert(!story_update(0, 0));
 
     /* Never in the attract demo. */
     g_attract = 1;
@@ -73,11 +73,100 @@ static void test_lines(void)
         }
 }
 
+/* ADR-040: the initials card opens only after a beaten record, outside
+ * the attract demo; letters wrap and repeat; it saves on the third B. */
+static void test_initials_card(void)
+{
+    u16 f;
+
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    story_initialize();
+    g_attract = 0;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);    /* nothing beaten */
+
+    save_record_rally(7);
+    g_attract = 1;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);
+    g_attract = 0;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_INITIALS);
+    assert(memcmp(g_story.letters, "AAA", 3) == 0 && g_story.cursor == 0);
+
+    /* Down wraps to Z; B is ignored before the minimum. */
+    assert(story_update(PAD_DOWN, PAD_DOWN));
+    assert(g_story.letters[0] == 'Z');
+    assert(story_update(PAD_B, 0));
+    assert(g_story.cursor == 0);
+    for (f = 2; f < STORY_INITIALS_MIN_FRAMES; ++f)
+        assert(story_update(0, 0));
+    /* Up held: one step, then repeats after the delay. */
+    assert(story_update(PAD_UP, PAD_UP));       /* Z -> A */
+    for (f = 1; f < STORY_REPEAT_DELAY; ++f)
+        assert(story_update(0, PAD_UP));
+    assert(g_story.letters[0] == 'A');
+    assert(story_update(0, PAD_UP));            /* the first repeat */
+    assert(g_story.letters[0] == 'B');
+    for (f = 0; f < STORY_REPEAT_FRAMES; ++f)
+        assert(story_update(0, PAD_UP));
+    assert(g_story.letters[0] == 'C');
+
+    /* B moves on, Y goes back, the third B saves. */
+    assert(story_update(PAD_B, 0) && g_story.cursor == 1);
+    assert(story_update(PAD_Y, 0) && g_story.cursor == 0);
+    assert(story_update(PAD_B, 0));
+    assert(story_update(PAD_UP, PAD_UP));       /* A -> B */
+    assert(story_update(PAD_B, 0) && g_story.cursor == 2);
+    assert(!story_update(PAD_B, 0));
+    assert(g_story.card == STORY_CARD_NONE);
+    assert(memcmp(g_save.initials.longest_rally, "CBA", 3) == 0);
+    assert(g_save_new_records == 0);
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);
+
+    /* The next card starts from them; untouched, it keeps them. */
+    save_record_rally(8);
+    story_begin_initials();
+    assert(memcmp(g_story.letters, "CBA", 3) == 0);
+    for (f = 1; f < STORY_INITIALS_FRAMES; ++f)
+        assert(story_update(0, 0));
+    assert(!story_update(0, 0));
+    assert(memcmp(g_save.initials.longest_rally, "CBA", 3) == 0);
+
+    /* Start saves at once. */
+    save_record_rally(9);
+    story_begin_initials();
+    for (f = 1; f < STORY_INITIALS_MIN_FRAMES; ++f)
+        assert(story_update(0, 0));
+    assert(!story_update(PAD_START, 0));
+}
+
+/* ADR-040: a record beaten in a match left early asks for nothing. */
+static void test_initials_need_a_finished_match(void)
+{
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    story_initialize();
+    match_config_defaults();
+    g_attract = 0;
+    game_new_match();
+    save_record_rally(5);
+    game_new_match();                           /* RESTART */
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);
+    assert(g_save.records.longest_rally == 5);
+    assert(g_save.initials.longest_rally[0] == 0);
+}
+
 int main(void)
 {
     test_intro_card();
     test_ladder_clear_record();
     test_lines();
+    test_initials_card();
+    test_initials_need_a_finished_match();
     printf("story host checks passed\n");
     return 0;
 }

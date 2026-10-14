@@ -283,6 +283,13 @@ static void hud_draw_scores(void)
 #define HUD_KEY_TITLE_BLINK 0x101
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 #define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
+#define HUD_KEY_INITIALS 0x800      /* the initials card (ADR-040) */
+/* The initials card: three big letters on rows 16-17, four columns apart
+ * and centred, the chosen one underlined on row 18. */
+#define INITIALS_ROW 16
+#define INITIALS_COL 11
+#define INITIALS_STEP 4
+#define INITIALS_LAST_ROW (INITIALS_ROW + 2)
 
 /* WIN BY 2 (ADR-033): one more point wins from a lead. */
 static u8 hud_win_by_2_match_point(void)
@@ -360,6 +367,8 @@ static u16 hud_scene_key(void)
 
     if (g_story.card == STORY_CARD_INTRO)
         return HUD_KEY_INTRO;
+    if (g_story.card == STORY_CARD_INITIALS)
+        return HUD_KEY_INITIALS;
     if (g_game_state.paused && !g_attract)
         return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
@@ -415,6 +424,107 @@ static void hud_center_text(u8 row, u8 palette, const char *text)
     while (text[length])
         ++length;
     hud_text((u8)(16 - length / 2), row, palette, text);
+}
+
+/* A count as text without leading zeros (no 816-tcc division); returns
+ * the end of the text. */
+static char *hud_count_text(char *out, u16 value)
+{
+    static const u16 powers[4] = { 10000, 1000, 100, 10 };
+    u8 i;
+    u8 leading = 1;
+    char digit;
+
+    for (i = 0; i < 4; ++i) {
+        digit = '0';
+        while (value >= powers[i]) {
+            value -= powers[i];
+            ++digit;
+        }
+        if (!leading || digit != '0') {
+            *out++ = digit;
+            leading = 0;
+        }
+    }
+    *out++ = (char)('0' + value);
+    *out = 0;
+    return out;
+}
+
+static char *hud_copy_text(char *out, const char *text)
+{
+    while (*text)
+        *out++ = *text++;
+    *out = 0;
+    return out;
+}
+
+/* The records just beaten: "BEST STREAK 5", "LONGEST RALLY 12", or both
+ * as "STREAK 5  RALLY 12". */
+static const char *hud_new_records_text(void)
+{
+    static char text[29];
+    char *end = text;
+    u8 both = g_save_new_records == (SAVE_NEW_STREAK | SAVE_NEW_RALLY);
+
+    if (g_save_new_records & SAVE_NEW_STREAK) {
+        end = hud_copy_text(end, both ? "STREAK " : "BEST STREAK ");
+        end = hud_count_text(end, g_save.records.best_streak);
+        if (both)
+            end = hud_copy_text(end, "  ");
+    }
+    if (g_save_new_records & SAVE_NEW_RALLY) {
+        end = hud_copy_text(end, both ? "RALLY " : "LONGEST RALLY ");
+        hud_count_text(end, g_save.records.longest_rally);
+    }
+    return text;
+}
+
+/* Letters and cursor as drawn; 0 forces a redraw. */
+static u8 s_initials_drawn[3];
+static u8 s_initials_cursor;
+
+/* The letters whose letter or underline changed: on idle frames. */
+static void hud_initials_refresh(void)
+{
+    static char letter[2];
+    u8 i;
+    u8 col;
+    u8 chosen;
+    u8 was = s_initials_cursor;
+
+    for (i = 0; i < 3; ++i) {
+        chosen = g_story.cursor == i;
+        if (s_initials_drawn[i] == g_story.letters[i] && (was == i) == chosen)
+            continue;
+        col = INITIALS_COL + i * INITIALS_STEP;
+        /* Statics are not zeroed at power-on: terminate it here. */
+        letter[0] = (char)g_story.letters[i];
+        letter[1] = 0;
+        hud_big_text(col, INITIALS_ROW, chosen ? HUD_PAL_YELLOW :
+            HUD_PAL_WHITE, letter);
+        hud_tile(col, INITIALS_LAST_ROW, chosen ?
+            hud_entry(HUD_TILE_BAR_ON, HUD_PAL_YELLOW) : HUD_TILE_CLEAR);
+        hud_tile(col + 1, INITIALS_LAST_ROW, chosen ?
+            hud_entry(HUD_TILE_BAR_ON, HUD_PAL_YELLOW) : HUD_TILE_CLEAR);
+        s_initials_drawn[i] = g_story.letters[i];
+    }
+    s_initials_cursor = g_story.cursor;
+}
+
+/* Initials card (ADR-040): NEW RECORD!, the records, and the prompt, one
+ * per frame; the letters draw on the idle frames after. */
+static void hud_initials_step(u8 step)
+{
+    if (step == HUD_STEP_BIG) {
+        hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, "NEW RECORD!");
+    } else if (step == HUD_STEP_PROMPT) {
+        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE,
+            hud_new_records_text());
+    } else if (step == HUD_STEP_EXTRA) {
+        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+            "UP DOWN  @ NEXT  START OK");
+    }
 }
 
 /* Intro card (ADR-026): the opponent's name, their line, the prompt, and
@@ -521,6 +631,19 @@ static void hud_record_line(u8 row, const char *label, u16 value)
 {
     hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
     hud_count(RECORDS_COUNT_COL, row, value);
+}
+
+/* The holder's initials before the count (ADR-040), --- for nobody. */
+#define RECORDS_INITIALS_COL (RECORDS_COUNT_COL - 4)
+static void hud_record_initials(u8 row, const u8 *initials)
+{
+    static char text[4];
+
+    text[0] = initials[0] ? (char)initials[0] : '-';
+    text[1] = initials[0] ? (char)initials[1] : '-';
+    text[2] = initials[0] ? (char)initials[2] : '-';
+    text[3] = 0;
+    hud_text(RECORDS_INITIALS_COL, row, HUD_PAL_YELLOW, text);
 }
 
 /* " SINGLES  W nnnn  L nnnn " */
@@ -897,6 +1020,7 @@ static u8 hud_title_draw_part(u8 view, u8 part)
     case 5:
         hud_record_line(TITLE_MENU_ROW + 6, "BEST STREAK",
             g_save.records.best_streak);
+        hud_record_initials(TITLE_MENU_ROW + 6, g_save.initials.best_streak);
         return 0;
     case 6:
         hud_record_line(TITLE_MENU_ROW + 7, "SHUTOUTS",
@@ -905,6 +1029,8 @@ static u8 hud_title_draw_part(u8 view, u8 part)
     case 7:
         hud_record_line(TITLE_MENU_ROW + 8, "LONGEST RALLY",
             g_save.records.longest_rally);
+        hud_record_initials(TITLE_MENU_ROW + 8,
+            g_save.initials.longest_rally);
         return 0;
     case 8:
         hud_record_ladder(TITLE_MENU_ROW + 9);
@@ -1098,13 +1224,24 @@ static void hud_scene_step(u16 key, u8 step)
     }
 
     if (step == HUD_STEP_CLEAR) {
+        /* The initials card also uses rows 15-18 (ADR-040). */
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 6 + TITLE_AREA_ROWS : 7);
+            from_title ? 6 + TITLE_AREA_ROWS :
+            (key == HUD_KEY_INITIALS || s_prev_scene == HUD_KEY_INITIALS) ?
+                INITIALS_LAST_ROW + 1 - CENTER_BIG_ROW : 7);
         hud_clear_rows(BANNER_ROW - 1, 4);
+        s_initials_drawn[0] = 0;
+        s_initials_drawn[1] = 0;
+        s_initials_drawn[2] = 0;
+        s_initials_cursor = 0xff;
         return;
     }
     if (key == HUD_KEY_INTRO) {
         hud_intro_step(step);
+        return;
+    }
+    if (key == HUD_KEY_INITIALS) {
+        hud_initials_step(step);
         return;
     }
     if (key == HUD_KEY_PRACTICE) {
@@ -1223,6 +1360,8 @@ void hud_scene_update(void)
     if (idle) {
         if (HUD_IS_TITLE(key))
             hud_title_area_update();
+        else if (key == HUD_KEY_INITIALS)
+            hud_initials_refresh();
         else if (hud_sub_panel_wanted() != s_sub_panel)
             hud_draw_sub_panel(hud_sub_panel_wanted());
     }

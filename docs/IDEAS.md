@@ -222,7 +222,7 @@ no-volley-anywhere.
 ## Battery save (SRAM)
 
 **Started:** [ADR-021](decisions/ADR-021-battery-save.md) adds the SRAM, the
-save block, and records (no initials entry yet). The notes below are the
+save block, and records (initials since ADR-040). The notes below are the
 original idea.
 
 Add battery-backed save RAM so the game can remember things after power-off.
@@ -235,7 +235,7 @@ Today the cart has none (ADR-017: "no SRAM").
 - Records: high scores, win streak vs CPU, longest rally, fastest win, and
   per-opponent wins and losses.
 - Settings (default rules, modifiers, difficulty).
-- Initials entry for the records, arcade style.
+- Initials entry for the records, arcade style (done: ADR-040).
 
 ### Cost
 

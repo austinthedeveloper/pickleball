@@ -510,8 +510,11 @@ int main(void)
              * closes it is the card's too: the serve buffers presses, so the
              * closing B would otherwise serve. */
             if (g_story.card != STORY_CARD_NONE) {
-                if (!story_update(g_pad_snapshots[0].pressed))
+                if (!story_update(g_pad_snapshots[0].pressed,
+                        g_pad_snapshots[0].held))
                     audio_ui(SFX_CONFIRM);
+                else if (g_story.card == STORY_CARD_INITIALS)
+                    ui_sounds(g_pad_snapshots[0].pressed);
             } else {
                 update_controllers();
                 /* Pause, unpause, or back to the title. */
@@ -526,6 +529,9 @@ int main(void)
                     if (g_game_state.paused)
                         pause_begin();      /* just paused: on RESUME */
                 }
+                /* A record beaten (ADR-040): initials before the result. */
+                if (g_game_state.phase == GAME_PHASE_MATCH_RESULT)
+                    story_begin_initials();
             }
             if (g_next_opponent)
                 start_next_opponent();

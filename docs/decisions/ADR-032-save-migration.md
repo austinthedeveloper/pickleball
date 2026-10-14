@@ -14,6 +14,7 @@ Players now hold saves from released builds:
 | v0.4.0 | 4 | 32 bytes |
 | v0.5.0 | 7 | 40 bytes |
 | v0.6.0 | 8 | 42 bytes (ADR-033) |
+| next | 9 | 48 bytes: record initials (ADR-040); 4, 7, and 8 migrate |
 
 From now on a layout change keeps their records and settings.
 

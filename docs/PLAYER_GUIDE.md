@@ -150,6 +150,12 @@ the CPU scored nothing), and the longest rally (shots in one point, the serve
 included; 2P matches count for this one too). They update at the end of each
 match.
 
+Beat your best win streak or the longest rally and the match ends with
+**NEW RECORD!**: enter three initials, arcade style. Up and Down pick the
+letter (hold to scroll), B moves to the next, Y goes back, and Start keeps
+what's shown. The records page shows them next to BEST STREAK and LONGEST
+RALLY (`---` until someone claims them).
+
 On the records page, Start, B, or Y goes back. To erase every record, hold
 L and R and press X. There is no confirmation. Court colours are kept.
 

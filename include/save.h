@@ -13,11 +13,13 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 8,           /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 9,           /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
-                                   (ADR-033). Shipped: 4 in v0.4.0, 7 in
-                                   v0.5.0, 8 in v0.6.0 (ADR-032). */
+                                   (ADR-033); 9: record initials (ADR-040).
+                                   Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
+                                   v0.6.0 (ADR-032). */
+    SAVE_INITIALS = 3,          /* letters per record holder (ADR-040) */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -47,6 +49,13 @@ typedef struct {
                                    host and SNES layouts match */
 } SaveSettings;
 
+/* Who holds a record (ADR-040): three capitals, or zeros for nobody yet
+ * (the records page shows ---). */
+typedef struct {
+    u8 best_streak[SAVE_INITIALS];
+    u8 longest_rally[SAVE_INITIALS];
+} SaveInitials;
+
 typedef struct {
     u8 magic[4];                /* "PB94" */
     u8 version;                 /* SAVE_VERSION, or a frozen older layout
@@ -54,10 +63,16 @@ typedef struct {
     u8 sequence;                /* the newer copy has the higher (wrapping) */
     SaveRecords records;
     SaveSettings settings;
+    SaveInitials initials;
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
 extern SaveData g_save;
+
+/* Records beaten since the holder last entered initials (ADR-040); WRAM
+ * only. A beaten record's initials are cleared until they are entered. */
+enum { SAVE_NEW_STREAK = 1, SAVE_NEW_RALLY = 2 };
+extern u8 g_save_new_records;
 
 /*
  * Frozen layouts of released saves (ADR-032). A valid save in one of these
@@ -65,7 +80,7 @@ extern SaveData g_save;
  * SAVE_VERSION is bumped, the outgoing SaveData is frozen here as
  * SaveV<old version> and gets a migration step in save.c.
  */
-enum { SAVE_V4 = 4, SAVE_V7 = 7 };  /* v0.4.0, v0.5.0 */
+enum { SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8 };  /* v0.4.0, v0.5.0, v0.6.0 */
 
 typedef struct {
     u8 magic[4];
@@ -106,6 +121,16 @@ typedef struct {
     u16 checksum;
 } SaveV7;
 
+/* v0.6.0 to v0.10.0: SaveData before the initials. */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 8 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettings settings;
+    u16 checksum;
+} SaveV8;
+
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */
 void save_initialize(void);
@@ -113,8 +138,11 @@ void save_initialize(void);
 void save_write(void);
 /* Back to defaults and written to both copies. */
 void save_clear(void);
-/* Zeroes the records only (settings stay) and writes. */
+/* Zeroes the records and their initials (settings stay) and writes. */
 void save_clear_records(void);
+/* The holder's initials for every record in g_save_new_records, which
+ * clears; writes. */
+void save_set_initials(const u8 *letters);
 
 /* A finished human match. vs_cpu: the opponents were all CPU (1P is always
  * on team 0). Updates the records and writes. */
