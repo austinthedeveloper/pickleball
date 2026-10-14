@@ -1126,9 +1126,11 @@ void hud_scene_update(void)
     u16 key;
 
     /* Spread big redraws over frames: a score change and a scene change on
-     * the same frame (every point) would overrun 816-tcc's budget. */
-    u8 busy = 0;
+     * the same frame (every point) would overrun 816-tcc's budget, as
+     * would a redraw with the renderer's recolour (g_render_busy). */
+    u8 busy = g_render_busy;
 
+    g_render_busy = 0;
     if (!s_hud_valid)
         hud_draw_scores();
     else if (s_hud_score[0] != g_game_state.team_score[0] ||

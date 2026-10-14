@@ -67,6 +67,10 @@ void render_prepare(void);
 /* VBlank-only uploads (HUD bands, pending palettes). */
 void render_commit(void);
 
+/* Set when render_prepare did heavy work this frame (a ground recolour):
+ * hud_scene_update then waits a frame with its own, and clears it. */
+extern u8 g_render_busy;
+
 /* Frames on which the PPU reported OBJ range/time over ($213E bits 6/7). */
 extern u16 g_obj_overflow_frames;
 

@@ -74,8 +74,15 @@ enum {
     PARK_MSG_PEEK = 6,          /* arg: court */
     PARK_MSG_CALLED = 7,
     PARK_MSG_WON = 8,
-    PARK_MSG_LOST = 9
+    PARK_MSG_LOST = 9,
+    PARK_MSG_2P_JOINED = 10,
+    PARK_MSG_2P_LEFT = 11
 };
+
+/* 2P joining or leaving shows for a moment (ADR-034). */
+#define PARK_2P_FRAMES 120
+static u8 s_2p_shown;
+static u8 s_2p_timer;
 
 static const char *park_team_name(u8 entry)
 {
@@ -111,6 +118,14 @@ static u8 park_message(u8 *arg)
     u8 wait;
 
     *arg = 0;
+    if (s_2p_shown != g_open_play.two_players) {
+        s_2p_shown = g_open_play.two_players;
+        s_2p_timer = PARK_2P_FRAMES;
+    }
+    if (s_2p_timer && g_open_play.called == OPEN_NONE) {
+        --s_2p_timer;
+        return s_2p_shown ? PARK_MSG_2P_JOINED : PARK_MSG_2P_LEFT;
+    }
     if (g_open_play.called != OPEN_NONE) {
         *arg = g_open_play.called;
         return PARK_MSG_CALLED;
@@ -191,8 +206,11 @@ static void park_draw_message(u8 message, u8 arg)
         at = park_append(at, park_team_name(court->playing[1]));
         break;
     case PARK_MSG_CALLED:
-        /* "WITH ACE VS TWINS": the captain next in line partners you. */
-        if (g_open_play.partner < OPPONENT_COUNT) {
+        /* "WITH ACE VS TWINS": the captain next in line partners you,
+         * or 2P does. */
+        if (g_open_play.two_players) {
+            at = park_append(at, "WITH 2P");
+        } else if (g_open_play.partner < OPPONENT_COUNT) {
             at = park_append(at, "WITH ");
             at = park_append(at, g_opponent_captain[g_open_play.partner]);
         } else {
@@ -210,8 +228,15 @@ static void park_draw_message(u8 message, u8 arg)
         *at++ = '-';
         at = park_number(at, g_open_play.last_score[1]);
         break;
+    case PARK_MSG_2P_JOINED:
+        at = park_append(at, "2P JOINED: YOUR PARTNER!");
+        break;
+    case PARK_MSG_2P_LEFT:
+        at = park_append(at, "2P LEFT");
+        break;
     default:
-        at = park_append(at, "OPEN PLAY  START EXIT");
+        at = park_append(at, g_open_play.two_players ?
+            "YOU AND 2P  START EXIT" : "OPEN PLAY  START EXIT");
         break;
     }
     *at = 0;
@@ -536,6 +561,8 @@ void render_park_open(void)
     bgSetDisable(1);
 
     hud_initialize();
+    s_2p_shown = g_open_play.two_players;   /* no flash on the way in */
+    s_2p_timer = 0;
     /* The skill levels, centred over their courts; they never change. */
     for (i = 0; i < OPEN_COURTS; ++i) {
         const char *level = open_court_level_name(i);

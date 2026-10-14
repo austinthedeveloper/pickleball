@@ -308,7 +308,7 @@ static u8 court_update(u8 c)
     return OPEN_EVENT_NONE;
 }
 
-void open_play_begin(u16 seed)
+void open_play_begin(u16 seed, u8 two_players)
 {
     OpenCourt *court;
     u8 c;
@@ -347,6 +347,7 @@ void open_play_begin(u16 seed)
     g_open_play.call_timer = 0;
     g_open_play.opponent = OPEN_NONE;
     g_open_play.partner = OPEN_NONE;
+    g_open_play.two_players = two_players != 0;
     g_open_play.last_won = OPEN_NONE;
     g_open_play.last_score[0] = 0;
     g_open_play.last_score[1] = 0;

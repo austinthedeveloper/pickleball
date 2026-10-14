@@ -62,6 +62,7 @@ static u8 s_ground_dirty;
 static u8 s_venue;
 /* The LAVA kitchen is on the ground palette (ADR-033). */
 static u8 s_lava_shown;
+u8 g_render_busy;
 /* A LAVA match, or its preview on the title's MODIFIERS page. A macro: it
  * runs on a new match's frame, which is near the budget. */
 #define RENDER_LAVA_WANTED() \
@@ -239,6 +240,9 @@ static void render_update_ground(void)
         return;
     }
     render_compose_ground();
+    /* The HUD skips its own big redraw this frame: the two together ran
+     * past the budget on the COURT page (a row and the recolour). */
+    g_render_busy = 1;
 }
 
 void render_request_palettes(void)

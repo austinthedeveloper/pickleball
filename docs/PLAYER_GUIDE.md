@@ -26,6 +26,9 @@ its own level. On KID, every court is KID.
   court partners you ("WITH PETE VS SURF CREW"); you play doubles against the
   team you were drawn with, at that court's level, with your POINTS and
   MODIFIERS.
+- **Two players:** press Start on controller 2 (on the title or in the
+  park) and 2P comes along as your partner in your games; press it again
+  to leave.
 - After the game, **B** takes you back to the park. **Start** in the park
   goes back to the title.
 

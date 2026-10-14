@@ -69,7 +69,12 @@ static void start_open_play_match(void)
 {
     match_config_doubles();
     match_config_opponent(g_open_play.opponent);
-    match_config_partner(g_open_play.partner);
+    /* 2P partners you on slot 1 (port 2); otherwise the captain next in
+     * line does. */
+    if (g_open_play.two_players)
+        g_match_config.human[1] = 1;
+    else
+        match_config_partner(g_open_play.partner);
     g_match_config.points_to_win = options_points(g_save.settings.points);
     /* The court's level sets the difficulty (KID keeps its assist). */
     g_match_config.difficulty = open_court_difficulty(g_open_play.called,
@@ -101,6 +106,13 @@ static void update_park(void)
     s16 move_y = (held & PAD_DOWN) ? 1 : (held & PAD_UP) ? -1 : 0;
     u8 event;
 
+    /* Start on pad 2: 2P joins as your partner, or leaves. */
+    if ((g_pad_snapshots[1].pressed & PAD_START) &&
+            g_open_play.called == OPEN_NONE) {
+        g_open_play.two_players ^= 1;
+        g_title_2p = g_open_play.two_players;
+        audio_ui(g_open_play.two_players ? SFX_CONFIRM : SFX_BACK);
+    }
     if ((pressed & PAD_START) && g_open_play.called == OPEN_NONE) {
         audio_ui(SFX_BACK);
         game_start_attract();
@@ -273,7 +285,7 @@ static void update_title(void)
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
             } else if (g_title_mode == TITLE_OPEN_PLAY) {
-                open_play_begin(g_game_state.frame_count);
+                open_play_begin(g_game_state.frame_count, g_title_2p);
                 s_open_park = 1;
                 return;
             } else if (g_title_mode == TITLE_MODIFIERS) {
@@ -335,7 +347,8 @@ static void update_title(void)
     } while (0)
 
 /* KID (ADR-025): a human swings as soon as the swing would meet the ball.
- * Humans play slots 0 and 2; a macro keeps the indices constant. */
+ * Humans play slot 0, and 2 (versus) or 1 (co-op, ADR-034); a macro keeps
+ * the indices constant. */
 #define ASSIST_KID(slot) \
     do { \
         if (g_input_owners[slot] == INPUT_OWNER_HUMAN && \
@@ -354,6 +367,7 @@ static void update_controllers(void)
         PROFILE_MARK(6);
     } else if (g_match_config.difficulty == DIFFICULTY_KID) {
         ASSIST_KID(0);
+        ASSIST_KID(1);                  /* 2P partnering (ADR-034) */
         ASSIST_KID(2);
     }
     /* Constant slot numbers keep 816-tcc from multiplying per access. */

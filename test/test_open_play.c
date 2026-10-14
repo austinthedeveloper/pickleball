@@ -1,6 +1,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "game.h"
+#include "input.h"
+#include "match.h"
 #include "open_play.h"
 #include "opponents.h"
 #include "options.h"
@@ -50,7 +53,7 @@ static void test_begin(void)
     u8 c;
     u8 side;
 
-    open_play_begin(1234);
+    open_play_begin(1234, 0);
     for (c = 0; c < OPEN_COURTS; ++c) {
         assert(g_open_play.court[c].state == OPEN_COURT_PLAYING);
         assert(g_open_play.court[c].score[0] < OPEN_GAME_POINTS);
@@ -70,7 +73,7 @@ static void test_walking(void)
     s16 left = open_court_left(1);
     u16 n;
 
-    open_play_begin(1);
+    open_play_begin(1, 0);
     /* Inside a court is fenced off; the walks between courts are open. */
     assert(!open_walkable(TO_FP(left + 20), TO_FP(OPEN_COURT_TOP + 40)));
     assert(open_walkable(TO_FP(left - 12), TO_FP(OPEN_COURT_TOP + 40)));
@@ -93,7 +96,7 @@ static void test_stacking(void)
 {
     u8 c = 2;
 
-    open_play_begin(7);
+    open_play_begin(7, 0);
     /* Away from every rack, B does nothing. */
     place_you(128, 200);
     assert(open_rack_near() == OPEN_NONE);
@@ -132,7 +135,7 @@ static void test_your_turn(void)
     u8 called_court;
     u8 opponent;
 
-    open_play_begin(99);
+    open_play_begin(99, 0);
     place_you(open_rack_x(c), OPEN_RACK_Y);
     assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
     place_you(128, 200);
@@ -193,7 +196,7 @@ static void test_soak(void)
     u8 c;
     u8 before[OPEN_COURTS];
 
-    open_play_begin(4321);
+    open_play_begin(4321, 0);
 
     for (f = 0; f < 60UL * 60 * 20; ++f) {
         for (c = 0; c < OPEN_COURTS; ++c)
@@ -234,6 +237,38 @@ static void test_levels(void)
     assert(open_court_difficulty(2, DIFFICULTY_KID) == DIFFICULTY_KID);
 }
 
+/* 2P as your partner (M4-OPEN-04): slot 1 is human on the port 2 pad;
+ * in versus, port 2 still plays slot 2. */
+static void test_two_players(void)
+{
+    u16 raw[MAX_PADS];
+
+    open_play_begin(5, 1);
+    assert(g_open_play.two_players == 1);
+    input_configure(0);
+    match_config_doubles();
+    g_match_config.human[1] = 1;
+    g_attract = 0;
+    game_new_match();
+    assert(g_input_owners[1] == INPUT_OWNER_HUMAN);
+    assert(g_input_pad_for_player[1] == 1);
+    assert(!g_players[1].cpu_controlled);
+    memset(raw, 0, sizeof(raw));
+    raw[1] = PAD_RIGHT;
+    input_map_frame(raw);
+    assert(g_player_intents[1].move_x == 1);
+    assert(g_player_intents[2].move_x == 0);
+    /* Versus: port 2 is slot 2's again, and slot 1 has no pad. */
+    match_config_doubles();
+    g_match_config.human[2] = 1;
+    game_new_match();
+    assert(g_input_pad_for_player[1] == INPUT_NO_PAD);
+    input_map_frame(raw);
+    assert(g_player_intents[2].move_x == 1);
+    match_config_defaults();
+    game_new_match();
+}
+
 int main(void)
 {
     test_levels();
@@ -242,6 +277,7 @@ int main(void)
     test_stacking();
     test_your_turn();
     test_soak();
+    test_two_players();
     printf("open play host checks passed\n");
     return 0;
 }

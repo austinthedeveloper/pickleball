@@ -98,14 +98,16 @@ typedef struct {
     u16 seed;
     u8 lineup;                  /* changes when anyone comes on or off */
     u8 stacks;                  /* changes when any stack changes */
+    u8 two_players;             /* 2P is with you: your partner */
     u8 last_won;                /* your last game: 1 won, 0 lost, none */
     u8 last_score[2];           /* yours, theirs */
 } OpenPlay;
 
 extern OpenPlay g_open_play;
 
-/* A fresh park: six teams playing, two waiting, you at the gate. */
-void open_play_begin(u16 seed);
+/* A fresh park: six teams playing, two waiting, you at the gate; with
+ * two_players, 2P comes along as your partner. */
+void open_play_begin(u16 seed, u8 two_players);
 /* One park frame: walking (the D-pad), B at a rack, the courts' games.
  * Returns OPEN_EVENT_*. While called, input is ignored. */
 u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed);

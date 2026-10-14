@@ -44,6 +44,13 @@ void input_assign_match(const u8 active[MAX_PLAYERS],
     g_input_owners[1] = OWNER(1);
     g_input_owners[2] = OWNER(2);
     g_input_owners[3] = OWNER(3);
+    /* Co-op (ADR-034): 2P partners P1 on slot 1 with the port 2 pad, which
+     * otherwise belongs to slot 2 (versus). Slot 1 has a pad of its own only
+     * on a Multitap. */
+    if (human[1] && !human[2])
+        g_input_pad_for_player[1] = 1;
+    else if (g_input_pad_for_player[1] == 1)
+        g_input_pad_for_player[1] = g_multitap_present ? 2 : INPUT_NO_PAD;
 }
 
 static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,

@@ -72,7 +72,8 @@ ADR-024.
 - [ ] `M4-OPEN-05` A bigger, scrolling park (more courts or a clubhouse). All eight OBJ palettes are in use (you, six teams on court, objects) and the scores are BG3 text, so it needs sprite scores or BG-baked labels, and palettes shared or swapped by what is on screen.
 - [x] `M4-OPEN-03` Partners from the stack: play with the person stacked with you (their looks and style), not a fixed regular.
   - Verified: ADR-034 (amended), `test_opponents.c: test_partner`, `test_open_play.c`; `open_play.timeline` shows "WITH PETE VS SURF CREW" and PETE's look in the match.
-- [ ] `M4-OPEN-04` A second player in the park: 2P joins and plays as your partner.
+- [x] `M4-OPEN-04` A second player in the park: 2P joins and plays as your partner.
+  - Verified: ADR-034 (amended), `test_open_play.c: test_two_players` (co-op pad mapping, versus unchanged). The headless runner cannot press port 2 (KNOWN_ISSUES #16): check by hand with a second pad.
 
 ## Practice
 
@@ -109,7 +110,7 @@ touching the simulation.
 ## Polish
 
 - [ ] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
-  - Progress: 4-9 overruns over the demo (was 160): the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 12, `menu.timeline` 10.
+  - Progress: 4-12 overruns over the demo (was 160), by power-on state and build: the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 16, `menu.timeline` 10.
   - Accept: zero overruns over a full doubles demo (about frames 4,300-9,300 from boot), without changing human matches or the golden trace.
 
 - [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).

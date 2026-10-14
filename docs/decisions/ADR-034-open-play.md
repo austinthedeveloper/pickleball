@@ -110,6 +110,25 @@ it changes the CPUs on a team with no human (ADR-025). Tests:
   palettes are in use, and the scores over the courts are BG3 text that
   can't scroll with the map.
 
+## Two players
+
+*Amended 2026-10-13 (`M4-OPEN-04`):* 2P comes along as your partner.
+
+- 2P joined on the title (Start on pad 2) comes into the park. In the park,
+  Start on pad 2 joins or leaves ("2P JOINED: YOUR PARTNER!", "2P LEFT").
+  The panel's idle line reads "YOU AND 2P  START EXIT".
+- Your game: 2P plays slot 1 instead of the captain next in line ("WITH 2P
+  VS TWINS"), in gold (the doubles default), with the KID assist on KID.
+- Input: `input_assign_match` gives slot 1 the port 2 pad when slot 1 is
+  human and slot 2 isn't (co-op). Versus keeps port 2 on slot 2, and slot 1
+  has a pad of its own only on a Multitap. Records count the game against
+  the CPU (no human on the right).
+- No 2P sprite walks the park: all eight OBJ palettes are in use there.
+- Found on the way: on the COURT page, a recolour and a row redraw could
+  land on one frame, and a few cycles of change elsewhere tipped it over.
+  The renderer now flags a recolour frame (`g_render_busy`), and the HUD
+  waits a frame.
+
 ## How
 
 - `src/open_play.c`, `include/open_play.h`: the rules, pure and
@@ -194,4 +213,4 @@ frame over the singles demo.
   palette is free for them); their paddles are on the racks.
 - No bench crowd, no wandering people, and a single screen with no
   scrolling to a bigger park.
-- 2P: the second player can't stack a paddle.
+- 2P has no sprite of their own in the park.
