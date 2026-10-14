@@ -455,6 +455,9 @@ static void render_load_court(void)
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
         venue->tiles_size);
     dmaCopyVram((u8 *)venue->map, RENDER_BG1_MAP_ADDR, venue->map_size);
+    /* The park (M4-OPEN-05) scrolls a 64x32 map of its own. */
+    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
+    bgSetScroll(0, 0, 0);
     dmaCopyCGram((u8 *)venue->palettes, 48, 160);
     memcpy(s_painted_ground, &court_palette, sizeof(s_painted_ground));
     render_compose_ground();

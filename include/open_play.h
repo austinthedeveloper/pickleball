@@ -31,8 +31,11 @@ enum {
     OPEN_WALK_FRAMES = 64,          /* walking off, or on before a game */
     OPEN_CALL_FRAMES = 150,         /* "YOUR GAME!" before the match */
 
-    /* Park layout in screen pixels (256x224). Courts run top to bottom;
-     * the path along the bottom has a paddle rack at each court's gate. */
+    /* Park layout in pixels: two screens wide (OPEN_PARK_W x 224), the
+     * view scrolling with you (M4-OPEN-05). The courts are on the first
+     * screen; they run top to bottom, and the path along the bottom has a
+     * paddle rack at each court's gate. */
+    OPEN_PARK_W = 512,
     OPEN_COURT_W = 56,
     OPEN_COURT_H = 112,
     OPEN_COURT_TOP = 48,
@@ -50,8 +53,29 @@ enum {
     OPEN_WALK_TOP = 30,
     OPEN_WALK_BOTTOM = 210,
     OPEN_WALK_LEFT = 8,
-    OPEN_WALK_RIGHT = 248,
-    OPEN_FENCE_MARGIN = 4           /* feet stay this far off a fence */
+    OPEN_WALK_RIGHT = 504,
+    OPEN_FENCE_MARGIN = 4,          /* feet stay this far off a fence */
+
+    /* The clubhouse (M4-OPEN-05), on the second screen: a room seen from
+     * above, its walls solid, a door in the bottom wall onto the path. */
+    OPEN_HOUSE_LEFT = 296,
+    OPEN_HOUSE_RIGHT = 488,
+    OPEN_HOUSE_TOP = 40,
+    OPEN_HOUSE_BOTTOM = 168,
+    OPEN_HOUSE_WALL = 6,
+    OPEN_HOUSE_DOOR_X = 392,        /* the door's middle */
+    OPEN_HOUSE_DOOR_W = 28,
+    /* Inside: B within OPEN_SPOT_REACH of the records board (on the top
+     * wall) or the ball machine; the waiting teams sit on the bench (its
+     * left end), four people 12 px apart. */
+    OPEN_BOARD_X = 336,
+    OPEN_BOARD_Y = 64,
+    OPEN_MACHINE_X = 452,
+    OPEN_MACHINE_Y = 84,
+    OPEN_BENCH_X = 344,
+    OPEN_BENCH_Y = 132,
+    OPEN_SPOT_REACH = 16,
+    OPEN_BOARD_PAGES = 4            /* records shown, one per B */
 };
 
 typedef enum {
@@ -79,7 +103,9 @@ enum {
     OPEN_EVENT_UNSTACKED = 2,   /* you took it back */
     OPEN_EVENT_FULL = 3,        /* that stack has no room */
     OPEN_EVENT_CALLED = 4,      /* your game is up: the call banner */
-    OPEN_EVENT_PLAY = 5         /* the banner is done: start the match */
+    OPEN_EVENT_PLAY = 5,        /* the banner is done: start the match */
+    OPEN_EVENT_BOARD = 6,       /* B at the records board: the next page */
+    OPEN_EVENT_PRACTICE = 7     /* B at the ball machine: start practice */
 };
 
 typedef struct {
@@ -101,6 +127,7 @@ typedef struct {
     u8 two_players;             /* 2P is with you: your partner */
     u8 last_won;                /* your last game: 1 won, 0 lost, none */
     u8 last_score[2];           /* yours, theirs */
+    u8 board_page;              /* the records board's page, or OPEN_NONE */
 } OpenPlay;
 
 extern OpenPlay g_open_play;
@@ -133,7 +160,17 @@ u8 open_court_near(void);
 /* Your place in your stack: 0 = next game, 1 = the one after; OPEN_NONE
  * when not stacked. Two entries per game. */
 u8 open_your_wait(void);
-/* Nonzero when a ground point is walkable (not inside a fenced court). */
+/* Nonzero when a ground point is walkable (not inside a fenced court or a
+ * clubhouse wall). */
 u8 open_walkable(fx x_fp, fx y_fp);
+/* The clubhouse (M4-OPEN-05): nonzero when you are inside; within reach
+ * of the records board or the ball machine; near the bench. */
+u8 open_in_house(void);
+u8 open_board_near(void);
+u8 open_machine_near(void);
+u8 open_bench_near(void);
+/* The nth team waiting in a stack (stack order, court by court), or
+ * OPEN_NONE: the bench shows the first two. */
+u8 open_waiting_team(u8 n);
 
 #endif

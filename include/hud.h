@@ -44,10 +44,10 @@ u8 hud_big_width(const char *text);
 void hud_center_big(u8 row, u8 palette, const char *text);
 /* Centred three-row panel; '@' in the text draws the B button glyph. */
 void hud_center_prompt(u8 row, u8 palette, const char *text);
-/* Its two halves, for frames that can't afford both (the doubles match
- * result). */
+/* Its panel, and half its text (part 0 the first, 1 the rest): for frames
+ * that can't afford it all (the doubles match result, the scrolling
+ * park). */
 void hud_center_prompt_panel(u8 row, const char *text);
-void hud_center_prompt_text(u8 row, u8 palette, const char *text);
 void hud_center_prompt_half(u8 row, u8 palette, const char *text, u8 part);
 /* DMA up to three dirty 4-row bands; call only inside VBlank. */
 void hud_commit(void);

@@ -18,52 +18,56 @@ def select_layout():
 
 
 def indexed_scene(name, rows, palette, budget, first_sub=1, last_sub=6):
-    """A 256x224 indexed picture as deduplicated BG tiles (flips included),
-    a 32x32 map, and BG palettes first_sub..last_sub (slots 16..111 for
-    1-6). Each tile uses one sub-palette (index // 16)."""
-    if len(rows) != 224 or any(len(row) != 256 for row in rows):
-        raise AssetError(f"{name} must be 256x224")
+    """A 256x224 (or 512x224: two screens, a 64x32 map) indexed picture as
+    deduplicated BG tiles (flips included), a 32x32 map per screen, and BG
+    palettes first_sub..last_sub (slots 16..111 for 1-6). Each tile uses
+    one sub-palette (index // 16)."""
+    screens = len(rows[0]) // 256 if rows else 0
+    if len(rows) != 224 or screens not in (1, 2) or \
+            any(len(row) != 256 * screens for row in rows):
+        raise AssetError(f"{name} must be 256x224 or 512x224")
     tiles, lookup, tilemap = [], {}, []
-    for ty in range(32):
-        for tx in range(32):
-            if ty >= 28:
-                tilemap.append(0)
-                continue
-            px = block(rows, tx * 8, ty * 8)
-            subs = {v // 16 for row in px for v in row}
-            if len(subs) != 1:
-                raise AssetError(
-                    f"{name} tile {tx},{ty} mixes palettes {subs}")
-            sub = subs.pop()
-            if not first_sub <= sub <= last_sub:
-                raise AssetError(f"{name} tile {tx},{ty} uses palette {sub}; "
-                                 f"BG1 may use {first_sub}-{last_sub} (0 is "
-                                 "the HUD's)")
-            local = [[v % 16 for v in row] for row in px]
-            variants = (
-                (local, 0),
-                ([row[::-1] for row in local], 0x4000),
-                (local[::-1], 0x8000),
-                ([row[::-1] for row in local[::-1]], 0xC000),
-            )
-            entry = None
-            for candidate, flip in variants:
-                key = encode_tile(candidate, 4)
-                if key in lookup:
-                    entry = lookup[key] | flip
-                    break
-            if entry is None:
-                key = encode_tile(local, 4)
-                lookup[key] = len(tiles)
-                entry = len(tiles)
-                tiles.append(key)
-            tilemap.append(entry | (sub << 10))
+    for screen in range(screens):
+        for ty in range(32):
+            for tx in range(32):
+                if ty >= 28:
+                    tilemap.append(0)
+                    continue
+                px = block(rows, screen * 256 + tx * 8, ty * 8)
+                subs = {v // 16 for row in px for v in row}
+                if len(subs) != 1:
+                    raise AssetError(
+                        f"{name} tile {tx},{ty} mixes palettes {subs}")
+                sub = subs.pop()
+                if not first_sub <= sub <= last_sub:
+                    raise AssetError(
+                        f"{name} tile {tx},{ty} uses palette {sub}; BG1 "
+                        f"may use {first_sub}-{last_sub} (0 is the HUD's)")
+                local = [[v % 16 for v in row] for row in px]
+                variants = (
+                    (local, 0),
+                    ([row[::-1] for row in local], 0x4000),
+                    (local[::-1], 0x8000),
+                    ([row[::-1] for row in local[::-1]], 0xC000),
+                )
+                entry = None
+                for candidate, flip in variants:
+                    key = encode_tile(candidate, 4)
+                    if key in lookup:
+                        entry = lookup[key] | flip
+                        break
+                if entry is None:
+                    key = encode_tile(local, 4)
+                    lookup[key] = len(tiles)
+                    entry = len(tiles)
+                    tiles.append(key)
+                tilemap.append(entry | (sub << 10))
     if len(tiles) > budget:
         raise AssetError(f"{name} uses {len(tiles)} tiles > {budget}")
     count = (last_sub - first_sub + 1) * 16
     pal = [rgb8_to_15(palette[slot]) if slot < len(palette) else 0
            for slot in range(first_sub * 16, first_sub * 16 + count)]
-    return b"".join(tiles), struct.pack("<1024H", *tilemap), \
+    return b"".join(tiles), struct.pack(f"<{len(tilemap)}H", *tilemap), \
         struct.pack(f"<{count}H", *pal), len(tiles)
 
 

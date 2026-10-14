@@ -98,6 +98,70 @@ u8 open_court_near(void)
     return OPEN_NONE;
 }
 
+/* The clubhouse walls, with the margin (M4-OPEN-05). */
+#define HOUSE_M OPEN_FENCE_MARGIN
+
+static u8 open_house_wall(s16 x, s16 y)
+{
+    if (x <= OPEN_HOUSE_LEFT - HOUSE_M || x >= OPEN_HOUSE_RIGHT + HOUSE_M ||
+            y <= OPEN_HOUSE_TOP - HOUSE_M || y >= OPEN_HOUSE_BOTTOM + HOUSE_M)
+        return 0;                   /* outside it */
+    if (x >= OPEN_HOUSE_LEFT + OPEN_HOUSE_WALL + HOUSE_M &&
+            x <= OPEN_HOUSE_RIGHT - OPEN_HOUSE_WALL - HOUSE_M &&
+            y >= OPEN_HOUSE_TOP + OPEN_HOUSE_WALL + HOUSE_M &&
+            y <= OPEN_HOUSE_BOTTOM - OPEN_HOUSE_WALL - HOUSE_M)
+        return 0;                   /* the room */
+    /* The door: through the bottom wall only. */
+    if (y > OPEN_HOUSE_BOTTOM - OPEN_HOUSE_WALL - HOUSE_M &&
+            x >= OPEN_HOUSE_DOOR_X - OPEN_HOUSE_DOOR_W / 2 + HOUSE_M &&
+            x <= OPEN_HOUSE_DOOR_X + OPEN_HOUSE_DOOR_W / 2 - HOUSE_M)
+        return 0;
+    return 1;
+}
+
+u8 open_in_house(void)
+{
+    s16 x = FROM_FP(g_open_play.x_fp);
+    s16 y = FROM_FP(g_open_play.y_fp);
+
+    return x > OPEN_HOUSE_LEFT && x < OPEN_HOUSE_RIGHT &&
+        y > OPEN_HOUSE_TOP && y < OPEN_HOUSE_BOTTOM - OPEN_HOUSE_WALL;
+}
+
+static u8 open_spot_near(s16 spot_x, s16 spot_y)
+{
+    return abs_s16(FROM_FP(g_open_play.x_fp) - spot_x) <= OPEN_SPOT_REACH &&
+        abs_s16(FROM_FP(g_open_play.y_fp) - spot_y) <= OPEN_SPOT_REACH;
+}
+
+u8 open_board_near(void)
+{
+    return open_spot_near(OPEN_BOARD_X, OPEN_BOARD_Y);
+}
+
+u8 open_machine_near(void)
+{
+    return open_spot_near(OPEN_MACHINE_X, OPEN_MACHINE_Y);
+}
+
+u8 open_bench_near(void)
+{
+    return open_spot_near(OPEN_BENCH_X + 24, OPEN_BENCH_Y + 8);
+}
+
+u8 open_waiting_team(u8 n)
+{
+    const OpenCourt *court = g_open_play.court;
+    u8 c;
+    u8 i;
+
+    for (c = 0; c < OPEN_COURTS; ++c, ++court)
+        for (i = 0; i < court->stack_count; ++i)
+            if (court->stack[i] < OPPONENT_COUNT && n-- == 0)
+                return court->stack[i];
+    return OPEN_NONE;
+}
+
 u8 open_walkable(fx x_fp, fx y_fp)
 {
     s16 x = FROM_FP(x_fp);
@@ -107,6 +171,8 @@ u8 open_walkable(fx x_fp, fx y_fp)
 
     if (x < OPEN_WALK_LEFT || x > OPEN_WALK_RIGHT ||
             y < OPEN_WALK_TOP || y > OPEN_WALK_BOTTOM)
+        return 0;
+    if (open_house_wall(x, y))
         return 0;
     for (c = 0; c < OPEN_COURTS; ++c) {
         left = open_court_left(c);
@@ -351,6 +417,7 @@ void open_play_begin(u16 seed, u8 two_players)
     g_open_play.last_won = OPEN_NONE;
     g_open_play.last_score[0] = 0;
     g_open_play.last_score[1] = 0;
+    g_open_play.board_page = OPEN_NONE;
 }
 
 static u8 open_press_rack(u8 rack)
@@ -412,10 +479,20 @@ u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed)
         return OPEN_EVENT_NONE;
     }
     open_walk(move_x, move_y);
+    /* The board's page shows while you stand there. */
+    if (!open_board_near())
+        g_open_play.board_page = OPEN_NONE;
     if (b_pressed) {
         rack = open_rack_near();
-        if (rack != OPEN_NONE)
+        if (rack != OPEN_NONE) {
             event = open_press_rack(rack);
+        } else if (open_board_near()) {
+            g_open_play.board_page = g_open_play.board_page >=
+                OPEN_BOARD_PAGES - 1 ? 0 : g_open_play.board_page + 1;
+            event = OPEN_EVENT_BOARD;
+        } else if (open_machine_near()) {
+            event = OPEN_EVENT_PRACTICE;
+        }
     }
     return event;
 }

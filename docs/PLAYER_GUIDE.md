@@ -31,6 +31,14 @@ its own level. On KID, every court is KID.
   to leave.
 - After the game, **B** takes you back to the park. **Start** in the park
   goes back to the title.
+- **The clubhouse:** walk right along the path and the park scrolls on to
+  the clubhouse. Go in through the door at the bottom:
+  - **B** at the board on the back wall reads your records, a page per
+    press.
+  - **B** at the ball machine starts a practice session on your PRACTICE
+    settings; **PARK** on the pause menu brings you back.
+  - The teams waiting for a court sit on the bench.
+  - You're still called for your game while you're inside.
 
 ## Practice
 

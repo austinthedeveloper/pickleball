@@ -15,6 +15,9 @@ enum { PAUSE_STAY = 0, PAUSE_DO_RESUME = 1, PAUSE_DO_RESTART = 2,
        PAUSE_DO_MAIN_MENU = 3 };
 
 extern u8 g_pause_choice;
+/* Practice from the park's ball machine (M4-OPEN-05): the third choice
+ * reads PARK and goes back there. */
+extern u8 g_pause_park;
 
 /* The menu opens on RESUME. */
 void pause_begin(void);

@@ -1,0 +1,30 @@
+# The clubhouse (M4-OPEN-05): OPEN PLAY on the title, into the park; walk
+# right along the path (the view scrolls, the court labels and scores
+# with it), up through the door, to the records board (B: a page), to the
+# ball machine (B: practice), PARK on the pause menu, and back inside by
+# the machine; then across to the bench, where the waiting teams sit.
+70 71 down
+80 81 down
+90 91 start
+160 370 right
+shot 260
+380 470 up
+shot 480
+490 535 left
+540 556 up
+580 581 b
+shot 600
+600 695 right
+700 716 down
+shot 725
+730 731 b
+shot 820
+850 851 start
+870 871 down
+880 881 down
+shot 886
+890 891 b
+shot 960
+970 1037 left
+1040 1085 down
+shot 1100

@@ -2,6 +2,7 @@
 #include "pause_menu.h"
 
 u8 g_pause_choice;
+u8 g_pause_park;
 
 void pause_begin(void)
 {
@@ -13,6 +14,8 @@ const char *pause_choice_name(u8 choice)
     static const char *const names[PAUSE_CHOICES] = {
         "RESUME", "RESTART", "MAIN MENU"
     };
+    if (choice == PAUSE_MAIN_MENU && g_pause_park)
+        return "PARK";
     return names[choice < PAUSE_CHOICES ? choice : PAUSE_RESUME];
 }
 

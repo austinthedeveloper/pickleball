@@ -269,6 +269,62 @@ static void test_two_players(void)
     game_new_match();
 }
 
+/* M4-OPEN-05: the clubhouse. Its walls are solid; the door in the bottom
+ * wall lets you in. Inside, B at the board turns its page and B at the
+ * ball machine asks for practice; the bench seats the first two teams
+ * waiting. */
+static void test_clubhouse(void)
+{
+    u16 n;
+
+    open_play_begin(7, 0);
+    /* Walls, inside, the door. */
+    assert(!open_walkable(TO_FP(OPEN_HOUSE_LEFT + 2), TO_FP(100)));
+    assert(!open_walkable(TO_FP(OPEN_HOUSE_RIGHT - 2), TO_FP(100)));
+    assert(!open_walkable(TO_FP(360), TO_FP(OPEN_HOUSE_TOP + 2)));
+    assert(!open_walkable(TO_FP(340), TO_FP(OPEN_HOUSE_BOTTOM - 2)));
+    assert(open_walkable(TO_FP(360), TO_FP(100)));
+    assert(open_walkable(TO_FP(OPEN_HOUSE_DOOR_X),
+        TO_FP(OPEN_HOUSE_BOTTOM - 2)));
+    assert(open_walkable(TO_FP(OPEN_HOUSE_LEFT - 8), TO_FP(100)));
+    /* Walk in: along the path to the door, then up through it. */
+    place_you(OPEN_HOUSE_DOOR_X, OPEN_START_Y);
+    assert(!open_in_house());
+    for (n = 0; n < 60; ++n)
+        open_play_update(0, -1, 0);
+    assert(open_in_house());
+    /* Walking into a wall from inside stops at it. */
+    for (n = 0; n < 200; ++n)
+        open_play_update(1, 0, 0);
+    assert(FROM_FP(g_open_play.x_fp) <
+        OPEN_HOUSE_RIGHT - OPEN_HOUSE_WALL);
+    /* The board: each B the next page, round again; leaving clears it. */
+    place_you(OPEN_BOARD_X, OPEN_BOARD_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_BOARD);
+    assert(g_open_play.board_page == 0);
+    for (n = 1; n < OPEN_BOARD_PAGES; ++n)
+        open_play_update(0, 0, 1);
+    assert(g_open_play.board_page == OPEN_BOARD_PAGES - 1);
+    open_play_update(0, 0, 1);
+    assert(g_open_play.board_page == 0);
+    place_you(400, 120);
+    open_play_update(0, 0, 0);
+    assert(g_open_play.board_page == OPEN_NONE);
+    /* The ball machine. */
+    place_you(OPEN_MACHINE_X, OPEN_MACHINE_Y);
+    assert(open_machine_near());
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_PRACTICE);
+    /* The bench: the two teams waiting at the start (one each at the
+     * first two levels' courts). */
+    assert(open_waiting_team(0) < OPPONENT_COUNT);
+    assert(open_waiting_team(1) < OPPONENT_COUNT);
+    assert(open_waiting_team(0) != open_waiting_team(1));
+    assert(open_waiting_team(2) == OPEN_NONE);
+    place_you(OPEN_BENCH_X + 24, OPEN_BENCH_Y + 8);
+    assert(open_bench_near());
+    check_population();
+}
+
 int main(void)
 {
     test_levels();
@@ -278,6 +334,7 @@ int main(void)
     test_your_turn();
     test_soak();
     test_two_players();
+    test_clubhouse();
     printf("open play host checks passed\n");
     return 0;
 }

@@ -253,22 +253,6 @@ void hud_center_prompt_half(u8 row, u8 palette, const char *text, u8 part)
     hud_mark(row + 1);
 }
 
-void hud_center_prompt_text(u8 row, u8 palette, const char *text)
-{
-    u8 len;
-    u8 col = hud_prompt_col(text, &len);
-    const char *p;
-
-    hud_text(col + 1, row + 1, palette, text);
-    p = text;
-    while (*p) {
-        if (*p == '@')
-            hud_tile(col + 1 + (u8)(p - text), row + 1,
-                hud_entry(HUD_TILE_BUTTON_B, HUD_PAL_YELLOW));
-        ++p;
-    }
-}
-
 /* At most this many 256-byte bands per VBlank, alongside the NMI's OAM DMA;
  * anything left over stays dirty for the next frame. */
 #define HUD_MAX_BANDS_PER_COMMIT 3

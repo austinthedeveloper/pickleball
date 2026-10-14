@@ -398,7 +398,7 @@ enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
        /* The match result only: a panel and its text on separate frames
         * (other scenes go from EXTRA2 to DONE). */
        HUD_STEP_EXTRA3 = 5, HUD_STEP_EXTRA4 = 6, HUD_STEP_EXTRA5 = 7,
-       HUD_STEP_DONE = 8 };
+       HUD_STEP_EXTRA6 = 8, HUD_STEP_DONE = 9 };
 
 static u8 s_scene_step;
 static u16 s_prev_scene;
@@ -463,7 +463,7 @@ static void hud_result_story(u8 step)
 
     if (g_match_config.opponent == OPPONENT_NONE)
         return;
-    if (step <= HUD_STEP_EXTRA4) {
+    if (step <= HUD_STEP_EXTRA5) {
         /* Separate steps: 816-tcc fails (ICE 2) on a ternary as the index. */
         lines = g_opponent_lines[g_match_config.opponent];
         if (won)
@@ -471,11 +471,11 @@ static void hud_result_story(u8 step)
         else
             lines += OPPONENT_LINE_TAUNT;
         /* The panel, then the line in halves: each half is a frame. */
-        if (step == HUD_STEP_EXTRA2)
+        if (step == HUD_STEP_EXTRA3)
             hud_center_prompt_panel(CENTER_PANEL_ROW, *lines);
         else
             hud_center_prompt_half(CENTER_PANEL_ROW, HUD_PAL_TEAM_RIGHT,
-                *lines, step == HUD_STEP_EXTRA4);
+                *lines, step == HUD_STEP_EXTRA5);
         return;
     }
     /* Open play (ADR-034) is off the ladder: no next-up line. */
@@ -1106,14 +1106,14 @@ static void hud_scene_step(u16 key, u8 step)
     }
     if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
             step >= HUD_STEP_PROMPT) {
-        /* The prompt's panel, then its text, then the story card
-         * (hud_result_story): each on its own frame. Together they
+        /* The prompt's panel, then its text in halves, then the story
+         * card (hud_result_story): each on its own frame. Together they
          * overran the doubles result frame. */
         if (step == HUD_STEP_PROMPT)
             hud_center_prompt_panel(BANNER_ROW, hud_result_prompt());
-        else if (step == HUD_STEP_EXTRA)
-            hud_center_prompt_text(BANNER_ROW, HUD_PAL_WHITE,
-                hud_result_prompt());
+        else if (step <= HUD_STEP_EXTRA2)
+            hud_center_prompt_half(BANNER_ROW, HUD_PAL_WHITE,
+                hud_result_prompt(), step == HUD_STEP_EXTRA2);
         else if (!g_attract)
             hud_result_story(step);
         return;

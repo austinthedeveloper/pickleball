@@ -58,6 +58,12 @@ static u8 update_pause_menu(u16 pressed)
         if (g_match_config.practice)
             practice_finish();
         game_start_attract();
+        /* Practice from the park (M4-OPEN-05): back to the ball machine. */
+        if (g_pause_park) {
+            g_pause_park = 0;
+            g_match_config_changed = 0;
+            s_open_park = 1;
+        }
     }
     return 1;
 }
@@ -83,6 +89,21 @@ static void start_open_play_match(void)
     g_match_config.open_play = 1;
     game_start_match();
     g_match_config_changed = 0;
+    render_open_match();
+    s_scene = SCENE_MATCH;
+    profile_resync();
+}
+
+/* The park's ball machine (M4-OPEN-05): practice on the saved drill, in
+ * the default look (no Player Select), and PARK on the pause menu goes
+ * back. The park waits, as for your game. */
+static void start_park_practice(void)
+{
+    match_config_defaults();
+    match_config_practice();
+    game_start_match();
+    g_match_config_changed = 0;
+    g_pause_park = 1;
     render_open_match();
     s_scene = SCENE_MATCH;
     profile_resync();
@@ -127,8 +148,15 @@ static void update_park(void)
         audio_ui(SFX_CONFIRM);
     else if (event == OPEN_EVENT_UNSTACKED || event == OPEN_EVENT_FULL)
         audio_ui(SFX_BACK);
+    if (event == OPEN_EVENT_BOARD)
+        audio_ui(SFX_BLIP);
     if (event == OPEN_EVENT_PLAY) {
         start_open_play_match();
+        return;
+    }
+    if (event == OPEN_EVENT_PRACTICE) {
+        audio_ui(SFX_CONFIRM);
+        start_park_practice();
         return;
     }
     render_park_prepare();
@@ -432,6 +460,7 @@ int main(void)
     s_scene = SCENE_MATCH;
     s_open_select = 0;
     s_open_park = 0;
+    g_pause_park = 0;
     s_practice_pending = 0;
     s_switched = 0;
     g_match_config_changed = 0;

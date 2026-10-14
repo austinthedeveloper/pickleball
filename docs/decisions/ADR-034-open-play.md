@@ -129,6 +129,54 @@ it changes the CPUs on a team with no human (ADR-025). Tests:
   The renderer now flags a recolour frame (`g_render_busy`), and the HUD
   waits a frame.
 
+## The clubhouse
+
+*Amended 2026-10-14 (`M4-OPEN-05`; the user chose a clubhouse over a
+fourth court):* the park is two screens wide, and the view scrolls with
+you.
+
+- **The second screen:** the path goes on to a clubhouse, a room seen
+  from above. Its walls are solid, and a door in the bottom wall opens onto
+  the path (`open_walkable`, `open_in_house`).
+  - **B at the records board** (on the back wall) shows a records page in
+    the panel and turns to the next on each press: doubles and singles
+    won and lost, best streak and longest rally, ladder clears and the
+    practice best.
+  - **B at the ball machine** starts practice on the saved PRACTICE
+    settings, in the default look (no Player Select). On the pause menu,
+    MAIN MENU reads **PARK** (`g_pause_park`) and goes back. The park
+    waits, as for your game.
+  - **The bench** seats the first two teams waiting in a stack (`open_waiting_team`),
+    and the panel names them ("GYM BROS AND SURF CREW WAIT").
+  - You can still be called while you're inside.
+- **BG1:** a 64x32 map (the park is 512x224, 159 tiles) at VRAM
+  0x0800-0x0fff, Player Select's portrait maps' place. The court's map
+  stays a screen at 0x0000, and `render_load_court` puts the pointer and
+  the scroll back. The clubhouse is whole tiles, in a BG palette of its
+  own (6). `indexed_scene` converts two-screen pictures.
+- **The court labels and scores** were BG3 text, which can't scroll with
+  the park. They're sprites now: HUD font glyphs in the objects palette,
+  yellow for scores and white for labels. That's 25 OBJ tiles, 249 of 256.
+- **Palettes:** with the view past x 76, court 1 is off screen (its
+  objects end at 64) and the bench not yet on (from 346). Court 1's two
+  team palettes are then the bench teams', and court 1's people are
+  hidden.
+- **OAM:** the cache keeps park x, not screen x. When the view moves,
+  `park_oam_scroll` (assembly) moves every shown object:
+  - one byte store for an object on screen before and after
+  - nothing for one off screen both times
+  - `oam_write` only for one crossing an edge
+
+  Calling `oam_write` for all of them cost about 100 scanlines a scroll
+  frame; this costs about 50.
+- **Frame budget:** a scroll frame plus a message step came to 230-250
+  scanlines, so a message now draws over four frames: clear, the panel,
+  and the text in two halves (`hud_center_prompt_half`). A score (five
+  sprites) is a frame's job of its own, not after a court's animation.
+  `clubhouse.timeline` and `open_play.timeline` have zero overruns.
+  - The doubles match result had the same trouble (`M4-UI-04`): it draws
+    its prompt and the opponent's line in halves too.
+
 ## How
 
 - `src/open_play.c`, `include/open_play.h`: the rules, pure and
@@ -209,8 +257,9 @@ frame over the singles demo.
 
 ## Not yet
 
-- The park resets on each visit. Waiting teams aren't drawn (no OBJ
-  palette is free for them); their paddles are on the racks.
-- No bench crowd, no wandering people, and a single screen with no
-  scrolling to a bigger park.
+- The park resets on each visit. Waiting teams are drawn only on the
+  clubhouse bench (the first two); elsewhere their paddles are on the
+  racks.
+- No wandering people. The bigger park (`M4-OPEN-05`) is the clubhouse
+  above; there are still three courts.
 - 2P has no sprite of their own in the park.

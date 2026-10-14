@@ -64,6 +64,33 @@ SHADOW_PALETTE = [0, 0, 0, 0, bgr15(0, 0, 0)] + [0] * 11
 SHADOW_OPAQUE_PALETTE = [0, 0, 0, 0, bgr15(4, 7, 7)] + [0] * 11
 
 
+# The park's court labels and scores as sprites (M4-OPEN-05: BG3 text
+# can't scroll with the park): HUD font glyphs, outlined in black, in the
+# objects palette. Yellow (2) for the scores, white (6) for the labels.
+PARK_FONTS = (("YELLOW", "0123456789-NEXTYOU", 2), ("WHITE", "<.+-345", 6))
+
+
+def font_tiles(chars, fill):
+    from .hud import FONT
+    tiles = []
+    for ch in chars:
+        glyph = FONT[ch]
+        px = [[0] * 8 for _ in range(8)]
+        for y, row in enumerate(glyph):
+            for x, c in enumerate(row[:6]):
+                if c == "#":
+                    px[y][x + 1] = fill
+        for y in range(8):
+            for x in range(8):
+                if px[y][x] == 0 and any(
+                        0 <= y + dy < 8 and 0 <= x + dx < 8 and
+                        px[y + dy][x + dx] == fill
+                        for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
+                    px[y][x] = 4
+        tiles.append(encode_tile(px, 4))
+    return tiles
+
+
 def obj_assets(manifest):
     width, height, rows, _ = read_png(paths.src / "player_sprites.png")
     if width != 128 or height % 32:
@@ -96,6 +123,13 @@ def obj_assets(manifest):
     for ty in range(oh // 8):
         for tx in range(16):
             tiles.append(encode_tile(block(orows, tx * 8, ty * 8), 4))
+    if not PARK_FONTS[0][1].startswith("0123456789"):
+        raise AssetError("the park's yellow font starts with the digits "
+                         "(render_park.c: park_glyph)")
+    font_base = {}
+    for name, chars, fill in PARK_FONTS:
+        font_base[name] = len(tiles)
+        tiles += font_tiles(chars, fill)
     if len(tiles) > OBJ_TILE_BUDGET:
         raise AssetError(f"OBJ uses {len(tiles)} tiles > {OBJ_TILE_BUDGET}")
     for name, info in frames.items():
@@ -135,6 +169,9 @@ def obj_assets(manifest):
             raise AssetError(f"large object {name} is empty")
         tile = (slot // 4) * 64 + (slot % 4) * 4
         header.append(f"#define OBJTILE_{name.upper()} {tile}")
+    for name, chars, _ in PARK_FONTS:
+        header.append(f"#define OBJTILE_FONT_{name} {font_base[name]}")
+        header.append(f'#define OBJFONT_{name} "{chars}"')
     header += ["", "#endif", ""]
     return b"".join(tiles), struct.pack(f"<{len(obj_pal)}H", *obj_pal), \
         "\n".join(header), len(tiles)
