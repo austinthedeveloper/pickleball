@@ -49,6 +49,10 @@ static u16 s_bust_palette[16];
 static u8 s_bust_shown;
 
 u16 g_obj_overflow_frames;
+/* Each slot's hat tile pair, 0 for the cap (M4-OPP-04); set with the match
+ * config, read by render_bodies (src/asm/render_bodies.asm). */
+u16 rb_hat[MAX_PLAYERS];
+static const u16 s_hat_tiles[HAT_COUNT] = HAT_TILES;
 
 /* Inputs for ram_copy (src/asm/ram_copy.asm). */
 u16 ram_copy_src;
@@ -115,6 +119,9 @@ void render_apply_match_config(void)
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (match_slot_active(slot))
             match_compose_palette(slot, s_player_palettes[slot]);
+    /* Hats (M4-OPP-04): render_bodies draws or parks them every frame. */
+    for (slot = 0; slot < MAX_PLAYERS; ++slot)
+        rb_hat[slot] = s_hat_tiles[match_slot_hat(slot)];
     /* Ponytails are written only for female players; park the rest. */
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (!match_slot_active(slot) ||
@@ -165,7 +172,10 @@ static void render_upload_palettes(void)
 typedef char oam_bodies_after_ball[
     (RENDER_OAM_BODIES > RENDER_OAM_BALL_SHADOW) ? 1 : -1];
 typedef char oam_shadows_after_bodies[
-    (RENDER_OAM_SHADOWS >= RENDER_OAM_BODIES + MAX_PLAYERS) ? 1 : -1];
+    (RENDER_OAM_SHADOWS >=
+        RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * MAX_PLAYERS) ? 1 : -1];
+typedef char oam_group_holds_hat_and_body[
+    (RENDER_OAM_GROUP_BODY == 2 && RENDER_OAM_GROUP_SIZE == 3) ? 1 : -1];
 typedef char oam_effects_after_shadows[
     (RENDER_OAM_SPARK >= RENDER_OAM_SHADOWS + MAX_PLAYERS) ? 1 : -1];
 typedef char oam_effects_within_reserve[
@@ -218,6 +228,7 @@ s16 rb_sx;
 u16 rb_attr;
 u16 rb_count;
 u16 rb_frame;
+u16 rb_oam;
 extern void render_bodies(void);
 
 static u8 s_active_bodies;
@@ -279,8 +290,14 @@ static void render_players(void)
     if (rb_count != s_active_bodies) {
         s_active_bodies = (u8)rb_count;
         for (j = 0; j < MAX_PLAYERS; ++j) {
-            if (j >= rb_count)
-                render_obj_hide(RENDER_OAM_BODIES + j);
+            if (j >= rb_count) {
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j);
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j + 1);
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j + RENDER_OAM_GROUP_BODY);
+            }
             if (rb_depth[j] == -32767)
                 render_obj_hide(RENDER_OAM_SHADOWS + j);
         }

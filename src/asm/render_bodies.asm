@@ -5,11 +5,17 @@
 ;
 ; Player bodies and shadows in assembly (doubles budget, ADR-018). Same
 ; result as the former C render_players():
-;   * bodies take OAM ASM_OAM_BODIES.. nearest-first (larger y first, ties
-;     by slot); shadows take ASM_OAM_SHADOWS + slot (ADR-012);
+;   * players take OAM groups from ASM_OAM_BODIES nearest-first (larger y
+;     first, ties by slot), ASM_OAM_GROUP_SIZE entries each: the hat's two
+;     halves, then the body (ADR-012, M4-OPP-04); shadows take
+;     ASM_OAM_SHADOWS + slot;
 ;   * screen x = 128 + d + ((d * (s(y) - 256) + 128) >> 8), d = x - 128,
 ;     using the hardware 8x8 multiplier (ADR-011, src/projection.c);
 ;   * frame from pose/state/animation, palette from flash or the player;
+;   * a hat (rb_hat[slot], 0 for the cap) sits at the frame's accessory
+;     offset plus HAT_DX, HAT_RAISE above it, in front of its body; flipped,
+;     it mirrors as 16 - x with its halves swapped (tile ^ 1); without one
+;     its entries are parked every frame (groups follow the depth order);
 ;   * female players add a ponytail at ASM_OAM_ACCESSORIES + slot (ADR-014),
 ;     offset per frame and mirrored with the body.
 ; Outputs rb_count = number of active bodies drawn. Working variables are
@@ -138,6 +144,13 @@ _rb_body:
     brl _rb_done
 +   lda.l _rb_slot_offset,x
     tax
+    lda.l rb_i                  ; group = ASM_OAM_BODIES + 3 * rank
+    sta.l rb_oam
+    asl a
+    clc
+    adc.l rb_oam
+    adc.w #ASM_OAM_BODIES
+    sta.l rb_oam
 
     lda.l g_players + ASM_PLAYER_Y,x
     RB_SAR4
@@ -282,9 +295,9 @@ _rb_have_tile:
 +
     ; --- body ---
     sep #$20
-    lda.l rb_i
+    lda.l rb_oam
     clc
-    adc.b #ASM_OAM_BODIES
+    adc.b #ASM_OAM_GROUP_BODY
     sta.l oam_in_id
     lda.l rb_attr
     sta.l oam_in_attr
@@ -326,6 +339,79 @@ _rb_have_tile:
     sta.l oam_in_tile
     jsl oam_write
 
+    ; --- hat (M4-OPP-04), same palette and flip as the body ---
+    lda.l rb_slot
+    asl a
+    tax
+    lda.l rb_hat,x
+    bne _rb_hat
+    ; The cap: park both halves at y = 240. Hat entries are always small
+    ; objects, so the Y byte alone hides them (oam_write is the costly way).
+    lda.l rb_oam
+    asl a
+    asl a
+    tax
+    sep #$20
+    lda.b #$F0
+    sta.l oamMemory+1,x
+    sta.l oamMemory+5,x
+    rep #$20
+    brl _rb_pony
+_rb_hat:
+    sta.l oam_in_tile
+    lda.l rb_frame
+    asl a
+    tax
+    lda.l _rb_acc_x,x
+    clc
+    adc.w #HAT_DX
+    sta.l rb_tmp
+    lda.l rb_attr
+    and.w #$0040
+    beq +
+    lda.w #16                   ; flipped: 16 - x, the right half first
+    sec
+    sbc.l rb_tmp
+    sta.l rb_tmp
+    lda.l oam_in_tile
+    eor.w #1
+    sta.l oam_in_tile
++   lda.l rb_sx
+    sec
+    sbc.w #ASM_SPRITE_HALF_WIDTH
+    clc
+    adc.l rb_tmp
+    sta.l oam_in_x
+    lda.l rb_y
+    sec
+    sbc.w #ASM_SPRITE_FOOT_Y + HAT_RAISE
+    clc
+    adc.l _rb_acc_y,x
+    sta.l oam_in_y
+    sep #$20
+    lda.l rb_oam
+    sta.l oam_in_id
+    lda.l rb_attr
+    sta.l oam_in_attr
+    lda.b #0
+    sta.l oam_in_large
+    rep #$20
+    jsl oam_write
+    lda.l oam_in_x
+    clc
+    adc.w #8
+    sta.l oam_in_x
+    lda.l oam_in_tile
+    eor.w #1
+    sta.l oam_in_tile
+    sep #$20
+    lda.l rb_oam
+    inc a
+    sta.l oam_in_id
+    rep #$20
+    jsl oam_write
+
+_rb_pony:
     ; --- ponytail (female variant), same palette and flip as the body ---
     lda.l rb_slot
     asl a

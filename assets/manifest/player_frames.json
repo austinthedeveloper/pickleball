@@ -113,5 +113,17 @@
     "gold"
   ],
   "palette_contract": "v2 (docs/10_MOCKUP_DECISIONS.md ADR-013); parts in assets/source/palettes",
-  "accessory_doc": "ADR-014: per-frame top-left of the 8x8 ponytail in frame pixels (facing right); mirrored as 24 - x when flipped"
+  "accessory_doc": "ADR-014: per-frame top-left of the 8x8 ponytail in frame pixels (facing right); mirrored as 24 - x when flipped",
+  "hats": {
+    "visor": 12,
+    "headband": 14,
+    "tricorn": 22,
+    "bandana": 24,
+    "hair": 26
+  },
+  "hat_offset": [
+    4,
+    -4
+  ],
+  "hat_doc": "M4-OPP-04: opponent hats, 16x8 (two objects: the cell given and the next), in front of the body at the frame's accessory offset plus hat_offset (facing right); mirrored as 16 - x when flipped. Ids follow this order from 1 (0: the cap the body wears)."
 }

@@ -35,13 +35,18 @@ enum {
 enum {
     RENDER_OAM_BALL = 0,
     RENDER_OAM_BALL_SHADOW = 1,
-    RENDER_OAM_BODIES = 2,        /* 2-5: sorted nearest-first (ADR-012) */
-    RENDER_OAM_SHADOWS = 6,       /* 6-9: by slot */
-    RENDER_OAM_SPARK = 10,        /* 10-13: impact effects reserve */
-    RENDER_OAM_DEBUG_MARKER = 11,
-    RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
-    RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
-    RENDER_OAM_FIRST_HIDDEN = 22
+    /* 2-13: a group per player, nearest-first (ADR-012): the hat's two
+     * halves (M4-OPP-04), then the body. A lower entry draws in front, so
+     * a hat covers its own body's cap and stays behind nearer players. */
+    RENDER_OAM_BODIES = 2,
+    RENDER_OAM_GROUP_SIZE = 3,
+    RENDER_OAM_GROUP_BODY = 2,    /* the body's entry in its group */
+    RENDER_OAM_SHADOWS = 14,      /* 14-17: by slot */
+    RENDER_OAM_SPARK = 18,        /* 18-21: impact effects reserve */
+    RENDER_OAM_DEBUG_MARKER = 19,
+    RENDER_OAM_ACCESSORIES = 22,  /* 22-25: ponytails by slot (ADR-014) */
+    RENDER_OAM_MACHINE = 26,      /* 26-29: practice ball machine (ADR-028) */
+    RENDER_OAM_FIRST_HIDDEN = 30
 };
 
 void render_initialize(void);

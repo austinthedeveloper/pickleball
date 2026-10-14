@@ -63,6 +63,8 @@ int main(void)
     assert(PLAYER_SPRITE_HALF_WIDTH == ASM_SPRITE_HALF_WIDTH);
     assert(PLAYER_SPRITE_FOOT_Y == ASM_SPRITE_FOOT_Y);
     assert(RENDER_OAM_BODIES == ASM_OAM_BODIES);
+    assert(RENDER_OAM_GROUP_SIZE == ASM_OAM_GROUP_SIZE);
+    assert(RENDER_OAM_GROUP_BODY == ASM_OAM_GROUP_BODY);
     assert(RENDER_OAM_SHADOWS == ASM_OAM_SHADOWS);
     assert(COURT_PROJECTION_ROWS == ASM_PROJECTION_ROWS);
     puts("layout host checks passed");

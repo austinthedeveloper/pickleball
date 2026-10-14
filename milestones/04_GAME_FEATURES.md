@@ -51,8 +51,9 @@ ADR-024.
   - Verified: [ADR-036](../docs/decisions/ADR-036-teamwork.md), `test_ai.c: test_teamwork`, `test_doubles.c`; middle balls lost untouched near zero for both sides in the ADR-036 table.
 - [x] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.
   - Verified: [ADR-039](../docs/decisions/ADR-039-smarter-aim.md), `test_ai.c: test_doubles_aim`; in doubles, smart teams hit at the one back when the opponents split up and back, an open lane, else the middle every other shot (ADR-038). Singles already aimed at the open court (`away`, ADR-037 depth).
-- [ ] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
+- [x] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
   - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.
+  - Verified: [ADR-014 hats amendment](../docs/10_MOCKUP_DECISIONS.md) — five hats (visor, headband, tricorn, bandana, bare hair) on 13 of the 16 opponents, drawn in front of their own bodies (OAM groups 2–13); no new OBJ tiles (249 of 256); worst row 32 of 34, the stress scene dropout-free; `test_opponents.c` (hats by slot), `test_asset_validation.py` (unknown hat); zero overruns in `make perf`, golden trace identical.
 - [x] `M4-STORY-01` Story cards: an intro card per opponent (name, one line of trash talk, rung) and the opponent's line on the match result.
   - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md), `test/test_story.c`, `story.timeline`. Uses the HUD over the live court; portraits are `M4-STORY-03`.
 - [x] `M4-STORY-02` A ladder ending after beating CHAMPS (CHAMPION!, plus a "ladder clears" record).

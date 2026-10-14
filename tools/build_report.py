@@ -54,7 +54,8 @@ budget = sizes.pop("_budget", {})
 render_h = (ROOT / "include" / "render.h").read_text()
 vram = dict(re.findall(r"#define RENDER_(\w+)_ADDR (0x[0-9a-fA-F]+)", render_h))
 oam = dict((k, int(v)) for k, v in
-           re.findall(r"RENDER_OAM_(\w+) = (\d+)", render_h))
+           re.findall(r"RENDER_OAM_(\w+) = (\d+)", render_h)
+           if not k.startswith("GROUP_"))
 
 game_ram = []
 lib_ram = []
@@ -119,7 +120,7 @@ lines += ["", "## OAM plan", "",
           "| First index | Use |", "|---:|---|"]
 for name, index in sorted(oam.items(), key=lambda kv: kv[1]):
     lines.append(f"| {index} | {name.lower()} |")
-lines += ["", "Worst planned row: 30 of 34 slivers (ADR-014), verified "
+lines += ["", "Worst planned row: 32 of 34 slivers (ADR-014, hats), verified "
           "dropout-free by the OBJ stress scene's PPU range/time-over latch.",
           "", "## Static RAM", "",
           f"- Game variables: {span(game_ram)}",

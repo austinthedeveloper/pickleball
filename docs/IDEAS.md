@@ -131,7 +131,7 @@ New knobs worth adding: **home position** (net rusher vs baseline camper) and
 Cheap: palette swaps of the shared body (palette parts, ADR-020) plus one
 accessory sprite (the ponytail slot, ADR-014): hats, hair, bandanas. Plus a
 select-style portrait (about 3.5 KiB each). New body animations are the
-expensive option: the OBJ tile budget is 208 of 256.
+expensive option: the OBJ tile budget is 249 of 256 (hats, M4-OPP-04, reuse blank object cells).
 
 ### Roster draft
 
