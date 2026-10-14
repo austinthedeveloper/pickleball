@@ -100,12 +100,6 @@ static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
 #define HUD_TITLE_MAX_WAITS 6
 static u8 s_title_waits;
 
-/* The prompt (a panel and its text) and the big logo each cost 60-100
- * scanlines: they wait for a lighter frame than a menu or page row. Back on
- * the title, the demo's light frames reach about 110 here, so 110 was a
- * coin flip; a miss waits out HUD_TITLE_MAX_WAITS and then draws on a heavy
- * frame (235 scanlines, a dropped frame). 116 + 98 still ends by 214. */
-#define HUD_TITLE_PROMPT_LIMIT 116
 
 /* The title prompt's rows (BANNER_ROW - 1 and its panel) as last drawn, for
  * TITLE_PAGE_* s_prompt_page (0xff: none yet). Its blink brings it back
@@ -115,6 +109,8 @@ static u8 s_title_waits;
 #define HUD_PROMPT_ROWS 4
 static u16 s_prompt_rows[HUD_PROMPT_ROWS * 32];
 static u8 s_prompt_page;
+/* A new prompt's panel is up and its text comes next (EXTRA2, EXTRA3). */
+static u8 s_prompt_text;
 
 /* Nonzero when title drawing should wait for a lighter frame: the frame's
  * work is past `limit`, and it has not waited HUD_TITLE_MAX_WAITS yet. */
@@ -970,10 +966,15 @@ static void hud_title_area_update(void)
                 hud_modifiers_refresh();
             return;
         }
-        if (hud_title_draw_part(view, s_title_part))
-            s_title_part = 0xff;
-        else
+        /* Parts back to back while the frame stays under the limit
+         * (M4-UI-01): each fits after it, as the first one does. */
+        do {
+            if (hud_title_draw_part(view, s_title_part)) {
+                s_title_part = 0xff;
+                return;
+            }
             ++s_title_part;
+        } while (profile_scanline() <= HUD_TITLE_SCANLINE_LIMIT);
         return;
     }
     /* Otherwise draw the whole view a part per frame. Menu to menu still
@@ -986,16 +987,15 @@ static void hud_title_area_update(void)
     s_title_part = 0;
 }
 
-/* The scanline a title step waits under: a prompt drawn from scratch needs
- * a light frame; a logo row, a clear, or a restored prompt only an
- * ordinary one; the logo steps between two title views draw nothing. */
-static u16 hud_title_step_limit(u16 key, u8 step)
+/* The scanline a title step waits under: the logo steps between two title
+ * views draw nothing; every other step (a logo row, a clear, a prompt's
+ * panel or half its text, a restored prompt) fits an ordinary frame. A new
+ * prompt in one step (about 106 scanlines) needed a light frame, waited
+ * them out on the singles demo, and dropped one (court.timeline). */
+static u16 hud_title_step_limit(u8 step)
 {
     if (step == HUD_STEP_BIG || step == HUD_STEP_EXTRA)
         return HUD_IS_TITLE(s_prev_scene) ? 0xffff : HUD_TITLE_SCANLINE_LIMIT;
-    if (step == HUD_STEP_PROMPT && !(key & 1) &&
-            s_prompt_page != ((key >> 1) & 7))
-        return HUD_TITLE_PROMPT_LIMIT;
     return HUD_TITLE_SCANLINE_LIMIT;
 }
 
@@ -1036,16 +1036,28 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
             hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
         break;
     case HUD_STEP_PROMPT:
+        s_prompt_text = 0;
         if (!(key & 1) && s_prompt_page == ((key >> 1) & 7)) {
             hud_restore_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
             break;
         }
         hud_clear_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS);
         if (!(key & 1)) {
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+            hud_center_prompt_panel(BANNER_ROW,
                 hud_title_prompt((key >> 1) & 7));
+            s_prompt_text = 1;
+        }
+        break;
+    /* A new prompt's text, in halves on the next two steps; then it is
+     * kept for the blink. */
+    case HUD_STEP_EXTRA2:
+    case HUD_STEP_EXTRA3:
+        hud_center_prompt_half(BANNER_ROW, HUD_PAL_WHITE,
+            hud_title_prompt((key >> 1) & 7), step == HUD_STEP_EXTRA3);
+        if (step == HUD_STEP_EXTRA3) {
             hud_save_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
             s_prompt_page = (key >> 1) & 7;
+            s_prompt_text = 0;
         }
         break;
     default:
@@ -1155,6 +1167,7 @@ void hud_scene_update(void)
      * the same frame (every point) would overrun 816-tcc's budget, as
      * would a redraw with the renderer's recolour (g_render_busy). */
     u8 busy = g_render_busy;
+    u8 idle;
 
     g_render_busy = 0;
     if (!s_hud_valid)
@@ -1180,23 +1193,34 @@ void hud_scene_update(void)
             s_scene_step = HUD_STEP_EXTRA;
     }
     /* Title steps also wait for a lighter frame (the demo runs behind). */
+    idle = 0;
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
-            hud_title_wait(hud_title_step_limit(key, s_scene_step))) {
+            hud_title_wait(hud_title_step_limit(s_scene_step))) {
         busy = 1;
     } else if (s_scene_step < HUD_STEP_DONE && !busy) {
+        /* The logo steps between two title views draw nothing, so the
+         * title area may still draw on their frames (M4-UI-01). */
+        idle = HUD_IS_TITLE(key) && HUD_IS_TITLE(s_prev_scene) &&
+            (s_scene_step == HUD_STEP_BIG || s_scene_step == HUD_STEP_EXTRA);
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
-        /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT. */
+        /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT,
+         * and a new prompt's text in halves (EXTRA2, EXTRA3). */
         if (HUD_IS_TITLE(key))
             s_scene_step = s_scene_step == HUD_STEP_BIG ? HUD_STEP_EXTRA :
                 s_scene_step == HUD_STEP_EXTRA ? HUD_STEP_PROMPT :
-                s_scene_step == HUD_STEP_PROMPT ? HUD_STEP_DONE :
+                s_scene_step == HUD_STEP_PROMPT ? (s_prompt_text ?
+                    HUD_STEP_EXTRA2 : HUD_STEP_DONE) :
+                s_scene_step == HUD_STEP_EXTRA3 ? HUD_STEP_DONE :
                 s_scene_step + 1;
         else if (++s_scene_step == HUD_STEP_EXTRA3 &&
                 g_game_state.phase != GAME_PHASE_MATCH_RESULT)
             s_scene_step = HUD_STEP_DONE;
     } else if (!busy) {
-        /* Only on otherwise idle frames: keeps each frame to one redraw. */
+        idle = 1;
+    }
+    /* Only on otherwise idle frames: keeps each frame to one redraw. */
+    if (idle) {
         if (HUD_IS_TITLE(key))
             hud_title_area_update();
         else if (hud_sub_panel_wanted() != s_sub_panel)
@@ -1221,5 +1245,6 @@ void hud_scene_initialize(void)
     s_title_part = 0;
     s_title_waits = 0;
     s_prompt_page = 0xff;
+    s_prompt_text = 0;
     s_title_stale = 0xff;
 }

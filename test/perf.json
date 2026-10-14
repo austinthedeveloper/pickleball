@@ -18,12 +18,9 @@
     {"timeline": "doubles_ladder.timeline", "frames": 2400},
     {"timeline": "open_play.timeline", "frames": 2800},
     {"timeline": "clubhouse.timeline", "frames": 1110},
-    {"timeline": "modifiers_doubles.timeline", "frames": 2400, "overruns": 20,
-     "note": "all four modifiers: 7-14 by power-on state (M4-UI-04)"},
-    {"timeline": "menu.timeline", "frames": 605, "overruns": 10,
-     "note": "fast menu scrolling over the doubles demo: 5-6 (M4-UI-03)"},
-    {"timeline": "demo.timeline", "frames": 9400, "overruns": 16,
-     "note": "the doubles attract demo: 4-12 by power-on state and build (M4-UI-03)"}
+    {"timeline": "modifiers_doubles.timeline", "frames": 2400},
+    {"timeline": "menu.timeline", "frames": 605},
+    {"timeline": "demo.timeline", "frames": 9400}
   ],
   "sound": [
     {"timeline": "practice.timeline", "frames": 700, "min_starts": 10,

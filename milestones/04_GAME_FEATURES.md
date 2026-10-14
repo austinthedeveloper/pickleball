@@ -120,18 +120,21 @@ touching the simulation.
 
 ## Polish
 
-- [ ] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
+- [x] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
   - Progress: 4-12 overruns over the demo (was 160), by power-on state and build: the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 16, `menu.timeline` 10.
   - Accept: zero overruns over a full doubles demo (about frames 4,300-9,300 from boot), without changing human matches or the golden trace.
+  - Verified: `player_step` in assembly (`src/asm/player_step.asm`; four player updates about 49 → 19 scanlines with the profiler on) and the separation by constant slots; `demo.timeline` and `menu.timeline` budgets 0 (worst frame 190 and 179 of 225). Golden trace and a 1,200-frame doubles trace identical. See `docs/REFACTOR_PLAN.md` R15.
 
 - [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
   - Verified: ADR-026; `hud_panel` now uses the assembly fill, and doubles has zero overruns.
   - Accept: zero overruns on the doubles timeline and a 3,000-frame doubles soak, with a few scanlines of margin.
 
-- [ ] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033).
+- [x] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033).
   - Progress: the plain ladder match drops none (`doubles_ladder.timeline`, budget 0); all four modifiers drop 7-14 (`modifiers_doubles.timeline`, budget 20). See `docs/REFACTOR_PLAN.md` R15.
   - Progress: a doubles ladder loss dropped 2-3 frames on the result screen: the prompt and the opponent's taunt (up to 28 characters, about 130 scanlines of text) each drew in one step on a frame already at about 115. The result now draws a panel and its text on separate frames, the taunt in halves (`hud_center_prompt_panel`, `_half`). `doubles_ladder.timeline` reaches it now (the CPUs win 5-0) and drops none.
   - Accept: zero overruns on that timeline, without changing the golden trace. Pairs with `M4-UI-03` (the same four-player AI cost).
+  - Verified: the `M4-UI-03` changes; `modifiers_doubles.timeline` budget 0 (worst frame 208), `doubles_ladder.timeline` 0 (186).
 
-- [ ] `M4-UI-01` Draw the title pages faster.
+- [x] `M4-UI-01` Draw the title pages faster.
   - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.
+  - Verified: the records page fills in 4-8 frames after the button (0.07-0.13 s; it was 15-18). `hud_text`'s loop is assembly (`src/asm/hud_text.asm`, a page row about 60 → a few scanlines), the area draws parts back to back while the frame is under its limit, and on the no-op logo steps between title views. The BG3 map is identical at every shot of nine HUD timelines. A new title prompt draws in three steps (panel, two halves): in one step (about 106 scanlines) it dropped a frame on `court.timeline` once the demo got faster.

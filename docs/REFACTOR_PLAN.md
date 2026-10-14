@@ -37,7 +37,7 @@ gameplay.
 | R12 | Split `src/hud_scene.c` (1,064 lines) into the match HUD (score panels, banners, pause menu) and the title (logo, menu, COURT/OPTIONS/PRACTICE/RECORDS pages); move title input (`update_title*`, ~120 lines of `main.c`) into a host-tested `title.c` | The title grew a page per feature; its input is the only menu logic without host tests | Medium | Planned |
 | R13 | One settings-page component: rows of (label, value names, count) with Up/Down rows, Left/Right wrapping values, B/Start keep, Y restore, and one HUD row renderer | `court_edit_input`, `options_edit_input`, and `practice_edit_input` repeat the same editor; their HUD pages repeat the row drawing | Medium | Planned |
 | R14 | One frame-budget helper: "defer if past scanline N, at most M frames in a row" | The same wait logic is written three times: `hud_title_wait` (hud_scene.c), `render_update_ground` (render.c), and `audio_update` (audio_events.c) | Low | Planned |
-| R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Partly done: 160 → 4-9 overruns in the doubles demo (see R15 notes) |
+| R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Done: 160 → 0 overruns in the doubles demo (see R15 notes) |
 
 ### R15 notes
 
@@ -65,6 +65,30 @@ prediction in `test_ai.c`). Release build, frames 4,300-9,400 from boot
   with a second think. Four player updates (~56 scanlines) and the body
   render (~33) are the largest fixed costs; an assembly `player_step` is
   the next lever.
+
+Second pass (`feature/cld-frame-budget`, M4-UI-01/03/04). Release build,
+worst frame (work scanline, of 225) and overruns:
+
+| Change | Doubles demo | All-modifier doubles | Menu |
+|---|---:|---:|---:|
+| Before | 4-12 | 7-14 | 3-6 |
+| `player_step` in assembly | 0 (219) | 0 (214) | 0 |
+| The step loop and teammate separation by constant slots | 0 (214) | 0 (204) | 0 (197) |
+| `hud_text`'s loop in assembly | 0 (190) | 0 (208) | 0 (179) |
+
+- **`player_step`** (`src/asm/player_step.asm`) does what the C one does;
+  the host tests run the C (`#ifdef HOST_TEST` in `player.c`), so a change
+  goes in both. The golden trace and a doubles trace (every player, ball,
+  and AI byte, every frame of `doubles.timeline`) are identical. The
+  attract demo's trace is not: its CPU schedule follows `g_loop_count`,
+  and a faster scene switch loses one frame fewer.
+- **`hud_text`** (`src/asm/hud_text.asm`) reads the string through the
+  compiler's `tcc__r9` (`[dp],y`, any bank). The BG3 map is identical at
+  every shot of nine HUD timelines.
+- **Found on the way:** with lighter demo frames, a new title prompt (106
+  scanlines in one step) waited out its six frames on `court.timeline` and
+  dropped one. It now draws as a panel and two halves of text, like the
+  match result's (`M4-UI-04`).
 
 ### R11 notes
 

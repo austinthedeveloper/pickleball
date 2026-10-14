@@ -89,8 +89,18 @@ void hud_tile(u8 col, u8 row, u16 entry)
     hud_mark(row);
 }
 
+#ifndef HOST_TEST
+/* Inputs for hud_text_write (src/asm/hud_text.asm, M4-UI-01). */
+const char *hud_text_src;
+u16 hud_text_index;
+u16 hud_text_cols;
+u16 hud_text_attr;
+extern void hud_text_write(void);
+#endif
+
 void hud_text(u8 col, u8 row, u8 palette, const char *text)
 {
+#ifdef HOST_TEST
     u16 index = (u16)row * 32 + col;
     u8 c;
 
@@ -102,6 +112,15 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
         g_hud_map[index++] = hud_entry(c, palette);
         ++col;
     }
+#else
+    if (col < 32) {
+        hud_text_src = text;
+        hud_text_index = (u16)row * 32 + col;
+        hud_text_cols = 32 - col;
+        hud_text_attr = hud_entry(0, palette);
+        hud_text_write();
+    }
+#endif
     hud_mark(row);
 }
 
