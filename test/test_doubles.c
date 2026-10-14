@@ -117,9 +117,14 @@ static void test_ai_doubles_matches(void)
         }
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP && frames == 0)
             g_ai_slots[0].late_period = 4;
-        /* At most one CPU per team plans to play the ball. */
+        /* At most one CPU per team plans to play the ball. Beside slot 0
+         * (a human's), the CPU partner may also go for a middle ball it is
+         * clearly nearer (a poach, ADR-036), never one deep in slot 0's
+         * half. */
         assert(!(g_ai_slots[2].has_target && g_ai_slots[3].has_target));
-        assert(!(g_ai_slots[0].has_target && g_ai_slots[1].has_target));
+        if (g_ai_slots[0].has_target && g_ai_slots[1].has_target)
+            assert(g_ai_slots[1].target_y - COURT_CENTERLINE_Y <= 30 &&
+                g_ai_slots[1].target_y - COURT_CENTERLINE_Y >= -30);
         ++frames;
         assert(frames < 60UL * 60 * 20);
     }

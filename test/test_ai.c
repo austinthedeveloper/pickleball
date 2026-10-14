@@ -5,6 +5,7 @@
 #include "court.h"
 #include "game.h"
 #include "match.h"
+#include "opponents.h"
 #include "serve.h"
 #include "test_support.h"
 
@@ -277,6 +278,87 @@ static void test_net_play(void)
     match_config_defaults();
 }
 
+/* Doubles, the right team incoming: a ball from slot 0 landing at
+ * (x, y), with the left team placed; returns whether `slot` plans to play
+ * it after its think. */
+static u8 owns_landing(u8 slot, s16 x, s16 y)
+{
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_ball.active = 1;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    g_ball.bounce_count = 0;
+    g_ball.last_hitter = slot < 2 ? 2 : 0;
+    g_ball.x_fp = TO_FP(slot < 2 ? 200 : 56);
+    g_ball.y_fp = TO_FP(130);
+    g_ball.z_fp = TO_FP(20);
+    ball_launch(&g_ball, x, y, 36);
+    ++g_game_state.shot_serial;
+    g_ai_slots[slot].incoming_frames = 30;
+    g_ai_slots[slot].plan_key = 0xff;
+    ai_update(slot, &intents[slot]);
+    return g_ai_slots[slot].has_target;
+}
+
+/* ADR-036 teamwork. */
+static void test_teamwork(void)
+{
+    const AiStyle *pirates = &g_opponent_styles[3][0];
+
+    assert(pirates->team && !g_ai_default_style.team);
+    assert(g_ai_partner_style.team);
+    /* Two CPUs with teamwork: a middle ball goes to the nearer one, even
+     * across the centreline; without it, by halves. */
+    match_config_doubles();
+    match_config_opponent(3);
+    new_match();
+    g_players[2].x_fp = TO_FP(200);
+    g_players[2].y_fp = TO_FP(100);         /* slot 2: top lane */
+    g_players[3].x_fp = TO_FP(200);
+    g_players[3].y_fp = TO_FP(160);
+    /* Landing just above the centreline (slot 2's half), nearer slot 3. */
+    g_players[3].y_fp = TO_FP(135);
+    assert(owns_landing(3, 200, 126));
+    assert(!owns_landing(2, 200, 126));
+    g_ai_styles[2].team = 0;
+    g_ai_styles[3].team = 0;
+    assert(!owns_landing(3, 200, 126));
+    assert(owns_landing(2, 200, 126));
+    /* A human's partner (slot 1, bottom lane) keeps a middle ball in its
+     * own half even with the human nearer, poaches one in the human's
+     * half when clearly nearer, and leaves one deep in it. */
+    match_config_doubles();
+    new_match();
+    g_players[0].x_fp = TO_FP(60);          /* slot 0: bottom lane */
+    g_players[0].y_fp = TO_FP(134);
+    g_players[1].x_fp = TO_FP(60);
+    g_players[1].y_fp = TO_FP(100);         /* slot 1: top lane */
+    assert(owns_landing(1, 60, 126));       /* its half; the human nearer */
+    g_players[0].y_fp = TO_FP(165);
+    g_players[1].y_fp = TO_FP(128);         /* clearly nearer the middle */
+    assert(owns_landing(1, 60, 140));       /* the human's half: a poach */
+    assert(!owns_landing(1, 60, 160));      /* deep in the human's half */
+    /* The pair: the partner comes in only when the human is up. */
+    g_ball.last_hitter = 0;
+    g_ball.x_fp = TO_FP(200);
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_players[0].x_fp = TO_FP(30);
+    g_ai_slots[1].has_target = 0;
+    ai_update(1, &intents[1]);
+    assert(g_ai_slots[1].target_x == COURT_NET_X - g_ai_partner_style.recover);
+    g_players[0].x_fp = TO_FP(COURT_NET_X - 50);
+    ai_update(1, &intents[1]);
+    assert(g_ai_slots[1].target_x == COURT_NET_X - g_ai_partner_style.net);
+    /* The shift: home moves toward the ball's side across the net. */
+    g_ball.y_fp = TO_FP(160);
+    ai_update(1, &intents[1]);
+    assert(g_ai_slots[1].target_y > AI_RECOVER_Y_TOP);
+    g_ball.y_fp = TO_FP(100);
+    ai_update(1, &intents[1]);
+    assert(g_ai_slots[1].target_y < AI_RECOVER_Y_TOP);
+    match_config_defaults();
+}
+
 int main(int argc, char **argv)
 {
     (void)argv;
@@ -291,6 +373,7 @@ int main(int argc, char **argv)
     test_cpu_uses_shared_player_path_and_bounds();
     test_cpu_returns_standard_serves();
     test_net_play();
+    test_teamwork();
     puts("ai host checks passed");
     return 0;
 }

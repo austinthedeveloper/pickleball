@@ -44,7 +44,8 @@ ADR-024.
 - [x] `M4-AI-01` Net play: CPUs volley once the bounces are done and come up to the kitchen line, scaled by ladder rung; a human's CPU partner plays it too.
   - Verified: [ADR-035](../docs/decisions/ADR-035-net-play.md), `test_ai.c: test_net_play`, the ADR-035 bot table (no early-volley faults), golden trace identical.
 - [ ] `M4-AI-02` Situational shots: drops and dinks against net players, put-aways, dink rallies with speed-ups.
-- [ ] `M4-AI-03` Doubles teamwork: the CPU partner moves up and back with you, covers the middle, poaches.
+- [x] `M4-AI-03` Doubles teamwork: the CPU partner moves up and back with you, covers the middle, poaches.
+  - Verified: [ADR-036](../docs/decisions/ADR-036-teamwork.md), `test_ai.c: test_teamwork`, `test_doubles.c`; middle balls lost untouched near zero for both sides in the ADR-036 table.
 - [ ] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.
 - [ ] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
   - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.

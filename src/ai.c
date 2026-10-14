@@ -23,6 +23,8 @@ static u8 s_slot;
 static u8 s_has_partner;
 /* The teammate is a human: never swing at a ball in their lane. */
 static u8 s_partner_human;
+/* The teammate (set with s_has_partner by ai_update). */
+static const Player *s_mate;
 
 static s16 s_impact_vz;
 
@@ -160,6 +162,46 @@ static u8 ai_owns_y(s16 y)
     if (!s_has_partner)
         return 1;
     return (y < COURT_CENTERLINE_Y) == match_slot_lane_top(s_slot);
+}
+
+/*
+ * Teamwork (ADR-036): a ball near the middle goes to whichever teammate
+ * is clearly nearer it, not strictly by half; a volley's middle band is
+ * wider (a poach). Clearly: by AI_MIDDLE_MARGIN, so teammates thinking on
+ * different frames agree; otherwise the halves decide. Without the style
+ * knob, the halves alone.
+ */
+static s16 abs_s16(s16 value);
+
+/* A human is "up" within this of the net: their partner comes in. */
+#define AI_PAIR_UP_DISTANCE 80
+/* The pair's shift toward the ball's side, at most. */
+#define AI_SHIFT_MAX 8
+#define AI_MIDDLE_BAND 12
+#define AI_POACH_BAND 20
+#define AI_MIDDLE_MARGIN 10
+
+static u8 ai_owns_point(const Player *player, s16 x, s16 y, u8 volley)
+{
+    s16 dy = y - COURT_CENTERLINE_Y;
+    s16 me;
+    s16 mate;
+
+    if (!s_has_partner || !s_style->team ||
+            abs_s16(dy) > (volley ? AI_POACH_BAND : AI_MIDDLE_BAND))
+        return ai_owns_y(y);
+    me = abs_s16(x - FROM_FP(player->x_fp)) + abs_s16(y - FROM_FP(player->y_fp));
+    mate = abs_s16(x - FROM_FP(s_mate->x_fp)) +
+        abs_s16(y - FROM_FP(s_mate->y_fp));
+    if (me + AI_MIDDLE_MARGIN < mate)
+        return 1;
+    /* A human may not go for it: their partner never gives up its own
+     * half, it only poaches into theirs. */
+    if (s_partner_human)
+        return ai_owns_y(y);
+    if (mate + AI_MIDDLE_MARGIN < me)
+        return 0;
+    return ai_owns_y(y);
 }
 
 static s16 abs_s16(s16 value)
@@ -400,7 +442,8 @@ static u8 ai_swing_connects(const Player *player)
         if (!court_x_on_side(g_probe.x, player->team))
             return 0;
         /* A human partner's lane is theirs, even when we could reach. */
-        if (s_partner_human && !ai_owns_y(FROM_FP(g_probe.y)))
+        if (s_partner_human && !ai_owns_point(player, FROM_FP(g_probe.x),
+                FROM_FP(g_probe.y), g_probe.bounces == 0))
             return 0;
         if (step == PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES)
             return 0;       /* first reachable after the window: wait */
@@ -474,7 +517,7 @@ static u8 ai_plan_volley(const Player *player, u8 land_steps, s16 land_x)
         return 0;
     g_ai.target_x = FROM_FP(x);
     g_ai.target_y = FROM_FP(g_ball.y_fp + (fx)(t * g_ball.vy_fp));
-    g_ai.has_target = ai_owns_y(g_ai.target_y);
+    g_ai.has_target = ai_owns_point(player, g_ai.target_x, g_ai.target_y, 1);
     return 1;
 }
 
@@ -494,7 +537,8 @@ static void ai_plan_intercept(const Player *player)
         /* Already bounced on our side: chase where it is heading. */
         g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * 6) + behind;
         g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * 6);
-        g_ai.has_target = ai_owns_y(FROM_FP(g_ball.y_fp));
+        g_ai.has_target = ai_owns_point(player, FROM_FP(g_ball.x_fp),
+            FROM_FP(g_ball.y_fp), 0);
         AI_AVOID_LAVA(player);
         return;
     }
@@ -550,7 +594,7 @@ static void ai_plan_intercept(const Player *player)
     g_ai.target_y = land_y + FROM_FP(vy * rise);
     AI_AVOID_LAVA(player);
     /* Doubles: only the teammate whose lane holds the landing plays it. */
-    g_ai.has_target = ai_owns_y(land_y);
+    g_ai.has_target = ai_owns_point(player, land_x, land_y, 0);
 }
 
 static void ai_think(u8 player_index, PlayerIntent *intent);
@@ -613,22 +657,23 @@ void ai_update(u8 player_index, PlayerIntent *intent)
     /* Constant indices (816-tcc multiplies for g_players[variable], and
      * for g_ai_slots[variable] twice a think). */
     if (player_index == 0) {
-        s_has_partner = g_players[1].active;
+        s_mate = &g_players[1];
         s_style = &g_ai_styles[0];
         state = &g_ai_slots[0];
     } else if (player_index == 1) {
-        s_has_partner = g_players[0].active;
+        s_mate = &g_players[0];
         s_style = &g_ai_styles[1];
         state = &g_ai_slots[1];
     } else if (player_index == 2) {
-        s_has_partner = g_players[3].active;
+        s_mate = &g_players[3];
         s_style = &g_ai_styles[2];
         state = &g_ai_slots[2];
     } else {
-        s_has_partner = g_players[2].active;
+        s_mate = &g_players[2];
         s_style = &g_ai_styles[3];
         state = &g_ai_slots[3];
     }
+    s_has_partner = s_mate->active;
     s_partner_human = s_has_partner &&
         g_input_owners[player_index ^ 1] == INPUT_OWNER_HUMAN;
     RAM_COPY(&g_ai, state, sizeof(g_ai));
@@ -647,6 +692,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     u8 key;
     u8 incoming;
     u8 home;
+    s16 shift;
 
     intent->move_x = 0;
     intent->move_y = 0;
@@ -749,6 +795,12 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
          * or its net distance once the rally lets it come in (ADR-035). */
         home = (s_style->net && ai_may_come_in(player->team)) ?
             s_style->net : s_style->recover;
+        /* ADR-036: a human's partner comes in only when they are up too
+         * (side by side, never split up and back). */
+        if (s_style->team && s_partner_human && home == s_style->net &&
+                abs_s16(FROM_FP(s_mate->x_fp) - COURT_NET_X) >
+                    AI_PAIR_UP_DISTANCE)
+            home = s_style->recover;
         g_ai.target_x = player->team ? COURT_NET_X + home :
             COURT_NET_X - home;
         if (!s_has_partner)
@@ -757,6 +809,17 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
             g_ai.target_y = AI_RECOVER_Y_TOP;
         else
             g_ai.target_y = AI_RECOVER_Y_BOTTOM;
+        /* ADR-036: the pair shifts toward the ball's side while it is on
+         * the other side of the net (covering the angle and the middle). */
+        if (s_has_partner && s_style->team &&
+                !court_x_on_side(g_ball.x_fp, player->team)) {
+            shift = (s16)(FROM_FP(g_ball.y_fp) - COURT_CENTERLINE_Y) >> 2;
+            if (shift > AI_SHIFT_MAX)
+                shift = AI_SHIFT_MAX;
+            else if (shift < -AI_SHIFT_MAX)
+                shift = -AI_SHIFT_MAX;
+            g_ai.target_y += shift;
+        }
     }
     intent->move_x = move_toward(x, g_ai.target_x);
     intent->move_y = move_toward(y, g_ai.target_y);

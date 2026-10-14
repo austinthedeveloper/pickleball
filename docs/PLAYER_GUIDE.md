@@ -103,8 +103,11 @@ ladder starts over. The records page shows your place.
 The higher you climb, the more your opponents play the net: from the Gym
 Bros on they move up once the serve and return have bounced and volley
 balls out of the air, and the Pirates through the Twins play right at the
-kitchen line. Your own CPU partner comes up to volley too. Lob them, or
-keep the ball low at their feet.
+kitchen line. Your own CPU partner comes up to volley too, but only when
+you're up as well, and it covers the middle: it takes middle balls on its
+side and picks off ones it's clearly nearer on yours. Most opponents from
+the Gym Bros on cover the middle and shift with the ball as a pair too.
+Lob them, or keep the ball low at their feet.
 
 Before a ladder match, the opponent introduces themselves (press B to
 play). After the match they have something to say, and when you win the
