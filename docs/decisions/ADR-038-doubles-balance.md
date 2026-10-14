@@ -87,6 +87,41 @@ footwork: a human mis-hits too). Before is the end of ADR-037.
 - **Your CPU partner** has footwork and the middle too. Against the strong
   teams it's a better partner.
 
+## Amendment 2026-10-14: the doubles ladder, re-measured (M4-OPP-02)
+
+`tools/match_stats.c` plays doubles now (`make stats MODE=1`, `+2` for the
+net bot) and a whole ladder (`OPPONENT=-2`, with `LATE=0` for the three bot
+skills). It plays P1's side as a human gets it: the bot with the CPU
+partner (the partner style), not two bots. Smarter aim (ADR-039) had moved
+the top of the ladder: SURF CREW won every match, and rungs 5-8 were all
+under 10 bot wins. Only the partners (players[1], doubles only) changed,
+so singles is as before:
+
+| Partner | late period |
+|---|---|
+| CHAD (GYM BROS) | 8 (was 6) |
+| VLAD (GOTH CLUB) | 3 (was 4), no footwork |
+| LANI (SURF CREW) | 3 (was 7), no footwork |
+| MIA (TWINS) | 5 (was 7) |
+
+Bot wins of 60 (three bot skills × 20, MEDIUM), `make stats LATE=0
+OPPONENT=-2 MODE=1` and `MODE=3`:
+
+| Team | Regular: before | After | Net: before | After |
+|---|---:|---:|---:|---:|
+| HENDERSON | 59 | 59 | 60 | 60 |
+| SNOWBIRDS | 44 | 44 | 59 | 59 |
+| GYM BROS | 47 | 37 | 50 | 35 |
+| PIRATES | 26 | 26 | 29 | 29 |
+| GOTH CLUB | 5 | 25 | 9 | 26 |
+| SURF CREW | 0 | 15 | 0 | 21 |
+| TWINS | 1 | 6 | 3 | 12 |
+| CHAMPS | 1 | 1 | 1 | 1 |
+
+Both bots now see each rung harder than the one before (the tool prints
+`ladder order: yes`). `test_footwork` measures 30 matches: MIA's extra late
+shots left too few unforced outs in 10 (29 without footwork, 4 with).
+
 ## Frame budget
 
 `ai_slide` is a few adds, once per swing check. `make perf`: every run
@@ -96,7 +131,7 @@ knob, and the one-owner change didn't touch its 4230 frames.
 
 ## Tests
 
-- `test_ai.c: test_footwork`: TWINS' unforced outs over 10 doubles matches,
+- `test_ai.c: test_footwork`: TWINS' unforced outs over 30 doubles matches (10 until M4-OPP-02),
   without footwork at least 10, with it at most a quarter of that (0 now).
 - `test_ai.c: test_middle_aim`: a tactics CPU in doubles holds a middle aim
   on even shots and a lane on odd ones; the default CPU always a lane.

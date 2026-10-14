@@ -473,10 +473,12 @@ static int unforced_outs(u8 footwork, u8 matches)
  * those mis-hits spray out. With it, only the deliberate late shots do. */
 static void test_footwork(void)
 {
-    int without = unforced_outs(0, 10);
-    int with = unforced_outs(1, 10);
+    /* 30 matches: MIA's deliberate late shots (M4-OPP-02) left 10 too few
+     * unforced outs to compare. */
+    int without = unforced_outs(0, 30);
+    int with = unforced_outs(1, 30);
 
-    printf("footwork: TWINS unforced outs in 10 doubles matches: %d without, "
+    printf("footwork: TWINS unforced outs in 30 doubles matches: %d without, "
         "%d with\n", without, with);
     assert(g_opponent_styles[6][0].footwork && !g_ai_default_style.footwork);
     assert(without >= 10);
