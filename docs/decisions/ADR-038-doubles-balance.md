@@ -101,8 +101,11 @@ so singles is as before:
 |---|---|
 | CHAD (GYM BROS) | 7 (was 6; with M4-OPP-03's BRAD) |
 | VLAD (GOTH CLUB) | 3 (was 4), no footwork |
-| LANI (SURF CREW) | 3 (was 7), no footwork |
-| MIA (TWINS) | 5 (was 7) |
+| LANI (SURF CREW) | 5 (was 7), no footwork |
+| MIA (TWINS) | 7 (unchanged, after the singles pass moved MAX) |
+
+The singles pass (ADR-023 amendment) also moved three captains, who play
+doubles too: RAVEN late 6, MAX 7, ACE 8.
 
 Bot wins of 60 (three bot skills × 20, MEDIUM), `make stats LATE=0
 OPPONENT=-2 MODE=1` and `MODE=3`:
@@ -113,14 +116,14 @@ OPPONENT=-2 MODE=1` and `MODE=3`:
 | SNOWBIRDS | 44 | 44 | 59 | 59 |
 | GYM BROS | 47 | 36 | 50 | 42 |
 | PIRATES | 26 | 26 | 29 | 29 |
-| GOTH CLUB | 5 | 25 | 9 | 26 |
-| SURF CREW | 0 | 15 | 0 | 21 |
-| TWINS | 1 | 6 | 3 | 12 |
-| CHAMPS | 1 | 1 | 1 | 1 |
+| GOTH CLUB | 5 | 21 | 9 | 20 |
+| SURF CREW | 0 | 9 | 0 | 17 |
+| TWINS | 1 | 3 | 3 | 7 |
+| CHAMPS | 1 | 2 | 1 | 2 |
 
 Both bots now see each rung harder than the one before (the tool prints
-`ladder order: yes`). `test_footwork` measures 30 matches: MIA's extra late
-shots left too few unforced outs in 10 (29 without footwork, 4 with).
+`ladder order: yes`). `test_footwork` measures 30 matches: a tuning round's extra late shots
+left too few unforced outs in 10 to compare.
 
 ## Frame budget
 

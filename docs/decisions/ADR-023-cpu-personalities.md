@@ -83,11 +83,16 @@ wins out of 180: 30 matches at each bot mistake period from 3 to 8.
   4th shot but slow to react (16 frames, was 10) and on his feet (speed 13,
   was 15): fewer gifts, and a better player beats him more (11, 16, 17, 19,
   13, 20). Bot wins of 180, same method: MARGE 123, **BRAD 96 (was 80)**,
-  PETE 79, so his rung sits between theirs. Re-measured, the later rungs
-  have moved since this table (ADR-035 to ADR-039): RAVEN 21, KAI 31, MAX 0,
-  ACE 0, so RAVEN is now harder than KAI in singles; left for a singles
-  pass. In doubles CHAD went to late every 7th (ADR-038 amendment) to keep
-  GYM BROS between SNOWBIRDS and PIRATES.
+  PETE 79, so his rung sits between theirs. In doubles CHAD went to late
+  every 7th (ADR-038 amendment) to keep GYM BROS between SNOWBIRDS and
+  PIRATES.
+- *Amended 2026-10-14 (singles pass).* The later rungs had moved since
+  this table (ADR-035 to ADR-039): RAVEN 21, KAI 31, MAX 0, ACE 0, so RAVEN
+  was harder than KAI and the last two rungs were walls. RAVEN is now late
+  every 6th (was 7th), MAX every 7th (was 10th), ACE every 8th (was 16th).
+  Bot wins of 180 by rung: **160, 123, 96, 79, 42, 31, 15, 4**, each
+  harder than the one before. The doubles partners keep the doubles ladder
+  in order (ADR-038 amendment).
 - Doubles partners copy their captain's tuned values except where the
   character differs (Kiddo). They were not measured; the balance tool is
   singles only.

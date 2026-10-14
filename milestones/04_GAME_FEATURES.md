@@ -40,7 +40,7 @@ ADR-024.
   - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md), `test/test_opponents.c`, `make stats OPPONENT=n`.
 - [x] `M4-OPP-02` Tune the doubles partners.
   - Accept: a doubles balance run (`tools/match_stats.c` is singles only today) shows each team's difficulty in ladder order.
-  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md) (amended): `make stats LATE=0 OPPONENT=-2 MODE=1` (and `MODE=3`, the net bot) prints the doubles ladder in order for both bots (bot wins of 60: 59, 44, 36, 26, 25, 15, 6, 1 and 60, 59, 42, 29, 26, 21, 12, 1); four partners retuned, singles unchanged.
+  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md) (amended): `make stats LATE=0 OPPONENT=-2 MODE=1` (and `MODE=3`, the net bot) prints the doubles ladder in order for both bots (bot wins of 60: 59, 44, 36, 26, 21, 9, 3, 2 and 60, 59, 42, 29, 20, 17, 7, 2, after the singles pass); four partners retuned, singles unchanged.
 - [x] `M4-OPP-03` Give BRAD a distinct difficulty.
   - Accept: his matches stop being a coin flip of balls hit out; his bot win rate sits between MARGE's and PETE's in the ADR-023 table.
   - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md) (amended): late every 4th (was 2nd), slower to react and move; bot wins of 180 MARGE 123, BRAD 96 (was 80), PETE 79, and better bots now beat him more (11 → 20 of 30, was flat); the doubles ladder stays in order (CHAD late 7).
