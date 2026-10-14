@@ -483,34 +483,71 @@ static void test_footwork(void)
     assert(with * 4 <= without);
 }
 
-/* The aim a doubles CPU (slot 2) holds through a swing with this shot
- * count. */
-static s16 doubles_aim_y(const AiStyle *style, u8 shot_counter)
+/* The aim a doubles CPU (slot 2, top lane) holds through its swing for a
+ * ball bouncing deep in its lane, with this shot count and the opponents
+ * (slots 0 and 1) at these x distances from the net and y; 0x7f if it
+ * never swung. */
+static s16 doubles_aim(const AiStyle *style, u8 shot_counter,
+    s16 x0, s16 y0, s16 x1, s16 y1)
 {
+    PlayerIntent idle;
+    u16 n;
+
+    memset(&idle, 0, sizeof(idle));
     match_config_doubles();
     new_match();
     g_ai_styles[2] = *style;
-    g_game_state.phase = GAME_PHASE_LIVE;
-    g_players[2].state = PLAYER_STATE_WINDUP;
-    g_players[2].state_frames_remaining = PLAYER_WINDUP_FRAMES;
+    g_ai_slots[2].late_period = 0;
     g_ai_slots[2].shot_counter = shot_counter;
-    g_ai_slots[2].planned_shot = SHOT_STANDARD;
-    g_ai_slots[2].planned_depth = 1;
-    ai_update(2, &intents[2]);
-    return intents[2].aim_y;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_players[2].x_fp = TO_FP(210);
+    g_players[2].y_fp = TO_FP(AI_RECOVER_Y_TOP);
+    g_players[3].x_fp = TO_FP(210);
+    g_players[3].y_fp = TO_FP(AI_RECOVER_Y_BOTTOM);
+    g_ball.active = 1;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    g_ball.last_hitter = 0;
+    g_ball.bounce_count = 0;
+    g_ball.x_fp = TO_FP(100);
+    g_ball.y_fp = TO_FP(AI_RECOVER_Y_TOP);
+    g_ball.z_fp = TO_FP(12);
+    ball_launch(&g_ball, 196, AI_RECOVER_Y_TOP, 30);
+    ++g_game_state.shot_serial;
+    for (n = 0; n < 90; ++n) {
+        g_players[0].x_fp = TO_FP(COURT_NET_X - x0);
+        g_players[0].y_fp = TO_FP(y0);
+        g_players[1].x_fp = TO_FP(COURT_NET_X - x1);
+        g_players[1].y_fp = TO_FP(y1);
+        frame(&idle);
+        if (intents[2].hit_pressed) {
+            frame(&idle);           /* picked on the swing's next frame */
+            return intents[2].aim_y;
+        }
+        if (g_game_state.phase != GAME_PHASE_LIVE)
+            break;
+    }
+    return 0x7f;
 }
 
-/* ADR-038: in doubles, tactics aims every other shot down the middle;
- * otherwise the lanes, as before. */
-static void test_middle_aim(void)
+/*
+ * ADR-038/039, doubles with tactics: at the one back when the opponents
+ * split up and back; a lane when it is clearly open; otherwise every other
+ * shot down the middle, the lane pattern between. The default CPU: the
+ * lane pattern always.
+ */
+static void test_doubles_aim(void)
 {
     const AiStyle *twins = &g_opponent_styles[6][0];
 
-    assert(doubles_aim_y(twins, 0) == 0);
-    assert(doubles_aim_y(twins, 2) == 0);
-    assert(doubles_aim_y(twins, 1) != 0);
-    assert(doubles_aim_y(&g_ai_default_style, 0) != 0);
-    assert(doubles_aim_y(&g_ai_default_style, 2) != 0);
+    /* Side by side at home: the middle on even shots, a lane on odd. */
+    assert(doubles_aim(twins, 0, 80, 110, 80, 150) == 0);
+    assert(doubles_aim(twins, 1, 80, 110, 80, 150) != 0);
+    /* Split: slot 1 back in the bottom lane. */
+    assert(doubles_aim(twins, 0, 40, 110, 100, 150) == 1);
+    /* Both crowd the bottom: the top lane is open. */
+    assert(doubles_aim(twins, 0, 80, 140, 80, 160) == -1);
+    assert(doubles_aim(&g_ai_default_style, 0, 80, 110, 80, 150) != 0);
     match_config_defaults();
 }
 
@@ -531,7 +568,7 @@ int main(int argc, char **argv)
     test_teamwork();
     test_tactics();
     test_footwork();
-    test_middle_aim();
+    test_doubles_aim();
     puts("ai host checks passed");
     return 0;
 }

@@ -33,6 +33,13 @@ static s16 s_impact_vz;
  * through its active frames (ADR-035). Outside AiState (golden traces). */
 static u8 s_contact_volley;
 static u8 s_block_volley[MAX_PLAYERS];
+/* Doubles aim for the swing (ADR-039): -1 top lane, 0 the middle, 1
+ * bottom lane; AI_AIM_PATTERN for the lane pattern. Held through the
+ * swing like the block volley. Picked on the swing's first held frame,
+ * not on the press frame, which already pays for the swing lookahead
+ * (any work there dropped frames); contact is 4 frames later. */
+#define AI_AIM_PATTERN 2
+static signed char s_open_aim[MAX_PLAYERS];
 /* A new shot's volley check waits for the slot's next think: the frame a
  * shot is planned already pays for its landing prediction (ADR-035). */
 static u8 s_volley_check[MAX_PLAYERS];
@@ -78,6 +85,7 @@ void ai_initialize(void)
     s_contact_volley = 0;
     for (i = 0; i < MAX_PLAYERS; ++i) {
         s_block_volley[i] = 0;
+        s_open_aim[i] = AI_AIM_PATTERN;
         s_volley_check[i] = 0;
     }
 }
@@ -231,6 +239,68 @@ static u8 ai_opponent_at_net(u8 team, s16 distance)
  * contact_z is the ball height at contact.
  */
 
+/*
+ * The open spot (ADR-039), doubles: the middle, between the opponents,
+ * unless a lane is clearly more open (an opponent left it: a poach, a
+ * chase). Open is the y distance from a target to the nearer opponent.
+ * The middle is the safe miss: a stretch from there stays in (ADR-038).
+ */
+#ifndef AI_OPEN_MARGIN
+#define AI_OPEN_MARGIN 12
+#endif
+#ifndef AI_SPLIT_DISTANCE
+#define AI_SPLIT_DISTANCE 32
+#endif
+
+/* The nearer of two values' distances from a target (fixed point). */
+#define AI_ABS(v) ((v) < 0 ? -(v) : (v))
+#define AI_OPEN_BY(t, a, b) \
+    (AI_ABS((a) - (t)) < AI_ABS((b) - (t)) ? AI_ABS((a) - (t)) : \
+     AI_ABS((b) - (t)))
+
+/* In fixed point, from the opponents by constant index (816-tcc: a
+ * pointer walk and function calls cost scanlines on a swing frame). */
+static signed char ai_open_spot(u8 team)
+{
+    fx ya;
+    fx yb;
+    fx xa;
+    fx xb;
+    fx top;
+    fx bottom;
+    fx middle;
+
+    if (team) {
+        ya = g_players[0].y_fp;
+        yb = g_players[1].y_fp;
+        xa = TO_FP(COURT_NET_X) - g_players[0].x_fp;
+        xb = TO_FP(COURT_NET_X) - g_players[1].x_fp;
+    } else {
+        ya = g_players[2].y_fp;
+        yb = g_players[3].y_fp;
+        xa = g_players[2].x_fp - TO_FP(COURT_NET_X);
+        xb = g_players[3].x_fp - TO_FP(COURT_NET_X);
+    }
+    /* Split up and back: at the one back, who has to hit up from there
+     * while the one up can't reach it. */
+    if (xa > xb + TO_FP(AI_SPLIT_DISTANCE))
+        return ya < TO_FP(COURT_CENTERLINE_Y) ? -1 : 1;
+    if (xb > xa + TO_FP(AI_SPLIT_DISTANCE))
+        return yb < TO_FP(COURT_CENTERLINE_Y) ? -1 : 1;
+    top = AI_OPEN_BY(TO_FP(HIT_TARGET_LANE_TOP), ya, yb);
+    bottom = AI_OPEN_BY(TO_FP(HIT_TARGET_LANE_BOTTOM), ya, yb);
+    middle = AI_OPEN_BY(TO_FP(HIT_TARGET_LANE_CENTER), ya, yb) +
+        TO_FP(AI_OPEN_MARGIN);
+    if (top >= bottom && top > middle)
+        return -1;
+    if (bottom > top && bottom > middle)
+        return 1;
+    /* Nothing clearly open: every other shot down the middle (ADR-038),
+     * the lane pattern otherwise. The press counted this shot already:
+     * odd now is even at the press. */
+    return (g_ai.shot_counter & 1) ? 0 : AI_AIM_PATTERN;
+}
+
 static void ai_plan_shot(const Player *player, fx contact_z)
 {
     u8 n = g_ai.shot_counter;
@@ -284,12 +354,10 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
         ++opponent;
     if (s_block_volley[s_slot])
         intent->aim_y = 0;              /* a block volley: down the middle */
-    else if (s_has_partner && s_style->tactics && !(g_ai.shot_counter & 1))
-        /* Doubles with tactics: every other shot down the middle, between
-         * the two opponents. A stretched contact sprays 20 px toward its
-         * sideline: from a lane that is out, from the middle it stays in
-         * (ADR-038). */
-        intent->aim_y = 0;
+    else if (s_open_aim[s_slot] < AI_AIM_PATTERN)
+        /* Doubles with tactics: the open spot, picked at the press
+         * (ADR-039). */
+        intent->aim_y = s_open_aim[s_slot];
     else if (s_has_partner)
         /* Doubles: both opponents get the ball. Aiming away from the first
          * one would starve slot 0 (the human). Lanes go bottom, top, top,
@@ -773,6 +841,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
          * otherwise alternating deep and neutral. Never a block volley's
          * centred aim (ADR-035). */
         s_block_volley[player_index] = 0;
+        s_open_aim[player_index] = AI_AIM_PATTERN;
         g_ai.planned_shot = SHOT_STANDARD;
         if ((g_ai.shot_counter & 3) == 3)
             g_ai.planned_depth = -1;
@@ -796,6 +865,11 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     /* Committed to a swing: plant the feet (the swing check assumed the
      * current position) and hold the aim through the active frames. */
     if (player_is_swinging(player)) {
+        /* The swing's first held frame picks the doubles aim (ADR-039). */
+        if (player->state == PLAYER_STATE_WINDUP &&
+                player->state_frames_remaining == PLAYER_WINDUP_FRAMES)
+            s_open_aim[player_index] = (s_has_partner && s_style->tactics) ?
+                ai_open_spot(player->team) : AI_AIM_PATTERN;
         ai_choose_aim(player, intent);
         return;
     }

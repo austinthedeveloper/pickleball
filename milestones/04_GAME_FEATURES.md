@@ -49,7 +49,8 @@ ADR-024.
   - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md), `test_ai.c: test_footwork, test_middle_aim`; the doubles ladder gets harder each rung (average bot wins of 60: 60, 52, 49, 37, 22, 20, 18, 4; TWINS against the net bot 59 → 21). The cause was CPU mis-hits from sliding into the swing (`footwork`).
 - [x] `M4-AI-03` Doubles teamwork: the CPU partner moves up and back with you, covers the middle, poaches.
   - Verified: [ADR-036](../docs/decisions/ADR-036-teamwork.md), `test_ai.c: test_teamwork`, `test_doubles.c`; middle balls lost untouched near zero for both sides in the ADR-036 table.
-- [ ] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.
+- [x] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.
+  - Verified: [ADR-039](../docs/decisions/ADR-039-smarter-aim.md), `test_ai.c: test_doubles_aim`; in doubles, smart teams hit at the one back when the opponents split up and back, an open lane, else the middle every other shot (ADR-038). Singles already aimed at the open court (`away`, ADR-037 depth).
 - [ ] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
   - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.
 - [x] `M4-STORY-01` Story cards: an intro card per opponent (name, one line of trash talk, rung) and the opponent's line on the match result.
