@@ -13,11 +13,25 @@ PracticeState g_practice;
 PracticeEdit g_practice_edit;
 
 static const u8 s_counts[PRACTICE_ROWS] = {
-    PRACTICE_SHOTS, PRACTICE_TARGETS, PRACTICE_RATES
+    PRACTICE_SHOTS, PRACTICE_TARGETS, PRACTICE_RATES, PRACTICE_ZONES
 };
-/* Defaults: MIX to RANDOM targets at a NORMAL rate. */
+/* Defaults: MIX to RANDOM targets at a NORMAL rate, returns anywhere in. */
 static const u8 s_defaults[PRACTICE_ROWS] = {
-    PRACTICE_SHOT_MIX, PRACTICE_TARGET_RANDOM, PRACTICE_RATE_NORMAL
+    PRACTICE_SHOT_MIX, PRACTICE_TARGET_RANDOM, PRACTICE_RATE_NORMAL,
+    PRACTICE_ZONE_ANY
+};
+
+const s16 g_practice_zone_rects[PRACTICE_ZONES][4] = {
+    { COURT_NET_X, COURT_SIDELINE_TOP, COURT_BASELINE_RIGHT,
+      COURT_SIDELINE_BOTTOM },
+    { COURT_NET_X, COURT_SIDELINE_TOP, COURT_KITCHEN_RIGHT_X,
+      COURT_SIDELINE_BOTTOM },
+    { COURT_BASELINE_RIGHT - PRACTICE_ZONE_DEEP_DEPTH, COURT_SIDELINE_TOP,
+      COURT_BASELINE_RIGHT, COURT_SIDELINE_BOTTOM },
+    { COURT_NET_X, COURT_SIDELINE_TOP, COURT_BASELINE_RIGHT,
+      COURT_SIDELINE_TOP + PRACTICE_ZONE_LINE_WIDTH },
+    { COURT_NET_X, COURT_SIDELINE_BOTTOM - PRACTICE_ZONE_LINE_WIDTH,
+      COURT_BASELINE_RIGHT, COURT_SIDELINE_BOTTOM }
 };
 
 u8 practice_shot(u8 saved)
@@ -33,6 +47,11 @@ u8 practice_target(u8 saved)
 u8 practice_rate(u8 saved)
 {
     return saved < PRACTICE_RATES ? saved : PRACTICE_RATE_NORMAL;
+}
+
+u8 practice_zone(u8 saved)
+{
+    return saved < PRACTICE_ZONES ? saved : PRACTICE_ZONE_ANY;
 }
 
 const char *practice_shot_name(u8 shot)
@@ -59,6 +78,21 @@ const char *practice_rate_name(u8 rate)
     return names[practice_rate(rate)];
 }
 
+const char *practice_zone_name(u8 zone)
+{
+    static const char *const names[PRACTICE_ZONES] = {
+        "ANY", "KITCHEN", "DEEP", "LEFT LINE", "RIGHT LINE"
+    };
+    return names[practice_zone(zone)];
+}
+
+u8 practice_in_zone(u8 zone, s16 x, s16 y)
+{
+    const s16 *rect = g_practice_zone_rects[practice_zone(zone)];
+
+    return x >= rect[0] && y >= rect[1] && x <= rect[2] && y <= rect[3];
+}
+
 u16 practice_rate_frames(u8 rate)
 {
     static const u16 frames[PRACTICE_RATES] = { 120, 75, 40 };
@@ -74,14 +108,24 @@ static void practice_show_score(void)
     g_game_state.team_score[1] = g_practice.best;
 }
 
+u16 practice_saved_best(u8 zone)
+{
+    zone = practice_zone(zone);
+    return zone == PRACTICE_ZONE_ANY ? g_save.records.practice_best :
+        g_save.records.practice_zone_best[zone - 1];
+}
+
 void practice_begin(void)
 {
-    u16 best = g_save.records.practice_best;
+    u8 zone = practice_zone(g_save.settings.practice[PRACTICE_ROW_ZONE]);
+    u16 best = practice_saved_best(zone);
 
     g_practice.shot = practice_shot(g_save.settings.practice[PRACTICE_ROW_SHOT]);
     g_practice.target =
         practice_target(g_save.settings.practice[PRACTICE_ROW_TARGET]);
     g_practice.rate = practice_rate(g_save.settings.practice[PRACTICE_ROW_RATE]);
+    g_practice.zone = zone;
+    g_practice.zone_flash = 0;
     g_practice.state = PRACTICE_WAIT;
     g_practice.timer = PRACTICE_FIRST_FEED_FRAMES;
     g_practice.streak = 0;
@@ -90,7 +134,7 @@ void practice_begin(void)
     g_practice.feeds = 0;
     g_practice.rng = 0x5a;
     g_practice.last_shot = SHOT_STANDARD;
-    g_practice.pose = PRACTICE_AIM_CENTER;
+    g_practice.pose = PRACTICE_POSE_CENTER;
     g_practice.turn_timer = 0;
     g_practice.kick = 0;
     g_ball.active = 0;
@@ -168,8 +212,8 @@ static void practice_aim(void)
     g_practice.next_tx = tx;
     g_practice.next_ty = ty;
     g_practice.aim = ty < PRACTICE_MACHINE_Y - PRACTICE_AIM_SPREAD ?
-        PRACTICE_AIM_UP : ty > PRACTICE_MACHINE_Y + PRACTICE_AIM_SPREAD ?
-        PRACTICE_AIM_DOWN : PRACTICE_AIM_CENTER;
+        PRACTICE_POSE_UP : ty > PRACTICE_MACHINE_Y + PRACTICE_AIM_SPREAD ?
+        PRACTICE_POSE_DOWN : PRACTICE_POSE_CENTER;
 }
 
 /* Picks the next feed as the wait starts, so the machine turns toward it
@@ -196,6 +240,8 @@ static void practice_turn(void)
 {
     if (g_practice.kick)
         --g_practice.kick;
+    if (g_practice.zone_flash)
+        --g_practice.zone_flash;
     if (g_practice.pose == g_practice.aim) {
         g_practice.turn_timer = 0;
         return;
@@ -265,6 +311,7 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
 {
     u8 hit;
     u8 events;
+    u8 good;
 
     practice_turn();
     if (g_practice.state == PRACTICE_WAIT) {
@@ -300,9 +347,15 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
     events_emit(EVENT_BOUNCE, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
         g_ball.bounce_count);
     if (g_practice.state == PRACTICE_RETURN) {
-        /* The return's first bounce: in on the machine's side is good. */
-        practice_end_feed(!(events & BALL_EVENT_OUT) &&
-            court_x_on_side(g_ball.x_fp, 1));
+        /* The return's first bounce: in on the machine's side, and in the
+         * zone if there is one, is good; the zone's corners blink. */
+        good = !(events & BALL_EVENT_OUT) &&
+            court_x_on_side(g_ball.x_fp, 1) &&
+            practice_in_zone(g_practice.zone, FROM_FP(g_ball.x_fp),
+                FROM_FP(g_ball.y_fp));
+        if (good && g_practice.zone != PRACTICE_ZONE_ANY)
+            g_practice.zone_flash = PRACTICE_ZONE_FLASH_FRAMES;
+        practice_end_feed(good);
     } else if (g_ball.bounce_count >= 2) {
         practice_end_feed(0);           /* the feed bounced twice: missed */
     }
@@ -310,10 +363,15 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
 
 void practice_finish(void)
 {
-    if (g_practice.best > g_save.records.practice_best) {
+    u8 zone = g_practice.zone;
+
+    if (g_practice.best <= practice_saved_best(zone))
+        return;
+    if (zone == PRACTICE_ZONE_ANY)
         g_save.records.practice_best = g_practice.best;
-        save_write();
-    }
+    else
+        g_save.records.practice_zone_best[zone - 1] = g_practice.best;
+    save_write();
 }
 
 void practice_edit_begin(u8 values[PRACTICE_ROWS])

@@ -350,6 +350,56 @@ static void test_migrate_v7(void)
     assert(g_save.settings.modifiers == 9);
 }
 
+/* A v0.6.0-v0.9.0 save (layout 8) carries over; the return zone is ANY and
+ * its bests start at 0 (M4-PRACTICE-03). */
+static void test_migrate_v8(void)
+{
+    SaveV8 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V8;
+    old.sequence = 9;
+    old.records.losses[MATCH_SINGLES] = 12;
+    old.records.longest_rally = 40;
+    old.records.practice_best = 27;
+    old.settings.venue = 2;
+    old.settings.practice[0] = 1;
+    old.settings.practice[1] = 4;
+    old.settings.practice[2] = 2;
+    old.settings.sound = 2;
+    old.settings.modifiers = 5;
+    old.settings.reserved = 0x77;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.losses[MATCH_SINGLES] == 12);
+    assert(g_save.records.longest_rally == 40);
+    assert(g_save.records.practice_best == 27);
+    assert(g_save.records.practice_zone_best[0] == 0 &&
+        g_save.records.practice_zone_best[3] == 0);
+    assert(g_save.settings.venue == 2);
+    assert(g_save.settings.practice[0] == 1 && g_save.settings.practice[1] == 4 &&
+        g_save.settings.practice[2] == 2);
+    assert(g_save.settings.practice[3] == 0);              /* new: ANY */
+    assert(g_save.settings.sound == 2 && g_save.settings.modifiers == 5);
+    memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+
+    /* The zone and its bests round-trip in the current layout. */
+    g_save.settings.practice[3] = 2;
+    g_save.records.practice_zone_best[1] = 14;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.settings.practice[3] == 2);
+    assert(g_save.records.practice_zone_best[1] == 14);
+}
+
 int main(void)
 {
     test_blank_sram_formats();
@@ -360,6 +410,7 @@ int main(void)
     test_records();
     test_migrate_v4();
     test_migrate_v7();
+    test_migrate_v8();
     test_game_hooks();
     printf("save host checks passed\n");
     return 0;

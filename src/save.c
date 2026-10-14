@@ -13,10 +13,11 @@ static const u8 s_magic[4] = { 'P', 'B', '9', '4' };
 /* Sizes the build checks: a layout change must not slip through. */
 typedef char save_v4_is_32_bytes[sizeof(SaveV4) == 32 ? 1 : -1];
 typedef char save_v7_is_40_bytes[sizeof(SaveV7) == 40 ? 1 : -1];
-typedef char save_v8_is_42_bytes[sizeof(SaveData) == 42 ? 1 : -1];
+typedef char save_v8_is_42_bytes[sizeof(SaveV8) == 42 ? 1 : -1];
+typedef char save_v9_is_46_bytes[sizeof(SaveData) == 46 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 42
+#define SAVE_RAW_BYTES 46
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -77,10 +78,12 @@ static void save_defaults(void)
     g_save.version = SAVE_VERSION;
     g_save.settings.points = OPTIONS_POINTS_DEFAULT;
     g_save.settings.difficulty = DIFFICULTY_MEDIUM;
-    /* Practice: MIX to RANDOM targets at a NORMAL rate (ADR-028). */
+    /* Practice: MIX to RANDOM targets at a NORMAL rate, returns anywhere
+     * in (ADR-028). */
     g_save.settings.practice[PRACTICE_ROW_SHOT] = PRACTICE_SHOT_MIX;
     g_save.settings.practice[PRACTICE_ROW_TARGET] = PRACTICE_TARGET_RANDOM;
     g_save.settings.practice[PRACTICE_ROW_RATE] = PRACTICE_RATE_NORMAL;
+    g_save.settings.practice[PRACTICE_ROW_ZONE] = PRACTICE_ZONE_ANY;
 }
 
 void save_write(void)
@@ -115,6 +118,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V8)
+        return sizeof(SaveV8);
     if (version == SAVE_V7)
         return sizeof(SaveV7);
     if (version == SAVE_V4)
@@ -159,6 +164,21 @@ static void save_migrate_v4(const u8 *raw)
     g_save.settings.difficulty = old.difficulty;
 }
 
+/* The records of v0.5.0 to v0.9.0; the return zone bests start at 0. */
+static void save_copy_records_v8(const SaveRecordsV8 *old)
+{
+    g_save.records.wins[0] = old->wins[0];
+    g_save.records.wins[1] = old->wins[1];
+    g_save.records.losses[0] = old->losses[0];
+    g_save.records.losses[1] = old->losses[1];
+    g_save.records.streak = old->streak;
+    g_save.records.best_streak = old->best_streak;
+    g_save.records.shutouts = old->shutouts;
+    g_save.records.longest_rally = old->longest_rally;
+    g_save.records.ladder_clears = old->ladder_clears;
+    g_save.records.practice_best = old->practice_best;
+}
+
 /* v0.5.0 to now: everything carries over; the modifiers start off. */
 static void save_migrate_v7(const u8 *raw)
 {
@@ -167,7 +187,7 @@ static void save_migrate_v7(const u8 *raw)
     memcpy(&old, raw, sizeof(old));
     save_defaults();
     g_save.sequence = old.sequence;
-    g_save.records = old.records;
+    save_copy_records_v8(&old.records);
     memcpy(g_save.settings.court, old.settings.court, COURT_PARTS);
     g_save.settings.ladder = old.settings.ladder;
     g_save.settings.venue = old.settings.venue;
@@ -175,6 +195,25 @@ static void save_migrate_v7(const u8 *raw)
     g_save.settings.difficulty = old.settings.difficulty;
     memcpy(g_save.settings.practice, old.settings.practice, 3);
     g_save.settings.sound = old.settings.sound;
+}
+
+/* v0.6.0 to v0.9.0: everything carries over; the return zone is ANY. */
+static void save_migrate_v8(const u8 *raw)
+{
+    static SaveV8 old;
+
+    memcpy(&old, raw, sizeof(old));
+    save_defaults();
+    g_save.sequence = old.sequence;
+    save_copy_records_v8(&old.records);
+    memcpy(g_save.settings.court, old.settings.court, COURT_PARTS);
+    g_save.settings.ladder = old.settings.ladder;
+    g_save.settings.venue = old.settings.venue;
+    g_save.settings.points = old.settings.points;
+    g_save.settings.difficulty = old.settings.difficulty;
+    memcpy(g_save.settings.practice, old.settings.practice, 3);
+    g_save.settings.sound = old.settings.sound;
+    g_save.settings.modifiers = old.settings.modifiers;
 }
 
 void save_initialize(void)
@@ -203,7 +242,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V7)
+    if (raw[pick][4] == SAVE_V8)
+        save_migrate_v8(raw[pick]);
+    else if (raw[pick][4] == SAVE_V7)
         save_migrate_v7(raw[pick]);
     else
         save_migrate_v4(raw[pick]);

@@ -35,7 +35,8 @@ enum {
     RENDER_OAM_DEBUG_MARKER = 11,
     RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
     RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
-    RENDER_OAM_FIRST_HIDDEN = 22
+    RENDER_OAM_ZONE = 22,         /* 22-25: practice return zone corners */
+    RENDER_OAM_FIRST_HIDDEN = 26
 };
 
 void render_initialize(void);

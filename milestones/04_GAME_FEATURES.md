@@ -94,7 +94,8 @@ ADR-024.
   - Verified: ADR-028 (amended), `test/smoke/machine.timeline`.
 - [x] `M4-PRACTICE-04` The machine aims: the nozzle turns toward each feed's lane before it leaves, so you can read where the ball is going.
   - Verified: ADR-028 (amended), `test_practice.c: test_machine_aim`, `machine.timeline` (MesenCE frames of the turn and the kick); `practice.timeline` still zero overruns.
-- [ ] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
+- [x] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
+  - Verified: ADR-028 (amended: return zones), `test_practice.c: test_zones`, `test_save.c: test_migrate_v8` (save layout 9; also on the ROM from a hand-built v8 `.srm`), `zones.timeline` (zero overruns; MesenCE frames of the page and the kitchen's corners). The page, feeds, rate, speed, and saved best were already ADR-028's; this adds RETURN TO and a best per zone.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
 
 ## Sound

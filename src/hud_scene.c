@@ -55,7 +55,7 @@
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
 #define OPTIONS_PAGE_ROWS 5         /* header, gap, points, difficulty, sound */
-#define PRACTICE_PAGE_ROWS 7        /* header, gap, 3 rows, gap, best */
+#define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
 #define MODIFIERS_PAGE_ROWS 6       /* header, gap, 4 rows */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
@@ -86,6 +86,7 @@ static u8 s_title_stale;
 static u8 s_court_row_drawn[COURT_ROWS];
 static u8 s_options_row_drawn[OPTIONS_ROWS];
 static u8 s_practice_row_drawn[PRACTICE_ROWS];
+static u8 s_practice_best_drawn;   /* the zone whose best is shown */
 static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
@@ -250,6 +251,23 @@ static void hud_versus(u8 row)
     hud_text(col + 3, row, HUD_PAL_TEAM_RIGHT, name);
 }
 
+/* Practice: PRACTICE, or the return zone the streak counts (centred). */
+static void hud_practice_title(void)
+{
+    const char *name = practice_zone_name(g_practice.zone);
+    u8 length = 0;
+
+    if (g_practice.zone == PRACTICE_ZONE_ANY) {
+        hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
+            "  PRACTICE");
+        return;
+    }
+    while (name[length])
+        ++length;
+    hud_text(CENTER_PANEL_COL + 1 + (CENTER_PANEL_WIDTH - 2 - length) / 2,
+        SCORE_TEXT_ROW, HUD_PAL_YELLOW, name);
+}
+
 /* Panels and labels never change during a match; drawn on full redraws. */
 static void hud_draw_scores(void)
 {
@@ -259,8 +277,7 @@ static void hud_draw_scores(void)
         team_name(0));
     hud_panel(CENTER_PANEL_COL, SCORE_PANEL_ROW, CENTER_PANEL_WIDTH);
     if (hud_practice())
-        hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
-            "  PRACTICE");
+        hud_practice_title();
     else if (!g_attract && !hud_doubles() && hud_opponent_team(1))
         hud_versus(SCORE_TEXT_ROW);
     else
@@ -740,16 +757,27 @@ static void hud_modifiers_refresh(void)
 static void hud_practice_row(u8 index)
 {
     static const char *const labels[PRACTICE_ROWS] = {
-        "SHOT", "TARGET", "RATE"
+        "SHOT", "TARGET", "RATE", "RETURN TO"
     };
     u8 value = g_save.settings.practice[index];
     u8 cursor = g_practice_edit.row == index;
     const char *name = index == PRACTICE_ROW_SHOT ? practice_shot_name(value) :
         index == PRACTICE_ROW_TARGET ? practice_target_name(value) :
-        practice_rate_name(value);
+        index == PRACTICE_ROW_RATE ? practice_rate_name(value) :
+        practice_zone_name(value);
 
     hud_setting_row(COURT_FIRST_ROW + index, labels[index], name, cursor);
     s_practice_row_drawn[index] = value | (cursor << 7);
+}
+
+/* The best streak for the RETURN TO zone (M4-PRACTICE-03). */
+static void hud_practice_best(void)
+{
+    u8 zone = g_save.settings.practice[PRACTICE_ROW_ZONE];
+
+    hud_record_line(COURT_FIRST_ROW + PRACTICE_ROWS + 1, "BEST STREAK",
+        practice_saved_best(zone));
+    s_practice_best_drawn = zone;
 }
 
 /* Practice page: the box, the header, a row per frame, then the best. */
@@ -758,9 +786,9 @@ static u8 hud_practice_draw_part(u8 part)
     if (part == 0) {
         hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
             PRACTICE_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        s_practice_row_drawn[0] = 0xff;
-        s_practice_row_drawn[1] = 0xff;
-        s_practice_row_drawn[2] = 0xff;
+        for (part = 0; part < PRACTICE_ROWS; ++part)
+            s_practice_row_drawn[part] = 0xff;
+        s_practice_best_drawn = 0xff;
         return 0;
     }
     if (part == 1) {
@@ -771,8 +799,7 @@ static u8 hud_practice_draw_part(u8 part)
         hud_practice_row(part - 2);
         return 0;
     }
-    hud_record_line(COURT_FIRST_ROW + PRACTICE_ROWS + 1, "BEST STREAK",
-        g_save.records.practice_best);
+    hud_practice_best();
     return 1;
 }
 
@@ -787,6 +814,8 @@ static void hud_practice_refresh(void)
             return;
         }
     }
+    if (s_practice_best_drawn != g_save.settings.practice[PRACTICE_ROW_ZONE])
+        hud_practice_best();
 }
 
 /* After the options page is drawn: a changed row, one per frame. */

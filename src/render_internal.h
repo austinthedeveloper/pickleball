@@ -21,6 +21,8 @@ extern void oam_write(void);
 
 #define OBJ_ATTR(palette, hflip) \
     ((OBJ_PRIORITY << 4) | ((palette) << 1) | ((hflip) << 6))
+#define OBJ_HFLIP 0x40
+#define OBJ_VFLIP 0x80
 
 /* A macro, not a function: 816-tcc's six stack arguments cost more than the
  * OAM write itself. */

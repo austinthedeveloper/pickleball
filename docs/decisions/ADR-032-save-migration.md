@@ -13,7 +13,8 @@ Players now hold saves from released builds:
 |---|---|---:|
 | v0.4.0 | 4 | 32 bytes |
 | v0.5.0 | 7 | 40 bytes |
-| v0.6.0 | 8 | 42 bytes (ADR-033) |
+| v0.6.0 to v0.9.0 | 8 | 42 bytes (ADR-033) |
+| next | 9 | 46 bytes (practice return zones, ADR-028) |
 
 From now on a layout change keeps their records and settings.
 
@@ -55,6 +56,11 @@ From now on a layout change keeps their records and settings.
    (`test/test_save.c: test_migrate_v4` is the pattern).
 
 ## Verified
+
+- `test/test_save.c: test_migrate_v8` and, in MesenCE, the debug ROM booted
+  from a hand-built v8 `.srm` (copy 1 blank): both copies were rewritten as
+  version 9 with the records and practice settings carried over and RETURN
+  TO at ANY, and the practice page showed them.
 
 - `test/test_save.c: test_migrate_v4`:
   - a v4 image keeps every carried field, with defaults for new ones

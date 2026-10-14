@@ -1,0 +1,13 @@
+# Practice return zones (M4-PRACTICE-03): Up wraps to PRACTICE; on the page
+# Up wraps to RETURN TO and Right picks KITCHEN; B to Player Select, Start
+# to play. The kitchen on the machine's side has a corner at each corner,
+# the centre panel reads KITCHEN, and BEST is the kitchen's best.
+70 71 up
+90 91 start
+110 111 up
+120 121 right
+shot 140
+150 151 b
+210 211 start   # confirm Player Select (after its fade-in)
+shot 250
+shot 330

@@ -103,7 +103,9 @@ Reserve stable IDs so draw order and overflow behavior are reviewable:
 | 6–9 | Player shadows 1–4 |
 | 10–13 | Impact effects reserve |
 | 14–17 | Accessories 1–4 ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)) |
-| 18–127 | Hidden/reserved |
+| 18–21 | Practice ball machine ([ADR-028](decisions/ADR-028-practice.md)) |
+| 22–25 | Practice return zone corners (ADR-028) |
+| 26–127 | Hidden/reserved |
 
 Confirm whether the selected PVSnesLib API expects byte offsets (`0, 4, 8...`) or logical indices at each call site. Wrap library calls in `render_obj_*` helpers so the game never mixes conventions.
 

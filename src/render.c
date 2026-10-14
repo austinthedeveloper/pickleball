@@ -159,8 +159,10 @@ typedef char oam_accessories_after_effects[
     (RENDER_OAM_ACCESSORIES >= RENDER_OAM_SPARK + 4) ? 1 : -1];
 typedef char oam_machine_after_accessories[
     (RENDER_OAM_MACHINE >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
-typedef char oam_hidden_after_machine[
-    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_zone_after_machine[
+    (RENDER_OAM_ZONE >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_hidden_after_zone[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ZONE + 4) ? 1 : -1];
 
 /* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
@@ -334,6 +336,39 @@ static void render_machine(void)
     obj_put(RENDER_OAM_MACHINE + 3, x + 8, y + 8, OBJTILE_MACHINE_BR, attr, 0);
 }
 
+/* The practice return zone (M4-PRACTICE-03): a corner object at each corner
+ * of its ground rectangle, the select cursor's corner flipped; they blink
+ * after a return lands in it. Hidden once when there is none. */
+static u8 s_zone_drawn;
+
+static void render_zone(void)
+{
+    const s16 *rect;
+    u8 attr = OBJ_ATTR(g_objpal_objects, 0);
+    u8 i;
+
+    if (!g_match_config.practice || g_attract ||
+            g_practice.zone == PRACTICE_ZONE_ANY ||
+            (g_practice.zone_flash & 4)) {
+        if (s_zone_drawn)
+            for (i = 0; i < 4; ++i)
+                render_obj_hide(RENDER_OAM_ZONE + i);
+        s_zone_drawn = 0;
+        return;
+    }
+    /* The corner's yellow edge is 1 px in from the tile's (6 px flipped). */
+    rect = g_practice_zone_rects[g_practice.zone];
+    obj_put(RENDER_OAM_ZONE, projection_x(rect[0], rect[1]) - 1, rect[1] - 1,
+        OBJTILE_SELECT_CORNER, attr, 0);
+    obj_put(RENDER_OAM_ZONE + 1, projection_x(rect[2], rect[1]) - 6,
+        rect[1] - 1, OBJTILE_SELECT_CORNER, attr | OBJ_HFLIP, 0);
+    obj_put(RENDER_OAM_ZONE + 2, projection_x(rect[0], rect[3]) - 1,
+        rect[3] - 6, OBJTILE_SELECT_CORNER, attr | OBJ_VFLIP, 0);
+    obj_put(RENDER_OAM_ZONE + 3, projection_x(rect[2], rect[3]) - 6,
+        rect[3] - 6, OBJTILE_SELECT_CORNER, attr | OBJ_HFLIP | OBJ_VFLIP, 0);
+    s_zone_drawn = 1;
+}
+
 static void render_effects(void)
 {
     s16 sx;
@@ -376,6 +411,7 @@ void render_prepare(void)
     render_ball();
     render_effects();
     render_machine();
+    render_zone();
     render_update_ground();
     PROFILE_MARK(3);
     hud_scene_update();
@@ -494,6 +530,7 @@ void render_open_match(void)
     setScreenOff();
     for (i = 0; i < 128; ++i)
         render_obj_hide(i);
+    s_zone_drawn = 0;
     render_load_court();
     render_fade(0);
 }

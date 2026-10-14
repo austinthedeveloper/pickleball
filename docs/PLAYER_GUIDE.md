@@ -48,6 +48,11 @@ its own level. On KID, every court is KID.
 - **TARGET**: the KITCHEN, DEEP, your FOREHAND (the lower side), your
   BACKHAND, AT YOU, or RANDOM.
 - **RATE**: how quickly the next ball comes (SLOW, NORMAL, FAST).
+- **RETURN TO**: where your returns must land to count: ANY (anywhere in),
+  the KITCHEN, DEEP (near the machine's baseline), or the LEFT LINE or
+  RIGHT LINE (your left and right as you face the net). Yellow corners
+  mark the zone on the court and blink when you hit it; a return anywhere
+  else ends the streak. Each zone keeps its own best streak.
 
 Press B, choose your player and paddle, and the machine starts feeding. Every
 return that lands in adds to your streak (P1 on the scoreboard), and your

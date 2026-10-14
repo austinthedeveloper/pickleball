@@ -15,10 +15,13 @@
 
 static PlayerIntent intents[MAX_PLAYERS];
 
+static u8 s_zone;   /* RETURN TO for the next start() */
+
 static void start(u8 shot, u8 target, u8 rate, u8 difficulty)
 {
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
+    g_save.settings.practice[PRACTICE_ROW_ZONE] = s_zone;
     g_save.settings.practice[PRACTICE_ROW_SHOT] = shot;
     g_save.settings.practice[PRACTICE_ROW_TARGET] = target;
     g_save.settings.practice[PRACTICE_ROW_RATE] = rate;
@@ -31,16 +34,21 @@ static void start(u8 shot, u8 target, u8 rate, u8 difficulty)
 
 static void test_settings(void)
 {
-    u8 values[PRACTICE_ROWS] = { 9, 9, 9 };
+    u8 values[PRACTICE_ROWS] = { 9, 9, 9, 9 };
 
     assert(practice_shot(9) == PRACTICE_SHOT_MIX);
     assert(strcmp(practice_target_name(PRACTICE_TARGET_AT_YOU), "AT YOU") == 0);
     practice_edit_begin(values);
     assert(values[0] == PRACTICE_SHOT_MIX &&
         values[1] == PRACTICE_TARGET_RANDOM &&
-        values[2] == PRACTICE_RATE_NORMAL);
+        values[2] == PRACTICE_RATE_NORMAL && values[3] == PRACTICE_ZONE_ANY);
     practice_edit_input(values, PAD_RIGHT);
     assert(values[0] == PRACTICE_SHOT_DRIVE);           /* wraps */
+    practice_edit_input(values, PAD_UP);
+    assert(g_practice_edit.row == PRACTICE_ROW_ZONE);
+    practice_edit_input(values, PAD_LEFT);
+    assert(values[3] == PRACTICE_ZONE_RIGHT);           /* wraps */
+    assert(strcmp(practice_zone_name(values[3]), "RIGHT LINE") == 0);
     practice_edit_input(values, PAD_UP);
     assert(g_practice_edit.row == PRACTICE_ROW_RATE);
     practice_edit_input(values, PAD_LEFT);
@@ -154,16 +162,16 @@ static void test_machine_aim(void)
     for (feeds = 0; feeds < 30; ++feeds) {
         for (f = 0; f < 400 && g_practice.state != PRACTICE_FEED; ++f) {
             game_update(intents);
-            assert(g_practice.pose <= PRACTICE_AIM_DOWN);
+            assert(g_practice.pose <= PRACTICE_POSE_DOWN);
             assert(g_practice.pose + 1 >= pose && g_practice.pose <= pose + 1);
             pose = g_practice.pose;
         }
         assert(g_practice.state == PRACTICE_FEED);
         assert(g_practice.pose == g_practice.aim);
         assert(g_practice.kick == PRACTICE_KICK_FRAMES);
-        if (g_practice.aim == PRACTICE_AIM_UP)
+        if (g_practice.aim == PRACTICE_POSE_UP)
             assert(g_ball.vy_fp < 0);
-        else if (g_practice.aim == PRACTICE_AIM_DOWN)
+        else if (g_practice.aim == PRACTICE_POSE_DOWN)
             assert(g_ball.vy_fp > 0);
         else
             assert(g_practice.next_ty >= PRACTICE_MACHINE_Y -
@@ -183,9 +191,70 @@ static void test_machine_aim(void)
     g_players[0].y_fp = TO_FP(HIT_TARGET_LANE_TOP);
     for (f = 0; f < 400 && g_practice.state != PRACTICE_FEED; ++f)
         game_update(intents);
-    assert(g_practice.aim == PRACTICE_AIM_UP);
-    assert(g_practice.pose == PRACTICE_AIM_UP);
+    assert(g_practice.aim == PRACTICE_POSE_UP);
+    assert(g_practice.pose == PRACTICE_POSE_UP);
     assert(g_ball.vy_fp < 0);
+}
+
+/* P1's return lands at (x, y): what the streak does. */
+static void return_to(s16 x, s16 y)
+{
+    u16 f;
+
+    memset(intents, 0, sizeof(intents));
+    for (f = 0; f < 400 && g_practice.state != PRACTICE_FEED; ++f)
+        game_update(intents);
+    assert(g_practice.state == PRACTICE_FEED);
+    /* Stand in for P1's hit: the ball leaves P1's side toward (x, y). */
+    g_ball.x_fp = TO_FP(100);
+    g_ball.y_fp = TO_FP(COURT_CENTERLINE_Y);
+    g_ball.z_fp = TO_FP(20);
+    g_ball.last_hitter = 0;
+    g_ball.bounce_count = 0;
+    ball_launch(&g_ball, x, y, 40);
+    g_practice.state = PRACTICE_RETURN;
+    for (f = 0; f < 200 && g_practice.state == PRACTICE_RETURN; ++f)
+        game_update(intents);
+    assert(g_practice.state == PRACTICE_WAIT);
+}
+
+/* Return zones (M4-PRACTICE-03): only returns that land in the zone add
+ * to its streak; anywhere else (even in) resets it. Each zone keeps its
+ * own saved best, apart from the plain streak's. */
+static void test_zones(void)
+{
+    static const s16 inside[PRACTICE_ZONES][2] = {
+        { 200, 100 }, { 150, 130 }, { 225, 140 }, { 190, 98 }, { 170, 162 }
+    };
+    static const s16 outside[PRACTICE_ZONES][2] = {
+        { 250, 130 }, { 200, 130 }, { 170, 130 }, { 190, 130 }, { 190, 130 }
+    };
+    u8 zone;
+    u8 other;
+
+    for (zone = 0; zone < PRACTICE_ZONES; ++zone) {
+        assert(practice_in_zone(zone, inside[zone][0], inside[zone][1]));
+        assert(!practice_in_zone(zone, outside[zone][0], outside[zone][1]));
+
+        s_zone = zone;
+        start(PRACTICE_SHOT_LOB, PRACTICE_TARGET_DEEP, PRACTICE_RATE_FAST,
+            DIFFICULTY_MEDIUM);
+        assert(g_practice.zone == zone);
+        return_to(inside[zone][0], inside[zone][1]);
+        assert(g_practice.streak == 1);
+        assert(g_practice.zone_flash ==
+            (zone ? PRACTICE_ZONE_FLASH_FRAMES : 0));
+        return_to(inside[zone][0], inside[zone][1]);
+        assert(g_practice.streak == 2 && g_practice.best == 2);
+        return_to(outside[zone][0], outside[zone][1]);
+        assert(g_practice.streak == 0 && g_practice.best == 2);
+        /* The best is saved for this zone only. */
+        practice_finish();
+        save_initialize();
+        for (other = 0; other < PRACTICE_ZONES; ++other)
+            assert(practice_saved_best(other) == (other == zone ? 2 : 0));
+    }
+    s_zone = PRACTICE_ZONE_ANY;
 }
 
 /* Leaving through the pause menu's MAIN MENU (ADR-030) saves the best:
@@ -210,6 +279,7 @@ int main(void)
     test_feeds_land();
     test_streaks();
     test_machine_aim();
+    test_zones();
     test_exit();
     printf("practice host checks passed\n");
     return 0;

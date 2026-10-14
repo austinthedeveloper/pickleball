@@ -21,6 +21,7 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
 | SHOT | DRIVE, LOB, DINK, MIX | MIX |
 | TARGET | KITCHEN, DEEP, FOREHAND, BACKHAND, AT YOU, RANDOM | RANDOM |
 | RATE | SLOW (2 s), NORMAL (1.25 s), FAST (0.67 s) between feeds | NORMAL |
+| RETURN TO | ANY, KITCHEN, DEEP, LEFT LINE, RIGHT LINE (*amended*) | ANY |
 
 - **Speed and swinging** follow the OPTIONS difficulty: a slow ball on KID
   and EASY, and on KID the swing assist.
@@ -69,8 +70,38 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
   - Not shown: depth (KITCHEN or DEEP) and the shot. The ball's flight
     shows those.
 - **Saving:** the best streak is saved when you leave, as
-  `practice_best`. The three settings are kept in `SaveSettings.practice`
-  (SaveData v7).
+  `practice_best`. The settings are kept in `SaveSettings.practice`
+  (SaveData v7; the fourth, RETURN TO, since v9).
+
+## Return zones
+
+*Amended 2026-10-14 (M4-PRACTICE-03).* RETURN TO picks a zone on the
+machine's side that a return must land in to count:
+
+| Zone | Ground rectangle (edges in) |
+|---|---|
+| ANY | the machine's side: the plain streak, as before |
+| KITCHEN | net to the kitchen line (x 128-164) |
+| DEEP | the last 36 px before the baseline (x 204-240) |
+| LEFT LINE | P1's left, facing the net: 22 px in from the far sideline (y 90-112) |
+| RIGHT LINE | P1's right: 22 px in from the near sideline (y 148-170) |
+
+- A return whose first bounce is in the zone (and in the court) adds to the
+  streak. Anywhere else resets it, even in the court: the drill is the
+  placement.
+- **Each zone has its own best**, saved on leaving as
+  `SaveRecords.practice_zone_best[4]` (u8, up to 99), apart from ANY's
+  `practice_best`. The practice page's BEST STREAK shows the chosen zone's
+  best and changes with RETURN TO. The RECORDS erase clears them too.
+- **On screen:** a corner object at each corner of the zone (the select
+  cursor's corner, flipped, in the objects palette; OAM 22-25), placed
+  through the court projection. The corners blink for 32 frames after a
+  return lands in. The centre score panel names the zone (PRACTICE on
+  ANY), and BEST is that zone's best.
+- **Save layout 9** (ADR-032): `practice[4]` takes the place of
+  `SaveSettingsV8.reserved`, and the records gain the four bests (46 bytes). A
+  v8 save (v0.6.0 to v0.9.0) carries everything over, with RETURN TO at ANY
+  and the zone bests at 0.
 
 ## Code
 
@@ -100,6 +131,11 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
   RANDOM feeds), and follows P1 on AT YOU.
 - `test/smoke/machine.timeline`: centre, up, the feed's kick, and a turn
   through the centre to down.
+- `test_practice.c: test_zones`: for each zone, two returns into it make a
+  streak of 2 (the corners blink on a zone), one outside resets it, and
+  the best is saved for that zone only. `test_save.c: test_migrate_v8`.
+- `test/smoke/zones.timeline`: RETURN TO KITCHEN on the page, then the
+  session with the kitchen's corners and KITCHEN on the centre panel.
 - `test/smoke/practice.timeline`: the page, Player Select, a session with a
   forehand return, and Start back to the title.
 
