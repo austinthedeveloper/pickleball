@@ -42,7 +42,7 @@
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
 #define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-18) */
-#define TITLE_MENU_COL 12
+#define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
 #define TITLE_2P_ROW 19
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
 #define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
@@ -530,8 +530,8 @@ static void hud_record_ladder(u8 row)
 static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
-        "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS ", "  OPTIONS ",
-        "  MODIFIERS", "  PRACTICE"
+        "  SINGLES  ", "  DOUBLES  ", "  COURT    ", "  RECORDS  ",
+        "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
     };
 
     hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
