@@ -69,6 +69,7 @@ static void start_open_play_match(void)
 {
     match_config_doubles();
     match_config_opponent(g_open_play.opponent);
+    match_config_partner(g_open_play.partner);
     g_match_config.points_to_win = options_points(g_save.settings.points);
     /* The court's level sets the difficulty (KID keeps its assist). */
     g_match_config.difficulty = open_court_difficulty(g_open_play.called,

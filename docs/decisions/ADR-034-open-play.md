@@ -41,8 +41,11 @@ scene of its own, like Player Select:
 - **Your game:** when your paddle reaches the top of the stack at a
   changeover, the park calls you ("YOUR GAME!", "COURT 2 VS PIRATES") for
   2.5 seconds. Then it starts a **doubles match**:
-  - you and a regular partner (the default CPU) against the team drawn
-    with you
+  - you and a partner against the team drawn with you. The partner is the
+    captain of the team waiting next at that court ("WITH PETE VS SURF
+    CREW"), with their look, body, paddle, and play style (ADR-023). Their
+    team stays in line. With nobody waiting there, it's the regular (the
+    default CPU).
   - at the park (AUTO venue)
   - with the saved points and modifiers, at the court's difficulty
   - no intro card, no ladder change, and no CHAMPION!
@@ -76,6 +79,17 @@ colour and a label over it:
 - Art: each court's tiles use their own copy of the park palette (BG
   palettes 1-3), differing only in the apron. The tile count is the same
   (47), since tiles are shared across palettes. The HUD font gained a `+`.
+
+## Partners from the stack
+
+*Amended 2026-10-13 (`M4-OPEN-03`):* `MatchConfig.partner` is a ladder
+team whose captain plays slot 1. `match_config_partner(team)` sets their
+variant and paddle. `match_slot_style` and `match_compose_palette` give slot
+1 the captain's style and palette. OPPONENT_NONE keeps the default CPU,
+and every other mode leaves it unset. Difficulty never changes your partner:
+it changes the CPUs on a team with no human (ADR-025). Tests:
+`test_opponents.c: test_partner` and the partner check in
+`test_open_play.c`.
 
 ## How
 
@@ -159,9 +173,6 @@ frame over the singles demo.
 
 - The park resets on each visit. The other players only take turns
   between courts; you never see them walk.
-- Your partner is always the default CPU. Partnering with someone from the
-  stack (and their looks) would need per-slot opponent members in
-  `MatchConfig`.
 - No bench crowd, no wandering people, and a single screen with no
   scrolling to a bigger park.
 - 2P: the second player can't stack a paddle.

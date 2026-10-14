@@ -90,6 +90,8 @@ typedef struct {
     u8 called;                  /* the court calling you, or OPEN_NONE */
     u8 call_timer;
     u8 opponent;                /* your opponents' team, when called */
+    u8 partner;                 /* the team next in line: its captain
+                                   partners you; OPEN_NONE: the regular */
     u16 seed;
     u8 lineup;                  /* changes when anyone comes on or off */
     u8 stacks;                  /* changes when any stack changes */

@@ -149,6 +149,18 @@ static void test_your_turn(void)
     opponent = g_open_play.opponent;
     assert(opponent < OPPONENT_COUNT);
     assert(open_team_court(opponent) == c);     /* a team of that level */
+    /* Your partner: the team waiting next there (not your opponents). */
+    if (g_open_play.court[c].stack_count) {
+        assert(g_open_play.partner == g_open_play.court[c].stack[0]);
+        assert(g_open_play.partner != opponent);
+        assert(open_team_court(g_open_play.partner) == c);
+    } else {
+        assert(g_open_play.partner == OPEN_NONE);
+    }
+    printf("open play: you and %s's captain vs %s\n",
+        g_open_play.partner < OPPONENT_COUNT ?
+            g_opponent_team[g_open_play.partner] : "the regular",
+        g_opponent_team[opponent]);
     assert(g_open_play.court[c].state == OPEN_COURT_YOURS);
     assert(g_open_play.your_court == OPEN_NONE);
     /* The call shows for a while, input ignored, then the match. */

@@ -268,6 +268,10 @@ static u8 court_start_game(u8 c)
         g_open_play.called = c;
         g_open_play.call_timer = 0;
         g_open_play.opponent = court->playing[side ^ 1];
+        /* Your partner: the captain of the team waiting next at this
+         * court (they stay in line); none waiting, the regular. */
+        g_open_play.partner = court->stack_count &&
+            court->stack[0] != OPEN_YOU ? court->stack[0] : OPEN_NONE;
         return OPEN_EVENT_CALLED;
     }
     court->state = OPEN_COURT_PLAYING;
@@ -336,6 +340,7 @@ void open_play_begin(u16 seed)
     g_open_play.called = OPEN_NONE;
     g_open_play.call_timer = 0;
     g_open_play.opponent = OPEN_NONE;
+    g_open_play.partner = OPEN_NONE;
     g_open_play.last_won = OPEN_NONE;
     g_open_play.last_score[0] = 0;
     g_open_play.last_score[1] = 0;

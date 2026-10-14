@@ -191,8 +191,14 @@ static void park_draw_message(u8 message, u8 arg)
         at = park_append(at, park_team_name(court->playing[1]));
         break;
     case PARK_MSG_CALLED:
-        at = park_append(at, "COURT ");
-        at = park_number(at, arg + 1);
+        /* "WITH ACE VS TWINS": the captain next in line partners you. */
+        if (g_open_play.partner < OPPONENT_COUNT) {
+            at = park_append(at, "WITH ");
+            at = park_append(at, g_opponent_captain[g_open_play.partner]);
+        } else {
+            at = park_append(at, "COURT ");
+            at = park_number(at, arg + 1);
+        }
         at = park_append(at, " VS ");
         at = park_append(at, park_team_name(g_open_play.opponent));
         break;

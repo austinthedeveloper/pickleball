@@ -22,7 +22,8 @@ its own level. On KID, every court is KID.
 - Press **B** at a rack to put your paddle in its stack (B again takes it
   back). Walk past a court to see who's playing.
 - When a game ends, everyone comes off and the next paddles go on. When
-  it's yours: **YOUR GAME!** You and a partner play doubles against the
+  it's yours: **YOUR GAME!** The captain of the team waiting next at that
+  court partners you ("WITH PETE VS SURF CREW"); you play doubles against the
   team you were drawn with, at that court's level, with your POINTS and
   MODIFIERS.
 - After the game, **B** takes you back to the park. **Start** in the park

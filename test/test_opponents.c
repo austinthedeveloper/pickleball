@@ -5,6 +5,7 @@
 #include "court.h"
 #include "game.h"
 #include "match.h"
+#include "options.h"
 #include "rules.h"
 #include "save.h"
 #include "select.h"
@@ -215,8 +216,37 @@ static void test_result_buttons(void)
     assert(g_match_config.opponent == 1);
 }
 
+/* Open play's partner (ADR-034): slot 1 is a team's captain, in look,
+ * variant, paddle, and style; difficulty never changes your partner. */
+static void test_partner(void)
+{
+    u16 pal[16];
+
+    match_config_doubles();
+    match_config_opponent(6);
+    match_config_partner(7);
+    g_match_config.difficulty = DIFFICULTY_HARD;
+    assert(g_match_config.partner == 7);
+    assert(match_slot_style(1) == &g_opponent_styles[7][0]);
+    assert(match_slot_style(0) == &g_ai_default_style);
+    assert(match_slot_style(2) == &g_opponent_styles[6][0]);
+    assert(g_match_config.variant[1] == g_opponent_variant[7][0]);
+    assert(g_match_config.paddle_id[1] == g_opponent_paddle[7][0]);
+    match_compose_palette(1, pal);
+    assert(memcmp(pal, g_opponent_palettes[7][0], sizeof(pal)) == 0);
+    game_new_match();
+    assert(memcmp(&g_ai_styles[1], &g_opponent_styles[7][0],
+        sizeof(AiStyle)) == 0);
+    /* No partner: the default CPU, as before. */
+    match_config_partner(OPPONENT_NONE);
+    assert(match_slot_style(1) == &g_ai_default_style);
+    match_config_defaults();
+    assert(g_match_config.partner == OPPONENT_NONE);
+}
+
 int main(void)
 {
+    test_partner();
     test_default_style_is_shipped_cpu();
     test_config();
     test_select_uses_ladder();

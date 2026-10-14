@@ -68,7 +68,9 @@ ADR-024.
   - Accept: walk the park, stack and take back your paddle, watch the games rotate, get called and play, come back; host tests for the rules (nobody lost or doubled in a long soak); the park holds the frame budget.
   - Verified: [ADR-034](../docs/decisions/ADR-034-open-play.md), `test/test_open_play.c`, `open_play.timeline` (zero overruns in `make perf`).
 - [ ] `M4-OPEN-02` A bigger park: scrolling or more screens, people walking between courts and to the racks, a bench crowd.
-- [ ] `M4-OPEN-03` Partners from the stack: play with the person stacked with you (their looks and style), not a fixed regular.
+- [x] `M4-OPEN-03` Partners from the stack: play with the person stacked with you (their looks and style), not a fixed regular.
+  - Verified: ADR-034 (amended), `test_opponents.c: test_partner`, `test_open_play.c`; `open_play.timeline` shows "WITH PETE VS SURF CREW" and PETE's look in the match.
+- [ ] `M4-OPEN-04` A second player in the park: 2P joins and plays as your partner.
 
 ## Practice
 

@@ -21,7 +21,8 @@ MatchConfig g_match_config = {
     DIFFICULTY_MEDIUM,
     0,
     0,
-    0
+    0,
+    OPPONENT_NONE
 };
 #else
 MatchConfig g_match_config;
@@ -50,6 +51,7 @@ void match_config_defaults(void)
     g_match_config.practice = 0;
     g_match_config.modifiers = 0;
     g_match_config.open_play = 0;
+    g_match_config.partner = OPPONENT_NONE;
 }
 
 void match_config_practice(void)
@@ -89,10 +91,27 @@ u8 match_slot_member(u8 slot)
     return slot - 2;
 }
 
+/* Slot 1 as an open play partner's captain (ADR-034). */
+static u8 match_slot_partner(u8 slot)
+{
+    return slot == 1 && g_match_config.partner < OPPONENT_COUNT;
+}
+
+void match_config_partner(u8 team)
+{
+    g_match_config.partner = team < OPPONENT_COUNT ? team : OPPONENT_NONE;
+    if (g_match_config.partner == OPPONENT_NONE || g_match_config.human[1])
+        return;
+    g_match_config.variant[1] = g_opponent_variant[team][0];
+    g_match_config.paddle_id[1] = g_opponent_paddle[team][0];
+}
+
 const AiStyle *match_slot_style(u8 slot)
 {
     u8 member = match_slot_member(slot);
 
+    if (match_slot_partner(slot))
+        return &g_opponent_styles[g_match_config.partner][0];
     if (member == 0xff)
         return &g_ai_default_style;
     return &g_opponent_styles[g_match_config.opponent][member];
@@ -187,6 +206,13 @@ void match_compose_palette(u8 slot, u16 out[16])
     u8 member = match_slot_member(slot);
     u8 i;
 
+    if (match_slot_partner(slot)) {
+        const u16 *look = g_opponent_palettes[g_match_config.partner][0];
+
+        for (i = 0; i < 16; ++i)
+            out[i] = look[i];
+        return;
+    }
     if (member != 0xff) {
         const u16 *look = g_opponent_palettes[g_match_config.opponent][member];
 

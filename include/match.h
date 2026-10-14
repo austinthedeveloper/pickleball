@@ -29,6 +29,9 @@ typedef struct {
     u8 practice;                  /* ADR-028: P1 alone vs the ball machine */
     u8 modifiers;                 /* ADR-033: MODIFIER_* bits */
     u8 open_play;                 /* ADR-034: a game from the park's stack */
+    u8 partner;                   /* ADR-034: a ladder team whose captain
+                                     plays slot 1, or OPPONENT_NONE (the
+                                     default CPU) */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */
@@ -53,6 +56,10 @@ void match_config_select(u8 mode, const PlayerChoice *p1,
  * (slot 3): look, body variant, and paddle (ADR-023). Only when no human
  * plays on that team; OPPONENT_NONE keeps the default CPU. */
 void match_config_opponent(u8 opponent);
+/* Open play (ADR-034): a ladder team's captain partners P1 on slot 1 (look,
+ * body variant, paddle, and style); OPPONENT_NONE keeps the default CPU.
+ * Doubles with P1 only on the left. */
+void match_config_partner(u8 team);
 /* Practice (ADR-028): singles with P1 only; the far side is the machine. */
 void match_config_practice(void);
 /* The opponent member (0 captain, 1 partner) playing the slot, or 0xff. */
