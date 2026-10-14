@@ -6,7 +6,8 @@ from .common import ROOT, AssetError, bgr15, paths
 
 STYLE_KEYS = ("late_period", "reaction", "dink_period", "lob_distance",
               "putaway_z", "putaway_distance", "aim", "depth", "recover",
-              "speed", "volley", "net", "team", "tactics")
+              "speed", "volley", "net", "team", "tactics",
+              "footwork")
 AIMS = ("away", "body", "mix")
 DEPTHS = ("alternate", "deep")
 # Inclusive ranges for the numeric knobs.
@@ -23,6 +24,7 @@ RANGES = {
     "net": (0, 100),             # ADR-035: home distance once in; 0 stays back
     "team": (0, 1),              # ADR-036: doubles teamwork
     "tactics": (0, 1),           # ADR-037: shots by the players' positions
+    "footwork": (0, 1),          # ADR-038: swings planned where it stops
 }
 VARIANTS = ("male", "female")
 NAME_CELLS = 9                   # "VS " + name in the 12-cell centre panel
@@ -59,6 +61,7 @@ def check_default_style(style):
         "net": 0,
         "team": 0,
         "tactics": 0,
+        "footwork": 0,
     }
     for key, value in expected.items():
         if style.get(key) != value:
@@ -209,6 +212,7 @@ def opponents_header():
              "    u8 net;               /* ADR-035: home distance once in; 0 stays back */",
              "    u8 team;              /* ADR-036: doubles teamwork (middle, pairs, shift) */",
              "    u8 tactics;           /* ADR-037: drops and dinks against net players */",
+             "    u8 footwork;          /* ADR-038: swings planned where it stops */",
              "} AiStyle;", "",
              "#ifdef OPPONENTS_DEFINE",
              f"const AiStyle g_ai_default_style = {style_row(spec['default_style'])};",

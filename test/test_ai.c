@@ -412,6 +412,108 @@ static void test_tactics(void)
     match_config_defaults();
 }
 
+/* Points the CPU team (TWINS) lost by hitting out on a shot it was not
+ * deliberately late for, over `matches` doubles matches against the bot
+ * pair; the TWINS' footwork as given. */
+static int unforced_outs(u8 footwork, u8 matches)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f = 0;
+    u8 m = 0;
+    u8 counted = 0;
+    u8 scored = 0;
+    int outs = 0;
+    u8 hitter;
+
+    match_config_doubles();
+    match_config_opponent(6);
+    g_attract = 0;
+    game_new_match();
+    while (m < matches && f < 60UL * 60 * 60) {
+        g_ai_styles[2].footwork = footwork;
+        g_ai_styles[3].footwork = footwork;
+        test_bot_skill(5, m);
+        memset(in, 0, sizeof(in));
+        ai_update(0, &in[0]);
+        ai_update(1, &in[1]);
+        ai_update(3, &in[3]);
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+            g_serve_state.server_index == 0 && (f & 31) == 0)
+            in[0].hit_pressed = 1;
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
+            in[0].hit_pressed = 1;
+            if (!counted) {
+                counted = 1;
+                ++m;
+            }
+        } else {
+            counted = 0;
+        }
+        if (g_game_state.phase == GAME_PHASE_POINT_RESULT) {
+            hitter = g_ball.last_hitter;
+            if (!scored && g_game_state.last_fault == GAME_FAULT_OUT &&
+                    (hitter == 2 || hitter == 3) &&
+                    !g_ai_slots[hitter].late_this_ball)
+                ++outs;
+            scored = 1;
+        } else {
+            scored = 0;
+        }
+        test_step(in);
+        if (g_next_opponent)
+            game_new_match();
+        ++f;
+    }
+    match_config_defaults();
+    return outs;
+}
+
+/* ADR-038: footwork plans the swing where the player stops; without it, a
+ * CPU still sliding meets a ball at the sweet spot's edge stretched, and
+ * those mis-hits spray out. With it, only the deliberate late shots do. */
+static void test_footwork(void)
+{
+    int without = unforced_outs(0, 10);
+    int with = unforced_outs(1, 10);
+
+    printf("footwork: TWINS unforced outs in 10 doubles matches: %d without, "
+        "%d with\n", without, with);
+    assert(g_opponent_styles[6][0].footwork && !g_ai_default_style.footwork);
+    assert(without >= 10);
+    assert(with * 4 <= without);
+}
+
+/* The aim a doubles CPU (slot 2) holds through a swing with this shot
+ * count. */
+static s16 doubles_aim_y(const AiStyle *style, u8 shot_counter)
+{
+    match_config_doubles();
+    new_match();
+    g_ai_styles[2] = *style;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_players[2].state = PLAYER_STATE_WINDUP;
+    g_players[2].state_frames_remaining = PLAYER_WINDUP_FRAMES;
+    g_ai_slots[2].shot_counter = shot_counter;
+    g_ai_slots[2].planned_shot = SHOT_STANDARD;
+    g_ai_slots[2].planned_depth = 1;
+    ai_update(2, &intents[2]);
+    return intents[2].aim_y;
+}
+
+/* ADR-038: in doubles, tactics aims every other shot down the middle;
+ * otherwise the lanes, as before. */
+static void test_middle_aim(void)
+{
+    const AiStyle *twins = &g_opponent_styles[6][0];
+
+    assert(doubles_aim_y(twins, 0) == 0);
+    assert(doubles_aim_y(twins, 2) == 0);
+    assert(doubles_aim_y(twins, 1) != 0);
+    assert(doubles_aim_y(&g_ai_default_style, 0) != 0);
+    assert(doubles_aim_y(&g_ai_default_style, 2) != 0);
+    match_config_defaults();
+}
+
 int main(int argc, char **argv)
 {
     (void)argv;
@@ -428,6 +530,8 @@ int main(int argc, char **argv)
     test_net_play();
     test_teamwork();
     test_tactics();
+    test_footwork();
+    test_middle_aim();
     puts("ai host checks passed");
     return 0;
 }

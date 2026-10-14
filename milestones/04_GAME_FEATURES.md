@@ -45,7 +45,8 @@ ADR-024.
   - Verified: [ADR-035](../docs/decisions/ADR-035-net-play.md), `test_ai.c: test_net_play`, the ADR-035 bot table (no early-volley faults), golden trace identical.
 - [x] `M4-AI-02` Situational shots: drops and dinks against net players, put-aways, dink rallies with speed-ups.
   - Verified: [ADR-037](../docs/decisions/ADR-037-situational-shots.md), `test_ai.c: test_tactics`; against a net-playing bot every net team is tougher in singles (CHAMPS 24 → 7 bot wins of 60). Not done: speed-ups out of a dink rally (put-aways of high balls stay).
-- [ ] `M4-AI-05` Balance doubles: TWINS are easy for a net-playing human (57-59 of 60 bot wins), GOTH CLUB over-dink, HENDERSON and GYM BROS are near-certain wins.
+- [x] `M4-AI-05` Balance doubles: TWINS are easy for a net-playing human (57-59 of 60 bot wins), GOTH CLUB over-dink, HENDERSON and GYM BROS are near-certain wins.
+  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md), `test_ai.c: test_footwork, test_middle_aim`; the doubles ladder gets harder each rung (average bot wins of 60: 60, 52, 49, 37, 22, 20, 18, 4; TWINS against the net bot 59 → 21). The cause was CPU mis-hits from sliding into the swing (`footwork`).
 - [x] `M4-AI-03` Doubles teamwork: the CPU partner moves up and back with you, covers the middle, poaches.
   - Verified: [ADR-036](../docs/decisions/ADR-036-teamwork.md), `test_ai.c: test_teamwork`, `test_doubles.c`; middle balls lost untouched near zero for both sides in the ADR-036 table.
 - [ ] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.

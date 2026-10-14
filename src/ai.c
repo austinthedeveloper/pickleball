@@ -284,6 +284,12 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
         ++opponent;
     if (s_block_volley[s_slot])
         intent->aim_y = 0;              /* a block volley: down the middle */
+    else if (s_has_partner && s_style->tactics && !(g_ai.shot_counter & 1))
+        /* Doubles with tactics: every other shot down the middle, between
+         * the two opponents. A stretched contact sprays 20 px toward its
+         * sideline: from a lane that is out, from the middle it stays in
+         * (ADR-038). */
+        intent->aim_y = 0;
     else if (s_has_partner)
         /* Doubles: both opponents get the ball. Aiming away from the first
          * one would starve slot 0 (the human). Lanes go bottom, top, top,
@@ -363,6 +369,33 @@ static fx s_contact_z;   /* ball height at the planned contact */
 static fx s_reach_x;
 static fx s_reach_y;
 
+/*
+ * How far a player slides after pressing swing (ADR-038): the swing stops
+ * the feet, so friction takes the speed, held under the paddle's swing
+ * limit, to zero in at most three frames (13, 7, 1). The contact check
+ * sees the player there, not where they pressed. Without footwork, a CPU
+ * plans from where it pressed, and a ball at the sweet spot's edge is met
+ * stretched: those mis-hits spray out.
+ */
+static s16 ai_slide(s16 v, s16 limit)
+{
+    s16 total;
+
+    v = v > PLAYER_FRICTION_FP ? v - PLAYER_FRICTION_FP :
+        v < -PLAYER_FRICTION_FP ? v + PLAYER_FRICTION_FP : 0;
+    if (v > limit)
+        v = limit;
+    else if (v < -limit)
+        v = -limit;
+    total = v;
+    while (v) {
+        v = v > PLAYER_FRICTION_FP ? v - PLAYER_FRICTION_FP :
+            v < -PLAYER_FRICTION_FP ? v + PLAYER_FRICTION_FP : 0;
+        total += v;
+    }
+    return total;
+}
+
 /* collision_ball_in_player_reach / _sweet_spot on the probe. */
 static u8 probe_in_reach(void)
 {
@@ -413,6 +446,12 @@ static u8 ai_swing_connects(const Player *player)
     ai_probe_load(&g_ball);
     s_reach_x = player->x_fp;
     s_reach_y = player->y_fp;
+    if (s_style->footwork) {
+        s_reach_x += ai_slide(player->vx_fp,
+            g_paddle_swing_limit[player->paddle]);
+        s_reach_y += ai_slide(player->vy_fp,
+            g_paddle_swing_limit[player->paddle]);
+    }
     /* Probe step n is the ball at frame n's contact check: it moved on
      * frames 0..n-1 (a slow ball skips some, ADR-025; a fast one takes
      * extra steps, ADR-033). At a steady pace the pace check is skipped:
@@ -547,11 +586,20 @@ static void ai_plan_intercept(const Player *player)
 
     if (g_ball.bounce_count > 0 &&
         court_x_on_side(g_ball.x_fp, player->team)) {
-        /* Already bounced on our side: chase where it is heading. */
+        /* Already bounced on our side: chase where it is heading. Strict
+         * halves go by the bounce (the shared landing cache) when there is
+         * one: a ball bouncing by the middle crosses it, and teammates
+         * thinking on different frames would both take it (ADR-038).
+         * Teamwork goes by who is nearer the ball now. */
         g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * 6) + behind;
         g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * 6);
-        g_ai.has_target = ai_owns_point(player, FROM_FP(g_ball.x_fp),
-            FROM_FP(g_ball.y_fp), 0);
+        if (!s_style->team && s_land_valid &&
+                s_land_serial == g_game_state.shot_serial &&
+                s_land_bounces == 0)
+            g_ai.has_target = ai_owns_point(player, s_land_x, s_land_y, 0);
+        else
+            g_ai.has_target = ai_owns_point(player, FROM_FP(g_ball.x_fp),
+                FROM_FP(g_ball.y_fp), 0);
         AI_AVOID_LAVA(player);
         return;
     }

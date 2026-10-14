@@ -109,7 +109,9 @@ side and picks off ones it's clearly nearer on yours. Most opponents from
 the Gym Bros on cover the middle and shift with the ball as a pair too.
 Lob them, or keep the ball low at their feet. Come to the net yourself
 and the smarter teams (the Pirates on) answer with soft drops into your
-kitchen and dink rallies, as real players do.
+kitchen and dink rallies, as real players do. In doubles they also hit
+down the middle, between you and your partner, and the top teams rarely
+mis-hit.
 
 Before a ladder match, the opponent introduces themselves (press B to
 play). After the match they have something to say, and when you win the
