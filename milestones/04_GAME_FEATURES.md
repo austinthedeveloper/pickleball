@@ -57,8 +57,9 @@ ADR-024.
   - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md), `test/test_story.c`, `story.timeline`. Uses the HUD over the live court; portraits are `M4-STORY-03`.
 - [x] `M4-STORY-02` A ladder ending after beating CHAMPS (CHAMPION!, plus a "ladder clears" record).
   - Verified: ADR-026, `test_story.c`.
-- [ ] `M4-STORY-03` Opponent portraits on the intro card (BG2, like Player Select's).
+- [x] `M4-STORY-03` Opponent portraits on the intro card (BG2, like Player Select's).
   - Accept: one portrait per team in palette roles; fits the BG2 portrait budget (ADR-020) and VRAM alongside the court.
+  - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md) (amended), the captain's bust in palette roles through BG palette 1 (51 tiles at `0x4800`, past BG1's reservation; docs/09); `story.timeline` shows DAD's bust and none after B; the asset build rejects off-role busts (`test_asset_validation.py`); zero overruns in `make perf`, golden trace identical.
 
 ## Options
 

@@ -15,6 +15,13 @@ enum {
     STORY_INTRO_FRAMES = 300        /* then it goes by itself (5 s) */
 };
 
+/* The captain's bust on the intro card (M4-STORY-03): a 6x6-tile BG2
+ * frame, centred between the rung (row 14) and the prompt (row 24).
+ * tools/assetgen/select.py reads these. */
+#define STORY_BUST_COL 13
+#define STORY_BUST_ROW 16
+#define STORY_BUST_TILES 6
+
 typedef struct {
     u8 card;
     u16 timer;

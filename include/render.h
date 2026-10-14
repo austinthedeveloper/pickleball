@@ -6,6 +6,12 @@
 /* VRAM word addresses; see docs/09_M1_VRAM_AND_BUILD.md. */
 #define RENDER_BG1_MAP_ADDR 0x0000
 #define RENDER_BG3_MAP_ADDR 0x0400
+/* The intro card's bust (M4-STORY-03): BG2, only while the card is up.
+ * The tile base steps by 0x1000 words, so BG2 counts from 0x4000 and the
+ * bust tiles start 128 tiles in (tools/assetgen/select.py). */
+#define RENDER_BG2_MAP_ADDR 0x0800
+#define RENDER_BG2_BASE_ADDR 0x4000
+#define RENDER_BG2_TILES_ADDR 0x4800
 #define RENDER_BG1_TILES_ADDR 0x1000
 #define RENDER_BG3_TILES_ADDR 0x5000
 #define RENDER_OBJ_TILES_ADDR 0x6000

@@ -46,7 +46,7 @@ from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
 from assetgen.ambience import ambience_module  # noqa: E402
 from assetgen.sfx import sfx_assets  # noqa: E402
-from assetgen.select import portrait_assets, scene_assets  # noqa: E402
+from assetgen.select import bust_assets, portrait_assets, scene_assets  # noqa: E402,E501
 from assetgen.park import park_assets  # noqa: E402
 
 
@@ -70,6 +70,7 @@ def generated_files():
     paddle_header, paddle_names = paddle_stats_header()
     select_pic, select_map, select_pal, select_tiles = scene_assets()
     portrait_pic, portrait_m, portrait_f, portrait_tiles = portrait_assets()
+    bust_pic, bust_m, bust_f, bust_tiles = bust_assets()
     park_pic, park_map, park_pal, park_tiles = park_assets()
     projection = court_projection.header(court_projection.scale_table())
     hud_header = [
@@ -107,6 +108,9 @@ def generated_files():
         "portrait.pic": portrait_pic,
         "portrait_m.map": portrait_m,
         "portrait_f.map": portrait_f,
+        "bust.pic": bust_pic,
+        "bust_m.map": bust_m,
+        "bust_f.map": bust_f,
         "park.pic": park_pic,
         "park.map": park_map,
         "park.pal": park_pal,
@@ -122,7 +126,8 @@ def generated_files():
         files[f"ambience_{i}.it"] = ambience_module(venue["ambience"], 100 + i)
     budget = {"court_tiles": court_tiles, "ground_tiles": ground_tiles, "hud_tiles": hud_tiles,
               "obj_tiles": obj_tiles, "select_tiles": select_tiles,
-              "portrait_tiles": portrait_tiles, "park_tiles": park_tiles}
+              "portrait_tiles": portrait_tiles, "bust_tiles": bust_tiles,
+              "park_tiles": park_tiles}
     return files, budget
 
 
@@ -162,7 +167,7 @@ def main():
                       encoding="utf-8")
     print("generated assets: court %(court_tiles)d tiles, hud %(hud_tiles)d "
           "tiles, obj %(obj_tiles)d tiles, select %(select_tiles)d tiles, "
-          "portraits %(portrait_tiles)d tiles" % budget)
+          "portraits %(portrait_tiles)d tiles, busts %(bust_tiles)d tiles" % budget)
 
 
 if __name__ == "__main__":

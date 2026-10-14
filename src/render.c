@@ -23,6 +23,8 @@
 #include "save.h"
 #include "practice.h"
 #include "serve.h"
+#include "opponents.h"
+#include "story.h"
 
 
 /* The ground every venue shares (ADR-024); venues.h has the rest. */
@@ -32,6 +34,19 @@ extern char hud_tiles, hud_tiles_end;
 extern char hud_palette, hud_palette_end;
 extern char obj_tiles, obj_tiles_end;
 extern char objects_palette, objects_palette_end;
+extern char bust_tiles, bust_tiles_end;
+extern char bust_m_map, bust_m_map_end;
+extern char bust_f_map, bust_f_map_end;
+
+/* The intro card's bust (M4-STORY-03) in BG palette 1, the one a match
+ * leaves free. Its frame uses two roles a bust never shows: 10 (shoe) is
+ * the inner border, in the HUD's border grey, and 13 (paddle edge) the
+ * backdrop (tools/art/prep_opponent_busts.py). */
+#define RENDER_BUST_CGRAM 16
+#define RENDER_BUST_FRAME 10
+#define RENDER_BUST_BACKDROP 13
+static u16 s_bust_palette[16];
+static u8 s_bust_shown;
 
 u16 g_obj_overflow_frames;
 
@@ -386,6 +401,11 @@ void render_commit(void)
         dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
         s_ground_dirty = 0;
     }
+    /* The card closed: the bust goes with the HUD's clear. */
+    if (s_bust_shown && g_story.card == STORY_CARD_NONE) {
+        bgSetDisable(1);
+        s_bust_shown = 0;
+    }
     hud_commit();
 }
 
@@ -396,6 +416,7 @@ void render_initialize(void)
     /* RAM is not cleared at power-on (real hardware or emulators that
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
+    s_bust_shown = 0;
     s_ground_dirty = 0;
     s_ground_pending = 0;
     s_ground_waits = 0;
@@ -435,6 +456,39 @@ void render_initialize(void)
     setScreenOn();
 }
 
+/* The captain's bust on BG2 when the match opens on its intro card
+ * (M4-STORY-03), else BG2 off; forced blank only. The map follows the
+ * captain's variant; the colours are theirs. */
+static void render_load_bust(void)
+{
+    u8 opponent = g_match_config.opponent;
+    u8 i;
+
+    s_bust_shown = g_story.card == STORY_CARD_INTRO &&
+        opponent < OPPONENT_COUNT;
+    if (!s_bust_shown) {
+        bgSetDisable(1);
+        return;
+    }
+    dmaCopyVram((u8 *)&bust_tiles, RENDER_BG2_TILES_ADDR,
+        (u16)(&bust_tiles_end - &bust_tiles));
+    if (g_opponent_variant[opponent][0])
+        dmaCopyVram((u8 *)&bust_f_map, RENDER_BG2_MAP_ADDR,
+            (u16)(&bust_f_map_end - &bust_f_map));
+    else
+        dmaCopyVram((u8 *)&bust_m_map, RENDER_BG2_MAP_ADDR,
+            (u16)(&bust_m_map_end - &bust_m_map));
+    for (i = 0; i < 16; ++i)
+        s_bust_palette[i] = g_opponent_palettes[opponent][0][i];
+    s_bust_palette[RENDER_BUST_FRAME] = RGB5(21, 22, 26);
+    s_bust_palette[RENDER_BUST_BACKDROP] = RGB5(13, 16, 21);
+    dmaCopyCGram((u8 *)s_bust_palette, RENDER_BUST_CGRAM, 32);
+    bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
+    bgSetMapPtr(1, RENDER_BG2_MAP_ADDR, SC_32x32);
+    bgSetScroll(1, 0, 0);
+    bgSetEnable(1);
+}
+
 /* Court scene into VRAM/CGRAM and the match HUD; forced blank only. Also
  * how the match returns from the Player Select screen. The venue is the
  * saved choice, or for AUTO the opponent's home court (ADR-024): shared
@@ -463,7 +517,7 @@ static void render_load_court(void)
     render_compose_ground();
     dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
     s_ground_dirty = 0;
-    bgSetDisable(1);
+    render_load_bust();
     /* Match palettes are composed and uploaded inside this forced blank. */
     render_apply_match_config();
     render_upload_palettes();

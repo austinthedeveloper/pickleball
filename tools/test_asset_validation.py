@@ -164,6 +164,8 @@ CASES = [
      "'PLAID' is not a court colour preset"),
     ("venue name fits the COURT page (ADR-024)", "venues.json",
      venue_long_name, "1..8 cells"),
+    ("bust roles follow the captain (M4-STORY-03)", "opponent_busts.png",
+     put_pixel(20, 20, 8), "bust uses role 8"),
 ]
 
 

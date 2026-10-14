@@ -36,7 +36,7 @@ sources the ROM uses).
 | OPT-02 | `test_options.c: test_difficulty_and_kid`: bot wins ordered KID >= EASY > MEDIUM > HARD; KID assist alone returns and wins | PASS |
 | OPT-03 | `test/smoke/options.timeline`: OPTIONS page, a KID match to 7, zero overruns | PASS (MesenCE smoke) |
 | STY-01 | `test_story.c`: intro card shows, can't be skipped instantly, ends by itself; ladder clears recorded; lines fit (ADR-026) | PASS |
-| STY-02 | `test/smoke/story.timeline`: DAD's intro card, B dismisses without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
+| STY-02 | `test/smoke/story.timeline`: DAD's intro card with his bust (M4-STORY-03), B dismisses it and the bust without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
 | KIT-01 | `test_court_style.c: test_kitchen`: SAME follows the surface, other presets two-tone, every venue default two-toned (ADR-027) | PASS |
 | PRA-01 | `test_practice.c: test_feeds_land`: every shot x target lands in on P1's side where asked; unreturned feeds reset the streak (ADR-028) | PASS |
 | PRA-02 | `test_practice.c`: streaks build (bot, KID assist), best saved on leaving, Start exits | PASS |
