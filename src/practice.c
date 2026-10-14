@@ -65,6 +65,8 @@ u16 practice_rate_frames(u8 rate)
     return frames[practice_rate(rate)];
 }
 
+static void practice_plan(void);
+
 static void practice_show_score(void)
 {
     /* The score panels read P1 <streak> and BEST <best> (hud_scene.c). */
@@ -88,9 +90,13 @@ void practice_begin(void)
     g_practice.feeds = 0;
     g_practice.rng = 0x5a;
     g_practice.last_shot = SHOT_STANDARD;
+    g_practice.pose = PRACTICE_AIM_CENTER;
+    g_practice.turn_timer = 0;
+    g_practice.kick = 0;
     g_ball.active = 0;
     g_ball.rally_state = BALL_RALLY_INACTIVE;
     game_set_phase(GAME_PHASE_LIVE);
+    practice_plan();
     practice_show_score();
 }
 
@@ -124,28 +130,18 @@ static u8 practice_flight(u8 shot_type, u8 dink, s16 distance_px)
     return (u8)frames;
 }
 
-static void practice_feed(void)
+/* Where the planned feed lands (next_tx, next_ty), and the aim. AT YOU
+ * reads where P1 stands, so it is aimed again each frame of the wait. */
+static void practice_aim(void)
 {
     static const s16 lanes[3] = {
         HIT_TARGET_LANE_TOP, HIT_TARGET_LANE_CENTER, HIT_TARGET_LANE_BOTTOM
     };
     const Player *p1 = &g_players[0];
-    u8 shot = g_practice.shot;
-    u8 target = g_practice.target;
-    u8 shot_type;
-    u8 dink;
     s16 tx;
     s16 ty = lanes[g_practice.feeds % 3];
 
-    if (shot == PRACTICE_SHOT_MIX)
-        shot = practice_next() & 3;     /* DRIVE, LOB, DINK, or standard */
-    if (target == PRACTICE_TARGET_RANDOM)
-        target = practice_next() % PRACTICE_TARGET_RANDOM;
-    dink = shot == PRACTICE_SHOT_DINK;
-    shot_type = shot == PRACTICE_SHOT_DRIVE ? SHOT_DRIVE :
-        (shot == PRACTICE_SHOT_LOB || dink) ? SHOT_SOFT : SHOT_STANDARD;
-
-    switch (target) {
+    switch (g_practice.next_target) {
     case PRACTICE_TARGET_DEEP:
         tx = HIT_TARGET_DEEP_LEFT;
         break;
@@ -167,8 +163,60 @@ static void practice_feed(void)
         tx = HIT_TARGET_DINK_LEFT;
         break;
     }
-    if (dink)
+    if (g_practice.next_dink)
         tx = HIT_TARGET_DINK_LEFT;      /* a dink always lands short */
+    g_practice.next_tx = tx;
+    g_practice.next_ty = ty;
+    g_practice.aim = ty < PRACTICE_MACHINE_Y - PRACTICE_AIM_SPREAD ?
+        PRACTICE_AIM_UP : ty > PRACTICE_MACHINE_Y + PRACTICE_AIM_SPREAD ?
+        PRACTICE_AIM_DOWN : PRACTICE_AIM_CENTER;
+}
+
+/* Picks the next feed as the wait starts, so the machine turns toward it
+ * before it leaves. MIX and RANDOM draw in the same order as before. */
+static void practice_plan(void)
+{
+    u8 shot = g_practice.shot;
+    u8 target = g_practice.target;
+
+    if (shot == PRACTICE_SHOT_MIX)
+        shot = practice_next() & 3;     /* DRIVE, LOB, DINK, or standard */
+    if (target == PRACTICE_TARGET_RANDOM)
+        target = practice_next() % PRACTICE_TARGET_RANDOM;
+    g_practice.next_dink = shot == PRACTICE_SHOT_DINK;
+    g_practice.next_shot = shot == PRACTICE_SHOT_DRIVE ? SHOT_DRIVE :
+        (shot == PRACTICE_SHOT_LOB || g_practice.next_dink) ? SHOT_SOFT :
+        SHOT_STANDARD;
+    g_practice.next_target = target;
+    practice_aim();
+}
+
+/* The nozzle turns one pose at a time (up passes the centre to go down). */
+static void practice_turn(void)
+{
+    if (g_practice.kick)
+        --g_practice.kick;
+    if (g_practice.pose == g_practice.aim) {
+        g_practice.turn_timer = 0;
+        return;
+    }
+    if (++g_practice.turn_timer < PRACTICE_TURN_FRAMES)
+        return;
+    g_practice.turn_timer = 0;
+    if (g_practice.pose < g_practice.aim)
+        ++g_practice.pose;
+    else
+        --g_practice.pose;
+}
+
+static void practice_feed(void)
+{
+    /* The muzzle of each pose (render.c), on the ground under the nozzle. */
+    static const s16 muzzle_y[3] = { -4, 0, 3 };
+    u8 shot_type = g_practice.next_shot;
+    s16 tx = g_practice.next_tx;
+    s16 y = PRACTICE_MACHINE_Y + muzzle_y[g_practice.aim];
+
     /* From the low nozzle a flat drive cannot clear the net and still land
      * in the kitchen: a "drive" there is a firm standard shot. */
     if (shot_type == SHOT_DRIVE && tx == HIT_TARGET_DINK_LEFT)
@@ -176,19 +224,20 @@ static void practice_feed(void)
 
     g_ball.active = 1;
     g_ball.x_fp = TO_FP(PRACTICE_MACHINE_X);
-    g_ball.y_fp = TO_FP(PRACTICE_MACHINE_Y);
+    g_ball.y_fp = TO_FP(y);
     g_ball.z_fp = TO_FP(PRACTICE_MACHINE_Z);
     g_ball.rally_state = BALL_RALLY_LIVE;
     g_ball.last_hitter = 2;             /* the machine plays the right team */
     g_ball.bounce_count = 0;
-    ball_launch(&g_ball, tx, ty,
-        practice_flight(shot_type, dink, PRACTICE_MACHINE_X - tx));
+    ball_launch(&g_ball, tx, g_practice.next_ty,
+        practice_flight(shot_type, g_practice.next_dink,
+            PRACTICE_MACHINE_X - tx));
     ++g_game_state.shot_serial;
-    events_emit(EVENT_HIT, PRACTICE_MACHINE_X, PRACTICE_MACHINE_Y,
-        2 | (shot_type << 4));
+    events_emit(EVENT_HIT, PRACTICE_MACHINE_X, y, 2 | (shot_type << 4));
     g_practice.last_shot = shot_type;
     g_practice.state = PRACTICE_FEED;
     g_practice.timer = 0;
+    g_practice.kick = PRACTICE_KICK_FRAMES;
     ++g_practice.feeds;
 }
 
@@ -208,6 +257,7 @@ static void practice_end_feed(u8 good)
     g_ball.rally_state = BALL_RALLY_INACTIVE;
     g_practice.state = PRACTICE_WAIT;
     g_practice.timer = practice_rate_frames(g_practice.rate);
+    practice_plan();
     practice_show_score();
 }
 
@@ -216,11 +266,17 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
     u8 hit;
     u8 events;
 
+    practice_turn();
     if (g_practice.state == PRACTICE_WAIT) {
-        if (g_practice.timer)
+        /* AT YOU follows P1 through the wait; then the machine finishes
+         * turning before it feeds, so it always points where the ball goes. */
+        if (g_practice.timer) {
             --g_practice.timer;
-        else
+            if (g_practice.next_target == PRACTICE_TARGET_AT_YOU)
+                practice_aim();
+        } else if (g_practice.pose == g_practice.aim) {
             practice_feed();
+        }
         return;
     }
     if (++g_practice.timer > PRACTICE_FEED_TIMEOUT_FRAMES) {

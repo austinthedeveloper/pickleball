@@ -1,10 +1,15 @@
 # Practice machine sprite (ADR-028): defaults (MIX, RANDOM); the machine
-# stands on the far baseline and the first feed leaves its nozzle.
+# stands on the far baseline and the first feed leaves its nozzle. The
+# nozzle turns toward each feed's lane before it leaves (centre, then up
+# for the first two feeds, then through the centre to down).
 70 71 up
 90 91 start
 120 121 b
 200 201 start   # confirm Player Select
 shot 240
+shot 290        # aimed up at the first feed's lane
 shot 300
-shot 304
+shot 304        # the feed: the machine kicks back
 shot 310
+shot 482        # turning through the centre
+shot 500        # aimed down

@@ -101,7 +101,11 @@
     "person_step": 18,
     "mini_paddle": 19,
     "mini_ball": 20,
-    "mini_shadow": 21
+    "mini_shadow": 21,
+    "machine_up_tl": 22,
+    "machine_up_bl": 23,
+    "machine_down_tl": 24,
+    "machine_down_bl": 25
   },
   "large_objects": {
     "big_ball": 11

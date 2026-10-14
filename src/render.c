@@ -303,12 +303,21 @@ static void render_ball(void)
 }
 
 /* The practice ball machine (ADR-028): four 8x8 objects, its nozzle (the
- * left edge, 8 px up) where the feeds leave. Hidden outside practice. */
+ * left edge, 8 px up) where the feeds leave. The left half turns the nozzle
+ * toward the next feed's lane; a feed kicks the machine back 2 px.
+ * Hidden outside practice. */
 static void render_machine(void)
 {
+    static const u8 left_top[3] = {
+        OBJTILE_MACHINE_UP_TL, OBJTILE_MACHINE_TL, OBJTILE_MACHINE_DOWN_TL
+    };
+    static const u8 left_bottom[3] = {
+        OBJTILE_MACHINE_UP_BL, OBJTILE_MACHINE_BL, OBJTILE_MACHINE_DOWN_BL
+    };
     s16 x;
     s16 y = PRACTICE_MACHINE_Y - 16;
     u8 attr = OBJ_ATTR(g_objpal_objects, 0);
+    u8 pose = g_practice.pose;
     u8 i;
 
     if (!g_match_config.practice || g_attract) {
@@ -317,9 +326,11 @@ static void render_machine(void)
         return;
     }
     x = projection_x(PRACTICE_MACHINE_X, PRACTICE_MACHINE_Y) - 1;
-    obj_put(RENDER_OAM_MACHINE, x, y, OBJTILE_MACHINE_TL, attr, 0);
+    if (g_practice.kick)
+        x += g_practice.kick > PRACTICE_KICK_FRAMES / 2 ? 2 : 1;
+    obj_put(RENDER_OAM_MACHINE, x, y, left_top[pose], attr, 0);
     obj_put(RENDER_OAM_MACHINE + 1, x + 8, y, OBJTILE_MACHINE_TR, attr, 0);
-    obj_put(RENDER_OAM_MACHINE + 2, x, y + 8, OBJTILE_MACHINE_BL, attr, 0);
+    obj_put(RENDER_OAM_MACHINE + 2, x, y + 8, left_bottom[pose], attr, 0);
     obj_put(RENDER_OAM_MACHINE + 3, x + 8, y + 8, OBJTILE_MACHINE_BR, attr, 0);
 }
 

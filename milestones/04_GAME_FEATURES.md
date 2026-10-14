@@ -92,6 +92,8 @@ ADR-024.
   - Verified: [ADR-028](../docs/decisions/ADR-028-practice.md), `test/test_practice.c`, `practice.timeline`.
 - [x] `M4-PRACTICE-02` A ball machine sprite on the far baseline (a few OBJ tiles; 208 of 256 used).
   - Verified: ADR-028 (amended), `test/smoke/machine.timeline`.
+- [x] `M4-PRACTICE-04` The machine aims: the nozzle turns toward each feed's lane before it leaves, so you can read where the ball is going.
+  - Verified: ADR-028 (amended), `test_practice.c: test_machine_aim`, `machine.timeline` (MesenCE frames of the turn and the kick); `practice.timeline` still zero overruns.
 - [ ] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
 

@@ -50,6 +50,24 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
     there can't clear the net and still land in the kitchen, so a DRIVE to
     the kitchen is fed as a firm standard shot. The every-shot × every-target
     landing test covers this.
+- **Aiming** (*amended 2026-10-14*): the nozzle used to face P1 whatever the
+  lane, so a feed's direction was a guess. Now each feed is planned when
+  the wait before it starts (`practice_plan`), and the nozzle turns toward
+  its lane: **up** (a lane more than 12 px toward the far sideline),
+  **centre**, or **down**.
+  - It turns one pose every 6 frames, so up to down passes the centre. The
+    machine feeds only once it points at the lane, which costs no time
+    except on AT YOU, which follows P1 through the wait and locks when the
+    wait ends.
+  - Each pose has its own left-half tiles (slots 22-25 of the small-object
+    sheet for up and down; the OBJ tile count is unchanged). A feed leaves
+    that pose's muzzle (4 px toward the far sideline for up, 3 px toward
+    the near one for down), and the machine kicks back 2 px, then 1, over
+    6 frames.
+  - MIX and RANDOM draw from the pattern in the same order as before, so
+    the same feeds come in the same order.
+  - Not shown: depth (KITCHEN or DEEP) and the shot. The ball's flight
+    shows those.
 - **Saving:** the best streak is saved when you leave, as
   `practice_best`. The three settings are kept in `SaveSettings.practice`
   (SaveData v7).
@@ -77,6 +95,11 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
     32 on DINK/KITCHEN
   - the best is saved on leaving and never lowered
   - Start returns to the title
+- `test_practice.c: test_machine_aim`: the nozzle turns one pose at a time,
+  points at each feed's lane when it leaves (all three poses seen over 30
+  RANDOM feeds), and follows P1 on AT YOU.
+- `test/smoke/machine.timeline`: centre, up, the feed's kick, and a turn
+  through the centre to down.
 - `test/smoke/practice.timeline`: the page, Player Select, a session with a
   forehand return, and Start back to the title.
 

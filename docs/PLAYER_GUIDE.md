@@ -51,7 +51,9 @@ its own level. On KID, every court is KID.
 
 Press B, choose your player and paddle, and the machine starts feeding. Every
 return that lands in adds to your streak (P1 on the scoreboard), and your
-best streak is saved. Ball speed and the KID swing assist follow your
+best streak is saved. Watch the nozzle: before each ball it turns toward
+the side it will go to (up for the far sideline, down for the near one,
+straight for the middle), and on AT YOU it follows you. Ball speed and the KID swing assist follow your
 OPTIONS difficulty, and a BIG or FAST ball from MODIFIERS works here too.
 Start pauses; choose MAIN MENU to leave.
 

@@ -35,8 +35,17 @@ enum {
     PRACTICE_MACHINE_Z = 8,
     PRACTICE_FIRST_FEED_FRAMES = 60,
     PRACTICE_FEED_TIMEOUT_FRAMES = 300, /* a stuck feed ends anyway */
-    PRACTICE_STREAK_MAX = 99            /* two digits on the score panel */
+    PRACTICE_STREAK_MAX = 99,           /* two digits on the score panel */
+    /* The nozzle turns one pose per PRACTICE_TURN_FRAMES toward the next
+     * feed's lane (up through centre to down), and kicks back on a feed. */
+    PRACTICE_TURN_FRAMES = 6,
+    PRACTICE_KICK_FRAMES = 6,
+    PRACTICE_AIM_SPREAD = 12            /* lanes this far off centre turn */
 };
+
+/* Nozzle poses, as seen on screen: toward the far sideline (up), the
+ * centre, or the near sideline (down). */
+enum { PRACTICE_AIM_UP = 0, PRACTICE_AIM_CENTER = 1, PRACTICE_AIM_DOWN = 2 };
 
 /* Feed state. */
 enum { PRACTICE_WAIT = 0, PRACTICE_FEED = 1, PRACTICE_RETURN = 2 };
@@ -52,6 +61,15 @@ typedef struct {
     u8 feeds;           /* drives the lanes and the MIX/RANDOM pattern */
     u8 rng;
     u8 last_shot;       /* ShotType of the last feed */
+    u8 next_shot;       /* the planned next feed: ShotType, dink, target */
+    u8 next_dink;
+    u8 next_target;
+    s16 next_tx;        /* where it lands (AT YOU follows P1 in the wait) */
+    s16 next_ty;
+    u8 aim;             /* PRACTICE_AIM_* toward next_ty */
+    u8 pose;            /* the nozzle on screen, turning toward aim */
+    u8 turn_timer;
+    u8 kick;            /* frames left of the feed's kick */
 } PracticeState;
 
 extern PracticeState g_practice;

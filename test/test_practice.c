@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "ai.h"
+#include "collision.h"
 #include "court.h"
 #include "game.h"
 #include "match.h"
@@ -136,6 +137,57 @@ static void test_streaks(void)
     assert(g_save.records.practice_best == (u16)kid_best);
 }
 
+/* The nozzle shows where each feed goes: it turns one pose at a time
+ * toward the next lane during the wait, points there when the ball leaves
+ * (up for the far sideline, down for the near one), and kicks back. */
+static void test_machine_aim(void)
+{
+    u8 seen[3] = { 0, 0, 0 };
+    u8 pose;
+    u16 f;
+    u8 feeds;
+
+    start(PRACTICE_SHOT_MIX, PRACTICE_TARGET_RANDOM, PRACTICE_RATE_FAST,
+        DIFFICULTY_MEDIUM);
+    memset(intents, 0, sizeof(intents));
+    pose = g_practice.pose;
+    for (feeds = 0; feeds < 30; ++feeds) {
+        for (f = 0; f < 400 && g_practice.state != PRACTICE_FEED; ++f) {
+            game_update(intents);
+            assert(g_practice.pose <= PRACTICE_AIM_DOWN);
+            assert(g_practice.pose + 1 >= pose && g_practice.pose <= pose + 1);
+            pose = g_practice.pose;
+        }
+        assert(g_practice.state == PRACTICE_FEED);
+        assert(g_practice.pose == g_practice.aim);
+        assert(g_practice.kick == PRACTICE_KICK_FRAMES);
+        if (g_practice.aim == PRACTICE_AIM_UP)
+            assert(g_ball.vy_fp < 0);
+        else if (g_practice.aim == PRACTICE_AIM_DOWN)
+            assert(g_ball.vy_fp > 0);
+        else
+            assert(g_practice.next_ty >= PRACTICE_MACHINE_Y -
+                PRACTICE_AIM_SPREAD &&
+                g_practice.next_ty <= PRACTICE_MACHINE_Y + PRACTICE_AIM_SPREAD);
+        seen[g_practice.aim] = 1;
+        /* Unreturned, it ends and the machine turns toward the next. */
+        for (f = 0; f < 300 && g_practice.state != PRACTICE_WAIT; ++f)
+            game_update(intents);
+        pose = g_practice.pose;
+    }
+    assert(seen[0] && seen[1] && seen[2]);
+
+    /* AT YOU follows P1: stand by the far sideline and it turns up. */
+    start(PRACTICE_SHOT_LOB, PRACTICE_TARGET_AT_YOU, PRACTICE_RATE_SLOW,
+        DIFFICULTY_MEDIUM);
+    g_players[0].y_fp = TO_FP(HIT_TARGET_LANE_TOP);
+    for (f = 0; f < 400 && g_practice.state != PRACTICE_FEED; ++f)
+        game_update(intents);
+    assert(g_practice.aim == PRACTICE_AIM_UP);
+    assert(g_practice.pose == PRACTICE_AIM_UP);
+    assert(g_ball.vy_fp < 0);
+}
+
 /* Leaving through the pause menu's MAIN MENU (ADR-030) saves the best:
  * main.c calls practice_finish, then returns to the title. */
 static void test_exit(void)
@@ -157,6 +209,7 @@ int main(void)
     test_settings();
     test_feeds_land();
     test_streaks();
+    test_machine_aim();
     test_exit();
     printf("practice host checks passed\n");
     return 0;
