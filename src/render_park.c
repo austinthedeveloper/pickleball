@@ -310,8 +310,11 @@ static void park_draw_court(u8 c)
     u8 p;
     u8 near;
     u8 i;
+    u8 walk;
     s16 x;
     s16 y;
+    s16 gate_x;
+    s16 gate_y;
 
     /* A new landing spot at each end (once per 32 frames). */
     if (s_ball_end[c] != (u8)(court->rally >> 5)) {
@@ -319,9 +322,47 @@ static void park_draw_court(u8 c)
         s_ball_x[c] = left + 16 + (s16)((s_ball_end[c] * 13 + c * 7) % 25);
     }
     ball_x = s_ball_x[c];
-    if (court->state != OPEN_COURT_PLAYING) {
+    /* Walking: off to the gate in the first 64 frames of a changeover,
+     * on from it in the first 64 of a game. walk is 0 at the players'
+     * spots, 64 at the gate. */
+    walk = 0;
+    if (court->state == OPEN_COURT_CHANGEOVER) {
+        walk = (u8)(OPEN_CHANGEOVER_FRAMES - court->timer);
+        if (walk >= OPEN_WALK_FRAMES)
+            walk = 0xff;                    /* off: nobody on court */
+        else if (!walk)
+            walk = 1;
+    } else if (court->state == OPEN_COURT_PLAYING &&
+            court->age < OPEN_WALK_FRAMES) {
+        walk = (u8)(OPEN_WALK_FRAMES - court->age);
+    } else if (court->state != OPEN_COURT_PLAYING) {
+        walk = 0xff;
+    }
+    if (walk == 0xff) {
         for (i = 0; i < 8; ++i, ++oam)
             PARK_HIDE(oam);
+        PARK_HIDE(PARK_OAM_BALLS + c);
+        PARK_HIDE(PARK_OAM_SHADOWS + c);
+        return;
+    }
+    if (walk) {
+        gate_x = left + OPEN_COURT_W / 2;
+        gate_y = OPEN_COURT_TOP + OPEN_COURT_H + 6;
+        for (side = 0; side < 2; ++side) {
+            for (p = 0; p < 2; ++p, oam += 2) {
+                if (court->playing[side] >= OPPONENT_COUNT) {
+                    PARK_HIDE(oam);
+                    PARK_HIDE(oam + 1);
+                    continue;
+                }
+                x = left + (p ? 40 : 16);
+                y = side ? bottom_y : top_y;
+                x += (s16)(((gate_x - x) * (s16)walk) >> 6);
+                y += (s16)(((gate_y - y) * (s16)walk) >> 6);
+                PARK_PERSON(oam, x, y, PARK_OBJPAL_TEAMS + c * 2 + side,
+                    (s_anim >> 3) & 1, p);
+            }
+        }
         PARK_HIDE(PARK_OAM_BALLS + c);
         PARK_HIDE(PARK_OAM_SHADOWS + c);
         return;

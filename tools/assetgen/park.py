@@ -10,6 +10,14 @@ SUB = 1                     # BG palette 1 (0 is the HUD's); court n: 1 + n
 # Each court's apron shows its skill level (<3.5, 3.5-4.5, 4.5+): the
 # court's tiles use their own copy of the palette with this apron colour.
 LEVEL_APRONS = [(52, 150, 120), (190, 150, 60), (176, 66, 60)]
+# The bench crowd (M4-OPEN-02) uses a palette of its own: the park's, with
+# colours that never appear by the benches (the courts', the trees', the
+# metal) swapped for people's. Drawn with the park name, shown as this.
+CROWD = {"surface": (200, 64, 64), "kitchen": (232, 200, 64),
+         "apron": (132, 84, 176), "tree": (64, 40, 28),
+         "tree_light": (232, 172, 132), "metal": (60, 160, 172)}
+CROWD_AS = {"red": "surface", "yellow": "kitchen", "purple": "apron",
+            "hair": "tree", "skin": "tree_light", "teal": "metal"}
 
 # One 15-colour palette, so no tile ever mixes palettes.
 COLORS = {
@@ -82,11 +90,19 @@ def park_assets():
              lay["OPEN_COURT_LEFT0"] + (c + 1) * lay["OPEN_COURT_PITCH"]) // 2
         rect(x - 4, top - 8, x + 4, path_top, "path")
 
-    # Benches below the path.
-    for bx in (36, 116, 196):
-        rect(bx, path_top + 28, bx + 24, path_top + 31, "wood")
-        rect(bx + 2, path_top + 31, bx + 4, path_top + 34, "dark")
-        rect(bx + 20, path_top + 31, bx + 22, path_top + 34, "dark")
+    # Benches below the path, each with three people watching.
+    benches = (36, 116, 196)
+    shirts = ("red", "yellow", "purple", "teal")
+    for n, bx in enumerate(benches):
+        seat = path_top + 28
+        rect(bx, seat, bx + 24, seat + 3, "wood")
+        rect(bx + 2, seat + 3, bx + 4, seat + 6, "dark")
+        rect(bx + 20, seat + 3, bx + 22, seat + 6, "dark")
+        for k, px in enumerate((bx + 2, bx + 9, bx + 16)):
+            shirt = CROWD_AS[shirts[(n + k) % len(shirts)]]
+            rect(px + 1, seat - 10, px + 5, seat - 9, CROWD_AS["hair"])
+            rect(px + 1, seat - 9, px + 5, seat - 6, CROWD_AS["skin"])
+            rect(px, seat - 6, px + 6, seat, shirt)
 
     for c in range(lay["OPEN_COURTS"]):
         left = lay["OPEN_COURT_LEFT0"] + c * lay["OPEN_COURT_PITCH"]
@@ -134,10 +150,22 @@ def park_assets():
                     for x in range(tx * 8, tx * 8 + 8):
                         rows[y][x] += 16 * (1 + c)
 
+    # The benches' tile cells take the crowd palette.
+    crowd_sub = SUB + courts + 1
+    for bx in benches:
+        for ty in range((path_top + 16) // 8, (path_top + 34) // 8 + 1):
+            for tx in range(bx // 8, (bx + 23) // 8 + 1):
+                for y in range(ty * 8, ty * 8 + 8):
+                    for x in range(tx * 8, tx * 8 + 8):
+                        if rows[y][x] // 16 != SUB:
+                            raise AssetError("park: a bench overlaps a court")
+                        rows[y][x] += 16 * (crowd_sub - SUB)
+
     palette = [(0, 0, 0)] * (SUB * 16)
     palette += [(0, 0, 0)] + [COLORS[name] for name in NAMES]
     for apron in LEVEL_APRONS:
         palette += [(0, 0, 0)] + [apron if name == "apron" else COLORS[name]
                                   for name in NAMES]
+    palette += [(0, 0, 0)] + [CROWD.get(name, COLORS[name]) for name in NAMES]
     return indexed_scene("park", rows, palette, PARK_TILE_BUDGET,
-                         first_sub=SUB, last_sub=SUB + courts)
+                         first_sub=SUB, last_sub=crowd_sub)

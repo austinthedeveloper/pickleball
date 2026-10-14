@@ -27,7 +27,8 @@ enum {
     /* A point every 1 to 3 s, so a game lasts about half a minute. */
     OPEN_POINT_MIN_FRAMES = 60,
     OPEN_POINT_SPAN_FRAMES = 128,  /* a power of two (a mask, no divide) */
-    OPEN_CHANGEOVER_FRAMES = 120,   /* players walk off and on */
+    OPEN_CHANGEOVER_FRAMES = 120,   /* players walk off, then a pause */
+    OPEN_WALK_FRAMES = 64,          /* walking off, or on before a game */
     OPEN_CALL_FRAMES = 150,         /* "YOUR GAME!" before the match */
 
     /* Park layout in screen pixels (256x224). Courts run top to bottom;
@@ -67,6 +68,8 @@ typedef struct {
     u8 stack_count;
     u16 timer;                  /* frames to the next point or game */
     u8 rally;                   /* animation: frames into the rally */
+    u8 age;                     /* frames since this game began (to 255):
+                                   the new players walk on first */
 } OpenCourt;
 
 /* open_play_update results. */

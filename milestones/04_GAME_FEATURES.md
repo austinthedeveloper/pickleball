@@ -67,7 +67,9 @@ ADR-024.
 - [x] `M4-OPEN-01` Open play (from GOOFY_IDEAS.md): a park with three courts, paddle stacks, and your turn as a doubles match.
   - Accept: walk the park, stack and take back your paddle, watch the games rotate, get called and play, come back; host tests for the rules (nobody lost or doubled in a long soak); the park holds the frame budget.
   - Verified: [ADR-034](../docs/decisions/ADR-034-open-play.md), `test/test_open_play.c`, `open_play.timeline` (zero overruns in `make perf`).
-- [ ] `M4-OPEN-02` A bigger park: scrolling or more screens, people walking between courts and to the racks, a bench crowd.
+- [x] `M4-OPEN-02` A livelier park: people walk off to the gate after a game and the next four walk on before the first serve; a crowd watches from the benches.
+  - Verified: ADR-034 (amended), `test_open_play.c`, MesenCE frames of a changeover; `open_play.timeline` still has zero overruns.
+- [ ] `M4-OPEN-05` A bigger, scrolling park (more courts or a clubhouse). All eight OBJ palettes are in use (you, six teams on court, objects) and the scores are BG3 text, so it needs sprite scores or BG-baked labels, and palettes shared or swapped by what is on screen.
 - [x] `M4-OPEN-03` Partners from the stack: play with the person stacked with you (their looks and style), not a fixed regular.
   - Verified: ADR-034 (amended), `test_opponents.c: test_partner`, `test_open_play.c`; `open_play.timeline` shows "WITH PETE VS SURF CREW" and PETE's look in the match.
 - [ ] `M4-OPEN-04` A second player in the park: 2P joins and plays as your partner.

@@ -276,6 +276,9 @@ static u8 court_start_game(u8 c)
     }
     court->state = OPEN_COURT_PLAYING;
     court_next_point(court);
+    /* The new four walk on from the gate before the first serve. */
+    court->age = 0;
+    court->timer += OPEN_WALK_FRAMES;
     return OPEN_EVENT_NONE;
 }
 
@@ -290,6 +293,8 @@ static u8 court_update(u8 c)
         --court->timer;
     if (court->state == OPEN_COURT_CHANGEOVER)
         return court->timer ? OPEN_EVENT_NONE : court_start_game(c);
+    if (court->age != 255)
+        ++court->age;
     ++court->rally;
     if (court->timer)
         return OPEN_EVENT_NONE;
@@ -320,6 +325,7 @@ void open_play_begin(u16 seed)
         court->score[1] = (u8)(open_random() & 3);
         court->stack_count = 0;
         court_next_point(court);
+        court->age = 255;           /* these games are already going */
     }
     /* Each team at its level's court: the first two play, the rest wait. */
     for (entry = 0; entry < OPPONENT_COUNT; ++entry) {

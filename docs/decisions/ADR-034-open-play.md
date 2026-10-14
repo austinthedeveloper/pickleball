@@ -91,6 +91,25 @@ it changes the CPUs on a team with no human (ADR-025). Tests:
 `test_opponents.c: test_partner` and the partner check in
 `test_open_play.c`.
 
+## A livelier park
+
+*Amended 2026-10-13 (`M4-OPEN-02`):*
+
+- **Walking:** after a game, its four walk to the court's gate over the
+  first 64 frames of the changeover. A new game's four walk on from the
+  gate over its first 64 frames (`OpenCourt.age`), and its first point
+  waits for them.
+  - The positions are straight lines from spot to gate; the renderer
+    draws them on its every-third-frame court turn.
+  - The ball is hidden while anyone walks.
+- **The crowd:** three people sit on each bench, painted into BG1. Bench
+  tiles use a fifth BG palette: the park's, with the colours that never
+  appear by the benches (court, tree, metal) swapped for skin, hair, and
+  shirts. The park is now 61 tiles.
+- **Not done:** a bigger, scrolling park (`M4-OPEN-05`). All eight OBJ
+  palettes are in use, and the scores over the courts are BG3 text that
+  can't scroll with the map.
+
 ## How
 
 - `src/open_play.c`, `include/open_play.h`: the rules, pure and
@@ -171,8 +190,8 @@ frame over the singles demo.
 
 ## Not yet
 
-- The park resets on each visit. The other players only take turns
-  between courts; you never see them walk.
+- The park resets on each visit. Waiting teams aren't drawn (no OBJ
+  palette is free for them); their paddles are on the racks.
 - No bench crowd, no wandering people, and a single screen with no
   scrolling to a bigger park.
 - 2P: the second player can't stack a paddle.
