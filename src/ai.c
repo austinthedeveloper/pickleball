@@ -173,6 +173,8 @@ static u8 ai_owns_y(s16 y)
  */
 static s16 abs_s16(s16 value);
 
+/* A player within this of the net is "up" (ADR-037 shot choice). */
+#define AI_UP_DISTANCE 64
 /* A human is "up" within this of the net: their partner comes in. */
 #define AI_PAIR_UP_DISTANCE 80
 /* The pair's shift toward the ball's side, at most. */
@@ -246,6 +248,17 @@ static void ai_plan_shot(const Player *player, fx contact_z)
         g_ai.planned_shot = SHOT_STANDARD;
         g_ai.planned_depth = 0;
         s_block_volley[s_slot] = 1;
+    } else if (s_style->tactics &&
+            (!s_partner_human || to_net < AI_UP_DISTANCE) &&
+            ai_opponent_at_net(player->team, AI_UP_DISTANCE)) {
+        /* ADR-037: an opponent is up. From the back, drop it into their
+         * kitchen (a lob every third time, if the style lobs); at the net
+         * too, dink. A ball high enough is still put away (above). A
+         * human's partner drops only from the net: from the back, its
+         * drops came back at the human's feet (measured). */
+        g_ai.planned_shot = SHOT_SOFT;
+        g_ai.planned_depth = (to_net >= AI_UP_DISTANCE &&
+            s_style->lob_distance && (n % 3) == 2) ? 1 : -1;
     } else if (s_style->lob_distance &&
             ai_opponent_at_net(player->team, s_style->lob_distance)) {
         g_ai.planned_shot = SHOT_SOFT;

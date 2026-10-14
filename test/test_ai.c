@@ -359,6 +359,59 @@ static void test_teamwork(void)
     match_config_defaults();
 }
 
+/* The shot a CPU (slot 2, singles) chooses for a ball that bounced deep
+ * on its side, with P1 at `p1_from_net` px from the net; 0xff if it never
+ * swung. */
+static u8 shot_against(const AiStyle *style, s16 p1_from_net)
+{
+    PlayerIntent idle;
+    u16 n;
+
+    memset(&idle, 0, sizeof(idle));
+    match_config_defaults();
+    new_match();
+    g_ai_styles[2] = *style;
+    g_ai_slots[2].late_period = 0;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_players[0].x_fp = TO_FP(COURT_NET_X - p1_from_net);
+    g_players[2].x_fp = TO_FP(210);
+    g_players[2].y_fp = TO_FP(130);
+    g_ball.active = 1;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    g_ball.last_hitter = 0;
+    g_ball.bounce_count = 0;
+    g_ball.x_fp = TO_FP(100);
+    g_ball.y_fp = TO_FP(130);
+    g_ball.z_fp = TO_FP(12);
+    ball_launch(&g_ball, 196, 130, 30);
+    ++g_game_state.shot_serial;
+    for (n = 0; n < 90; ++n) {
+        idle.move_x = 0;
+        frame(&idle);
+        g_players[0].x_fp = TO_FP(COURT_NET_X - p1_from_net);
+        if (intents[2].hit_pressed)
+            return intents[2].shot;
+        if (g_game_state.phase != GAME_PHASE_LIVE)
+            break;
+    }
+    return 0xff;
+}
+
+/* ADR-037: with tactics, a drop (soft, short) against P1 up at the net,
+ * a normal shot against P1 back; without, a normal shot either way. */
+static void test_tactics(void)
+{
+    const AiStyle *pirates = &g_opponent_styles[3][0];
+
+    assert(pirates->tactics && !g_ai_default_style.tactics);
+    assert(shot_against(pirates, 50) == SHOT_SOFT);
+    assert(g_ai_slots[2].planned_depth == -1);
+    assert(shot_against(pirates, 100) == SHOT_STANDARD);
+    assert(shot_against(&g_ai_default_style, 50) == SHOT_STANDARD);
+    match_config_defaults();
+}
+
 int main(int argc, char **argv)
 {
     (void)argv;
@@ -374,6 +427,7 @@ int main(int argc, char **argv)
     test_cpu_returns_standard_serves();
     test_net_play();
     test_teamwork();
+    test_tactics();
     puts("ai host checks passed");
     return 0;
 }
