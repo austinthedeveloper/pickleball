@@ -19,6 +19,7 @@ MatchConfig g_match_config = {
     OPPONENT_NONE,
     OPTIONS_POINTS_DEFAULT,
     DIFFICULTY_MEDIUM,
+    0,
     0
 };
 #else
@@ -46,6 +47,7 @@ void match_config_defaults(void)
     g_match_config.points_to_win = OPTIONS_POINTS_DEFAULT;
     g_match_config.difficulty = DIFFICULTY_MEDIUM;
     g_match_config.practice = 0;
+    g_match_config.modifiers = 0;
 }
 
 void match_config_practice(void)

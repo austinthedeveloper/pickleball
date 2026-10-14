@@ -23,6 +23,8 @@ enum { COURT_VENUE_AUTO = 0 };
 void court_style_compose(u16 out[COURT_GROUND_COLORS],
     const u16 painted[COURT_GROUND_COLORS], const u8 choice[COURT_PARTS],
     u8 venue);
+/* The LAVA kitchen (ADR-033) over a composed ground palette. */
+void court_style_lava(u16 out[COURT_GROUND_COLORS]);
 /* Display name of a part's preset (at most 8 characters). */
 const char *court_style_name(u8 part, u8 preset);
 /* The venue to load: the saved choice, or for AUTO the opponent's home

@@ -47,8 +47,11 @@ sources the ROM uses).
 | PAU-02 | `test/smoke/pause.timeline`: pause, MAIN MENU, back to the title | PASS (MesenCE smoke) |
 | AMB-01 | `test_audio.c: test_ambience` and the MesenCE voice probe: the venue's loop at boot and after a venue change; stops with NO CROWD / OFF (ADR-031) | PASS |
 | SAV-04 | `test_save.c: test_migrate_v4` + MesenCE `.srm` boot: v0.4.0 saves migrate to the current layout (ADR-032) | PASS |
+| MOD-01 | `test_modifiers.c`: editor, Player Select copies, fast steps and arc, big reach, WIN BY 2 through deuce, LAVA faults and colours, no CPU in the lava across the ladder (ADR-033) | PASS |
+| MOD-02 | `test/smoke/modifiers.timeline`: all four on, the lava preview, a big-ball singles match, LAVA! when P1 walks into the kitchen | PASS (MesenCE smoke) |
+| SAV-05 | `test_save.c: test_migrate_v7` + MesenCE `.srm` boot: v0.5.0 saves migrate to layout 8 (ADR-033) | PASS |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |
-| PRF-01 | `make perf` (`test/perf.json`): 14 timelines with no dropped frames (the doubles demo within its `M4-UI-03` budget), the main loop running, and effects and ambience voices sounding | PASS (MesenCE) |
+| PRF-01 | `make perf` (`test/perf.json`): 16 timelines with no dropped frames (the doubles demo and the doubles modifiers match within their `M4-UI-03` / `M4-UI-04` budgets), the main loop running, and effects and ambience voices sounding | PASS (MesenCE) |
 
 ## Candidate
 

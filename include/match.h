@@ -27,6 +27,7 @@ typedef struct {
     u8 points_to_win;             /* ADR-025: first to this many */
     u8 difficulty;                /* ADR-025: Difficulty */
     u8 practice;                  /* ADR-028: P1 alone vs the ball machine */
+    u8 modifiers;                 /* ADR-033: MODIFIER_* bits */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */

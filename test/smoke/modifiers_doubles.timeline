@@ -1,0 +1,23 @@
+# Modifiers in doubles (ADR-033), the heaviest frames: all four on (as in
+# modifiers.timeline), then a doubles match against DAD and MOM. P1 serves
+# and stands back; the CPU partner plays with a big, fast ball on lava.
+70 71 up
+80 81 up
+90 91 start
+110 111 right
+120 121 down
+130 131 right
+140 141 down
+150 151 right
+160 161 down
+170 171 right
+210 211 b
+230 231 down   # MODIFIERS -> PRACTICE -> SINGLES -> DOUBLES
+236 237 down
+242 243 down
+250 251 start
+290 291 start  # confirm Player Select
+370 371 b      # close the intro card
+400 401 b      # serve
+shot 460
+shot 700

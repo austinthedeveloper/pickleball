@@ -1,5 +1,6 @@
 #include "input.h"
 #include "player.h"
+#include "modifiers.h"
 #include "options.h"
 #include "save.h"
 #include "select.h"
@@ -118,4 +119,6 @@ void select_apply(void)
     /* ADR-025: the saved options. */
     g_match_config.points_to_win = options_points(g_save.settings.points);
     g_match_config.difficulty = options_difficulty(g_save.settings.difficulty);
+    /* ADR-033: the saved modifiers. */
+    g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
 }

@@ -1,9 +1,11 @@
-# Options (ADR-025): Up wraps past PRACTICE (ADR-028) to OPTIONS; POINTS 5 -> 7; DIFFICULTY
+# Options (ADR-025): Up wraps past PRACTICE (ADR-028) and MODIFIERS (ADR-033)
+# to OPTIONS; POINTS 5 -> 7; DIFFICULTY
 # MEDIUM -> KID; keep with B. Then a singles match on KID, first to 7,
 # where P1 only moves (no swing presses after the serve): the KID assist
 # swings.
 70 71 up
 80 81 up
+85 86 up
 shot 85
 90 91 start
 110 111 right
@@ -13,7 +15,9 @@ shot 85
 shot 150
 160 161 b
 shot 175
-190 191 down
+180 181 down   # OPTIONS -> MODIFIERS -> PRACTICE -> SINGLES
+186 187 down
+192 193 down
 200 201 start
 240 241 start  # confirm Player Select
 shot 300

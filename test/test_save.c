@@ -302,6 +302,54 @@ static void test_migrate_v4(void)
     assert(g_save.records.wins[MATCH_SINGLES] == 0);
 }
 
+/* A v0.5.0 save (layout 7) migrates with every field; modifiers start off
+ * (ADR-033). */
+static void test_migrate_v7(void)
+{
+    SaveV7 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V7;
+    old.sequence = 4;
+    old.records.wins[MATCH_DOUBLES] = 21;
+    old.records.best_streak = 6;
+    old.records.ladder_clears = 2;
+    old.records.practice_best = 33;
+    old.settings.court[COURT_PART_KITCHEN] = 5;
+    old.settings.ladder = 7;
+    old.settings.venue = 3;
+    old.settings.points = 9;
+    old.settings.difficulty = 0;
+    old.settings.practice[2] = 2;
+    old.settings.sound = 1;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram + SAVE_COPY_STRIDE, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.wins[MATCH_DOUBLES] == 21);
+    assert(g_save.records.best_streak == 6);
+    assert(g_save.records.ladder_clears == 2);
+    assert(g_save.records.practice_best == 33);
+    assert(g_save.settings.court[COURT_PART_KITCHEN] == 5);
+    assert(g_save.settings.ladder == 7 && g_save.settings.venue == 3);
+    assert(g_save.settings.points == 9 && g_save.settings.difficulty == 0);
+    assert(g_save.settings.practice[2] == 2 && g_save.settings.sound == 1);
+    assert(g_save.settings.modifiers == 0);                 /* new */
+    memcpy(&a, g_host_sram, sizeof(a));
+    assert(save_valid(&a) && a.settings.modifiers == 0);
+
+    /* The modifiers round-trip in the current layout. */
+    g_save.settings.modifiers = 9;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.settings.modifiers == 9);
+}
+
 int main(void)
 {
     test_blank_sram_formats();
@@ -311,6 +359,7 @@ int main(void)
     test_sequence_wraps();
     test_records();
     test_migrate_v4();
+    test_migrate_v7();
     test_game_hooks();
     printf("save host checks passed\n");
     return 0;

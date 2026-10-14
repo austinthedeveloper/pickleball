@@ -5,6 +5,7 @@
 #include "collision.h"
 #include "court.h"
 #include "match.h"
+#include "modifiers.h"
 #include "options.h"
 #include "game.h"
 #include "input.h"
@@ -237,28 +238,29 @@ static fx s_reach_y;
 /* collision_ball_in_player_reach / _sweet_spot on the probe. */
 static u8 probe_in_reach(void)
 {
-    fx d = g_probe.x - s_reach_x;
-    if (d > TO_FP(HIT_REACH_X) || d < -TO_FP(HIT_REACH_X))
+    if (!HIT_WITHIN(g_probe.x - s_reach_x, g_hit_box.reach_x,
+            g_hit_box.reach_x_span))
         return 0;
-    d = g_probe.y - s_reach_y;
-    if (d > TO_FP(HIT_REACH_Y) || d < -TO_FP(HIT_REACH_Y))
+    if (!HIT_WITHIN(g_probe.y - s_reach_y, g_hit_box.reach_y,
+            g_hit_box.reach_y_span))
         return 0;
-    return g_probe.z >= 0 && g_probe.z <= TO_FP(HIT_REACH_Z);
+    /* 0 <= z <= reach: one unsigned test. */
+    return (u16)g_probe.z <= (u16)g_hit_box.reach_z;
 }
 
 static u8 probe_in_sweet_spot(void)
 {
-    fx d = g_probe.x - s_reach_x;
-    if (d > TO_FP(HIT_SWEET_X) || d < -TO_FP(HIT_SWEET_X))
+    if (!HIT_WITHIN(g_probe.x - s_reach_x, g_hit_box.sweet_x,
+            g_hit_box.sweet_x_span))
         return 0;
-    d = g_probe.y - s_reach_y;
-    return d <= TO_FP(HIT_SWEET_Y) && d >= -TO_FP(HIT_SWEET_Y);
+    return HIT_WITHIN(g_probe.y - s_reach_y, g_hit_box.sweet_y,
+        g_hit_box.sweet_y_span);
 }
 
 static u8 ai_swing_connects(const Player *player)
 {
     u8 step;
-    u8 slow;
+    u8 n;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
@@ -267,7 +269,7 @@ static u8 ai_swing_connects(const Player *player)
     /* Contact needs a bounced ball; skip the lookahead while the bounce is
      * still beyond the swing window (the common case, and the costly one). */
     if (g_ball.bounce_count == 0 &&
-        g_ai.predicted_steps > g_ai.plan_age + PLAYER_WINDUP_FRAMES +
+        g_ai.predicted_frames > g_ai.plan_age + PLAYER_WINDUP_FRAMES +
             PLAYER_ACTIVE_FRAMES)
         return 0;
     if (!g_ball.active || g_ball.rally_state != BALL_RALLY_LIVE)
@@ -276,13 +278,16 @@ static u8 ai_swing_connects(const Player *player)
     s_reach_x = player->x_fp;
     s_reach_y = player->y_fp;
     /* Probe step n is the ball at frame n's contact check: it moved on
-     * frames 0..n-1 (a slow ball skips some, ADR-025). The check is skipped
-     * at normal speed: two calls per step cost 816-tcc real frame time. */
-    slow = g_match_config.difficulty < DIFFICULTY_MEDIUM;
+     * frames 0..n-1 (a slow ball skips some, ADR-025; a fast one takes
+     * extra steps, ADR-033). At a steady pace the pace check is skipped:
+     * two calls per step cost 816-tcc real frame time. */
     for (step = 1; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES;
             ++step) {
-        if (!slow || game_ball_moves_ahead(step - 1))
+        if (!g_ball_paced)
             ai_probe_step();
+        else
+            for (n = GAME_BALL_STEPS_AHEAD(step - 1); n; --n)
+                ai_probe_step();
         if (step < PLAYER_WINDUP_FRAMES)
             continue;
         if (!probe_in_reach())
@@ -302,8 +307,11 @@ static u8 ai_swing_connects(const Player *player)
             return !g_ai.late_this_ball;   /* a late player waits it out */
         /* First contact would be stretched; take it only as a last chance. */
         while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
-            if (!slow || game_ball_moves_ahead(step))
+            if (!g_ball_paced)
                 ai_probe_step();
+            else
+                for (n = GAME_BALL_STEPS_AHEAD(step); n; --n)
+                    ai_probe_step();
             ++step;
         }
         return !probe_in_reach();
@@ -311,8 +319,18 @@ static u8 ai_swing_connects(const Player *player)
     return 0;
 }
 
+/* LAVA (ADR-033): an intercept never asks a CPU into its own kitchen (the
+ * home targets are behind it already). Tested inline: no call without it. */
+#define AI_AVOID_LAVA(player) \
+    do { \
+        if (g_match_config.modifiers & MODIFIER_LAVA) \
+            g_ai.target_x = modifiers_lava_target(g_ai.target_x, \
+                (player)->team); \
+    } while (0)
+
 static void ai_plan_intercept(const Player *player)
 {
+    u8 steps;
     s16 land_x;
     s16 land_y;
     s16 bounce_vz;
@@ -327,10 +345,17 @@ static void ai_plan_intercept(const Player *player)
         g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * 6) + behind;
         g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * 6);
         g_ai.has_target = ai_owns_y(FROM_FP(g_ball.y_fp));
+        AI_AVOID_LAVA(player);
         return;
     }
 
-    g_ai.predicted_steps = ai_predict_landing(&g_ball, &land_x, &land_y);
+    steps = ai_predict_landing(&g_ball, &land_x, &land_y);
+    /* FAST BALL takes an extra step every 3rd frame, so N steps take at
+     * least N - N/4 - 1 frames: the swing early-out stays safe. A slow ball
+     * (ADR-025) only takes longer, so its steps are a safe count. */
+    if ((g_match_config.modifiers & MODIFIER_FAST_BALL) && steps > 1)
+        steps -= (steps >> 2) + 1;
+    g_ai.predicted_frames = steps;
     g_ai.predicted_land_x = land_x;
     g_ai.predicted_land_y = land_y;
 
@@ -350,6 +375,7 @@ static void ai_plan_intercept(const Player *player)
     vy = ball_retain(g_ball.vy_fp, BALL_BOUNCE_PLANAR_256);
     g_ai.target_x = land_x + FROM_FP(vx * rise) + behind;
     g_ai.target_y = land_y + FROM_FP(vy * rise);
+    AI_AVOID_LAVA(player);
     /* Doubles: only the teammate whose lane holds the landing plays it. */
     g_ai.has_target = ai_owns_y(land_y);
 }
@@ -376,7 +402,7 @@ u8 ai_assist_swing(u8 player_index)
         return 0;
     RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
     g_ai.late_this_ball = 0;
-    g_ai.predicted_steps = 0;       /* no early-out on a stale plan */
+    g_ai.predicted_frames = 0;      /* no early-out on a stale plan */
     s_slot = player_index;
     s_has_partner = 0;
     s_partner_human = 0;

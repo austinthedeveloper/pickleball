@@ -5,9 +5,9 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
 On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **COURT**,
-**RECORDS**, **OPTIONS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
+**RECORDS**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
-Player Select (or the court, records, or options page).
+Player Select (or the court, records, options, or modifiers page).
 
 ## Practice
 
@@ -21,7 +21,8 @@ Player Select (or the court, records, or options page).
 Press B, choose your player and paddle, and the machine starts feeding. Every
 return that lands in adds to your streak (P1 on the scoreboard), and your
 best streak is saved. Ball speed and the KID swing assist follow your
-OPTIONS difficulty. Start pauses; choose MAIN MENU to leave.
+OPTIONS difficulty, and a BIG or FAST ball from MODIFIERS works here too.
+Start pauses; choose MAIN MENU to leave.
 
 ## Pause
 
@@ -47,6 +48,24 @@ background crowd), or OFF. With ALL, each venue has a quiet background:
 birds at the park, gulls and water by the lake, crickets at sunset.
 
 B or Start keeps your choices (they're saved); Y puts back what you had.
+
+## Modifiers
+
+**MODIFIERS** changes the rules for your matches. Left/Right switches a row,
+and they combine:
+
+- **BALL**: NORMAL or **BIG**, a bigger ball that is easier to reach.
+- **SPEED**: NORMAL or **FAST**, a quicker ball. (On KID, FAST is the
+  normal speed.)
+- **SCORING**: FIRST TO your POINTS, or **WIN BY 2**: at 5-5 in a game to
+  5, play on until someone leads by two.
+- **KITCHEN**: NORMAL or **LAVA**. Step into your own kitchen (the zone
+  next to the net) during a rally and you lose the point: `LAVA!`. The
+  kitchen glows on the court behind the page while LAVA is chosen. The CPUs
+  know to stay out.
+
+B or Start keeps your choices (they're saved); Y puts back what you had.
+The title demo always plays without modifiers.
 
 ## Opponents
 

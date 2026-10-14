@@ -12,10 +12,11 @@ static const u8 s_magic[4] = { 'P', 'B', '9', '4' };
 
 /* Sizes the build checks: a layout change must not slip through. */
 typedef char save_v4_is_32_bytes[sizeof(SaveV4) == 32 ? 1 : -1];
-typedef char save_v7_is_40_bytes[sizeof(SaveData) == 40 ? 1 : -1];
+typedef char save_v7_is_40_bytes[sizeof(SaveV7) == 40 ? 1 : -1];
+typedef char save_v8_is_42_bytes[sizeof(SaveData) == 42 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 40
+#define SAVE_RAW_BYTES 42
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -114,6 +115,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V7)
+        return sizeof(SaveV7);
     if (version == SAVE_V4)
         return sizeof(SaveV4);
     return 0;
@@ -156,6 +159,24 @@ static void save_migrate_v4(const u8 *raw)
     g_save.settings.difficulty = old.difficulty;
 }
 
+/* v0.5.0 to now: everything carries over; the modifiers start off. */
+static void save_migrate_v7(const u8 *raw)
+{
+    static SaveV7 old;
+
+    memcpy(&old, raw, sizeof(old));
+    save_defaults();
+    g_save.sequence = old.sequence;
+    g_save.records = old.records;
+    memcpy(g_save.settings.court, old.settings.court, COURT_PARTS);
+    g_save.settings.ladder = old.settings.ladder;
+    g_save.settings.venue = old.settings.venue;
+    g_save.settings.points = old.settings.points;
+    g_save.settings.difficulty = old.settings.difficulty;
+    memcpy(g_save.settings.practice, old.settings.practice, 3);
+    g_save.settings.sound = old.settings.sound;
+}
+
 void save_initialize(void)
 {
     static u8 raw[2][SAVE_RAW_BYTES];
@@ -182,7 +203,10 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    save_migrate_v4(raw[pick]);
+    if (raw[pick][4] == SAVE_V7)
+        save_migrate_v7(raw[pick]);
+    else
+        save_migrate_v4(raw[pick]);
     save_write();
     save_write();
 }

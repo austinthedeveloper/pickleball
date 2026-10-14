@@ -6,6 +6,7 @@
 #include "fx.h"
 #include "input.h"
 #include "match.h"
+#include "modifiers.h"
 #include "options.h"
 #include "practice.h"
 #include "game.h"
@@ -24,13 +25,25 @@ u8 g_next_opponent;
 /* shot_serial at the serve: a point's rally length is the difference.
  * Outside g_game_state, which golden traces compare byte for byte. */
 static u8 s_rally_start;
-/* Slow-ball tick (ADR-025), 0..OPTIONS_BALL_CYCLE-1; outside g_game_state. */
-static u8 s_ball_tick;
+/* Ball pace (ADR-025/033); outside g_game_state. */
+u8 g_ball_tick;
+u8 g_ball_paced;
+u8 g_ball_pace[GAME_BALL_PACE_TICKS];
 
-u8 game_ball_moves_ahead(u8 frames)
+#define GAME_SCORE_WINS(score, other) \
+    MODIFIERS_SCORE_WINS(score, other, g_match_config.points_to_win, \
+        g_match_config.modifiers)
+
+u8 game_team_won(u8 team)
 {
-    return options_ball_moves(g_match_config.difficulty,
-        (u8)(s_ball_tick + frames));
+    return GAME_SCORE_WINS(g_game_state.team_score[team],
+        g_game_state.team_score[team ^ 1]);
+}
+
+u8 game_match_point(u8 team)
+{
+    return GAME_SCORE_WINS(g_game_state.team_score[team] + 1,
+        g_game_state.team_score[team ^ 1]);
 }
 
 void game_set_phase(u8 phase)
@@ -79,27 +92,43 @@ static void game_activate_players(void)
     u8 active[MAX_PLAYERS];
     u8 doubles = g_match_config.mode == MATCH_DOUBLES;
     Player *player = g_players;
+    const AiStyle *style;
+    u8 big;
     u8 i;
 
     for (i = 0; i < MAX_PLAYERS; ++i)
         active[i] = match_slot_active(i);
-    s_ball_tick = 0;
+    g_ball_tick = 0;
+    g_ball_paced = g_match_config.difficulty < DIFFICULTY_MEDIUM ||
+        (g_match_config.modifiers & MODIFIER_FAST_BALL);
+    if (g_ball_paced)
+        for (i = 0; i < GAME_BALL_PACE_TICKS; ++i)
+            g_ball_pace[i] = modifiers_ball_steps(g_match_config.difficulty,
+                g_match_config.modifiers, i);
+    /* Only on a change: a new match frame runs near the budget (the demo
+     * restarts on one). */
+    big = (g_match_config.modifiers & MODIFIER_BIG_BALL) != 0;
+    if (big != g_hit_box.big)
+        collision_configure(big);
     input_assign_match(active, g_match_config.human);
     for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
         player->active = active[i];
         player->cpu_controlled = g_input_owners[i] == INPUT_OWNER_CPU;
-        player->max_speed_fp = player->cpu_controlled ?
-            match_slot_style(i)->speed : PLAYER_MAX_SPEED_FP;
+        player->max_speed_fp = PLAYER_MAX_SPEED_FP;
         player->palette = doubles ? i : player->team;
         player->variant = g_match_config.variant[i];
         player->paddle = g_match_config.paddle_id[i];
         if (player->cpu_controlled) {
             /* ADR-023: the slot's play style (the default CPU unless an
-             * opponent is set). */
-            g_ai_styles[i] = *match_slot_style(i);
+             * opponent is set). One lookup: this runs on a new match's
+             * frame, near the budget. */
+            style = match_slot_style(i);
+            player->max_speed_fp = style->speed;
+            g_ai_styles[i] = *style;
             /* ADR-025: difficulty changes the CPUs the humans play
-             * against, not a human's CPU partner. */
-            if (!g_match_config.human[i & 2] &&
+             * against, not a human's CPU partner; MEDIUM changes none. */
+            if (g_match_config.difficulty != DIFFICULTY_MEDIUM &&
+                    !g_match_config.human[i & 2] &&
                     !g_match_config.human[(i & 2) + 1])
                 options_apply_difficulty(&g_ai_styles[i],
                     g_match_config.difficulty);
@@ -163,15 +192,36 @@ void game_contact(u8 player_index)
 
 u8 game_step_ball(void)
 {
-    u8 events;
+    u8 events = 0;
+    u8 steps;
 
-    /* ADR-025: a slow ball skips some steps; normal speed skips the call. */
-    if (g_match_config.difficulty >= DIFFICULTY_MEDIUM)
+    /* ADR-025: a slow ball skips some steps, and FAST BALL (ADR-033) takes
+     * an extra one; a steady pace skips the call. Two steps report both
+     * steps' events. */
+    if (!g_ball_paced)
         return ball_update(0);
-    events = game_ball_moves_ahead(0) ? ball_update(0) : 0;
-    if (++s_ball_tick >= OPTIONS_BALL_CYCLE)
-        s_ball_tick = 0;
+    for (steps = GAME_BALL_STEPS_AHEAD(0); steps; --steps)
+        events |= ball_update(0);
+    if (++g_ball_tick >= OPTIONS_BALL_CYCLE)
+        g_ball_tick = 0;
     return events;
+}
+
+/* LAVA (ADR-033): a player standing in their own kitchen while the ball
+ * is in play loses the point for their team. */
+static void game_check_lava(void)
+{
+    const Player *player = g_players;
+    u8 i;
+
+    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
+        if (player->active &&
+                modifiers_in_kitchen(player->x_fp, player->y_fp,
+                    player->team)) {
+            rules_resolve_point(player->team, GAME_FAULT_LAVA);
+            return;
+        }
+    }
 }
 
 static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
@@ -179,6 +229,11 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
     u8 hit_player;
     u8 ball_events;
 
+    if (g_match_config.modifiers & MODIFIER_LAVA) {
+        game_check_lava();
+        if (g_game_state.phase != GAME_PHASE_LIVE)
+            return;
+    }
     hit_player = collision_resolve_player_hits(&g_ball, g_players, intents,
         MAX_PLAYERS);
     PROFILE_MARK(5);
@@ -226,7 +281,8 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
         !intents[0].hit_pressed)
         return;
 
-    if (g_game_state.team_score[winner] >= g_match_config.points_to_win) {
+    if (GAME_SCORE_WINS(g_game_state.team_score[winner],
+            g_game_state.team_score[winner ^ 1])) {
         g_game_state.match_winner = winner;
         game_set_phase(GAME_PHASE_MATCH_RESULT);
         /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match.

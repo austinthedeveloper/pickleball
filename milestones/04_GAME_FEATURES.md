@@ -90,8 +90,9 @@ touching the simulation.
 
 ## Play modifiers
 
-- [ ] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
+- [x] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
   - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
+  - Verified: [ADR-033](../docs/decisions/ADR-033-modifiers.md), `test/test_modifiers.c`, `test_save.c: test_migrate_v7`, `modifiers.timeline`. First to 11 was already a POINTS choice (ADR-025), so the scoring modifier is WIN BY 2. Doubles with all four drops frames (budgeted; see `M4-UI-04`).
 
 ## Polish
 
@@ -101,6 +102,9 @@ touching the simulation.
 - [x] `M4-UI-02` Doubles frame headroom: the doubles timeline peaks at scanline 223-226 of 225 (one dropped frame on the options branch, two on the old `main`).
   - Verified: ADR-026; `hud_panel` now uses the assembly fill, and doubles has zero overruns.
   - Accept: zero overruns on the doubles timeline and a 3,000-frame doubles soak, with a few scanlines of margin.
+
+- [ ] `M4-UI-04` Doubles ladder matches drop frames: 17 in a 2,400-frame match against DAD and MOM before the modifiers, 26-48 with all four modifiers (most from FAST BALL's longer swing lookahead; ADR-033). `make perf` holds `modifiers_doubles.timeline` to a budget of 60.
+  - Accept: zero overruns on that timeline, without changing the golden trace. Pairs with `M4-UI-03` (the same four-player AI cost).
 
 - [ ] `M4-UI-01` Draw the title pages faster.
   - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.

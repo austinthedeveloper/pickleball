@@ -94,7 +94,11 @@
     "machine_tl": 7,
     "machine_tr": 8,
     "machine_bl": 9,
-    "machine_br": 10
+    "machine_br": 10,
+    "big_ball_shadow": 11
+  },
+  "large_objects": {
+    "big_ball": 11
   },
   "palettes": [
     "blue",

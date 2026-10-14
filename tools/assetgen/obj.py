@@ -122,6 +122,17 @@ def obj_assets(manifest):
         header.append(f"#define FRAME_{name.upper()}_ACC_Y {ay}")
     for name, index in manifest["objects"].items():
         header.append(f"#define OBJTILE_{name.upper()} {object_base + index}")
+    # 32x32 objects in sheet slots no frame uses (the BIG BALL, ADR-033).
+    used_slots = {info["slot"] for info in frames.values()}
+    for name, slot in manifest.get("large_objects", {}).items():
+        if slot in used_slots or not 0 <= slot < slots:
+            raise AssetError(f"large object {name}: slot {slot} is taken "
+                             "or outside the sheet")
+        x0, y0 = (slot % 4) * 32, (slot // 4) * 32
+        if not any(v for row in block(rows, x0, y0, 32, 32) for v in row):
+            raise AssetError(f"large object {name} is empty")
+        tile = (slot // 4) * 64 + (slot % 4) * 4
+        header.append(f"#define OBJTILE_{name.upper()} {tile}")
     header += ["", "#endif", ""]
     return b"".join(tiles), struct.pack(f"<{len(obj_pal)}H", *obj_pal), \
         "\n".join(header), len(tiles)

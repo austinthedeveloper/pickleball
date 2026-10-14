@@ -3,6 +3,7 @@
 #include "game.h"
 #include "input.h"
 #include "match.h"
+#include "modifiers.h"
 #include "profile.h"
 #include "save.h"
 #include "sfx.h"
@@ -148,7 +149,9 @@ void audio_crowd(u8 volume)
  * that wins the match. */
 static u8 audio_applause_volume(u8 winner)
 {
-    if (g_game_state.team_score[winner & 1] >= g_match_config.points_to_win)
+    if (MODIFIERS_SCORE_WINS(g_game_state.team_score[winner & 1],
+            g_game_state.team_score[(winner & 1) ^ 1],
+            g_match_config.points_to_win, g_match_config.modifiers))
         return 15;
     if (s_rally_shots >= 10)
         return 13;

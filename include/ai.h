@@ -44,8 +44,9 @@ typedef struct {
     s16 target_y;
     s16 predicted_land_x;
     s16 predicted_land_y;
-    u8 predicted_steps;
-    u8 plan_age;          /* frames since predicted_steps was computed */
+    u8 predicted_frames;  /* until the landing: its ball steps, fewer with
+                             FAST BALL (ADR-033) */
+    u8 plan_age;          /* frames since predicted_frames was computed */
     u8 shot_counter;
     u8 plan_key;
     /* Difficulty: frames an incoming ball is ignored before reacting. */

@@ -99,7 +99,7 @@ def court_assets():
     venues = spec["venues"]
     if not 1 <= len(venues) <= 9:
         raise AssetError("venues.json: 1..9 venues")
-    color_parts = load_court_colors()
+    color_parts, _ = load_court_colors()
 
     scenes = []
     for venue in venues:

@@ -192,6 +192,10 @@ shot.
 
 ## Play modifiers
 
+**Started:** [ADR-033](decisions/ADR-033-modifiers.md) adds the MODIFIERS
+page with BIG BALL, FAST BALL, WIN BY 2, and a LAVA kitchen. The notes below
+are the original idea.
+
 Toggles that change the rules or physics for a match, e.g. big ball, fast
 ball, wind, first to 5 or 21, rally scoring, "kitchen is lava", or
 no-volley-anywhere.

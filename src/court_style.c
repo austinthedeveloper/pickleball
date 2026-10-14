@@ -61,6 +61,15 @@ void court_style_compose(u16 out[COURT_GROUND_COLORS],
     }
 }
 
+void court_style_lava(u16 out[COURT_GROUND_COLORS])
+{
+    const u8 *entries = g_court_part_entries[COURT_PART_KITCHEN];
+    u8 i;
+
+    for (i = 0; i < g_court_part_size[COURT_PART_KITCHEN]; ++i)
+        out[entries[i]] = g_court_lava_colors[i];
+}
+
 const char *court_style_name(u8 part, u8 preset)
 {
     return g_court_preset_names[preset_index(part, preset)];

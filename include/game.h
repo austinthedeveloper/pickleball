@@ -20,7 +20,8 @@ typedef enum {
     GAME_FAULT_WRONG_BOX = 3,
     GAME_FAULT_OUT = 4,
     GAME_FAULT_SECOND_BOUNCE = 5,
-    GAME_FAULT_EARLY_VOLLEY = 6
+    GAME_FAULT_EARLY_VOLLEY = 6,
+    GAME_FAULT_LAVA = 7         /* ADR-033: stepped into the kitchen */
 } GameFault;
 
 typedef enum {
@@ -79,11 +80,24 @@ void game_start_attract(void);
 void game_start_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
-/* Nonzero when the ball steps `frames` frames from now (ADR-025 slow ball;
- * 0 = during this frame's update). */
-u8 game_ball_moves_ahead(u8 frames);
-/* This frame's ball step at the difficulty's speed; BallEvent bits. */
+/* Nonzero when the ball's pace varies by frame: a slow ball (ADR-025) or
+ * FAST BALL (ADR-033). Otherwise it steps once every frame. */
+extern u8 g_ball_paced;
+/* When paced: the ball's steps (0, 1, or 2) on each tick of two cycles,
+ * and this frame's tick (0..OPTIONS_BALL_CYCLE-1). A table, not a call:
+ * the CPUs' swing lookahead reads it up to ten times a frame each. */
+enum { GAME_BALL_PACE_TICKS = 24 };
+extern u8 g_ball_pace[GAME_BALL_PACE_TICKS];
+extern u8 g_ball_tick;
+/* Ball steps `frames` frames from now (0 = during this frame's update;
+ * at most OPTIONS_BALL_CYCLE): 0, 1, or 2. Only when g_ball_paced. */
+#define GAME_BALL_STEPS_AHEAD(frames) g_ball_pace[g_ball_tick + (frames)]
+/* This frame's ball steps at the match's pace; BallEvent bits. */
 u8 game_step_ball(void);
+/* Nonzero when the team has won the match (POINTS, and WIN BY 2). */
+u8 game_team_won(u8 team);
+/* Nonzero when one more point wins the match for the team. */
+u8 game_match_point(u8 team);
 /* A player's paddle met the ball: flash, hit stop, and the HIT event. */
 void game_contact(u8 player_index);
 

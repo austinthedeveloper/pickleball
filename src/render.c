@@ -13,6 +13,7 @@
 #include "hud_tiles.h"
 #include "input.h"
 #include "match.h"
+#include "modifiers.h"
 #include "player.h"
 #include "profile.h"
 #include "projection.h"
@@ -59,6 +60,14 @@ static u8 s_ground_waits;
 static u8 s_ground_dirty;
 /* Venue on screen (ADR-024). */
 static u8 s_venue;
+/* The LAVA kitchen is on the ground palette (ADR-033). */
+static u8 s_lava_shown;
+/* A LAVA match, or its preview on the title's MODIFIERS page. A macro: it
+ * runs on a new match's frame, which is near the budget. */
+#define RENDER_LAVA_WANTED() \
+    (g_attract ? (g_title_page == TITLE_PAGE_MODIFIERS && \
+                  (g_save.settings.modifiers & MODIFIER_LAVA) != 0) : \
+     (g_match_config.modifiers & MODIFIER_LAVA) != 0)
 static u8 s_doubles;
 static u8 s_applied_mode;
 
@@ -100,6 +109,9 @@ void render_apply_match_config(void)
         s_hud_team_colors[team][1] = match_team_hud_colors(team)[1];
     }
     s_palette_dirty = 1;
+    /* Back to the title from a LAVA match, or into one: the kitchen. */
+    if (s_lava_shown != RENDER_LAVA_WANTED())
+        s_ground_pending = 1;
 }
 
 /* Every OBJ palette of the active layout, the HUD team colours, and the
@@ -203,6 +215,9 @@ static void render_compose_ground(void)
 {
     court_style_compose(s_ground_palette, s_painted_ground,
         g_save.settings.court, s_venue);
+    s_lava_shown = RENDER_LAVA_WANTED();
+    if (s_lava_shown)
+        court_style_lava(s_ground_palette);
     s_ground_dirty = 1;
     s_ground_pending = 0;
     s_ground_waits = 0;
@@ -269,6 +284,14 @@ static void render_ball(void)
     y = FROM_FP(g_ball.y_fp);
     z = FROM_FP(g_ball.z_fp);
     sx = projection_x(x, y);
+    if (g_match_config.modifiers & MODIFIER_BIG_BALL) {
+        /* BIG BALL (ADR-033): a 14 px ball centred in a 32x32 object. */
+        obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4,
+            OBJTILE_BIG_BALL_SHADOW, OBJ_ATTR(g_objpal_shadow, 0), 0);
+        obj_put(RENDER_OAM_BALL, sx - 16, y - z - 16, OBJTILE_BIG_BALL,
+            OBJ_ATTR(g_objpal_objects, 0), 1);
+        return;
+    }
     obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4, OBJTILE_BALL_SHADOW,
         OBJ_ATTR(g_objpal_shadow, 0), 0);
     obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,

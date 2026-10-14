@@ -14,6 +14,9 @@
     {"timeline": "practice.timeline", "frames": 780},
     {"timeline": "machine.timeline", "frames": 320},
     {"timeline": "pause.timeline", "frames": 390},
+    {"timeline": "modifiers.timeline", "frames": 1500},
+    {"timeline": "modifiers_doubles.timeline", "frames": 2400, "overruns": 60,
+     "note": "doubles ladder match: 26-48 by power-on state, 18 without modifiers (M4-UI-04)"},
     {"timeline": "menu.timeline", "frames": 605, "overruns": 40,
      "note": "the doubles attract demo's own budget (M4-UI-03)"}
   ],

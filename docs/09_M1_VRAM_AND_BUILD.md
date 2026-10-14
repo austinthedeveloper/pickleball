@@ -57,7 +57,8 @@ dark shadows (ADR-018). Singles keeps translucent shadows.
 
 ## OAM
 
-Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball, 1 ball shadow, 2–5 bodies
+Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball (a 32×32 large object for BIG
+BALL, ADR-033), 1 ball shadow, 2–5 bodies
 sorted nearest-first, 6–9 shadows by slot (one 8×8 each), 10 spark, 11 debug
 landing marker (debug builds), 14–17 accessories (ponytails, ADR-014),
 18–21 the practice ball machine (ADR-028), 22–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the

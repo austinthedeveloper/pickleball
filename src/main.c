@@ -1,12 +1,14 @@
 #include <snes.h>
 #include "ai.h"
 #include "audio_events.h"
+#include "collision.h"
 #include "court_style.h"
 #include "game.h"
 #include "hud_scene.h"
 #include "serve.h"
 #include "input.h"
 #include "match.h"
+#include "modifiers.h"
 #include "options.h"
 #include "pause_menu.h"
 #include "practice.h"
@@ -127,6 +129,23 @@ static void update_title_options(u16 pressed)
     }
 }
 
+/* Modifiers page (ADR-033): B or Start keeps (and saves), Y puts back.
+ * KITCHEN: LAVA previews on the court behind the page while it is open. */
+static void update_title_modifiers(u16 pressed)
+{
+    u8 *modifiers = &g_save.settings.modifiers;
+    u8 lava = *modifiers & MODIFIER_LAVA;
+    u8 result = modifiers_edit_input(modifiers, pressed);
+
+    if (result != MODIFIERS_EDIT_STAY)
+        g_title_page = TITLE_PAGE_MENU;
+    if (lava != (*modifiers & MODIFIER_LAVA) ||
+            (result != MODIFIERS_EDIT_STAY && lava))
+        render_apply_court_colors();
+    if (result == MODIFIERS_EDIT_DONE && modifiers_edit_changed(*modifiers))
+        save_write();
+}
+
 /* Practice page (ADR-028): B or Start saves any change and goes on to
  * Player Select for the session; Y puts the settings back. */
 static void update_title_practice(u16 pressed)
@@ -162,6 +181,8 @@ static void update_title(void)
         update_title_options(pressed);
     else if (g_title_page == TITLE_PAGE_PRACTICE)
         update_title_practice(pressed);
+    else if (g_title_page == TITLE_PAGE_MODIFIERS)
+        update_title_modifiers(pressed);
     else {
         if (pressed & PAD_UP)
             g_title_mode = g_title_mode ? g_title_mode - 1 :
@@ -177,6 +198,11 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
+            } else if (g_title_mode == TITLE_MODIFIERS) {
+                modifiers_edit_begin(&g_save.settings.modifiers);
+                g_title_page = TITLE_PAGE_MODIFIERS;
+                if (g_save.settings.modifiers & MODIFIER_LAVA)
+                    render_apply_court_colors();
             } else if (g_title_mode == TITLE_OPTIONS) {
                 options_edit_begin(&g_save.settings.points,
                     &g_save.settings.difficulty, &g_save.settings.sound);
@@ -290,6 +316,7 @@ int main(void)
     save_initialize();
     story_initialize();
     match_config_defaults();
+    collision_configure(0);         /* ADR-033: the normal hit box */
 #ifdef BUILD_DEBUG
     /* ADR-010: every active player has a unique palette. */
     if (!match_config_palettes_unique())

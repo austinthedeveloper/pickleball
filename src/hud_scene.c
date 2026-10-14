@@ -10,6 +10,7 @@
 #include "render_internal.h"
 #include "court_style.h"
 #include "audio_events.h"
+#include "modifiers.h"
 #include "options.h"
 #include "pause_menu.h"
 #include "practice.h"
@@ -40,9 +41,9 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-17) */
+#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-18) */
 #define TITLE_MENU_COL 12
-#define TITLE_2P_ROW 18
+#define TITLE_2P_ROW 19
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
 #define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
@@ -55,6 +56,7 @@
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
 #define OPTIONS_PAGE_ROWS 5         /* header, gap, points, difficulty, sound */
 #define PRACTICE_PAGE_ROWS 7        /* header, gap, 3 rows, gap, best */
+#define MODIFIERS_PAGE_ROWS 6       /* header, gap, 4 rows */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -81,6 +83,7 @@ static u8 s_title_part;
 static u8 s_court_row_drawn[COURT_ROWS];
 static u8 s_options_row_drawn[OPTIONS_ROWS];
 static u8 s_practice_row_drawn[PRACTICE_ROWS];
+static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
 /* Title drawing (staged steps and area parts) waits for a later frame once
@@ -94,9 +97,12 @@ static u8 s_practice_row_drawn[PRACTICE_ROWS];
 #define HUD_TITLE_MAX_WAITS 6
 static u8 s_title_waits;
 
-/* The prompt (a panel and its text) and the big logo each cost 60-90
- * scanlines: they wait for a lighter frame than a menu or page row. */
-#define HUD_TITLE_PROMPT_LIMIT 110
+/* The prompt (a panel and its text) and the big logo each cost 60-100
+ * scanlines: they wait for a lighter frame than a menu or page row. Back on
+ * the title, the demo's light frames reach about 110 here, so 110 was a
+ * coin flip; a miss waits out HUD_TITLE_MAX_WAITS and then draws on a heavy
+ * frame (235 scanlines, a dropped frame). 116 + 98 still ends by 214. */
+#define HUD_TITLE_PROMPT_LIMIT 116
 
 /* Nonzero when title drawing should wait for a lighter frame: the frame's
  * work is past `limit`, and it has not waited HUD_TITLE_MAX_WAITS yet. */
@@ -179,6 +185,8 @@ static const char *fault_word(u8 fault)
         return "2 BOUNCES";
     case GAME_FAULT_EARLY_VOLLEY:
         return "VOLLEY!";
+    case GAME_FAULT_LAVA:
+        return "LAVA!";
     default:
         return "POINT!";
     }
@@ -268,15 +276,30 @@ static void hud_draw_scores(void)
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 #define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
 
+/* WIN BY 2 (ADR-033): one more point wins from a lead. */
+static u8 hud_win_by_2_match_point(void)
+{
+    u8 left = g_game_state.team_score[0];
+    u8 right = g_game_state.team_score[1];
+    u8 points = g_match_config.points_to_win;
+
+    return (left + 1 >= points && left > right) ||
+        (right + 1 >= points && right > left);
+}
+
 /* Doubles shows ARCADE RULES under DOUBLES; either mode shows MATCH POINT
- * when a team is one point from winning (the doubles mockup). */
+ * when a team is one point from winning (the doubles mockup). Runs every
+ * match frame, close to the budget: without WIN BY 2 it is the original
+ * test plus one bit. */
 static u8 hud_sub_panel_wanted(void)
 {
     if (g_attract || g_match_config.practice)
         return 0;
     if (g_game_state.phase != GAME_PHASE_MATCH_RESULT &&
-        (g_game_state.team_score[0] == g_match_config.points_to_win - 1 ||
-         g_game_state.team_score[1] == g_match_config.points_to_win - 1))
+        ((g_match_config.modifiers & MODIFIER_WIN_BY_2) ?
+            hud_win_by_2_match_point() :
+            (g_game_state.team_score[0] == g_match_config.points_to_win - 1 ||
+             g_game_state.team_score[1] == g_match_config.points_to_win - 1)))
         return 2;
     return hud_doubles() ? 1 : 0;
 }
@@ -508,7 +531,7 @@ static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
         "  SINGLES ", "  DOUBLES ", "  COURT   ", "  RECORDS ", "  OPTIONS ",
-        "  PRACTICE"
+        "  MODIFIERS", "  PRACTICE"
     };
 
     hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
@@ -518,7 +541,7 @@ static void hud_title_item(u8 item, u8 choice)
             hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
 }
 
-/* Two menu items per call (half 0, 1, or 2). */
+/* Two menu items per call (half 0 to 3). */
 static void hud_title_menu(u8 choice, u8 half)
 {
     u8 i = half * 2;
@@ -632,6 +655,52 @@ static u8 hud_options_draw_part(u8 part)
     return part - 2 == OPTIONS_ROWS - 1;
 }
 
+/* One modifiers page row (ADR-033): the row's bit is its value. */
+static void hud_modifiers_row(u8 index)
+{
+    u8 value = (g_save.settings.modifiers >> index) & 1;
+    u8 cursor = g_modifiers_edit.row == index;
+
+    hud_setting_row(COURT_FIRST_ROW + index, modifiers_row_label(index),
+        modifiers_value_name(index, g_save.settings.modifiers), cursor);
+    s_modifiers_row_drawn[index] = value | (cursor << 7);
+}
+
+/* Modifiers page: the box, the header, then a row per frame. */
+static u8 hud_modifiers_draw_part(u8 part)
+{
+    u8 i;
+
+    if (part == 0) {
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+            MODIFIERS_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        for (i = 0; i < MODIFIERS_ROWS; ++i)
+            s_modifiers_row_drawn[i] = 0xff;
+        return 0;
+    }
+    if (part == 1) {
+        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "MODIFIERS");
+        return 0;
+    }
+    hud_modifiers_row(part - 2);
+    return part - 2 == MODIFIERS_ROWS - 1;
+}
+
+/* After the modifiers page is drawn: a changed row, one per frame. */
+static void hud_modifiers_refresh(void)
+{
+    u8 index;
+
+    for (index = 0; index < MODIFIERS_ROWS; ++index) {
+        if (s_modifiers_row_drawn[index] !=
+                (((g_save.settings.modifiers >> index) & 1) |
+                 ((g_modifiers_edit.row == index) << 7))) {
+            hud_modifiers_row(index);
+            return;
+        }
+    }
+}
+
 /* One practice page row (ADR-028). */
 static void hud_practice_row(u8 index)
 {
@@ -700,22 +769,20 @@ static void hud_options_refresh(void)
 }
 
 /* Title views for the area: the menu choice (bits 0-2) and 2P (bit 3), or
- * a page. */
-#define HUD_TITLE_VIEW_COURT 0x80
-#define HUD_TITLE_VIEW_RECORDS 0x81
-#define HUD_TITLE_VIEW_OPTIONS 0x82
-#define HUD_TITLE_VIEW_PRACTICE 0x83
+ * a page: 0x7f + its TITLE_PAGE_*. */
+#define HUD_TITLE_VIEW_PAGE(page) (0x7f + (page))
+#define HUD_TITLE_VIEW_COURT HUD_TITLE_VIEW_PAGE(TITLE_PAGE_COURT)
+#define HUD_TITLE_VIEW_RECORDS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_RECORDS)
+#define HUD_TITLE_VIEW_OPTIONS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_OPTIONS)
+#define HUD_TITLE_VIEW_PRACTICE HUD_TITLE_VIEW_PAGE(TITLE_PAGE_PRACTICE)
+#define HUD_TITLE_VIEW_MODIFIERS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_MODIFIERS)
 
+/* Runs on every idle title frame behind the demo: one test, not one per
+ * page. */
 static u8 hud_title_view(void)
 {
-    if (g_title_page == TITLE_PAGE_COURT)
-        return HUD_TITLE_VIEW_COURT;
-    if (g_title_page == TITLE_PAGE_RECORDS)
-        return HUD_TITLE_VIEW_RECORDS;
-    if (g_title_page == TITLE_PAGE_OPTIONS)
-        return HUD_TITLE_VIEW_OPTIONS;
-    if (g_title_page == TITLE_PAGE_PRACTICE)
-        return HUD_TITLE_VIEW_PRACTICE;
+    if (g_title_page != TITLE_PAGE_MENU)
+        return HUD_TITLE_VIEW_PAGE(g_title_page);
     return g_title_mode | (g_title_2p << 3);
 }
 
@@ -765,8 +832,12 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         return hud_options_draw_part(part);
     if (view == HUD_TITLE_VIEW_PRACTICE)
         return hud_practice_draw_part(part);
+    if (view == HUD_TITLE_VIEW_MODIFIERS)
+        return hud_modifiers_draw_part(part);
     if (view != HUD_TITLE_VIEW_RECORDS) {
-        if (part < 3) {
+        /* Parts stay at most two rows: each waits for a frame under
+         * HUD_TITLE_SCANLINE_LIMIT, which leaves room for no more. */
+        if (part < 4) {
             hud_title_menu(view & 7, part);
             return 0;
         }
@@ -840,12 +911,17 @@ static void hud_title_area_update(void)
 
     if (s_title_view == view) {
         if (s_title_part == 0xff) {
+            /* A drawn page redraws a changed row; a drawn menu, nothing. */
+            if (view < HUD_TITLE_VIEW_COURT)
+                return;
             if (view == HUD_TITLE_VIEW_COURT)
                 hud_court_refresh();
             else if (view == HUD_TITLE_VIEW_OPTIONS)
                 hud_options_refresh();
             else if (view == HUD_TITLE_VIEW_PRACTICE)
                 hud_practice_refresh();
+            else if (view == HUD_TITLE_VIEW_MODIFIERS)
+                hud_modifiers_refresh();
             return;
         }
         if (hud_title_draw_part(view, s_title_part))
@@ -866,7 +942,8 @@ static void hud_title_area_update(void)
 
 static const char *hud_title_prompt(u8 page)
 {
-    if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS)
+    if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS ||
+            page == TITLE_PAGE_MODIFIERS)
         return "@ OK  Y CANCEL";
     if (page == TITLE_PAGE_PRACTICE)
         return "@ PLAY  Y BACK";
@@ -1060,5 +1137,6 @@ void hud_scene_initialize(void)
     s_scene_step = HUD_STEP_DONE;
     s_prev_scene = 0xff;
     s_title_view = HUD_TITLE_UNKNOWN;
+    s_title_part = 0;
     s_title_waits = 0;
 }

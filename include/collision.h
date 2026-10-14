@@ -49,6 +49,32 @@ enum {
     HIT_TARGET_DINK_LEFT = COURT_MIRROR_X(HIT_TARGET_DINK_RIGHT)
 };
 
+/* The hit box for this match, in 12.4 units: HIT_REACH_* and HIT_SWEET_*,
+ * each MODIFIER_BIG_REACH larger for BIG BALL (ADR-033). The spans are
+ * twice the half-widths: -r <= d <= r is one unsigned test,
+ * (u16)(d + r) <= span, which the swing lookahead runs dozens of times a
+ * frame. */
+typedef struct {
+    fx reach_x;
+    fx reach_y;
+    fx reach_z;
+    fx sweet_x;
+    fx sweet_y;
+    u16 reach_x_span;
+    u16 reach_y_span;
+    u16 sweet_x_span;
+    u16 sweet_y_span;
+    u8 big;                     /* configured for BIG BALL */
+} HitBox;
+
+/* Nonzero when -half <= d <= half, given span = 2 * half. */
+#define HIT_WITHIN(d, half, span) ((u16)((d) + (half)) <= (span))
+
+extern HitBox g_hit_box;
+
+/* Sets g_hit_box for a normal (0) or big (1) ball; main() configures the
+ * normal one at boot. */
+void collision_configure(u8 big_ball);
 u8 collision_ball_in_player_reach(const Player *player, const Ball *ball);
 u8 collision_ball_in_sweet_spot(const Player *player, const Ball *ball);
 /* Returns the contacting player index plus one, or zero for no contact. */

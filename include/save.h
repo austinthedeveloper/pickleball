@@ -13,10 +13,11 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 7,           /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 8,           /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
-                                   7: practice (ADR-028). Shipped: 4 in
-                                   v0.4.0, 7 in v0.5.0 (ADR-032). */
+                                   7: practice (ADR-028); 8: modifiers
+                                   (ADR-033). Shipped: 4 in v0.4.0, 7 in
+                                   v0.5.0 (ADR-032). */
     SAVE_COUNTER_MAX = 9999     /* counters saturate; four digits on screen */
 };
 
@@ -41,6 +42,9 @@ typedef struct {
     u8 difficulty;              /* Difficulty (ADR-025) */
     u8 practice[3];             /* shot, target, rate (ADR-028) */
     u8 sound;                   /* AUDIO_* (ADR-029); 0 ALL in older saves */
+    u8 modifiers;               /* MODIFIER_* bits (ADR-033) */
+    u8 reserved;                /* keeps the checksum on an even offset, so
+                                   host and SNES layouts match */
 } SaveSettings;
 
 typedef struct {
@@ -61,7 +65,7 @@ extern SaveData g_save;
  * SAVE_VERSION is bumped, the outgoing SaveData is frozen here as
  * SaveV<old version> and gets a migration step in save.c.
  */
-enum { SAVE_V4 = 4 };           /* v0.4.0 */
+enum { SAVE_V4 = 4, SAVE_V7 = 7 };  /* v0.4.0, v0.5.0 */
 
 typedef struct {
     u8 magic[4];
@@ -81,6 +85,26 @@ typedef struct {
     u8 reserved;
     u16 checksum;
 } SaveV4;
+
+/* v0.5.0: SaveData before the modifiers. */
+typedef struct {
+    u8 court[COURT_PARTS];
+    u8 ladder;
+    u8 venue;
+    u8 points;
+    u8 difficulty;
+    u8 practice[3];
+    u8 sound;
+} SaveSettingsV7;
+
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 7 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettingsV7 settings;
+    u16 checksum;
+} SaveV7;
 
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */

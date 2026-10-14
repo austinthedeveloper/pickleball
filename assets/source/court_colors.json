@@ -3,6 +3,7 @@
   "min_line_contrast": 2.5,
   "min_ball_contrast": 2.0,
   "ball_color": [224, 232, 48],
+  "lava": [196, 64, 24],
   "parts": {
     "surface": {
       "entries": [4, 15],

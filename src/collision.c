@@ -1,5 +1,34 @@
 #include "collision.h"
+#include "modifiers.h"
 #include "paddle_stats.h"
+
+#ifdef HOST_TEST
+/* Host tests may collide before any match configures it. */
+HitBox g_hit_box = {
+    TO_FP(HIT_REACH_X), TO_FP(HIT_REACH_Y), TO_FP(HIT_REACH_Z),
+    TO_FP(HIT_SWEET_X), TO_FP(HIT_SWEET_Y),
+    2 * TO_FP(HIT_REACH_X), 2 * TO_FP(HIT_REACH_Y),
+    2 * TO_FP(HIT_SWEET_X), 2 * TO_FP(HIT_SWEET_Y), 0
+};
+#else
+HitBox g_hit_box;
+#endif
+
+void collision_configure(u8 big_ball)
+{
+    fx grow = big_ball ? TO_FP(MODIFIER_BIG_REACH) : 0;
+
+    g_hit_box.reach_x = TO_FP(HIT_REACH_X) + grow;
+    g_hit_box.reach_y = TO_FP(HIT_REACH_Y) + grow;
+    g_hit_box.reach_z = TO_FP(HIT_REACH_Z) + grow;
+    g_hit_box.sweet_x = TO_FP(HIT_SWEET_X) + grow;
+    g_hit_box.sweet_y = TO_FP(HIT_SWEET_Y) + grow;
+    g_hit_box.reach_x_span = (u16)(2 * g_hit_box.reach_x);
+    g_hit_box.reach_y_span = (u16)(2 * g_hit_box.reach_y);
+    g_hit_box.sweet_x_span = (u16)(2 * g_hit_box.sweet_x);
+    g_hit_box.sweet_y_span = (u16)(2 * g_hit_box.sweet_y);
+    g_hit_box.big = big_ball;
+}
 
 static fx absolute_fp(fx value)
 {
@@ -94,24 +123,22 @@ u8 collision_ball_in_player_reach(const Player *player, const Ball *ball)
         return 0;
     if (ball->rally_state != BALL_RALLY_LIVE)
         return 0;
-    if (absolute_fp(ball->x_fp - player->x_fp) > TO_FP(HIT_REACH_X))
+    if (!HIT_WITHIN(ball->x_fp - player->x_fp, g_hit_box.reach_x,
+            g_hit_box.reach_x_span))
         return 0;
-    if (absolute_fp(ball->y_fp - player->y_fp) > TO_FP(HIT_REACH_Y))
+    if (!HIT_WITHIN(ball->y_fp - player->y_fp, g_hit_box.reach_y,
+            g_hit_box.reach_y_span))
         return 0;
-    if (ball->z_fp < 0)
-        return 0;
-    if (ball->z_fp > TO_FP(HIT_REACH_Z))
-        return 0;
-    return 1;
+    /* 0 <= z <= reach: one unsigned test. */
+    return (u16)ball->z_fp <= (u16)g_hit_box.reach_z;
 }
 
 u8 collision_ball_in_sweet_spot(const Player *player, const Ball *ball)
 {
-    if (absolute_fp(ball->x_fp - player->x_fp) > TO_FP(HIT_SWEET_X))
-        return 0;
-    if (absolute_fp(ball->y_fp - player->y_fp) > TO_FP(HIT_SWEET_Y))
-        return 0;
-    return 1;
+    return HIT_WITHIN(ball->x_fp - player->x_fp, g_hit_box.sweet_x,
+            g_hit_box.sweet_x_span) &&
+        HIT_WITHIN(ball->y_fp - player->y_fp, g_hit_box.sweet_y,
+            g_hit_box.sweet_y_span);
 }
 
 u8 collision_resolve_player_hits(Ball *ball, Player players[MAX_PLAYERS],
