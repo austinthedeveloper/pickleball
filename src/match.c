@@ -112,6 +112,10 @@ const AiStyle *match_slot_style(u8 slot)
 
     if (match_slot_partner(slot))
         return &g_opponent_styles[g_match_config.partner][0];
+    /* ADR-035: a CPU partnering a human plays the smarter partner style. */
+    if (member == 0xff && g_match_config.human[slot ^ 1] &&
+            !g_match_config.human[slot])
+        return &g_ai_partner_style;
     if (member == 0xff)
         return &g_ai_default_style;
     return &g_opponent_styles[g_match_config.opponent][member];

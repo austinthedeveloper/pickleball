@@ -4,6 +4,7 @@
 #include "ai.h"
 #include "court.h"
 #include "game.h"
+#include "match.h"
 #include "serve.h"
 #include "test_support.h"
 
@@ -191,6 +192,91 @@ static void test_cpu_returns_standard_serves(void)
     assert(returned >= 8);
 }
 
+/* A flat ball from P1 passing the CPU (at its kitchen-line spot) at
+ * about 15 px, in a rally at the given bounce stage. Returns 1 if the CPU
+ * hit it before it bounced, 0 if after, -1 if not at all; *fault is the
+ * point's fault against the CPU's team, if any. */
+static int volley_case(const AiStyle *style, u8 required, u8 serving,
+    u8 *fault)
+{
+    PlayerIntent idle;
+    u8 serial;
+    u8 bounces;
+    u16 n;
+
+    memset(&idle, 0, sizeof(idle));
+    match_config_defaults();
+    new_match();
+    g_ai_styles[2] = *style;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_game_state.required_bounce = required;
+    g_game_state.serving_team = serving;
+    g_players[2].x_fp = TO_FP(COURT_NET_X + 44);
+    g_players[2].y_fp = TO_FP(130);
+    g_players[2].state = PLAYER_STATE_IDLE;
+    g_players[0].x_fp = TO_FP(40);
+    g_ball.active = 1;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    g_ball.last_hitter = 0;
+    g_ball.bounce_count = 0;
+    g_ball.x_fp = TO_FP(60);
+    g_ball.y_fp = TO_FP(130);
+    g_ball.z_fp = TO_FP(10);
+    ball_launch(&g_ball, 230, 130, 24);
+    ++g_game_state.shot_serial;
+    serial = g_game_state.shot_serial;
+    *fault = GAME_FAULT_NONE;
+    for (n = 0; n < 120; ++n) {
+        bounces = g_ball.bounce_count;
+        frame(&idle);
+        if (g_game_state.phase == GAME_PHASE_POINT_RESULT) {
+            if (g_game_state.point_winner == 0)
+                *fault = g_game_state.last_fault;
+            return -1;
+        }
+        if (g_game_state.shot_serial != serial && g_ball.last_hitter == 2)
+            return bounces == 0;
+    }
+    return -1;
+}
+
+/* ADR-035 net play: a volleying style volleys a ball passing at a good
+ * height once the bounces are done, never before (no early-volley
+ * faults), and the default CPU never volleys. */
+static void test_net_play(void)
+{
+    const AiStyle *twins = &g_opponent_styles[6][0];
+    u8 fault;
+    int r;
+
+    assert(twins->volley && twins->net == 44);
+    r = volley_case(twins, GAME_REQUIRED_BOUNCE_NONE, 0, &fault);
+    assert(r == 1);
+    /* The return still has to bounce for the serving team. */
+    r = volley_case(twins, GAME_REQUIRED_BOUNCE_RETURN, 1, &fault);
+    assert(r != 1 && fault != GAME_FAULT_EARLY_VOLLEY);
+    /* The default CPU lets it bounce. */
+    r = volley_case(&g_ai_default_style, GAME_REQUIRED_BOUNCE_NONE, 0,
+        &fault);
+    assert(r != 1);
+    /* Coming in: with the ball going away, home is the style's net spot;
+     * while the serving team must still let the return bounce, it is not. */
+    match_config_defaults();
+    new_match();
+    g_ai_styles[2] = *twins;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_ball.last_hitter = 2;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    ai_update(2, &intents[2]);
+    assert(g_ai_slots[2].target_x == COURT_NET_X + 44);
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_RETURN;
+    g_game_state.serving_team = 1;
+    ai_update(2, &intents[2]);
+    assert(g_ai_slots[2].target_x == COURT_NET_X + twins->recover);
+    match_config_defaults();
+}
+
 int main(int argc, char **argv)
 {
     (void)argv;
@@ -204,6 +290,7 @@ int main(int argc, char **argv)
     test_probe_matches_ball();
     test_cpu_uses_shared_player_path_and_bounds();
     test_cpu_returns_standard_serves();
+    test_net_play();
     puts("ai host checks passed");
     return 0;
 }

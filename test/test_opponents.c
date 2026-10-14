@@ -39,7 +39,8 @@ static void test_config(void)
     assert(g_match_config.variant[3] == g_opponent_variant[o][1]);
     assert(g_match_config.paddle_id[3] == g_opponent_paddle[o][1]);
     assert(match_slot_style(0) == &g_ai_default_style);
-    assert(match_slot_style(1) == &g_ai_default_style);
+    /* P1's CPU partner plays the partner style (ADR-035). */
+    assert(match_slot_style(1) == &g_ai_partner_style);
     assert(match_slot_style(2) == &g_opponent_styles[o][0]);
     assert(match_slot_style(3) == &g_opponent_styles[o][1]);
     match_compose_palette(3, pal);
@@ -237,9 +238,9 @@ static void test_partner(void)
     game_new_match();
     assert(memcmp(&g_ai_styles[1], &g_opponent_styles[7][0],
         sizeof(AiStyle)) == 0);
-    /* No partner: the default CPU, as before. */
+    /* No partner from the stack: the smarter partner style (ADR-035). */
     match_config_partner(OPPONENT_NONE);
-    assert(match_slot_style(1) == &g_ai_default_style);
+    assert(match_slot_style(1) == &g_ai_partner_style);
     match_config_defaults();
     assert(g_match_config.partner == OPPONENT_NONE);
 }

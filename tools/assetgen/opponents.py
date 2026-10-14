@@ -6,7 +6,7 @@ from .common import ROOT, AssetError, bgr15, paths
 
 STYLE_KEYS = ("late_period", "reaction", "dink_period", "lob_distance",
               "putaway_z", "putaway_distance", "aim", "depth", "recover",
-              "speed")
+              "speed", "volley", "net")
 AIMS = ("away", "body", "mix")
 DEPTHS = ("alternate", "deep")
 # Inclusive ranges for the numeric knobs.
@@ -19,6 +19,8 @@ RANGES = {
     "putaway_distance": (0, 128),
     "recover": (40, 100),        # home distance behind the net
     "speed": (12, 24),           # <= PLAYER_MAX_SPEED_FP
+    "volley": (0, 1),            # ADR-035: volleys once the bounces are done
+    "net": (0, 100),             # ADR-035: home distance once in; 0 stays back
 }
 VARIANTS = ("male", "female")
 NAME_CELLS = 9                   # "VS " + name in the 12-cell centre panel
@@ -51,6 +53,8 @@ def check_default_style(style):
         "depth": "alternate",
         "recover": header_constant("include/ai.h", "AI_RECOVER_X") - net,
         "speed": header_constant("include/player.h", "PLAYER_CPU_MAX_SPEED_FP"),
+        "volley": 0,
+        "net": 0,
     }
     for key, value in expected.items():
         if style.get(key) != value:
@@ -64,6 +68,10 @@ def check_style(where, style):
     for key, (low, high) in RANGES.items():
         if not low <= style[key] <= high:
             raise AssetError(f"{where}: {key} {style[key]} outside {low}..{high}")
+    # ADR-035: coming in stops behind the LAVA line (kitchen + 8, ADR-033).
+    if style["net"] and style["net"] < 44:
+        raise AssetError(f"{where}: net {style['net']} is inside 44 (the "
+                         "kitchen line and the LAVA margin)")
     if style["aim"] not in AIMS:
         raise AssetError(f"{where}: aim is one of {', '.join(AIMS)}")
     if style["depth"] not in DEPTHS:
@@ -117,6 +125,7 @@ def opponents_header():
         (paths.src / "venues.json").read_text("utf-8"))["venues"]]
     check_style("default_style", spec["default_style"])
     check_default_style(spec["default_style"])
+    check_style("partner_style", spec["partner_style"])
 
     opponents = spec["opponents"]
     if not 1 <= len(opponents) <= 9:
@@ -192,9 +201,13 @@ def opponents_header():
              "    u8 depth;             /* AI_DEPTH_* for standard shots */",
              "    u8 recover;           /* home x distance behind the net */",
              "    u8 speed;             /* max speed, 12.4 px/frame units */",
+             "    u8 volley;            /* ADR-035: volleys once the bounces are done */",
+             "    u8 net;               /* ADR-035: home distance once in; 0 stays back */",
              "} AiStyle;", "",
              "#ifdef OPPONENTS_DEFINE",
              f"const AiStyle g_ai_default_style = {style_row(spec['default_style'])};",
+             "/* ADR-035: a human's CPU partner (the default look, smarter). */",
+             f"const AiStyle g_ai_partner_style = {style_row(spec['partner_style'])};",
              "/* [opponent][captain, partner] */",
              "const AiStyle g_opponent_styles[OPPONENT_COUNT][2] = {"]
     lines += ["    { " + ", ".join(row) + " }," for row in styles]
@@ -228,6 +241,7 @@ def opponents_header():
                  ", ".join(map(str, homes)) + " };")
     lines += ["#else",
               "extern const AiStyle g_ai_default_style;",
+              "extern const AiStyle g_ai_partner_style;",
               "extern const AiStyle g_opponent_styles[OPPONENT_COUNT][2];",
               "extern const u16 g_opponent_palettes[OPPONENT_COUNT][2][16];",
               "extern const u8 g_opponent_variant[OPPONENT_COUNT][2];",

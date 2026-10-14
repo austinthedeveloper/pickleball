@@ -100,6 +100,12 @@ a CPU partner play the whole team. Win and press B to face the next opponent
 straight away; lose and B is a rematch. After the Champs the
 ladder starts over. The records page shows your place.
 
+The higher you climb, the more your opponents play the net: from the Gym
+Bros on they move up once the serve and return have bounced and volley
+balls out of the air, and the Pirates through the Twins play right at the
+kitchen line. Your own CPU partner comes up to volley too. Lob them, or
+keep the ball low at their feet.
+
 Before a ladder match, the opponent introduces themselves (press B to
 play). After the match they have something to say, and when you win the
 next opponent is named. Beat the Champs to clear the ladder: the records page

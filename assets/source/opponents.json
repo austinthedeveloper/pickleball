@@ -1,9 +1,14 @@
 {
-  "comment": "CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
-    "depth": "alternate", "recover": 80, "speed": 19
+    "depth": "alternate", "recover": 80, "speed": 19, "volley": 0, "net": 0
+  },
+  "partner_style": {
+    "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
+    "putaway_z": 14, "putaway_distance": 48, "aim": "away",
+    "depth": "alternate", "recover": 80, "speed": 19, "volley": 1, "net": 48
   },
   "skins": {
     "light": [[22, 13, 9], [30, 21, 15], [31, 26, 20]],
@@ -27,7 +32,8 @@
           "style": {"late_period": 3, "reaction": 6, "dink_period": 6,
                     "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40,
                     "aim": "away", "depth": "alternate", "recover": 84,
-                    "speed": 16}
+                    "speed": 16,
+                    "volley": 0, "net": 0}
         },
         {
           "name": "KIDDO", "variant": "female", "paddle": "red", "skin": "light",
@@ -37,7 +43,8 @@
           "style": {"late_period": 3, "reaction": 0, "dink_period": 0,
                     "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 64,
-                    "speed": 22}
+                    "speed": 22,
+                    "volley": 0, "net": 0}
         }
       ]
     },
@@ -56,7 +63,8 @@
           "style": {"late_period": 6, "reaction": 5, "dink_period": 3,
                     "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40,
                     "aim": "away", "depth": "deep", "recover": 88,
-                    "speed": 15}
+                    "speed": 15,
+                    "volley": 0, "net": 0}
         },
         {
           "name": "WALT", "variant": "male", "paddle": "wood", "skin": "light",
@@ -66,7 +74,8 @@
           "style": {"late_period": 6, "reaction": 5, "dink_period": 3,
                     "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40,
                     "aim": "away", "depth": "deep", "recover": 88,
-                    "speed": 15}
+                    "speed": 15,
+                    "volley": 0, "net": 0}
         }
       ]
     },
@@ -85,7 +94,8 @@
           "style": {"late_period": 2, "reaction": 10, "dink_period": 0,
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
-                    "speed": 15}
+                    "speed": 15,
+                    "volley": 1, "net": 64}
         },
         {
           "name": "CHAD", "variant": "male", "paddle": "red", "skin": "light",
@@ -95,7 +105,8 @@
           "style": {"late_period": 2, "reaction": 10, "dink_period": 0,
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
-                    "speed": 15}
+                    "speed": 15,
+                    "volley": 1, "net": 64}
         }
       ]
     },
@@ -114,7 +125,8 @@
           "style": {"late_period": 5, "reaction": 2, "dink_period": 0,
                     "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80,
                     "aim": "body", "depth": "deep", "recover": 80,
-                    "speed": 18}
+                    "speed": 18,
+                    "volley": 1, "net": 44}
         },
         {
           "name": "BILGE", "variant": "male", "paddle": "gold", "skin": "light",
@@ -124,7 +136,8 @@
           "style": {"late_period": 5, "reaction": 2, "dink_period": 0,
                     "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80,
                     "aim": "body", "depth": "deep", "recover": 80,
-                    "speed": 18}
+                    "speed": 18,
+                    "volley": 1, "net": 44}
         }
       ]
     },
@@ -143,7 +156,8 @@
           "style": {"late_period": 7, "reaction": 4, "dink_period": 2,
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
-                    "speed": 18}
+                    "speed": 18,
+                    "volley": 1, "net": 44}
         },
         {
           "name": "VLAD", "variant": "male", "paddle": "wood", "skin": "pale",
@@ -153,7 +167,8 @@
           "style": {"late_period": 7, "reaction": 4, "dink_period": 2,
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
-                    "speed": 18}
+                    "speed": 18,
+                    "volley": 1, "net": 44}
         }
       ]
     },
@@ -172,7 +187,8 @@
           "style": {"late_period": 5, "reaction": 0, "dink_period": 5,
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "mix", "depth": "alternate", "recover": 92,
-                    "speed": 20}
+                    "speed": 20,
+                    "volley": 1, "net": 44}
         },
         {
           "name": "LANI", "variant": "female", "paddle": "blue", "skin": "deep",
@@ -182,7 +198,8 @@
           "style": {"late_period": 5, "reaction": 0, "dink_period": 5,
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "mix", "depth": "alternate", "recover": 92,
-                    "speed": 20}
+                    "speed": 20,
+                    "volley": 1, "net": 44}
         }
       ]
     },
@@ -201,7 +218,8 @@
           "style": {"late_period": 10, "reaction": 0, "dink_period": 4,
                     "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 50,
-                    "speed": 21}
+                    "speed": 21,
+                    "volley": 1, "net": 44}
         },
         {
           "name": "MIA", "variant": "female", "paddle": "gold", "skin": "deep",
@@ -211,7 +229,8 @@
           "style": {"late_period": 10, "reaction": 0, "dink_period": 4,
                     "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 50,
-                    "speed": 21}
+                    "speed": 21,
+                    "volley": 1, "net": 44}
         }
       ]
     },
@@ -230,7 +249,8 @@
           "style": {"late_period": 16, "reaction": 0, "dink_period": 3,
                     "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "away", "depth": "alternate", "recover": 80,
-                    "speed": 22}
+                    "speed": 22,
+                    "volley": 1, "net": 60}
         },
         {
           "name": "JADE", "variant": "female", "paddle": "gold", "skin": "tan",
@@ -240,7 +260,8 @@
           "style": {"late_period": 14, "reaction": 0, "dink_period": 3,
                     "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "away", "depth": "alternate", "recover": 80,
-                    "speed": 22}
+                    "speed": 22,
+                    "volley": 1, "net": 60}
         }
       ]
     }

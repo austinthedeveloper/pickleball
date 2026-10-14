@@ -26,6 +26,23 @@ static u8 s_partner_human;
 
 static s16 s_impact_vz;
 
+/* The planned contact is a volley (set by ai_swing_connects), and the
+ * slot's swing is a block volley: neutral and down the middle, held
+ * through its active frames (ADR-035). Outside AiState (golden traces). */
+static u8 s_contact_volley;
+static u8 s_block_volley[MAX_PLAYERS];
+/* A new shot's volley check waits for the slot's next think: the frame a
+ * shot is planned already pays for its landing prediction (ADR-035). */
+static u8 s_volley_check[MAX_PLAYERS];
+
+/* Net play (ADR-035): volleys are legal once both bounces are done. */
+#define AI_VOLLEYS_LEGAL() \
+    (g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_NONE)
+#define AI_VOLLEYS(style) ((style)->volley && AI_VOLLEYS_LEGAL())
+/* A volley is played between these heights (12.4): lower is a half-volley
+ * the player lets bounce, higher is over their head. */
+#define AI_VOLLEY_MIN_Z TO_FP(4)
+
 /*
  * Landing cache: a flight is fixed from a hit or a bounce to the next one,
  * so its landing is predicted once and shared. Every CPU on the receiving
@@ -54,6 +71,13 @@ void ai_initialize(void)
     }
     s_style = &g_ai_styles[0];
     s_land_valid = 0;
+    /* RAM is not cleared at power-on: a stale block volley would centre
+     * the first serve. */
+    s_contact_volley = 0;
+    for (i = 0; i < MAX_PLAYERS; ++i) {
+        s_block_volley[i] = 0;
+        s_volley_check[i] = 0;
+    }
 }
 
 /*
@@ -162,16 +186,24 @@ static u8 ai_opponent_at_net(u8 team, s16 distance)
  * style (ADR-023); the default style is 14 px / 48 px, 44 px, every 4th.
  * contact_z is the ball height at contact.
  */
+
 static void ai_plan_shot(const Player *player, fx contact_z)
 {
     u8 n = g_ai.shot_counter;
     u8 dink = s_style->dink_period;
     s16 to_net = abs_s16(FROM_FP(player->x_fp) - COURT_NET_X);
 
+    s_block_volley[s_slot] = 0;
     if (contact_z >= TO_FP(s_style->putaway_z) &&
             to_net < s_style->putaway_distance) {
         g_ai.planned_shot = SHOT_DRIVE;
         g_ai.planned_depth = 0;
+    } else if (s_contact_volley) {
+        /* A volley met off-centre sprays long and wide (ADR-019): block it
+         * back with control instead of going for depth and a line. */
+        g_ai.planned_shot = SHOT_STANDARD;
+        g_ai.planned_depth = 0;
+        s_block_volley[s_slot] = 1;
     } else if (s_style->lob_distance &&
             ai_opponent_at_net(player->team, s_style->lob_distance)) {
         g_ai.planned_shot = SHOT_SOFT;
@@ -195,7 +227,9 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
     /* First active player on the other team (slots 0-1 left, 2-3 right). */
     if (!opponent->active)
         ++opponent;
-    if (s_has_partner)
+    if (s_block_volley[s_slot])
+        intent->aim_y = 0;              /* a block volley: down the middle */
+    else if (s_has_partner)
         /* Doubles: both opponents get the ball. Aiming away from the first
          * one would starve slot 0 (the human). Lanes go bottom, top, top,
          * bottom by shot count. */
@@ -304,15 +338,18 @@ static u8 ai_swing_connects(const Player *player)
 {
     u8 step = 1;
     u8 n;
+    u8 volleys;
     s16 rise;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
     if (dx > 64 || dx < -64)
         return 0;
-    /* Contact needs a bounced ball; skip the lookahead while the bounce is
-     * still beyond the swing window (the common case, and the costly one). */
-    if (g_ball.bounce_count == 0 &&
+    /* Contact needs a bounced ball (unless this CPU volleys, ADR-035);
+     * skip the lookahead while the bounce is still beyond the swing window
+     * (the common case, and the costly one). */
+    volleys = AI_VOLLEYS(s_style);
+    if (g_ball.bounce_count == 0 && !volleys &&
         g_ai.predicted_frames > g_ai.plan_age + PLAYER_WINDUP_FRAMES +
             PLAYER_ACTIVE_FRAMES)
         return 0;
@@ -353,8 +390,14 @@ static u8 ai_swing_connects(const Player *player)
         /* This frame would be the contact. Let every incoming ball bounce
          * once first (legal and readable), and never reach over the net. */
         s_contact_z = g_probe.z;
-        if (g_probe.bounces == 0 ||
-            !court_x_on_side(g_probe.x, player->team))
+        s_contact_volley = g_probe.bounces == 0;
+        /* A volley only from a volleying style, below the minimum height
+         * never, and never at a ball that would land out (ADR-035). */
+        if (g_probe.bounces == 0 && (!volleys || g_probe.z < AI_VOLLEY_MIN_Z ||
+                !court_contains_ground_fp(TO_FP(g_ai.predicted_land_x),
+                    TO_FP(g_ai.predicted_land_y))))
+            return 0;
+        if (!court_x_on_side(g_probe.x, player->team))
             return 0;
         /* A human partner's lane is theirs, even when we could reach. */
         if (s_partner_human && !ai_owns_y(FROM_FP(g_probe.y)))
@@ -385,6 +428,55 @@ static u8 ai_swing_connects(const Player *player)
             g_ai.target_x = modifiers_lava_target(g_ai.target_x, \
                 (player)->team); \
     } while (0)
+
+/*
+ * Net play (ADR-035). A team may come in once both bounces are done, or the
+ * receiving team as soon as it has returned the serve (the serving team must
+ * still let the return bounce).
+ */
+
+static u8 ai_may_come_in(u8 team)
+{
+    if (g_game_state.phase != GAME_PHASE_LIVE)
+        return 0;
+    return g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_NONE ||
+        (g_game_state.required_bounce == GAME_REQUIRED_BOUNCE_RETURN &&
+         team != g_game_state.serving_team);
+}
+
+/*
+ * Stand and volley (ADR-035): the ball, coming in, passes the player's x
+ * before it would land, at a height they can hit. Then the target is that
+ * point and the player stays put. Lobs over the head and balls that would
+ * land out are left to the bounce logic. One division per new shot.
+ */
+static u8 ai_plan_volley(const Player *player, u8 land_steps, s16 land_x)
+{
+    fx x = player->x_fp;
+    s16 px = FROM_FP(x);
+    s16 bx = FROM_FP(g_ball.x_fp);
+    s16 vx = g_ball.vx_fp;
+    s16 t;
+    fx z;
+
+    /* A cheap test first (the math below is three library calls, on the
+     * frame a shot is planned): the ball passes the player before it would
+     * land, so the player stands between the two. */
+    if (!vx || (px - bx < 0) != (land_x - px < 0) || px == land_x)
+        return 0;
+    t = (s16)((x - g_ball.x_fp) / vx);
+    if (t <= 0 || t >= (s16)land_steps)
+        return 0;
+    /* z after t steps: z + t vz + g t (t - 1) / 2, exactly. */
+    z = g_ball.z_fp + (fx)(t * g_ball.vz_fp) +
+        (fx)(BALL_GRAVITY_FP * (t * (t - 1) / 2));
+    if (z < AI_VOLLEY_MIN_Z || z > g_hit_box.reach_z - TO_FP(2))
+        return 0;
+    g_ai.target_x = FROM_FP(x);
+    g_ai.target_y = FROM_FP(g_ball.y_fp + (fx)(t * g_ball.vy_fp));
+    g_ai.has_target = ai_owns_y(g_ai.target_y);
+    return 1;
+}
 
 static void ai_plan_intercept(const Player *player)
 {
@@ -433,6 +525,13 @@ static void ai_plan_intercept(const Player *player)
     g_ai.predicted_land_x = land_x;
     g_ai.predicted_land_y = land_y;
 
+    /* A volley (ADR-035) only at a ball that would land in: checked on
+     * the next think (s_volley_check), from the cached landing. */
+    s_volley_check[s_slot] = AI_VOLLEYS(s_style) && g_ball.bounce_count == 0 &&
+        s_land_valid &&
+        court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) &&
+        court_x_on_side(TO_FP(land_x), player->team);
+
     if (!court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) ||
         !court_x_on_side(TO_FP(land_x), player->team)) {
         /* Out (or short of the net): let it go and hold the middle. */
@@ -477,6 +576,7 @@ u8 ai_assist_swing(u8 player_index)
     RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
     g_ai.late_this_ball = 0;
     g_ai.predicted_frames = 0;      /* no early-out on a stale plan */
+    s_style = &g_ai_default_style;  /* the assist never volleys */
     s_slot = player_index;
     s_has_partner = 0;
     s_partner_human = 0;
@@ -486,37 +586,57 @@ u8 ai_assist_swing(u8 player_index)
 
 /* Attract demo budget: the demo P1 thinks every other frame and repeats its
  * last movement in between (the one-shot swing press is not repeated). */
+/* A slot's held intent by a constant index (816-tcc multiplies for a
+ * variable one, and these run for every CPU, every frame). */
+static PlayerIntent *ai_held(u8 player_index)
+{
+    if (player_index == 0)
+        return &s_held_intent[0];
+    if (player_index == 1)
+        return &s_held_intent[1];
+    if (player_index == 2)
+        return &s_held_intent[2];
+    return &s_held_intent[3];
+}
+
 void ai_hold_intent(u8 player_index, PlayerIntent *intent)
 {
-    *intent = s_held_intent[player_index];
+    RAM_COPY(intent, ai_held(player_index), sizeof(PlayerIntent));
     intent->hit_pressed = 0;
 }
 
 void ai_update(u8 player_index, PlayerIntent *intent)
 {
+    AiState *state;
+
     s_slot = player_index;
-    /* Constant indices (816-tcc multiplies for g_players[variable]). */
+    /* Constant indices (816-tcc multiplies for g_players[variable], and
+     * for g_ai_slots[variable] twice a think). */
     if (player_index == 0) {
         s_has_partner = g_players[1].active;
         s_style = &g_ai_styles[0];
+        state = &g_ai_slots[0];
     } else if (player_index == 1) {
         s_has_partner = g_players[0].active;
         s_style = &g_ai_styles[1];
+        state = &g_ai_slots[1];
     } else if (player_index == 2) {
         s_has_partner = g_players[3].active;
         s_style = &g_ai_styles[2];
+        state = &g_ai_slots[2];
     } else {
         s_has_partner = g_players[2].active;
         s_style = &g_ai_styles[3];
+        state = &g_ai_slots[3];
     }
     s_partner_human = s_has_partner &&
         g_input_owners[player_index ^ 1] == INPUT_OWNER_HUMAN;
-    RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
+    RAM_COPY(&g_ai, state, sizeof(g_ai));
     PROFILE_MARK(8);
     ai_think(player_index, intent);
     PROFILE_MARK(11);
-    RAM_COPY(&g_ai_slots[player_index], &g_ai, sizeof(g_ai));
-    s_held_intent[player_index] = *intent;
+    RAM_COPY(state, &g_ai, sizeof(g_ai));
+    RAM_COPY(ai_held(player_index), intent, sizeof(PlayerIntent));
 }
 
 static void ai_think(u8 player_index, PlayerIntent *intent)
@@ -526,6 +646,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     s16 y;
     u8 key;
     u8 incoming;
+    u8 home;
 
     intent->move_x = 0;
     intent->move_y = 0;
@@ -542,7 +663,9 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         if (g_serve_state.server_index != player_index)
             return;
         /* Serves keep the original depth pattern: a short serve every 4th,
-         * otherwise alternating deep and neutral. */
+         * otherwise alternating deep and neutral. Never a block volley's
+         * centred aim (ADR-035). */
+        s_block_volley[player_index] = 0;
         g_ai.planned_shot = SHOT_STANDARD;
         if ((g_ai.shot_counter & 3) == 3)
             g_ai.planned_depth = -1;
@@ -592,8 +715,17 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
             ai_plan_intercept(player);
             g_ai.plan_key = key;
             g_ai.plan_age = 0;
-        } else if (g_ai.plan_age < 255) {
-            ++g_ai.plan_age;
+        } else {
+            if (g_ai.plan_age < 255)
+                ++g_ai.plan_age;
+            /* The volley check a new shot left for this think. */
+            if (s_volley_check[player_index]) {
+                s_volley_check[player_index] = 0;
+                if (g_ball.bounce_count == 0 && AI_VOLLEYS(s_style) &&
+                        s_land_serial == g_game_state.shot_serial)
+                    ai_plan_volley(player, (u8)(s_land_step - g_ball_steps),
+                        s_land_x);
+            }
         }
         PROFILE_MARK(10);
         /* Doubles: only the teammate whose lane holds the ball looks ahead
@@ -613,9 +745,12 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     }
 
     if (!g_ai.has_target) {
-        /* Home: the style's distance behind the net (default 80, x 208). */
-        g_ai.target_x = player->team ? COURT_NET_X + s_style->recover :
-            COURT_NET_X - s_style->recover;
+        /* Home: the style's distance behind the net (default 80, x 208),
+         * or its net distance once the rally lets it come in (ADR-035). */
+        home = (s_style->net && ai_may_come_in(player->team)) ?
+            s_style->net : s_style->recover;
+        g_ai.target_x = player->team ? COURT_NET_X + home :
+            COURT_NET_X - home;
         if (!s_has_partner)
             g_ai.target_y = AI_RECOVER_Y;
         else if (match_slot_lane_top(player_index))
