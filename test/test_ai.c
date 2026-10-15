@@ -167,12 +167,11 @@ static u8 cpu_returns_serve(s16 aim_y)
 
     new_match();
     memset(&p1, 0, sizeof(p1));
+    p1.hit_pressed = 1;
+    frame(&p1);
+    p1.hit_pressed = 0;
     p1.aim_y = aim_y;
     for (n = 0; n < 400; ++n) {
-        /* P1 holds to the classic level and lets go (ADR-044). */
-        p1.hit_held = g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            !(g_serve_charge.charging &&
-              g_serve_charge.level >= SERVE_CHARGE_CLASSIC);
         frame(&p1);
         if (g_ball.last_hitter == 2)
             return g_game_state.phase == GAME_PHASE_LIVE;

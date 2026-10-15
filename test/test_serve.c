@@ -198,7 +198,9 @@ static void charge_and_serve(u8 slot, u8 level, u8 falling)
         step();
     intents[slot].hit_held = 0;
     step();
-    assert(g_serve_charge.power == level);
+    /* Let go before the meter left the dud zone: a tap, the classic. */
+    assert(g_serve_charge.power == (level < SERVE_CHARGE_DUD && !falling ?
+        SERVE_CHARGE_CLASSIC : level));
     while (g_game_state.phase == GAME_PHASE_SERVE_TOSS)
         step();
 }
@@ -223,7 +225,7 @@ static void test_charged_meter(void)
     reset_fixture(0);
     g_input_owners[0] = INPUT_OWNER_HUMAN;
     assert(serve_charged());
-    /* A press before the ready frame does nothing; holding waits for it. */
+    /* Holding before the ready frame waits for it. */
     intents[0].hit_held = 1;
     while (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES - 1)
         step();
@@ -254,40 +256,67 @@ static void test_charged_meter(void)
     g_attract = 0;
 }
 
-/* A dud goes in the net; every other level, aim, box, and side lands in. */
+/* Let go on the way down in the dud zone: the net. Every other release
+ * (a tap, any level on the way up, the rest on the way down), at every aim,
+ * box, and side, lands in. */
 static void test_charged_serves_land(void)
 {
     u8 team;
     u8 parity;
     u8 level;
+    u8 falling;
     s16 aim;
     u8 slot;
 
     for (team = 0; team < 2; ++team) {
         slot = team ? 2 : 0;
         for (parity = 0; parity < 2; ++parity) {
-            for (level = 0; level <= SERVE_CHARGE_MAX; ++level) {
-                for (aim = -1; aim <= 1; ++aim) {
-                    reset_fixture(team);
-                    g_game_state.team_score[team] = parity;
-                    serve_setup(team);
-                    intents[slot].aim_x = aim;
-                    intents[slot].aim_y = aim;
-                    charge_and_serve(slot, level, 0);
-                    if (level < SERVE_CHARGE_DUD) {
-                        assert(serve_flight_event() & BALL_EVENT_NET_FAULT);
-                        assert(g_game_state.last_fault == GAME_FAULT_NET);
-                    } else {
-                        assert(serve_flight_event() == BALL_EVENT_BOUNCE);
-                        assert(g_game_state.last_fault == GAME_FAULT_NONE);
+            for (falling = 0; falling < 2; ++falling) {
+                for (level = 0; level <= SERVE_CHARGE_MAX; ++level) {
+                    if (falling && level == SERVE_CHARGE_MAX)
+                        continue;           /* the top is on the way up */
+                    for (aim = -1; aim <= 1; ++aim) {
+                        reset_fixture(team);
+                        g_game_state.team_score[team] = parity;
+                        serve_setup(team);
+                        intents[slot].aim_x = aim;
+                        intents[slot].aim_y = aim;
+                        charge_and_serve(slot, level, falling);
+                        if (falling && level < SERVE_CHARGE_DUD) {
+                            assert(serve_flight_event() &
+                                BALL_EVENT_NET_FAULT);
+                            assert(g_game_state.last_fault ==
+                                GAME_FAULT_NET);
+                        } else {
+                            assert(serve_flight_event() ==
+                                BALL_EVENT_BOUNCE);
+                            assert(g_game_state.last_fault ==
+                                GAME_FAULT_NONE);
+                        }
                     }
                 }
             }
         }
     }
-    /* Released on the way down: the level it shows. */
+}
+
+/* A tap serves safely, also an early one (buffered to the ready frame). */
+static void test_tap_is_classic(void)
+{
     reset_fixture(0);
-    charge_and_serve(0, 10, 1);
+    g_input_owners[0] = INPUT_OWNER_HUMAN;
+    intents[0].hit_pressed = 1;
+    intents[0].hit_held = 1;
+    step();
+    intents[0].hit_pressed = 0;
+    intents[0].hit_held = 0;
+    while (g_game_state.phase == GAME_PHASE_SERVE_SETUP)
+        step();
+    assert(g_game_state.phase_timer <= 2);  /* served at the ready frame */
+    assert(!g_serve_charge.charging);
+    assert(g_serve_charge.power == SERVE_CHARGE_CLASSIC);
+    while (g_game_state.phase == GAME_PHASE_SERVE_TOSS)
+        step();
     assert(serve_flight_event() == BALL_EVENT_BOUNCE);
 }
 
@@ -320,6 +349,7 @@ int main(void)
     test_pause_freezes_toss();
     test_charged_meter();
     test_charged_serves_land();
+    test_tap_is_classic();
     puts("serve host checks passed");
     return 0;
 }

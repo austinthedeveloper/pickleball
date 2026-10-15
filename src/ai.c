@@ -954,16 +954,6 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         else
             g_ai.planned_depth = (g_ai.shot_counter & 1) ? 1 : 0;
         ai_choose_aim(player, intent);
-        /* Playing a human's slot (a host test or make stats bot), it
-         * serves with the meter (ADR-044): held from the ready frame to
-         * the classic level, then let go, as the test bots' early press
-         * served before the meter. */
-        if (serve_charged()) {
-            intent->hit_held = g_game_state.phase ==
-                GAME_PHASE_SERVE_SETUP && !(g_serve_charge.charging &&
-                g_serve_charge.level >= SERVE_CHARGE_CLASSIC);
-            return;
-        }
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_game_state.phase_timer >= AI_SERVE_DELAY_FRAMES) {
             intent->hit_pressed = 1;

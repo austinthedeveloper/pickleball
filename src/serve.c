@@ -163,6 +163,7 @@ void serve_setup(u8 serving_team)
     g_serve_charge.charging = 0;
     g_serve_charge.level = 0;
     g_serve_charge.rising = 1;
+    g_serve_charge.armed = 0;
     g_serve_charge.power = SERVE_CHARGE_CLASSIC;
     server = &g_players[g_serve_state.server_index];
     receiver = &g_players[g_serve_state.receiver_index];
@@ -204,37 +205,35 @@ void serve_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
 
     if (g_game_state.phase == GAME_PHASE_SERVE_SETUP) {
         serve_hold_ball();
-        if (serve_charged()) {
-            /* ADR-044: the meter runs while a button is held from the
-             * ready frame on; the release serves at its level. */
-            if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
-                return;
-            if (intent->hit_held) {
-                if (!g_serve_charge.charging)
-                    g_serve_charge.charging = 1;
-                else if (g_serve_charge.rising) {
-                    if (++g_serve_charge.level >= SERVE_CHARGE_MAX)
-                        g_serve_charge.rising = 0;
-                } else if (--g_serve_charge.level == 0) {
-                    g_serve_charge.rising = 1;
-                }
-                return;
+        /* Buffer an early press so it is not lost to the ready delay. */
+        if (intent->hit_pressed)
+            g_serve_state.requested = 1;
+        if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
+            return;
+        /* ADR-044: a human holding a button runs the meter. */
+        if (serve_charged() && intent->hit_held) {
+            if (!g_serve_charge.charging) {
+                g_serve_charge.charging = 1;
+            } else if (g_serve_charge.rising) {
+                if (++g_serve_charge.level >= SERVE_CHARGE_MAX)
+                    g_serve_charge.rising = 0;
+                if (g_serve_charge.level >= SERVE_CHARGE_DUD)
+                    g_serve_charge.armed = 1;
+            } else if (--g_serve_charge.level == 0) {
+                g_serve_charge.rising = 1;
             }
-            if (!g_serve_charge.charging)
-                return;
-            g_serve_charge.charging = 0;
-            g_serve_charge.power = g_serve_charge.level;
-        } else {
-            /* Buffer an early press so it is not lost to the ready
-             * delay. */
-            if (intent->hit_pressed)
-                g_serve_state.requested = 1;
-            if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
-                return;
-            if (!g_serve_state.requested)
-                return;
-            g_serve_state.requested = 0;
+            return;
         }
+        if (g_serve_charge.charging) {
+            /* Let go: at the level shown. Before the meter has left the
+             * dud zone it was a tap, a safe classic serve. */
+            g_serve_charge.charging = 0;
+            if (g_serve_charge.armed)
+                g_serve_charge.power = g_serve_charge.level;
+        } else if (!g_serve_state.requested) {
+            return;
+        }
+        g_serve_state.requested = 0;
         g_ball.vz_fp = SERVE_TOSS_VZ_FP;
         server->pose = PLAYER_POSE_TOSS;
         game_set_phase(GAME_PHASE_SERVE_TOSS);

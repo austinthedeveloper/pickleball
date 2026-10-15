@@ -33,9 +33,11 @@ enum {
 
     /* The charged serve (ADR-044): holding a swing button runs a meter
      * from 0 up to SERVE_CHARGE_MAX and back down, a frame a step; the
-     * release serves at that level. Below SERVE_CHARGE_DUD the serve is a
-     * dud into the net; from there the flight shortens a frame for every two
-     * levels, SERVE_FLIGHT_FRAMES down to 27. */
+     * release serves at that level. A tap (let go before the meter reaches
+     * SERVE_CHARGE_DUD) is the classic serve. Once it has, a release below
+     * SERVE_CHARGE_DUD is a dud into the net; from there up the flight
+     * shortens a frame for every two levels, SERVE_FLIGHT_FRAMES down to
+     * 27. */
     SERVE_CHARGE_MAX = 30,
     SERVE_CHARGE_DUD = 4,
     /* The serve without a meter (CPUs, KID): today's 40-frame flight. */
@@ -63,6 +65,7 @@ typedef struct {
     u8 charging;        /* the meter is running (the button is held) */
     u8 level;           /* 0 .. SERVE_CHARGE_MAX */
     u8 rising;
+    u8 armed;           /* reached SERVE_CHARGE_DUD: no longer a tap */
     u8 power;           /* the level the serve goes at */
 } ServeCharge;
 

@@ -75,9 +75,9 @@ ADR-024.
 
 ## Serves and shots
 
-- [x] `M4-SERVE-01` Charged serve: hold to run a power meter, release to serve; the bottom of the meter is a dud into the net. Not on KID.
-  - Accept: the meter rises and falls while held; more charge is a faster serve that still lands in; a release at the bottom hits the net; CPUs and KID serve as before; zero overruns.
-  - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land`, MesenCE (a tap is a NET fault, a full charge lands in, the bar follows the level); `make perf` zero overruns; golden trace re-recorded (its P1 taps are duds now).
+- [x] `M4-SERVE-01` Charged serve: a press serves safely; holding runs a power meter, and the release serves at its level, with the bottom of the meter on the way down a dud into the net. Not on KID.
+  - Accept: a tap (also an early one) is the classic serve; the meter rises and falls while held; more charge is a faster serve that still lands in; a release at the bottom on the way down hits the net; CPUs and KID serve as before; zero overruns.
+  - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
 - [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
 
 ## Pause

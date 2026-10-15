@@ -13,57 +13,47 @@ it a small skill test with a risk: more power, or a dud into the net.
 
 - **Who:** a human server, not on KID, outside the attract demo
   (`serve_charged`). CPUs and KID serve as before, at the classic power.
+- **A tap is safe:** a press serves the classic 40-frame serve, as before,
+  and a press before the ready frame is still buffered to it. Only a hold
+  can fail (amended 2026-10-15: at first any release at the bottom was a
+  dud, so a tap was one, and an early press was dropped).
 - **Hold:** from the serve's ready frame, holding B, A, or Y runs a meter
   from level 0 up to 30 and back down, one level a frame (one second up and
-  down). A button held before the ready frame starts it at the ready frame;
-  a press released before it does nothing (the old early-press buffer is
-  for CPUs and KID only).
+  down). A button held before the ready frame starts it at the ready frame.
 - **Release** tosses and serves at the level shown:
-  - **0-3: a dud.** The ball goes low and slow to just past the net
-    (`SERVE_DUD_PAST_NET`, 30 frames) and meets the net: a NET fault
-    through the existing `BALL_EVENT_NET_FAULT` path. A tap is a dud.
+  - **Before the meter reaches level 4** (a tap, or let go at once): the
+    classic serve.
   - **4-30:** the flight shortens a frame for every two levels, from 40
-    frames (the classic serve, level 4) to 27 at the top. Every level, aim,
-    box, and side lands in (`test_charged_serves_land`): the fastest serve
-    still clears the net.
+    frames (level 4, the classic) to 27 at the top. Every level, aim, box,
+    and side lands in (`test_charged_serves_land`): the fastest serve still
+    clears the net.
+  - **0-3 on the way back down: a dud.** The ball goes low and slow to just
+    past the net (`SERVE_DUD_PAST_NET`, 30 frames) and meets the net: a NET
+    fault through the existing `BALL_EVENT_NET_FAULT` path.
 - **Aim** is as before: the D-pad at contact.
 - **HUD:** the prompt reads `HOLD @ TO SERVE`; once the meter runs, a
   15-cell bar replaces the text, one cell for two levels. The first cell is
-  white (lit there or nothing lit: a dud); the rest fill yellow. Only the
+  white, the dud zone on the way down; the rest fill yellow. Only the
   changed cells redraw, on idle HUD frames (one tile most frames); VRAM
   follows the level one frame behind.
 
 ## State
 
-`ServeCharge g_serve_charge` (charging, level, rising, power), apart from
+`ServeCharge g_serve_charge` (charging, level, rising, armed, power), apart from
 `ServeState`, which the golden trace captures at a fixed size.
 `PlayerIntent` gains `hit_held` at the end (the assembly reads only the
 fields before it).
 
 ## Bots and tests
 
-A host test or `make stats` bot plays P1's human-owned slot through the
-AI. When it serves with the meter, it holds from the ready frame to the
-classic level and lets go, so its serve is the CPU's and its timing is the
-old early press's (close, not frame-exact). Singles ladder bot wins are
-unchanged. Doubles moved, from that serve timing alone (CPUs serve as
-before), and every table keeps its ladder order. Bot wins of 60:
+Host tests and `make stats` bots serve P1 with a press, which is the
+classic serve, so every ladder table is unchanged.
 
-| Team | Regular: before | Now | Net: before | Now |
-|---|---:|---:|---:|---:|
-| HENDERSON | 59 | 60 | 60 | 60 |
-| SNOWBIRDS | 57 | 56 | 60 | 60 |
-| GYM BROS | 44 | 40 | 54 | 56 |
-| PIRATES | 22 | 26 | 42 | 39 |
-| GOTH CLUB | 18 | 12 | 24 | 33 |
-| SURF CREW | 5 | 8 | 11 | 17 |
-| TWINS | 2 | 5 | 5 | 14 |
-| CHAMPS | 0 | 3 | 2 | 5 |
-
-The smoke timelines that serve for P1 (`doubles_ladder`, `modifiers`,
-`modifiers_doubles`) hold B for 15 frames. `golden.timeline` taps B, so P1's
-serves there are now duds: the trace differs from frame 339 and is
-re-recorded.
+A tap after the ready frame serves one frame later than before (the release
+is what tells a tap from a hold), so the golden trace differs from frame
+340 and is re-recorded. The smoke timelines that serve for P1 in perf runs
+(`doubles_ladder`, `modifiers`, `modifiers_doubles`) hold B for 15 frames,
+so `make perf` covers the meter's drawing.
 
 ## Not yet
 
@@ -77,8 +67,10 @@ re-recorded.
   falls a level a frame, the flight table, no meter for CPU, KID, or the
   demo.
 - `test_serve.c: test_charged_serves_land`: both teams, both boxes, every
-  level and aim: duds are NET faults, the rest land in; a release on the
-  way down serves at the level shown.
-- MesenCE: a tap goes in the net (NET); a full charge (level 30) lands in;
-  the bar's cells in VRAM follow the level.
+  level and aim, released on the way up and on the way down: only the dud
+  zone on the way down goes in the net.
+- `test_serve.c: test_tap_is_classic`: an early tap is buffered and serves
+  the classic serve.
+- MesenCE: a tap serves in; a full charge (level 30) lands in; the bar's
+  cells in VRAM follow the level.
 - `make perf`: zero overruns.
