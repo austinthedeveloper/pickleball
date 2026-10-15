@@ -218,3 +218,7 @@ These are simplified rules; the HUD says **ARCADE RULES**.
 | FAULT! | The serve landed in the wrong service box. |
 | 2 BOUNCES | The receiving side failed to return the ball. |
 | VOLLEY! | The ball was hit before a required bounce. |
+
+After a long rally, a ball that lands just out gets a **close call**
+replay: a close-up of the line shows the ball landing past it, and by how
+many inches.

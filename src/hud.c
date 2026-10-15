@@ -157,6 +157,33 @@ void hud_panel(u8 col, u8 row, u8 inner_cols)
     g_hud_map[mid + right] = hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
 }
 
+/* A panel's border around inner_cols x inner_rows cells left clear, so a
+ * layer under the HUD shows through (the close call, ADR-041). */
+void hud_frame(u8 col, u8 row, u8 inner_cols, u8 inner_rows)
+{
+    u8 right = col + inner_cols + 1;
+    u8 bottom = row + inner_rows + 1;
+    u8 r;
+
+    hud_fill_box(col + 1, row, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0));
+    hud_fill_box(col + 1, row + 1, inner_cols, inner_rows, HUD_TILE_CLEAR);
+    hud_fill_box(col + 1, bottom, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP);
+    g_hud_map[(u16)row * 32 + col] = hud_entry(HUD_TILE_PANEL_TL, 0);
+    g_hud_map[(u16)row * 32 + right] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP;
+    g_hud_map[(u16)bottom * 32 + col] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_VFLIP;
+    g_hud_map[(u16)bottom * 32 + right] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP | HUD_VFLIP;
+    for (r = row + 1; r < bottom; ++r) {
+        g_hud_map[(u16)r * 32 + col] = hud_entry(HUD_TILE_PANEL_L, 0);
+        g_hud_map[(u16)r * 32 + right] =
+            hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
+    }
+}
+
 /* Index into HUD_BIG_CHARS ("A-Z0-9'!") without searching. */
 static s16 hud_big_index(u8 c)
 {

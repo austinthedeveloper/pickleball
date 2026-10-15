@@ -12,6 +12,9 @@
 #define RENDER_BG2_MAP_ADDR 0x0800
 #define RENDER_BG2_BASE_ADDR 0x4000
 #define RENDER_BG2_TILES_ADDR 0x4800
+/* The close call's close-up (ADR-041): its own BG2 map, rows 15-21 written
+ * when a point shows it. */
+#define RENDER_BG2_REPLAY_MAP_ADDR 0x0C00
 #define RENDER_BG1_TILES_ADDR 0x1000
 #define RENDER_BG3_TILES_ADDR 0x5000
 #define RENDER_OBJ_TILES_ADDR 0x6000
@@ -41,7 +44,9 @@ enum {
     RENDER_OAM_DEBUG_MARKER = 11,
     RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
     RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
-    RENDER_OAM_FIRST_HIDDEN = 22
+    RENDER_OAM_REPLAY = 22,       /* 22-23: the close call's ball and shadow
+                                     (ADR-041) */
+    RENDER_OAM_FIRST_HIDDEN = 24
 };
 
 void render_initialize(void);

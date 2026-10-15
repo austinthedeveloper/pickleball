@@ -25,6 +25,7 @@
 #include "serve.h"
 #include "opponents.h"
 #include "story.h"
+#include "replay.h"
 
 
 /* The ground every venue shares (ADR-024); venues.h has the rest. */
@@ -37,6 +38,7 @@ extern char objects_palette, objects_palette_end;
 extern char bust_tiles, bust_tiles_end;
 extern char bust_m_map, bust_m_map_end;
 extern char bust_f_map, bust_f_map_end;
+extern char closeup_map, closeup_map_end;
 
 /* The intro card's bust (M4-STORY-03) in BG palette 1, the one a match
  * leaves free. Its frame uses two roles a bust never shows: 10 (shoe) is
@@ -47,6 +49,9 @@ extern char bust_f_map, bust_f_map_end;
 #define RENDER_BUST_BACKDROP 13
 static u16 s_bust_palette[16];
 static u8 s_bust_shown;
+/* The close call's close-up is on BG2 (ADR-041); its ball's OAM is used. */
+static u8 s_replay_shown;
+static u8 s_replay_ball;
 
 u16 g_obj_overflow_frames;
 
@@ -176,8 +181,10 @@ typedef char oam_accessories_after_effects[
     (RENDER_OAM_ACCESSORIES >= RENDER_OAM_SPARK + 4) ? 1 : -1];
 typedef char oam_machine_after_accessories[
     (RENDER_OAM_MACHINE >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
-typedef char oam_hidden_after_machine[
-    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_replay_after_machine[
+    (RENDER_OAM_REPLAY >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_hidden_after_replay[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_REPLAY + 2) ? 1 : -1];
 
 /* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
@@ -369,6 +376,88 @@ static void render_effects(void)
 #endif
 }
 
+/* The close call (ADR-041) shows during its point result only. */
+#define RENDER_REPLAY_WANTED() \
+    (g_replay.active && !g_attract && \
+     g_game_state.phase == GAME_PHASE_POINT_RESULT)
+#define RENDER_REPLAY_ROWS_BYTES (REPLAY_ROWS * 32 * 2)
+#define RENDER_REPLAY_DROP_START 6
+#define RENDER_REPLAY_DROP_FRAMES 24  /* falls 36 px: (t * t) / 16 */
+#define RENDER_REPLAY_BOUNCE_FRAMES 16
+#define RENDER_REPLAY_BALL_RADIUS 7   /* the BIG BALL is 14 px */
+#define RENDER_REPLAY_LINE_HALF 4
+
+/* VBlank: the close-up's rows for this line and side, then BG2 on; off
+ * when the point result ends. */
+static void render_commit_replay(void)
+{
+    u8 variant;
+
+    /* After the HUD's frame is up: never a bare close-up for a frame. */
+    if (RENDER_REPLAY_WANTED() && hud_replay_framed()) {
+        if (s_replay_shown)
+            return;
+        variant = (g_replay.vertical ? 0 : 2) + (g_replay.out_dir > 0);
+        dmaCopyVram((u8 *)&closeup_map + variant * RENDER_REPLAY_ROWS_BYTES,
+            RENDER_BG2_REPLAY_MAP_ADDR + REPLAY_ROW * 32,
+            RENDER_REPLAY_ROWS_BYTES);
+        bgSetMapPtr(1, RENDER_BG2_REPLAY_MAP_ADDR, SC_32x32);
+        bgSetScroll(1, 0, 0);
+        bgSetEnable(1);
+        s_replay_shown = 1;
+    } else if (s_replay_shown) {
+        bgSetDisable(1);
+        s_replay_shown = 0;
+    }
+}
+
+/* The ball dropping onto its spot in slow motion, with a bounce, and its
+ * shadow; in front of the close-up (OBJ priority 3). Zoomed 4x: the ball's
+ * edge is 4 px per pixel past the line's edge. */
+static void render_replay_ball(void)
+{
+    s16 x = REPLAY_COL * 8 + REPLAY_COLS * 4;
+    s16 y = REPLAY_ROW * 8 + REPLAY_ROWS * 4;
+    s16 out = RENDER_REPLAY_LINE_HALF + RENDER_REPLAY_BALL_RADIUS +
+        (g_replay.dist_fp >> 2);
+    s16 t = (s16)g_game_state.phase_timer - RENDER_REPLAY_DROP_START;
+    s16 z;
+
+    if (!s_replay_shown || t < 0) {
+        if (s_replay_ball) {
+            render_obj_hide(RENDER_OAM_REPLAY);
+            render_obj_hide(RENDER_OAM_REPLAY + 1);
+            s_replay_ball = 0;
+        }
+        return;
+    }
+    /* Inside the close-up whatever the distance (the threshold keeps it
+     * there anyway: 6 inches is 10 zoomed pixels). */
+    if (g_replay.vertical) {
+        if (out > REPLAY_COLS * 4 - RENDER_REPLAY_BALL_RADIUS - 8)
+            out = REPLAY_COLS * 4 - RENDER_REPLAY_BALL_RADIUS - 8;
+        x = REPLAY_LINE_COL * 8 + 4 + g_replay.out_dir * out;
+    } else {
+        if (out > (REPLAY_ROWS / 2) * 8 + 3 - RENDER_REPLAY_BALL_RADIUS)
+            out = (REPLAY_ROWS / 2) * 8 + 3 - RENDER_REPLAY_BALL_RADIUS;
+        y = REPLAY_LINE_ROW * 8 + 4 + g_replay.out_dir * out;
+    }
+    if (t < RENDER_REPLAY_DROP_FRAMES) {
+        z = RENDER_REPLAY_DROP_FRAMES - t;
+        z = (s16)((z * z) >> 4);
+    } else if (t < RENDER_REPLAY_DROP_FRAMES + RENDER_REPLAY_BOUNCE_FRAMES) {
+        t -= RENDER_REPLAY_DROP_FRAMES;
+        z = (s16)((t * (RENDER_REPLAY_BOUNCE_FRAMES - t)) >> 3);
+    } else {
+        z = 0;
+    }
+    obj_put(RENDER_OAM_REPLAY + 1, x - 4, y - 4, OBJTILE_PLAYER_SHADOW,
+        (3 << 4) | (g_objpal_shadow << 1), 0);
+    obj_put(RENDER_OAM_REPLAY, x - 16, y - z - 16, OBJTILE_BIG_BALL,
+        (3 << 4) | (g_objpal_objects << 1), 1);
+    s_replay_ball = 1;
+}
+
 void render_prepare(void)
 {
 #ifdef RENDER_DIAGNOSTICS
@@ -380,6 +469,7 @@ void render_prepare(void)
     render_players();
     PROFILE_MARK(2);
     render_ball();
+    render_replay_ball();
     render_effects();
     render_machine();
     render_update_ground();
@@ -408,6 +498,7 @@ void render_commit(void)
         bgSetDisable(1);
         s_bust_shown = 0;
     }
+    render_commit_replay();
     hud_commit();
 }
 
@@ -466,14 +557,21 @@ static void render_load_bust(void)
     u8 opponent = g_match_config.opponent;
     u8 i;
 
+    /* The tiles (busts and the close call's) and a blank close-up map go
+     * up with every court, BG2 off until a card or a close call. */
+    dmaCopyVram((u8 *)&bust_tiles, RENDER_BG2_TILES_ADDR,
+        (u16)(&bust_tiles_end - &bust_tiles));
+    dmaCopyVram((u8 *)&bust_m_map, RENDER_BG2_REPLAY_MAP_ADDR,
+        (u16)(&bust_m_map_end - &bust_m_map));
+    bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
+    s_replay_shown = 0;
+    s_replay_ball = 1;          /* parked on the first frame */
     s_bust_shown = g_story.card == STORY_CARD_INTRO &&
         opponent < OPPONENT_COUNT;
     if (!s_bust_shown) {
         bgSetDisable(1);
         return;
     }
-    dmaCopyVram((u8 *)&bust_tiles, RENDER_BG2_TILES_ADDR,
-        (u16)(&bust_tiles_end - &bust_tiles));
     if (g_opponent_variant[opponent][0])
         dmaCopyVram((u8 *)&bust_f_map, RENDER_BG2_MAP_ADDR,
             (u16)(&bust_f_map_end - &bust_f_map));

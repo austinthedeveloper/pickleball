@@ -31,6 +31,7 @@ sources the ROM uses).
 | OPP-03 | `test_opponents.c: test_difficulty_order`: the first rung is beaten clearly more than the last | PASS |
 | VEN-01 | `test_court_style.c: test_venues`, `test_editor`: DEFAULT = venue ground, AUTO = opponent home, VENUE row (ADR-024) | PASS |
 | VEN-02 | Asset build: shared ground palette and tiles, per-venue budget, names, ground presets | PASS |
+| REP-01 | `test_replay.c`: the close call shows for a long rally just out (each line, a hair, a corner), never for short rallies, other faults, or wide misses; MesenCE with dropped thresholds shows the close-up; zero overruns with it on every out (ADR-041) | PASS |
 | VEN-03 | `test/smoke/venue.timeline`, `lake.timeline`: SUNSET and LAKESIDE chosen on the title, a match at SUNSET | PASS (MesenCE smoke) |
 | VEN-04 | `test/smoke/venue_preview.timeline`: a rested VENUE previews behind the COURT page, one scrolled past doesn't, Y restores; zero overruns (M4-VENUE-02) | PASS (MesenCE smoke) |
 | OPT-01 | `test_options.c`: values, difficulty styles, slow-ball pattern, editor, first to 11 (ADR-025) | PASS |

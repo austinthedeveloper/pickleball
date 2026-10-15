@@ -38,6 +38,8 @@ void hud_tile(u8 col, u8 row, u16 entry);
 void hud_fill_box(u8 col, u8 row, u8 width, u8 rows, u16 entry);
 /* Three-row panel: border rows at row and row+2, interior on row+1. */
 void hud_panel(u8 col, u8 row, u8 inner_cols);
+/* A panel border around inner_cols x inner_rows cells left clear. */
+void hud_frame(u8 col, u8 row, u8 inner_cols, u8 inner_rows);
 void hud_big_text(u8 col, u8 row, u8 palette, const char *text);
 u8 hud_big_width(const char *text);
 /* Big text centred on the 32-column map. */
