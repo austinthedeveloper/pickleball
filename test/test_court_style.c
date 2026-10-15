@@ -142,7 +142,7 @@ static void test_kitchen(void)
 
 static void test_editor(void)
 {
-    u8 choice[COURT_PARTS] = { 0, 0, 9, 1 };    /* surround out of range */
+    u8 choice[COURT_PARTS] = { 0, 0, 99, 1 };   /* surround out of range */
     u8 venue = 200;                         /* out of range */
     u8 time = 9;                            /* out of range */
     u8 surfaces = g_court_part_count[COURT_PART_SURFACE];

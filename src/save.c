@@ -274,6 +274,19 @@ static void save_migrate_v10(const u8 *raw)
     g_save.initials = old.initials;
 }
 
+/* Layouts before 11 knew 7 surface colours, so the kitchen's own presets
+ * (LIME, TEAL) came at 9 and 10; the surface colours added with layout 11
+ * (mirrored in the kitchen, ADR-027) moved them up. */
+#define SAVE_V10_KITCHEN_EXTRAS 9
+static void save_remap_kitchen_v10(void)
+{
+    u8 *kitchen = &g_save.settings.court[COURT_PART_KITCHEN];
+
+    if (*kitchen >= SAVE_V10_KITCHEN_EXTRAS)
+        *kitchen = (u8)(*kitchen - SAVE_V10_KITCHEN_EXTRAS +
+            COURT_KITCHEN_SAME + g_court_part_count[COURT_PART_SURFACE]);
+}
+
 void save_initialize(void)
 {
     static u8 raw[2][SAVE_RAW_BYTES];
@@ -312,6 +325,7 @@ void save_initialize(void)
         save_migrate_v7(raw[pick]);
     else
         save_migrate_v4(raw[pick]);
+    save_remap_kitchen_v10();
     save_write();
     save_write();
 }

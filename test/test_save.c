@@ -456,6 +456,7 @@ static void test_migrate_v10(void)
     old.records.wins[MATCH_DOUBLES] = 31;
     old.records.practice_zone_best[2] = 11;
     old.settings.court[COURT_PART_LINES] = 1;
+    old.settings.court[COURT_PART_KITCHEN] = 9;             /* LIME */
     old.settings.venue = 3;
     old.settings.practice[3] = 2;
     old.settings.sound = 1;
@@ -469,6 +470,9 @@ static void test_migrate_v10(void)
     assert(g_save.records.wins[MATCH_DOUBLES] == 31);
     assert(g_save.records.practice_zone_best[2] == 11);
     assert(g_save.settings.court[COURT_PART_LINES] == 1);
+    /* The kitchen's own presets moved past the new surface colours. */
+    assert(strcmp(g_court_preset_names[g_court_part_first[COURT_PART_KITCHEN] +
+        g_save.settings.court[COURT_PART_KITCHEN]], "LIME") == 0);
     assert(g_save.settings.venue == 3 && g_save.settings.practice[3] == 2);
     assert(g_save.settings.sound == 1 && g_save.settings.modifiers == 6);
     assert(g_save.settings.time == COURT_TIME_DAY);         /* new */

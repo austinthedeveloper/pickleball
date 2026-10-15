@@ -31,9 +31,17 @@ to the painted base, which keeps the base's hue.
 
 | Part | Presets |
 |---|---|
-| Surface | DEFAULT, BLUE, NAVY, GREEN, PURPLE, CLAY, SLATE, RED |
-| Surround | DEFAULT, GRASS, CONCRETE, SAND, BRICK, ASPHALT, SKY |
-| Lines | DEFAULT, WHITE, YELLOW |
+| Surface | DEFAULT, BLUE, NAVY, GREEN, PURPLE, CLAY, SLATE, RED, PINK, ORANGE, BLACK, AQUA |
+| Surround | DEFAULT, GRASS, CONCRETE, SAND, BRICK, ASPHALT, SKY, SNOW, CANDY, AUTUMN |
+| Lines | DEFAULT, WHITE, YELLOW, CYAN, LIME |
+
+*Amended 2026-10-15:* the fun colours (PINK to AQUA surfaces, mirrored as
+kitchens before LIME and TEAL; SNOW, CANDY, AUTUMN surrounds; CYAN and LIME
+lines) pass the checks below at every TIME (ADR-045). They push the
+kitchen's own presets (LIME, TEAL) from 9-10 to 13-14, so saves from layouts
+before 11 have those remapped as they migrate (`save_remap_kitchen_v10`,
+`test_save.c: test_migrate_v10`). New colours go at the end of their part,
+or, for the surface, with the same remap.
 
 Presets cannot produce an unreadable court. The asset build fails unless:
 
