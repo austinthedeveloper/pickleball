@@ -82,7 +82,7 @@
       ]
     },
     {
-      "team": "GYM BROS", "venue": "PARK",
+      "team": "GYM BROS", "venue": "DINOSAUR",
       "intro": "DO YOU EVEN DINK, BRO?",
       "taunt": "NEW PERSONAL BEST, BRO!",
       "concede": "BRO... THAT WAS SICK.",
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "team": "GOTH CLUB", "venue": "SUNSET",
+      "team": "GOTH CLUB", "venue": "SPACE",
       "intro": "THE KITCHEN IS OUR CRYPT.",
       "taunt": "DARKNESS ALWAYS WINS.",
       "concede": "HOW... DELIGHTFULLY GRIM.",
@@ -175,7 +175,7 @@
       ]
     },
     {
-      "team": "SURF CREW", "venue": "LAKESIDE",
+      "team": "SURF CREW", "venue": "UNDERSEA",
       "intro": "COWABUNGA, DUDE!",
       "taunt": "TOTALLY TUBULAR, BRAH!",
       "concede": "GNARLY GAME, DUDE. RESPECT.",

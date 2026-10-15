@@ -35,7 +35,9 @@ ADR-024.
 - [x] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
   - Accept: scrolling VENUE shows the backdrop (reload with a short fade, or a thumbnail) without dropped frames; Y still restores the original.
   - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md) (amended): a rested VENUE reloads behind the page in about 25 frames (the ambience waits for the page to close); `venue_preview.timeline` with zero overruns in `make perf`; golden trace identical.
-- [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium).
+- [x] `M4-VENUE-04` Fun venues: DINOSAUR, SPACE, and UNDERSEA, each with its own ambience, default court, and home-court opponent.
+  - Verified: [ADR-046](../docs/decisions/ADR-046-fun-venues.md), the asset build's venue checks, `make perf` zero overruns, golden trace identical, MesenCE matches at each.
+- [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium). The soundbank is nearly full (ADR-046): a seventh venue moves it to three banks.
   - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 512 KiB cart has about 300 KiB free).
 
 ## Opponents and story

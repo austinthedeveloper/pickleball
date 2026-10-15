@@ -22,7 +22,8 @@ Composition:
                    projection as src/render.c.
   * rows 186..223: procedural chain-link fence with the mock's corner bushes.
 
-Usage: python tools/art/prep_court_scene.py [PARK|LAKESIDE|SUNSET]
+Usage: python tools/art/prep_court_scene.py [PARK|LAKESIDE|SUNSET|DINOSAUR|
+                                              SPACE|UNDERSEA]
 """
 import re
 import sys
@@ -36,13 +37,24 @@ INSPIRATION = ROOT / "assets" / "inspiration"
 SOURCE = ROOT / "assets" / "source"
 # Venue: mock, output, and the mock's HUD panels (in 256x224 pixels, x0 y0 x1
 # y1) to in-paint; BG3 draws live HUD panels over that area.
+LAKE_MOCK = INSPIRATION / "level-02.png"
+FUN_HUD = [(9, 9, 67, 28), (74, 9, 180, 28), (187, 9, 246, 28)]
 VENUES = {
     "PARK": (INSPIRATION / "level-01", SOURCE / "court_scene.png",
              [(11, 11, 69, 30), (75, 10, 181, 30), (187, 11, 245, 30)]),
-    "LAKESIDE": (INSPIRATION / "level-02.png", SOURCE / "venue_lake.png",
+    "LAKESIDE": (LAKE_MOCK, SOURCE / "venue_lake.png",
                  [(7, 6, 57, 25), (81, 6, 175, 25), (199, 6, 250, 25)]),
     "SUNSET": (INSPIRATION / "level-03.png", SOURCE / "venue_sunset.png",
                [(15, 6, 77, 24), (82, 3, 180, 33), (185, 6, 246, 24)]),
+    # The fun venues share one mock layout (court_top_*.png). Their court
+    # is on grass, which the bush test would take for bushes: the corner
+    # bushes come from the LAKESIDE mock instead.
+    "DINOSAUR": (INSPIRATION / "court_top_dinosaur.png",
+                 SOURCE / "venue_dinosaur.png", FUN_HUD, LAKE_MOCK),
+    "SPACE": (INSPIRATION / "court_top_space.png", SOURCE / "venue_space.png",
+              FUN_HUD, LAKE_MOCK),
+    "UNDERSEA": (INSPIRATION / "court_top_undersea.png",
+                 SOURCE / "venue_undersea.png", FUN_HUD, LAKE_MOCK),
 }
 W, H = 256, 224
 SAND_TOP = 76
@@ -271,12 +283,18 @@ def main():
     venue = sys.argv[1].upper() if len(sys.argv) > 1 else "PARK"
     if venue not in VENUES:
         raise SystemExit(f"venue is one of {', '.join(VENUES)}")
-    mock_path, out_path, hud_rects = VENUES[venue]
+    mock_path, out_path, hud_rects, *bush_mock = VENUES[venue]
     c = court_constants()
     mock = Image.open(mock_path).convert("RGB").resize((W, H), Image.BOX)
     rgb = np.asarray(mock).astype(np.float64)
     # The mock's HUD panels and banner are replaced by live BG3 panels.
     rgb = inpaint(rgb, hud_rects)
+    if bush_mock:
+        # The corner bushes (only) from another mock.
+        other = Image.open(bush_mock[0]).convert("RGB").resize((W, H),
+                                                                Image.BOX)
+        rgb[FENCE_TOP - 14:] = np.asarray(other).astype(
+            np.float64)[FENCE_TOP - 14:]
     rgb5 = rgb / 255.0 * 31.0
 
     court_idx = paint_court(c)

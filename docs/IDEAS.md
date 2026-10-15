@@ -49,7 +49,8 @@ Constraints to resolve:
 - Loading happens in forced blank, the same way Player Select already swaps
   the court out and back.
 
-Starter list: Riverside Park (current), Beach Boardwalk, Indoor Rec Center,
+Built: PARK, LAKESIDE, SUNSET (ADR-024); DINOSAUR, SPACE, UNDERSEA
+(ADR-046). Starter list: Riverside Park (current), Beach Boardwalk, Indoor Rec Center,
 Rooftop at Night, Pirate Dock, Gothic Courtyard, Suburban Driveway, Championship
 Stadium. Each story opponent can have a home court (see below).
 

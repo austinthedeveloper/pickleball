@@ -2,7 +2,9 @@
 
 Each module is a soft crowd murmur (a looping sample) with nature calls
 dropped at random rows: birds at the PARK, gulls and lapping water by the
-LAKESIDE, crickets at SUNSET. SNESMOD loops the order list, so the
+LAKESIDE, crickets at SUNSET; jungle birds and a far-off rumble with the
+DINOSAURs, blips and sweeps in SPACE, bubbles and a whale UNDERSEA
+(ADR-046). SNESMOD loops the order list, so the
 ambience plays until the next venue loads. Synthesized with the standard
 library and fixed seeds, like the effects (sfx.py).
 """
@@ -98,6 +100,92 @@ def cricket():
     return out
 
 
+def trill():
+    """A jungle bird: a fast warbling trill that falls away."""
+    out = []
+    phase = 0.0
+    length = 0.35
+    for n in range(int(length * HIGH_RATE)):
+        t = n / HIGH_RATE
+        freq = 2100 + 450 * math.sin(2 * math.pi * 22 * t) - 600 * t
+        phase += 2 * math.pi * freq / HIGH_RATE
+        env = min(1.0, t / 0.02) * (1 - t / length) ** 1.2
+        out.append(math.sin(phase) * env)
+    return out
+
+
+def rumble():
+    """Something big, far away: a low growl that swells and fades."""
+    rng = random.Random(14)
+    out = []
+    phase = 0.0
+    low = 0.0
+    length = 0.7
+    for n in range(int(length * LOW_RATE)):
+        t = n / LOW_RATE
+        freq = 110 - 30 * t / length
+        phase += 2 * math.pi * freq / LOW_RATE
+        low += 0.2 * ((rng.random() * 2 - 1) - low)
+        env = math.sin(math.pi * t / length) ** 1.5
+        out.append((0.7 * math.sin(phase) * (0.6 + 0.4 * low) + 0.3 * low) *
+                   env)
+    return out
+
+
+def blip():
+    """A console's two-note blip."""
+    out = []
+    for n in range(int(0.14 * HIGH_RATE)):
+        t = n / HIGH_RATE
+        freq = 1320 if t < 0.06 else 1760
+        tone = 1.0 if math.sin(2 * math.pi * freq * t) >= 0 else -1.0
+        env = 1.0 if t % 0.07 < 0.05 else 0.0
+        out.append(0.5 * tone * env)
+    return out
+
+
+def sweep():
+    """A sci-fi sweep: a rising tone with a wobble."""
+    out = []
+    phase = 0.0
+    length = 0.4
+    for n in range(int(length * HIGH_RATE)):
+        t = n / HIGH_RATE
+        freq = 500 + 900 * t / length + 60 * math.sin(2 * math.pi * 9 * t)
+        phase += 2 * math.pi * freq / HIGH_RATE
+        env = math.sin(math.pi * t / length)
+        out.append(math.sin(phase) * env)
+    return out
+
+
+def bubble():
+    """One bubble: a quick rising blip."""
+    out = []
+    phase = 0.0
+    length = 0.07
+    for n in range(int(length * HIGH_RATE)):
+        t = n / HIGH_RATE
+        freq = 350 + 900 * (t / length) ** 2
+        phase += 2 * math.pi * freq / HIGH_RATE
+        env = (1 - t / length) ** 0.5
+        out.append(math.sin(phase) * env)
+    return out
+
+
+def whale():
+    """A whale far off: a slow rising and falling moan."""
+    out = []
+    phase = 0.0
+    length = 1.0
+    for n in range(int(length * LOW_RATE)):
+        t = n / LOW_RATE
+        freq = 190 + 80 * math.sin(math.pi * t / length)
+        phase += 2 * math.pi * freq / LOW_RATE
+        env = math.sin(math.pi * t / length) ** 2
+        out.append((math.sin(phase) + 0.3 * math.sin(2 * phase)) * env)
+    return out
+
+
 # Kind: the calls, each (synth, rate, notes to vary the pitch, chance per
 # row, volume range of 64).
 KINDS = {
@@ -106,6 +194,13 @@ KINDS = {
     "gulls": [(gull, HIGH_RATE, (C5 - 1, C5, C5 + 2), 0.035, (16, 30)),
               (water, LOW_RATE, (C5 - 2, C5), 0.06, (14, 26))],
     "crickets": [(cricket, HIGH_RATE, (C5, C5 + 1), 0.16, (10, 22))],
+    "jungle": [(trill, HIGH_RATE, (C5 - 3, C5, C5 + 2), 0.07, (12, 28)),
+               (rumble, LOW_RATE, (C5 - 2, C5), 0.015, (18, 30))],
+    "space": [(blip, HIGH_RATE, (C5 - 5, C5, C5 + 4), 0.05, (8, 18)),
+              (sweep, HIGH_RATE, (C5 - 2, C5), 0.025, (10, 20))],
+    "bubbles": [(bubble, HIGH_RATE, (C5 - 4, C5, C5 + 3, C5 + 7), 0.14,
+                 (10, 24)),
+                (whale, LOW_RATE, (C5 - 1, C5), 0.012, (16, 28))],
 }
 
 

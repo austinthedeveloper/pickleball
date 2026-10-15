@@ -30,7 +30,9 @@ export ROMNAME ROMTITLE FASTROM
 # in the last two ROM banks (14-15; over 32 KiB, it spans two). -f checks
 # that each ambience fits sound RAM alongside the effects.
 AUDIOFILES := assets/generated/sfx.it assets/generated/ambience_0.it \
-	assets/generated/ambience_1.it assets/generated/ambience_2.it
+	assets/generated/ambience_1.it assets/generated/ambience_2.it \
+	assets/generated/ambience_3.it assets/generated/ambience_4.it \
+	assets/generated/ambience_5.it
 export SOUNDBANK := assets/generated/soundbank
 SMCONVFLAGS := -s -o $(SOUNDBANK) -b 14 -f
 

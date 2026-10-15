@@ -83,7 +83,9 @@ and B chooses. Start or Y also resumes.
 
 **SOUND** is ALL, NO CROWD (effects without the applause or the
 background crowd), or OFF. With ALL, each venue has a quiet background:
-birds at the park, gulls and water by the lake, crickets at sunset.
+birds at the park, gulls and water by the lake, crickets at sunset (and
+at night), jungle calls with the dinosaurs, blips in space, and bubbles
+under the sea.
 
 B or Start keeps your choices (they're saved); Y puts back what you had.
 
@@ -142,7 +144,8 @@ and colour changes show on the court behind the menu straight away. B or
 Start keeps your choices, which are saved for every later match; Y puts back
 what you had.
 
-- **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
+- **VENUE**: PARK, LAKESIDE, SUNSET, DINOSAUR, SPACE, or UNDERSEA. AUTO
+  plays each opponent at their
   home court. Stop on a venue for a moment and it loads behind the page,
   so you can see it; Y puts the old one back.
 - **TIME**: DAY, DUSK, or NIGHT, at any venue. At night the court plays
@@ -150,7 +153,9 @@ what you had.
 - **KITCHEN** colours the non-volley zone; SAME makes it match the surface.
 - **DEFAULT** colours are the venue's own: a teal court with a navy kitchen
   on dirt at the park, green with a blue kitchen on grass by the lake, and
-  teal with a clay kitchen on brick at sunset.
+  teal with a clay kitchen on brick at sunset, green with an orange kitchen
+  among the dinosaurs, navy with a purple kitchen and cyan lines in space,
+  and aqua with a navy kitchen on sand under the sea.
 
 ## Records
 
