@@ -136,8 +136,8 @@ counts your ladder clears.
 
 ## Court colours
 
-**COURT** picks where you play and the colours of the court surface, the
-ground around it, and the lines. Up/Down picks a row, Left/Right changes it,
+**COURT** picks where you play, the time of day, and the colours of the
+court surface, the ground around it, and the lines. Up/Down picks a row, Left/Right changes it,
 and colour changes show on the court behind the menu straight away. B or
 Start keeps your choices, which are saved for every later match; Y puts back
 what you had.
@@ -145,6 +145,8 @@ what you had.
 - **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
   home court. Stop on a venue for a moment and it loads behind the page,
   so you can see it; Y puts the old one back.
+- **TIME**: DAY, DUSK, or NIGHT, at any venue. At night the court plays
+  under the lights and the crickets come out.
 - **KITCHEN** colours the non-volley zone; SAME makes it match the surface.
 - **DEFAULT** colours are the venue's own: a teal court with a navy kitchen
   on dirt at the park, green with a blue kitchen on grass by the lake, and

@@ -51,7 +51,7 @@
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 11
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
-#define COURT_PAGE_ROWS 7           /* the court box: header, gap, 5 rows */
+#define COURT_PAGE_ROWS 8           /* the court box: header, gap, 6 rows */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
@@ -805,7 +805,9 @@ static u8 hud_court_value(u8 index)
 {
     if (index == COURT_ROW_VENUE)
         return g_save.settings.venue;
-    return g_save.settings.court[index - 1];
+    if (index == COURT_ROW_TIME)
+        return g_save.settings.time;
+    return g_save.settings.court[index - COURT_ROW_PARTS];
 }
 
 /* A settings page row: cursor, label, and "<VALUE   >". */
@@ -834,14 +836,15 @@ static void hud_setting_row(u8 row, const char *label, const char *name,
 static void hud_court_row(u8 index)
 {
     static const char *const labels[COURT_ROWS] = {
-        "VENUE", "SURFACE", "KITCHEN", "SURROUND", "LINES"
+        "VENUE", "TIME", "SURFACE", "KITCHEN", "SURROUND", "LINES"
     };
     u8 value = hud_court_value(index);
     u8 cursor = g_court_edit.row == index;
 
     hud_setting_row(COURT_FIRST_ROW + index, labels[index],
         index == COURT_ROW_VENUE ? court_style_venue_name(value) :
-        court_style_name(index - 1, value), cursor);
+        index == COURT_ROW_TIME ? court_style_time_name(value) :
+        court_style_name(index - COURT_ROW_PARTS, value), cursor);
     s_court_row_drawn[index] = value | (cursor << 7);
 }
 

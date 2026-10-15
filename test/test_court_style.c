@@ -144,54 +144,128 @@ static void test_editor(void)
 {
     u8 choice[COURT_PARTS] = { 0, 0, 9, 1 };    /* surround out of range */
     u8 venue = 200;                         /* out of range */
+    u8 time = 9;                            /* out of range */
     u8 surfaces = g_court_part_count[COURT_PART_SURFACE];
 
-    court_edit_begin(choice, &venue);
+    court_edit_begin(choice, &venue, &time);
     assert(choice[COURT_PART_SURROUND] == 0);   /* clamped on open */
     assert(venue == COURT_VENUE_AUTO);
+    assert(time == COURT_TIME_DAY);
     assert(g_court_edit.row == COURT_ROW_VENUE);
-    assert(!court_edit_changed(choice, venue));
+    assert(!court_edit_changed(choice, venue, time));
 
     /* The venue row: AUTO, then each venue, wrapping; no recolour. */
-    court_edit_input(choice, &venue, PAD_LEFT);
+    court_edit_input(choice, &venue, &time, PAD_LEFT);
     assert(venue == VENUE_COUNT);
-    assert(!g_court_edit.recolor);
-    court_edit_input(choice, &venue, PAD_RIGHT);
+    assert(!g_court_edit.recolor && !g_court_edit.retime);
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
     assert(venue == COURT_VENUE_AUTO);
-    court_edit_input(choice, &venue, PAD_RIGHT);
-    assert(venue == 1 && court_edit_changed(choice, venue));
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
+    assert(venue == 1 && court_edit_changed(choice, venue, time));
+
+    /* TIME (ADR-045): DAY, DUSK, NIGHT, wrapping; each change retimes. */
+    court_edit_input(choice, &venue, &time, PAD_DOWN);
+    assert(g_court_edit.row == COURT_ROW_TIME);
+    court_edit_input(choice, &venue, &time, PAD_LEFT);
+    assert(time == COURT_TIMES - 1 && g_court_edit.retime);
+    g_court_edit.retime = 0;
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
+    assert(time == COURT_TIME_DAY && g_court_edit.retime);
+    g_court_edit.retime = 0;
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
+    assert(time == 1);
 
     /* Down to SURFACE: Left wraps to the last preset and recolours. */
-    court_edit_input(choice, &venue, PAD_DOWN);
-    assert(g_court_edit.row == COURT_PART_SURFACE + 1);
-    assert(court_edit_input(choice, &venue, PAD_LEFT) == COURT_EDIT_STAY);
+    court_edit_input(choice, &venue, &time, PAD_DOWN);
+    assert(g_court_edit.row == COURT_PART_SURFACE + COURT_ROW_PARTS);
+    assert(court_edit_input(choice, &venue, &time, PAD_LEFT) ==
+        COURT_EDIT_STAY);
     assert(choice[COURT_PART_SURFACE] == surfaces - 1);
     assert(g_court_edit.recolor);
     g_court_edit.recolor = 0;
-    court_edit_input(choice, &venue, PAD_RIGHT);
-    court_edit_input(choice, &venue, PAD_RIGHT);
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
     assert(choice[COURT_PART_SURFACE] == 1);
 
     /* Rows wrap; Left/Right change only the cursor's row. */
-    court_edit_input(choice, &venue, PAD_UP);
-    court_edit_input(choice, &venue, PAD_UP);
+    court_edit_input(choice, &venue, &time, PAD_UP);
+    court_edit_input(choice, &venue, &time, PAD_UP);
+    court_edit_input(choice, &venue, &time, PAD_UP);
     assert(g_court_edit.row == COURT_ROWS - 1);
-    court_edit_input(choice, &venue, PAD_RIGHT);
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
     assert(choice[COURT_PART_LINES] == 2);
-    court_edit_input(choice, &venue, PAD_DOWN);
+    court_edit_input(choice, &venue, &time, PAD_DOWN);
     assert(g_court_edit.row == COURT_ROW_VENUE);
 
-    /* Y puts everything back. */
-    assert(court_edit_input(choice, &venue, PAD_Y) == COURT_EDIT_CANCEL);
+    /* Y puts everything back, the time too (and retimes). */
+    g_court_edit.retime = 0;
+    assert(court_edit_input(choice, &venue, &time, PAD_Y) ==
+        COURT_EDIT_CANCEL);
     assert(choice[COURT_PART_SURFACE] == 0 && choice[COURT_PART_LINES] == 1);
-    assert(venue == COURT_VENUE_AUTO);
-    assert(!court_edit_changed(choice, venue));
+    assert(venue == COURT_VENUE_AUTO && time == COURT_TIME_DAY);
+    assert(g_court_edit.retime);
+    assert(!court_edit_changed(choice, venue, time));
 
     /* B keeps. */
-    court_edit_begin(choice, &venue);
-    court_edit_input(choice, &venue, PAD_RIGHT);
-    assert(court_edit_input(choice, &venue, PAD_B) == COURT_EDIT_DONE);
-    assert(venue == 1 && court_edit_changed(choice, venue));
+    court_edit_begin(choice, &venue, &time);
+    court_edit_input(choice, &venue, &time, PAD_RIGHT);
+    assert(court_edit_input(choice, &venue, &time, PAD_B) ==
+        COURT_EDIT_DONE);
+    assert(venue == 1 && court_edit_changed(choice, venue, time));
+}
+
+/* TIME (ADR-045): DAY changes nothing; NIGHT darkens the surround far more
+ * than the floodlit court, keeps the hue order of a blue-shifted night, and
+ * plays the night ambience. */
+static u8 channel(u16 color, u8 shift)
+{
+    return (u8)((color >> shift) & 31);
+}
+
+static void test_times(void)
+{
+    u16 ground[COURT_GROUND_COLORS];
+    u16 day[COURT_GROUND_COLORS];
+    u16 white = 0x7fff;
+    u16 one;
+    u8 choice[COURT_PARTS] = { 0, COURT_KITCHEN_SAME, 0, 0 };
+    u8 night = COURT_TIMES - 1;
+    u8 i;
+
+    load_painted();
+    court_style_compose(day, painted, choice, 0);
+    memcpy(ground, day, sizeof(ground));
+    court_style_time_ground(ground, COURT_TIME_DAY);
+    assert(memcmp(ground, day, sizeof(ground)) == 0);
+    one = white;
+    court_style_time(&one, 1, COURT_TIME_DAY, 0);
+    assert(one == white);
+
+    court_style_time_ground(ground, night);
+    for (i = 1; i < COURT_GROUND_COLORS; ++i) {
+        /* Never brighter, in any channel. */
+        assert(channel(ground[i], 0) <= channel(day[i], 0));
+        assert(channel(ground[i], 5) <= channel(day[i], 5));
+        assert(channel(ground[i], 10) <= channel(day[i], 10));
+    }
+    /* White under the lights stays bright; white in the dark doesn't, and
+     * the dark keeps more blue than red (a night sky, not grey). */
+    one = white;
+    court_style_time(&one, 1, night, 1);
+    assert(channel(one, 0) >= 24 && channel(one, 10) >= 28);
+    one = white;
+    court_style_time(&one, 1, night, 0);
+    assert(channel(one, 0) <= 8 && channel(one, 10) > channel(one, 0));
+    /* The lines are lit, the surround is not. */
+    assert(g_court_lit_mask & (1 << g_court_part_entries[COURT_PART_LINES][0]));
+    assert(!(g_court_lit_mask &
+        (1 << g_court_part_entries[COURT_PART_SURROUND][0])));
+
+    assert(strcmp(court_style_time_name(night), "NIGHT") == 0);
+    assert(strcmp(court_style_time_name(99), "DAY") == 0);
+    assert(court_style_ambience(1, COURT_TIME_DAY) == 1);
+    assert(court_style_ambience(1, night) != 0xff);
+    assert(court_style_ambience(1, night) < VENUE_COUNT);
 }
 
 int main(void)
@@ -202,6 +276,7 @@ int main(void)
     test_venues();
     test_kitchen();
     test_editor();
+    test_times();
     printf("court style host checks passed\n");
     return 0;
 }

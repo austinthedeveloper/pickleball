@@ -20,10 +20,11 @@ typedef char save_v4_is_32_bytes[sizeof(SaveV4) == 32 ? 1 : -1];
 typedef char save_v7_is_40_bytes[sizeof(SaveV7) == 40 ? 1 : -1];
 typedef char save_v8_is_42_bytes[sizeof(SaveV8) == 42 ? 1 : -1];
 typedef char save_v9_is_48_bytes[sizeof(SaveV9) == 48 ? 1 : -1];
-typedef char save_v10_is_52_bytes[sizeof(SaveData) == 52 ? 1 : -1];
+typedef char save_v10_is_52_bytes[sizeof(SaveV10) == 52 ? 1 : -1];
+typedef char save_v11_is_54_bytes[sizeof(SaveData) == 54 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 52
+#define SAVE_RAW_BYTES 54
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -137,6 +138,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V10)
+        return sizeof(SaveV10);
     if (version == SAVE_V9)
         return sizeof(SaveV9);
     if (version == SAVE_V8)
@@ -258,6 +261,19 @@ static void save_migrate_v9(const u8 *raw)
     g_save.initials = old.initials;
 }
 
+/* v0.14.0: everything carries over; the court's time is DAY. */
+static void save_migrate_v10(const u8 *raw)
+{
+    static SaveV10 old;
+
+    memcpy(&old, raw, sizeof(old));
+    save_defaults();
+    g_save.sequence = old.sequence;
+    g_save.records = old.records;
+    memcpy(&g_save.settings, &old.settings, sizeof(old.settings));
+    g_save.initials = old.initials;
+}
+
 void save_initialize(void)
 {
     static u8 raw[2][SAVE_RAW_BYTES];
@@ -286,7 +302,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V9)
+    if (raw[pick][4] == SAVE_V10)
+        save_migrate_v10(raw[pick]);
+    else if (raw[pick][4] == SAVE_V9)
         save_migrate_v9(raw[pick]);
     else if (raw[pick][4] == SAVE_V8)
         save_migrate_v8(raw[pick]);

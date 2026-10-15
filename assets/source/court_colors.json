@@ -51,5 +51,14 @@
         ["YELLOW", [250, 222, 70]]
       ]
     }
+  },
+  "times": {
+    "comment": "Night courts (ADR-045): the TIME row of the COURT page. DAY is the scene as painted. Other times scale each 5-bit channel (red, green, blue) of the venue's backdrop (BG1 palettes 3-7) and of the ground's dark entries by 'dark', and the ground's lit entries (the court under floodlights: surface, kitchen, lines, net) by 'lit'. 'ambience' names a venues.json ambience to play instead of the venue's own.",
+    "lit_entries": [4, 5, 6, 7, 9, 11, 12, 15],
+    "list": [
+      {"name": "DAY"},
+      {"name": "DUSK", "dark": [0.80, 0.62, 0.66], "lit": [0.98, 0.88, 0.80]},
+      {"name": "NIGHT", "dark": [0.22, 0.26, 0.42], "lit": [0.80, 0.86, 0.96], "ambience": "crickets"}
+    ]
   }
 }

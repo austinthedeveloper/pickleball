@@ -13,11 +13,12 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 10,          /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 11,          /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033); 9: record initials (ADR-040);
-                                   10: practice return zones (ADR-028).
+                                   10: practice return zones (ADR-028);
+                                   11: the court's time (ADR-045).
                                    Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
                                    v0.6.0 to v0.12.0, 9 in v0.13.0
                                    (ADR-032). */
@@ -49,6 +50,8 @@ typedef struct {
     u8 practice[4];             /* shot, target, rate, return zone (ADR-028) */
     u8 sound;                   /* AUDIO_* (ADR-029); 0 ALL in older saves */
     u8 modifiers;               /* MODIFIER_* bits (ADR-033) */
+    u8 time;                    /* COURT_TIME_* (ADR-045); 0 DAY */
+    u8 reserved;                /* keeps the checksum on an even offset */
 } SaveSettings;
 
 /* Who holds a record (ADR-040): three capitals, or zeros for nobody yet
@@ -82,8 +85,8 @@ extern u8 g_save_new_records;
  * SAVE_VERSION is bumped, the outgoing SaveData is frozen here as
  * SaveV<old version> and gets a migration step in save.c.
  */
-enum { SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9 };
-/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0 */
+enum { SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10 };
+/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0 */
 
 typedef struct {
     u8 magic[4];
@@ -169,6 +172,29 @@ typedef struct {
     SaveInitials initials;
     u16 checksum;
 } SaveV9;
+
+/* v0.14.0: the settings before the court's time. */
+typedef struct {
+    u8 court[COURT_PARTS];
+    u8 ladder;
+    u8 venue;
+    u8 points;
+    u8 difficulty;
+    u8 practice[4];
+    u8 sound;
+    u8 modifiers;
+} SaveSettingsV10;
+
+/* v0.14.0: SaveData before the court's time. */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 10 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettingsV10 settings;
+    SaveInitials initials;
+    u16 checksum;
+} SaveV10;
 
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */

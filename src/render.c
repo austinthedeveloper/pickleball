@@ -84,6 +84,15 @@ static u8 s_ground_waits;
 #define RENDER_RECOLOR_SCANLINE_LIMIT 110
 #define RENDER_RECOLOR_MAX_WAITS 3
 static u8 s_ground_dirty;
+/* The venue's backdrop, BG1 palettes 3-7, at the saved TIME (ADR-045):
+ * composed here and uploaded whole. A TIME change on the COURT page
+ * recomposes it on a light frame after the ground's. */
+static u16 s_backdrop[5 * 16];
+/* The backdrop as painted, copied from ROM when the court loads (the
+ * transform reads work RAM, src/asm/court_time.asm). */
+static u16 s_backdrop_painted[5 * 16];
+static u8 s_backdrop_pending;
+static u8 s_backdrop_dirty;
 /* Venue on screen (ADR-024). */
 static u8 s_venue;
 /* A preview keeps the ambience that plays (render_preview_court). */
@@ -260,6 +269,7 @@ static void render_compose_ground(void)
     s_lava_shown = RENDER_LAVA_WANTED();
     if (s_lava_shown)
         court_style_lava(s_ground_palette);
+    court_style_time_ground(s_ground_palette, g_save.settings.time);
     s_ground_dirty = 1;
     s_ground_pending = 0;
     s_ground_waits = 0;
@@ -270,17 +280,37 @@ void render_apply_court_colors(void)
     s_ground_pending = 1;
 }
 
-/* In render_prepare: a pending recolour on a light frame (or a late one). */
+/* The backdrop as painted, then at the saved TIME (ADR-045). */
+static void render_compose_backdrop(void)
+{
+    court_style_time_copy(s_backdrop_painted, s_backdrop, 5 * 16,
+        g_save.settings.time, 0);
+    s_backdrop_pending = 0;
+}
+
+void render_apply_court_time(void)
+{
+    s_ground_pending = 1;
+    s_backdrop_pending = 1;
+}
+
+/* In render_prepare: a pending recolour on a light frame (or a late one):
+ * the ground first, the backdrop on a later frame. */
 static void render_update_ground(void)
 {
-    if (!s_ground_pending)
+    if (!s_ground_pending && !s_backdrop_pending)
         return;
     if (profile_scanline() > RENDER_RECOLOR_SCANLINE_LIMIT &&
             s_ground_waits < RENDER_RECOLOR_MAX_WAITS) {
         ++s_ground_waits;
         return;
     }
-    render_compose_ground();
+    if (s_ground_pending) {
+        render_compose_ground();
+    } else {
+        render_compose_backdrop();
+        s_backdrop_dirty = 1;
+    }
     /* The HUD skips its own big redraw this frame: the two together ran
      * past the budget on the COURT page (a row and the recolour). */
     g_render_busy = 1;
@@ -612,6 +642,10 @@ void render_commit(void)
 #endif
     if (s_palette_dirty)
         render_upload_palettes();
+    if (s_backdrop_dirty) {
+        dmaCopyCGram((u8 *)s_backdrop, 48, sizeof(s_backdrop));
+        s_backdrop_dirty = 0;
+    }
     if (s_ground_dirty) {
         dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
         s_ground_dirty = 0;
@@ -638,6 +672,8 @@ void render_initialize(void)
     s_ground_dirty = 0;
     s_ground_pending = 0;
     s_ground_waits = 0;
+    s_backdrop_pending = 0;
+    s_backdrop_dirty = 0;
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
     hud_scene_initialize();
@@ -730,7 +766,7 @@ static void render_load_court(void)
             g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */
     if (!s_keep_ambience)
-        audio_ambience(s_venue);
+        audio_ambience(court_style_ambience(s_venue, g_save.settings.time));
     venue = &g_venue_data[s_venue];
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
@@ -739,7 +775,10 @@ static void render_load_court(void)
     /* The park (M4-OPEN-05) scrolls a 64x32 map of its own. */
     bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
     bgSetScroll(0, 0, 0);
-    dmaCopyCGram((u8 *)venue->palettes, 48, 160);
+    memcpy(s_backdrop_painted, venue->palettes, sizeof(s_backdrop_painted));
+    render_compose_backdrop();
+    dmaCopyCGram((u8 *)s_backdrop, 48, sizeof(s_backdrop));
+    s_backdrop_dirty = 0;
     memcpy(s_painted_ground, &court_palette, sizeof(s_painted_ground));
     render_compose_ground();
     dmaCopyCGram((u8 *)s_ground_palette, 32, 32);

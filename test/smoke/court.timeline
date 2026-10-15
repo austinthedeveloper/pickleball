@@ -1,13 +1,20 @@
-# Court colours (ADR-022/024/027): COURT on the title; rows are VENUE,
-# SURFACE, KITCHEN, SURROUND, LINES. BLUE surface, NAVY kitchen, GRASS
-# surround, WHITE lines; keep with B; reopen, change, cancel with Y.
+# Court colours (ADR-022/024/027) and time (ADR-045): COURT on the title;
+# rows are VENUE, TIME, SURFACE, KITCHEN, SURROUND, LINES. NIGHT (through
+# DUSK, a live recolour of the ground and the backdrop), BLUE surface, NAVY
+# kitchen, GRASS surround, WHITE lines; keep with B; reopen, change, cancel
+# with Y.
 70 71 down
 75 76 down     # past OPEN PLAY (ADR-034)
 80 81 down
 shot 90
 100 101 start
-115 116 down
-125 126 right
+108 109 down   # TIME
+112 113 right  # DUSK
+shot 118
+120 121 right  # NIGHT
+shot 128
+130 131 down
+135 136 right
 shot 140
 150 151 down
 160 161 right

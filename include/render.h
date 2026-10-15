@@ -65,6 +65,9 @@ void render_apply_match_config(void);
 /* Recomposes the ground palette from the saved court colours (ADR-022);
  * uploaded in render_commit's VBlank. */
 void render_apply_court_colors(void);
+/* The saved TIME changed (ADR-045): the ground and the backdrop recompose
+ * on light frames and upload in VBlank. */
+void render_apply_court_time(void);
 /* Mode whose palettes/colour math are currently set up. */
 u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the

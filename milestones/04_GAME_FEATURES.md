@@ -27,6 +27,9 @@ ADR-024.
 - [x] `M4-COURT-02` Two-tone court: the kitchen gets its own colour part (see IDEAS.md, "Two-tone court").
   - Verified: [ADR-027](../docs/decisions/ADR-027-two-tone-kitchen.md), `test_court_style.c`, `court.timeline`.
   - Accept: the kitchen paints with its own palette-2 entries; a KITCHEN row (with SAME as an option) previews live; every kitchen preset passes the line contrast check; venues can set a default kitchen.
+- [x] `M4-COURT-03` Night courts: a TIME row (DAY, DUSK, NIGHT) on the COURT page for any venue, with a floodlit court and a night ambience (see IDEAS.md, "Night courts").
+  - Accept: the backdrop and surround darken while the court and lines stay readable at every time (the contrast checks pass); the change previews live without dropped frames; it is saved, and older saves migrate.
+  - Verified: [ADR-045](../docs/decisions/ADR-045-night-courts.md), `test_court_style.c: test_editor, test_times`, `test_save.c: test_migrate_v10`, the asset build's contrast checks per time, `court.timeline` zero overruns in `make perf` (the transform in assembly), MesenCE at every venue; golden trace identical.
 - [x] `M4-VENUE-01` Venues PARK, LAKESIDE, and SUNSET with shared ground tiles and home courts.
   - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md), `venue.timeline`, `lake.timeline`.
 - [x] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.

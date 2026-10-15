@@ -441,6 +441,48 @@ static void test_migrate_v9(void)
     assert(save_valid(&a) && a.version == SAVE_VERSION);
 }
 
+/* A v0.14.0 save (layout 10) carries over whole; the court's time is DAY
+ * (ADR-045), and the time round-trips in the current layout. */
+static void test_migrate_v10(void)
+{
+    SaveV10 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V10;
+    old.sequence = 7;
+    old.records.wins[MATCH_DOUBLES] = 31;
+    old.records.practice_zone_best[2] = 11;
+    old.settings.court[COURT_PART_LINES] = 1;
+    old.settings.venue = 3;
+    old.settings.practice[3] = 2;
+    old.settings.sound = 1;
+    old.settings.modifiers = 6;
+    memcpy(old.initials.longest_rally, "SUE", 3);
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.wins[MATCH_DOUBLES] == 31);
+    assert(g_save.records.practice_zone_best[2] == 11);
+    assert(g_save.settings.court[COURT_PART_LINES] == 1);
+    assert(g_save.settings.venue == 3 && g_save.settings.practice[3] == 2);
+    assert(g_save.settings.sound == 1 && g_save.settings.modifiers == 6);
+    assert(g_save.settings.time == COURT_TIME_DAY);         /* new */
+    assert(memcmp(g_save.initials.longest_rally, "SUE", 3) == 0);
+    memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+
+    g_save.settings.time = 2;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.settings.time == 2);
+}
+
 /* ADR-040: beating a record clears its initials until they are entered;
  * entering sets them for every record beaten, saves, and clears the
  * flags. Erasing the records erases the initials. */
@@ -522,6 +564,7 @@ int main(void)
     test_migrate_v7();
     test_migrate_v8();
     test_migrate_v9();
+    test_migrate_v10();
     test_initials();
     test_game_hooks();
     printf("save host checks passed\n");

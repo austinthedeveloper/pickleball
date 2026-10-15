@@ -218,10 +218,13 @@ static void court_show_venue(u8 saved, u8 preview)
             render_open_match();
         profile_resync();
     }
-    /* Closing on a previewed venue: its ambience, under a fade. */
-    if (!preview && audio_ambience_venue() != render_court_venue()) {
+    /* Closing on a previewed venue (or a new TIME, ADR-045): its
+     * ambience, under a fade. */
+    if (!preview && audio_ambience_venue() != court_style_ambience(
+            render_court_venue(), g_save.settings.time)) {
         render_fade(1);
-        audio_ambience(render_court_venue());
+        audio_ambience(court_style_ambience(render_court_venue(),
+            g_save.settings.time));
         render_fade(0);
         profile_resync();
     }
@@ -231,9 +234,14 @@ static void update_title_court(u16 pressed)
 {
     SaveSettings *settings = &g_save.settings;
     u8 venue = settings->venue;
-    u8 result = court_edit_input(settings->court, &settings->venue, pressed);
+    u8 result = court_edit_input(settings->court, &settings->venue,
+        &settings->time, pressed);
 
-    if (g_court_edit.recolor) {
+    if (g_court_edit.retime) {
+        g_court_edit.retime = 0;
+        g_court_edit.recolor = 0;
+        render_apply_court_time();
+    } else if (g_court_edit.recolor) {
         g_court_edit.recolor = 0;
         render_apply_court_colors();
     }
@@ -251,10 +259,13 @@ static void update_title_court(u16 pressed)
     }
     g_title_page = TITLE_PAGE_MENU;
     if (result == COURT_EDIT_DONE &&
-            court_edit_changed(settings->court, settings->venue))
+            court_edit_changed(settings->court, settings->venue,
+                settings->time))
         save_write();
-    /* Y restored the venue: only a preview changed what shows. */
-    if (s_venue_previewed || settings->venue != g_court_edit.original_venue)
+    /* Y restored the venue: only a preview changed what shows. A new TIME
+     * may change the ambience (court_show_venue loads it). */
+    if (s_venue_previewed || settings->venue != g_court_edit.original_venue ||
+            settings->time != g_court_edit.original_time)
         court_show_venue(settings->venue, 0);
 }
 
@@ -367,7 +378,7 @@ static void update_title(void)
                 g_title_page = TITLE_PAGE_OPTIONS;
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,
-                    &g_save.settings.venue);
+                    &g_save.settings.venue, &g_save.settings.time);
                 s_venue_rest = COURT_PREVIEW_REST_FRAMES;
                 s_venue_previewed = 0;
                 g_title_page = TITLE_PAGE_COURT;

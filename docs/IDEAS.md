@@ -367,6 +367,10 @@ are kept per character, and playing unlocks cosmetics.
 
 ## Night courts
 
+**Done:** [ADR-045](decisions/ADR-045-night-courts.md). Still open: light
+poles, and a match that darkens as it goes. The notes below are the
+original idea.
+
 Play any venue at night: a **TIME** row on the COURT page (DAY, DUSK,
 NIGHT), saved with the other court settings.
 
