@@ -14,8 +14,12 @@ enum {
     SERVE_HAND_OFFSET_X = 10,
     SERVE_HAND_Z = 14,
     SERVE_STANCE_OFFSET_Y = 22,
-    SERVE_BASELINE_GAP = 6,
-    SERVE_RECEIVER_GAP = 4,
+    /* Feet behind the baseline: the server as far back as the runoff
+     * allows, the receiver and the server's partner a little less. A
+     * player's body reaches toward the net past their feet, so less looks
+     * like standing in the court. */
+    SERVE_BASELINE_GAP = PLAYER_RUNOFF_BACK,
+    SERVE_RECEIVER_GAP = 8,
     SERVE_PARTNER_KITCHEN_GAP = 8,
     SERVE_TARGET_LANE_SHIFT = 12,
     /* Targets for a left-team server; the right team mirrors them. */

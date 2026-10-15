@@ -48,9 +48,10 @@ static void test_server_rotation(void)
     assert(g_serve_state.server_index == 0);
     assert(g_serve_state.receiver_index == 2);
     assert(!top(0) && top(2));
-    /* Partners: server's at the baseline, receiver's at the kitchen. */
+    /* Partners: server's behind the baseline, receiver's at the kitchen. */
     assert(top(1) && !top(3));
-    assert(g_players[1].x_fp < TO_FP(COURT_KITCHEN_LEFT_X));
+    assert(g_players[1].x_fp ==
+        TO_FP(COURT_BASELINE_LEFT - SERVE_RECEIVER_GAP));
     assert(g_players[3].x_fp ==
         TO_FP(COURT_KITCHEN_RIGHT_X + SERVE_PARTNER_KITCHEN_GAP));
 

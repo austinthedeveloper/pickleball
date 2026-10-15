@@ -60,6 +60,9 @@ static void test_setup_positions(void)
         TO_FP(COURT_BASELINE_LEFT - SERVE_BASELINE_GAP));
     assert(g_players[0].y_fp > TO_FP(COURT_CENTERLINE_Y));
     assert(g_players[2].y_fp < TO_FP(COURT_CENTERLINE_Y));
+    /* Both stand behind their baselines, not on them. */
+    assert(g_players[2].x_fp ==
+        TO_FP(COURT_BASELINE_RIGHT + SERVE_RECEIVER_GAP));
     assert(g_players[0].frozen == 1);
     assert(g_players[2].frozen == 0);
     assert(g_ball.rally_state == BALL_RALLY_INACTIVE);
@@ -77,7 +80,11 @@ static void test_setup_positions(void)
     assert(g_players[2].y_fp < TO_FP(COURT_CENTERLINE_Y));
     assert(g_players[2].x_fp ==
         TO_FP(COURT_BASELINE_RIGHT + SERVE_BASELINE_GAP));
+    assert(g_players[0].x_fp ==
+        TO_FP(COURT_BASELINE_LEFT - SERVE_RECEIVER_GAP));
     assert(g_ball.x_fp == g_players[2].x_fp - TO_FP(SERVE_HAND_OFFSET_X));
+    /* The ball is struck behind the baseline too. */
+    assert(g_ball.x_fp > TO_FP(COURT_BASELINE_RIGHT));
 }
 
 static void test_early_press_is_buffered_and_toss_runs(void)
