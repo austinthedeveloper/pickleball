@@ -1,7 +1,8 @@
 # Known Issues
 
-Open defects and accepted minors for the M3 candidate (`M3-QA-06`). None
-are blockers.
+Open defects, accepted minors, and fixed defects worth remembering, from the
+M3 candidate (`M3-QA-06`) on. Add a row for each new defect; when one is
+fixed, mark it Resolved and say how, with the branch and the test.
 
 | # | Severity | Issue | Reproduction | Status / reason |
 |---|---|---|---|---|
