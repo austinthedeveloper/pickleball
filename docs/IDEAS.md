@@ -342,6 +342,10 @@ release to toss and serve at that power.
 
 ## Career mode
 
+**Started:** [ADR-047](decisions/ADR-047-career.md): three slots, stats,
+and cosmetic unlocks (stage 1, the data). The notes below are the original
+idea.
+
 Create a character, save their name, and play every mode as them. Stats
 are kept per character, and playing unlocks cosmetics.
 

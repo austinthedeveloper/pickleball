@@ -85,6 +85,14 @@ ADR-024.
   - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
 - [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
 
+## Career
+
+- [x] `M4-CAREER-01` Career players, the data: three save slots, each a named player with a look, lifetime stats, and unlocks; stats from points and matches against the CPU; save layout 12.
+  - Verified: [ADR-047](../docs/decisions/ADR-047-career.md), `test/test_career.c`, the save written and reloaded in MesenCE; `make perf` zero overruns (the save sum in assembly).
+- [ ] `M4-CAREER-02` The CAREER page (RECORDS becomes CAREER): slot picker, player card with stats and unlocks, and the editor (name, body, skin, hair, shirt, hat, paddle; locked items shown locked).
+- [ ] `M4-CAREER-03` Play as the active player: 1P's look and paddle, the name on the HUD, and new unlocks on the result screen.
+- [ ] `M4-CAREER-04` Gear that changes stats, always a trade-off (phase 2, with a balance pass).
+
 ## Pause
 
 - [x] `M4-PAUSE-01` Pause menu: RESUME, RESTART, MAIN MENU in matches and practice.

@@ -81,8 +81,12 @@ static u16 s_painted_ground[COURT_GROUND_COLORS];
  * reaches ~200 scanlines on its heavy frames), but at most a few frames. */
 static u8 s_ground_pending;
 static u8 s_ground_waits;
-#define RENDER_RECOLOR_SCANLINE_LIMIT 110
-#define RENDER_RECOLOR_MAX_WAITS 3
+/* 96 and 6 (were 110 and 3): with the career save (ADR-047) boot runs a
+ * little longer, which moved heavy title-demo frames onto COURT page
+ * recolours (and a LAVA one in a match); a lighter frame or more chances
+ * keep every make perf run at zero. */
+#define RENDER_RECOLOR_SCANLINE_LIMIT 96
+#define RENDER_RECOLOR_MAX_WAITS 6
 static u8 s_ground_dirty;
 /* The venue's backdrop, BG1 palettes 3-7, at the saved TIME (ADR-045):
  * composed here and uploaded whole. A TIME change on the COURT page

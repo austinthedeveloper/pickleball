@@ -42,6 +42,7 @@ from assetgen.hud import (HUD_TILE_BALL_ICON, HUD_TILE_BAR_OFF,  # noqa: E402
 from assetgen.obj import obj_assets, palette_parts_header  # noqa: E402
 from assetgen.court_colors import court_colors_header  # noqa: E402
 from assetgen.opponents import opponents_header  # noqa: E402
+from assetgen.career import career_header  # noqa: E402
 from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
 from assetgen.ambience import ambience_module  # noqa: E402
@@ -100,6 +101,7 @@ def generated_files():
         "paddle_stats.h": paddle_header.encode(),
         "court_colors.h": court_colors_header().encode(),
         "opponents.h": opponents_header().encode(),
+        "career_data.h": career_header().encode(),
         "court_projection.h": projection.encode(),
         "asm_shared.inc": asm_include(header).encode(),
         "select.pic": select_pic,

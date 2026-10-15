@@ -13,12 +13,13 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 11,          /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 12,          /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033); 9: record initials (ADR-040);
                                    10: practice return zones (ADR-028);
-                                   11: the court's time (ADR-045).
+                                   11: the court's time (ADR-045);
+                                   12: career players (ADR-047).
                                    Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
                                    v0.6.0 to v0.12.0, 9 in v0.13.0
                                    (ADR-032). */
@@ -61,6 +62,41 @@ typedef struct {
     u8 longest_rally[SAVE_INITIALS];
 } SaveInitials;
 
+/* A career player (ADR-047). Words first and an even size, so the layout is
+ * the same on the host and the SNES (816-tcc does not pad). Counters
+ * saturate at SAVE_COUNTER_MAX, beaten[] at 255. */
+enum {
+    CAREER_SLOTS = 3,
+    CAREER_NAME = 8,            /* letters, space-padded */
+    CAREER_TEAMS = 8,           /* ladder teams (OPPONENT_COUNT, checked) */
+    CAREER_NONE = 0xff          /* no active player */
+};
+
+typedef struct {
+    u16 wins[2];                /* by MatchMode, against the CPU */
+    u16 losses[2];
+    u16 points_won;
+    u16 points_lost;
+    u16 aces;                   /* your serves that were not returned */
+    u16 shutouts;
+    u16 streak;
+    u16 best_streak;
+    u16 longest_rally;
+    u16 ladder_clears;
+    u16 open_play;              /* open play games finished */
+    u16 unlocked;               /* bit n: career.json's unlock n */
+    u8 used;                    /* 0: an empty slot */
+    u8 name[CAREER_NAME];
+    u8 variant;                 /* PLAYER_VARIANT_* */
+    u8 skin;                    /* CAREER_SKINS */
+    u8 hair;                    /* CAREER_HAIRS */
+    u8 shirt;                   /* PAL_* team colour */
+    u8 hat;                     /* HAT id, 0 the cap */
+    u8 paddle;                  /* PADDLE_* */
+    u8 beaten[CAREER_TEAMS];    /* wins over each ladder team */
+    u8 reserved;
+} CareerPlayer;
+
 typedef struct {
     u8 magic[4];                /* "PB94" */
     u8 version;                 /* SAVE_VERSION, or a frozen older layout
@@ -69,6 +105,9 @@ typedef struct {
     SaveRecords records;
     SaveSettings settings;
     SaveInitials initials;
+    CareerPlayer career[CAREER_SLOTS];
+    u8 career_active;           /* slot, or CAREER_NONE */
+    u8 career_reserved;
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
@@ -85,8 +124,11 @@ extern u8 g_save_new_records;
  * SAVE_VERSION is bumped, the outgoing SaveData is frozen here as
  * SaveV<old version> and gets a migration step in save.c.
  */
-enum { SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10 };
-/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0 */
+enum {
+    SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10,
+    SAVE_V11 = 11
+};
+/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0, v0.15.0 */
 
 typedef struct {
     u8 magic[4];
@@ -195,6 +237,17 @@ typedef struct {
     SaveInitials initials;
     u16 checksum;
 } SaveV10;
+
+/* v0.15.0: SaveData before the career players. */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 11 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettings settings;
+    SaveInitials initials;
+    u16 checksum;
+} SaveV11;
 
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */

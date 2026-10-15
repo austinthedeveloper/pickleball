@@ -21,10 +21,12 @@ typedef char save_v7_is_40_bytes[sizeof(SaveV7) == 40 ? 1 : -1];
 typedef char save_v8_is_42_bytes[sizeof(SaveV8) == 42 ? 1 : -1];
 typedef char save_v9_is_48_bytes[sizeof(SaveV9) == 48 ? 1 : -1];
 typedef char save_v10_is_52_bytes[sizeof(SaveV10) == 52 ? 1 : -1];
-typedef char save_v11_is_54_bytes[sizeof(SaveData) == 54 ? 1 : -1];
+typedef char save_v11_is_54_bytes[sizeof(SaveV11) == 54 ? 1 : -1];
+typedef char career_player_is_52_bytes[sizeof(CareerPlayer) == 52 ? 1 : -1];
+typedef char save_v12_is_212_bytes[sizeof(SaveData) == 212 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 54
+#define SAVE_RAW_BYTES 212
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -52,6 +54,7 @@ static void sram_write(const SaveData *source, u16 offset)
 
 /* Fletcher-style: two running byte sums, so swapped bytes also change it.
  * The same for every layout. */
+#ifdef HOST_TEST
 u16 save_checksum_bytes(const u8 *byte, u16 count)
 {
     u8 a = 0;
@@ -63,6 +66,23 @@ u16 save_checksum_bytes(const u8 *byte, u16 count)
     }
     return ((u16)b << 8) | a;
 }
+#else
+/* src/asm/save_sum.asm: the same sums, several times faster. A save write
+ * (match end, leaving a page) sums the whole 212-byte block. */
+u16 save_sum_src;
+u16 save_sum_len;
+u16 save_sum_result;
+u8 save_sum_b;
+extern void save_sum(void);
+
+u16 save_checksum_bytes(const u8 *byte, u16 count)
+{
+    save_sum_src = (u16)byte;
+    save_sum_len = count;
+    save_sum();
+    return save_sum_result;
+}
+#endif
 
 u16 save_checksum(const SaveData *data)
 {
@@ -91,6 +111,7 @@ static void save_defaults(void)
     g_save.settings.practice[PRACTICE_ROW_TARGET] = PRACTICE_TARGET_RANDOM;
     g_save.settings.practice[PRACTICE_ROW_RATE] = PRACTICE_RATE_NORMAL;
     g_save.settings.practice[PRACTICE_ROW_ZONE] = PRACTICE_ZONE_ANY;
+    g_save.career_active = CAREER_NONE;
 }
 
 void save_write(void)
@@ -138,6 +159,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V11)
+        return sizeof(SaveV11);
     if (version == SAVE_V10)
         return sizeof(SaveV10);
     if (version == SAVE_V9)
@@ -274,6 +297,19 @@ static void save_migrate_v10(const u8 *raw)
     g_save.initials = old.initials;
 }
 
+/* v0.15.0: everything carries over; no career players yet (ADR-047). */
+static void save_migrate_v11(const u8 *raw)
+{
+    static SaveV11 old;
+
+    memcpy(&old, raw, sizeof(old));
+    save_defaults();
+    g_save.sequence = old.sequence;
+    g_save.records = old.records;
+    g_save.settings = old.settings;
+    g_save.initials = old.initials;
+}
+
 /* Layouts before 11 knew 7 surface colours, so the kitchen's own presets
  * (LIME, TEAL) came at 9 and 10; the surface colours added with layout 11
  * (mirrored in the kitchen, ADR-027) moved them up. */
@@ -315,7 +351,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V10)
+    if (raw[pick][4] == SAVE_V11)
+        save_migrate_v11(raw[pick]);
+    else if (raw[pick][4] == SAVE_V10)
         save_migrate_v10(raw[pick]);
     else if (raw[pick][4] == SAVE_V9)
         save_migrate_v9(raw[pick]);
@@ -325,7 +363,8 @@ void save_initialize(void)
         save_migrate_v7(raw[pick]);
     else
         save_migrate_v4(raw[pick]);
-    save_remap_kitchen_v10();
+    if (raw[pick][4] != SAVE_V11)
+        save_remap_kitchen_v10();
     save_write();
     save_write();
 }

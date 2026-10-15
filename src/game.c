@@ -1,6 +1,7 @@
 #include <string.h>
 #include "ai.h"
 #include "ball.h"
+#include "career.h"
 #include "collision.h"
 #include "events.h"
 #include "fx.h"
@@ -305,6 +306,12 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     /* First frame of the result (the timer counts from 1 here). */
     if (g_game_state.phase_timer == 1 && !g_attract) {
         save_record_rally((u8)(g_game_state.shot_serial - s_rally_start));
+        /* ADR-047: the active career player's point (against the CPU). */
+        if (g_match_config.human[2] == 0)
+            career_record_point(
+                (u8)(g_game_state.shot_serial - s_rally_start),
+                g_game_state.point_winner == 0,
+                g_serve_state.server_index == 0);
         /* A close call after a long rally (ADR-041): display only. */
         replay_check((u8)(g_game_state.shot_serial - s_rally_start),
             g_game_state.last_fault);
@@ -324,6 +331,11 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
         if (!g_attract && winner == 0 && !g_match_config.open_play &&
                 g_match_config.opponent != OPPONENT_NONE)
             save_advance_ladder();
+        /* ADR-047: before save_record_match, whose write keeps both. */
+        if (!g_attract && g_match_config.human[2] == 0)
+            career_record_match(g_match_config.mode, winner == 0,
+                g_game_state.team_score[1], g_match_config.opponent,
+                g_match_config.open_play);
         if (!g_attract)
             save_record_match(g_match_config.mode,
                 !g_match_config.human[2], winner == 0,
