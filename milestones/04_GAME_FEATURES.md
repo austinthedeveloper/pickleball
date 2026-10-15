@@ -28,8 +28,9 @@ ADR-024.
   - Accept: the kitchen paints with its own palette-2 entries; a KITCHEN row (with SAME as an option) previews live; every kitchen preset passes the line contrast check; venues can set a default kitchen.
 - [x] `M4-VENUE-01` Venues PARK, LAKESIDE, and SUNSET with shared ground tiles and home courts.
   - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md), `venue.timeline`, `lake.timeline`.
-- [ ] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
+- [x] `M4-VENUE-02` Preview a venue on the COURT page before leaving it.
   - Accept: scrolling VENUE shows the backdrop (reload with a short fade, or a thumbnail) without dropped frames; Y still restores the original.
+  - Verified: [ADR-024](../docs/decisions/ADR-024-venues.md) (amended): a rested VENUE reloads behind the page in about 25 frames (the ambience waits for the page to close); `venue_preview.timeline` with zero overruns in `make perf`; golden trace identical.
 - [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium).
   - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 512 KiB cart has about 300 KiB free).
 
@@ -37,10 +38,12 @@ ADR-024.
 
 - [x] `M4-OPP-01` Eight CPU personalities with looks, play styles, and a saved ladder.
   - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md), `test/test_opponents.c`, `make stats OPPONENT=n`.
-- [ ] `M4-OPP-02` Tune the doubles partners.
+- [x] `M4-OPP-02` Tune the doubles partners.
   - Accept: a doubles balance run (`tools/match_stats.c` is singles only today) shows each team's difficulty in ladder order.
-- [ ] `M4-OPP-03` Give BRAD a distinct difficulty.
+  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md) (amended): `make stats LATE=0 OPPONENT=-2 MODE=1` (and `MODE=3`, the net bot) prints the doubles ladder in order for both bots (bot wins of 60: 59, 44, 36, 26, 21, 9, 3, 2 and 60, 59, 42, 29, 20, 17, 7, 2, after the singles pass); four partners retuned, singles unchanged.
+- [x] `M4-OPP-03` Give BRAD a distinct difficulty.
   - Accept: his matches stop being a coin flip of balls hit out; his bot win rate sits between MARGE's and PETE's in the ADR-023 table.
+  - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md) (amended): late every 4th (was 2nd), slower to react and move; bot wins of 180 MARGE 123, BRAD 96 (was 80), PETE 79, and better bots now beat him more (11 → 20 of 30, was flat); the doubles ladder stays in order (CHAD late 7).
 - [x] `M4-AI-01` Net play: CPUs volley once the bounces are done and come up to the kitchen line, scaled by ladder rung; a human's CPU partner plays it too.
   - Verified: [ADR-035](../docs/decisions/ADR-035-net-play.md), `test_ai.c: test_net_play`, the ADR-035 bot table (no early-volley faults), golden trace identical.
 - [x] `M4-AI-02` Situational shots: drops and dinks against net players, put-aways, dink rallies with speed-ups.

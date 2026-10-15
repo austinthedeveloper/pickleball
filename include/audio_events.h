@@ -41,6 +41,8 @@ void audio_update(void);
  * venue, or stops it when the SOUND option leaves out the crowd. Loading a
  * module blocks for a moment: call it while the court loads. */
 void audio_ambience(u8 venue);
+/* The venue last asked for (its ambience, unless SOUND mutes it). */
+u8 audio_ambience_venue(void);
 /* Re-applies the SOUND option to the ambience (after OPTIONS changes). */
 void audio_refresh(void);
 /* Venue whose ambience is playing, or AUDIO_NO_AMBIENCE (host tests). */

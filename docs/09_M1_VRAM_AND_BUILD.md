@@ -13,7 +13,8 @@ are uploaded once during forced blank.
 | BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
 | BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 21,152 (661 tiles: shared ground + the venue's own; ADR-024/027) |
 | BG2 intro card bust map (M4-STORY-03) | `0x0800` | `0x1000–0x17ff` | 2,048 (the captain's variant; only while the card is up) |
-| BG2 intro card bust tiles | `0x4800` | `0x9000–0x9fff` | 1,632 (51 tiles; budget 128). BG2's tile base is `0x4000` (it steps by `0x1000` words); the map counts from tile 128. |
+| BG2 close call map (ADR-041) | `0x0c00` | `0x1800–0x1fff` | 2,048 (rows 15-21 written when a point shows it) |
+| BG2 intro card bust and close call tiles | `0x4800` | `0x9000–0x9fff` | 1,824 (57 tiles; budget 128). BG2's tile base is `0x4000` (it steps by `0x1000` words); the map counts from tile 128. |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
 | OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 7,968 (249 tiles: the second objects row holds open play's people, ADR-034, and opponent hats, M4-OPP-04; then the park fonts) |
 
@@ -64,7 +65,8 @@ BALL, ADR-033), 1 ball shadow, 2–13 a group of three per player sorted
 nearest-first (the hat's two halves, then the body; M4-OPP-04), 14–17 shadows
 by slot (one 8×8 each), 18 spark, 19 debug landing marker (debug builds),
 22–25 accessories (ponytails, ADR-014), 26–29 the practice ball machine
-(ADR-028), 30–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
+(ADR-028), 30–31 the close call (ADR-041), 32–33 the partner sitting out
+(ADR-042), 34–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
 high-table X bit for negative x and parks hidden objects as small objects at
 y = 240. That is below every evaluated line, so they never show and never count
 toward the PPU's 32-object range-over limit.

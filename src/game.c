@@ -13,6 +13,7 @@
 #include "player.h"
 #include "profile.h"
 #include "rules.h"
+#include "replay.h"
 #include "save.h"
 #include "serve.h"
 
@@ -152,6 +153,7 @@ void game_new_match(void)
     serve_initialize();
     ai_initialize();
     fx_initialize();
+    replay_initialize();
     game_initialize();
     game_activate_players();
     if (g_match_config.practice)
@@ -281,8 +283,12 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     game_freeze_players(winner);
 
     /* First frame of the result (the timer counts from 1 here). */
-    if (g_game_state.phase_timer == 1 && !g_attract)
+    if (g_game_state.phase_timer == 1 && !g_attract) {
         save_record_rally((u8)(g_game_state.shot_serial - s_rally_start));
+        /* A close call after a long rally (ADR-041): display only. */
+        replay_check((u8)(g_game_state.shot_serial - s_rally_start),
+            g_game_state.last_fault);
+    }
     if (g_game_state.phase_timer < GAME_POINT_RESULT_MIN_FRAMES)
         return;
     if (g_game_state.phase_timer < GAME_POINT_RESULT_FRAMES &&

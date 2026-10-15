@@ -26,4 +26,7 @@ extern u8 g_title_mode;
 extern u8 g_title_page;
 extern u8 g_title_2p;
 
+/* The close call's frame is drawn (ADR-041): its close-up may show. */
+u8 hud_replay_framed(void);
+
 #endif

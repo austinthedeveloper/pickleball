@@ -16,6 +16,7 @@
 #include "practice.h"
 #include "save.h"
 #include "story.h"
+#include "replay.h"
 
 /*
  * Score panels and scene overlays (title, serve prompt, point and match
@@ -398,6 +399,14 @@ enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
 
 static u8 s_scene_step;
 static u16 s_prev_scene;
+/* The close call's frame is up (rows 14-23, ADR-041): the next clear takes
+ * those rows too. */
+static u8 s_replay_drawn;
+
+u8 hud_replay_framed(void)
+{
+    return s_replay_drawn;
+}
 
 /* The opponent speaking on the story cards: singles names the captain,
  * doubles the team. */
@@ -415,6 +424,61 @@ static void hud_center_text(u8 row, u8 palette, const char *text)
     while (text[length])
         ++length;
     hud_text((u8)(16 - length / 2), row, palette, text);
+}
+
+/* A count as text without leading zeros (no 816-tcc division); returns
+ * the end of the text. */
+static char *hud_count_text(char *out, u16 value)
+{
+    static const u16 powers[4] = { 10000, 1000, 100, 10 };
+    u8 i;
+    u8 leading = 1;
+    char digit;
+
+    for (i = 0; i < 4; ++i) {
+        digit = '0';
+        while (value >= powers[i]) {
+            value -= powers[i];
+            ++digit;
+        }
+        if (!leading || digit != '0') {
+            *out++ = digit;
+            leading = 0;
+        }
+    }
+    *out++ = (char)('0' + value);
+    *out = 0;
+    return out;
+}
+
+static char *hud_copy_text(char *out, const char *text)
+{
+    while (*text)
+        *out++ = *text++;
+    *out = 0;
+    return out;
+}
+
+/* The close call (ADR-041): a frame around the BG2 close-up, then the
+ * caption under it ("OUT BY 2 INCHES!"). */
+static void hud_replay_step(u8 step)
+{
+    static char caption[20];
+    char *end;
+
+    if (step == HUD_STEP_EXTRA) {
+        hud_frame(REPLAY_COL - 1, REPLAY_ROW - 1, REPLAY_COLS, REPLAY_ROWS);
+        s_replay_drawn = 1;
+    } else if (step == HUD_STEP_EXTRA2) {
+        if (!g_replay.inches) {
+            hud_copy_text(caption, "OUT BY A HAIR!");
+        } else {
+            end = hud_copy_text(caption, "OUT BY ");
+            end = hud_count_text(end, g_replay.inches);
+            hud_copy_text(end, g_replay.inches == 1 ? " INCH!" : " INCHES!");
+        }
+        hud_center_text(REPLAY_ROW + REPLAY_ROWS + 1, HUD_PAL_YELLOW, caption);
+    }
 }
 
 /* Intro card (ADR-026): the opponent's name, their line, the prompt, and
@@ -1099,7 +1163,9 @@ static void hud_scene_step(u16 key, u8 step)
 
     if (step == HUD_STEP_CLEAR) {
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 6 + TITLE_AREA_ROWS : 7);
+            from_title ? 6 + TITLE_AREA_ROWS : s_replay_drawn ?
+                REPLAY_ROW + REPLAY_ROWS + 1 - CENTER_BIG_ROW : 7);
+        s_replay_drawn = 0;
         hud_clear_rows(BANNER_ROW - 1, 4);
         return;
     }
@@ -1130,6 +1196,11 @@ static void hud_scene_step(u16 key, u8 step)
             hud_result_story(step);
         return;
     }
+    if (g_game_state.phase == GAME_PHASE_POINT_RESULT && g_replay.active &&
+            !g_attract && step >= HUD_STEP_EXTRA) {
+        hud_replay_step(step);
+        return;
+    }
     if (step >= HUD_STEP_EXTRA)
         return;
     switch (g_game_state.phase) {
@@ -1145,7 +1216,7 @@ static void hud_scene_step(u16 key, u8 step)
         if (step == HUD_STEP_BIG)
             hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
                 fault_word(g_game_state.last_fault));
-        else
+        else if (step == HUD_STEP_PROMPT)
             hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
                 hud_point_text(winner));
         break;
@@ -1237,6 +1308,7 @@ void hud_scene_update(void)
 void hud_scene_initialize(void)
 {
     s_hud_valid = 0;
+    s_replay_drawn = 0;
     s_sub_panel = 0;
     s_hud_scene = 0xff;
     s_scene_step = HUD_STEP_DONE;

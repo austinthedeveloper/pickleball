@@ -1,6 +1,6 @@
 PVSNESLIB_HOME ?= ../pvsneslib
 CONFIG ?= debug
-VERSION_NAME := 0.10.0
+VERSION_NAME := 0.12.0
 BUILD_ID ?= $(shell id=$$(git rev-parse --short HEAD 2>/dev/null || echo dev); \
 	if test -n "$$(git status --porcelain 2>/dev/null)"; then \
 		fingerprint=$$({ git diff --binary HEAD; git status --porcelain; } | \
@@ -96,8 +96,8 @@ HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/court.c src/court_style.c src/events.c src/fx.c src/game.c \
 	src/input_state.c src/match.c src/modifiers.c src/open_play.c src/options.c src/pause_menu.c src/player.c \
 	src/projection.c src/practice.c src/rules.c src/save.c src/select.c \
-	src/serve.c src/story.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice audio pause_menu modifiers open_play
+	src/serve.c src/story.c src/replay.c
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice audio pause_menu modifiers open_play replay
 
 host-check: assets
 	@mkdir -p build/host
@@ -110,18 +110,20 @@ host-check: assets
 CC_HOST ?= cc
 check: host-check asset-check
 
-# Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE, MATCHES,
-# OPPONENT (-1 the default CPU, else a ladder opponent, ADR-023),
-# DIFFICULTY (0 KID .. 3 HARD, ADR-025).
+# Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE (0: three
+# bot skills), MATCHES, OPPONENT (-1 the default CPU, -2 the whole ladder,
+# else a ladder opponent, ADR-023), DIFFICULTY (0 KID .. 3 HARD, ADR-025),
+# MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02).
 LATE ?= 4
 MATCHES ?= 20
 OPPONENT ?= -1
 DIFFICULTY ?= 2
+MODE ?= 0
 stats: assets
 	@mkdir -p build/host
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
-	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY)
+	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY) $(MODE)
 
 # The sound effects as WAV files in build/sfx/, to listen to (ADR-029).
 sfx-preview:

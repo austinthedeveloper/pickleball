@@ -12,6 +12,9 @@
 #define RENDER_BG2_MAP_ADDR 0x0800
 #define RENDER_BG2_BASE_ADDR 0x4000
 #define RENDER_BG2_TILES_ADDR 0x4800
+/* The close call's close-up (ADR-041): its own BG2 map, rows 15-21 written
+ * when a point shows it. */
+#define RENDER_BG2_REPLAY_MAP_ADDR 0x0C00
 #define RENDER_BG1_TILES_ADDR 0x1000
 #define RENDER_BG3_TILES_ADDR 0x5000
 #define RENDER_OBJ_TILES_ADDR 0x6000
@@ -46,7 +49,11 @@ enum {
     RENDER_OAM_DEBUG_MARKER = 19,
     RENDER_OAM_ACCESSORIES = 22,  /* 22-25: ponytails by slot (ADR-014) */
     RENDER_OAM_MACHINE = 26,      /* 26-29: practice ball machine (ADR-028) */
-    RENDER_OAM_FIRST_HIDDEN = 30
+    RENDER_OAM_REPLAY = 30,       /* 30-31: the close call's ball and shadow
+                                     (ADR-041) */
+    RENDER_OAM_WATCHER = 32,      /* 32-33: the opponent's partner watching
+                                     a singles match (ADR-042) */
+    RENDER_OAM_FIRST_HIDDEN = 34
 };
 
 void render_initialize(void);
@@ -62,6 +69,11 @@ u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the
  * current g_match_config, or the Player Select screen. */
 void render_open_match(void);
+/* The venue the court shows (resolved: never AUTO). */
+u8 render_court_venue(void);
+/* render_open_match without the venue's ambience (M4-VENUE-02): loading a
+ * sound module takes about 45 frames, too long for a preview. */
+void render_preview_court(void);
 void render_select_open(void);
 /* Player Select frame: buffers before VBlank, uploads inside it. */
 void render_select_prepare(void);

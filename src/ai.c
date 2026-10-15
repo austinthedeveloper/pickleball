@@ -43,6 +43,13 @@ static signed char s_open_aim[MAX_PLAYERS];
 /* A new shot's volley check waits for the slot's next think: the frame a
  * shot is planned already pays for its landing prediction (ADR-035). */
 static u8 s_volley_check[MAX_PLAYERS];
+/* The frame (g_game_state.frame_count) of each slot's last think. A doubles
+ * CPU covering its lane thinks every fourth frame (main.c), so the reaction
+ * delay counts the frames since, not the thinks: counting thinks made a
+ * slow-reacting team's lane partner ignore a serve for four times its
+ * reaction (GYM BROS let 40% of serves bounce twice). Outside AiState
+ * (golden traces); singles CPUs think every frame, so nothing changes. */
+static u16 s_last_think[MAX_PLAYERS];
 
 /* Net play (ADR-035): volleys are legal once both bounces are done. */
 #define AI_VOLLEYS_LEGAL() \
@@ -87,6 +94,7 @@ void ai_initialize(void)
         s_block_volley[i] = 0;
         s_open_aim[i] = AI_AIM_PATTERN;
         s_volley_check[i] = 0;
+        s_last_think[i] = 0;
     }
 }
 
@@ -567,8 +575,29 @@ static u8 ai_swing_connects(const Player *player)
             return 0;
         if (step == PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES)
             return 0;       /* first reachable after the window: wait */
-        if (probe_in_sweet_spot())
-            return !g_ai.late_this_ball;   /* a late player waits it out */
+        if (probe_in_sweet_spot()) {
+            if (!g_ai.late_this_ball)
+                return 1;
+            /* A late player waits it out. A human's partner doesn't wait
+             * for a ball that would be gone by and out past the lines:
+             * that last chance was hit from out past the baseline, the
+             * late shots behind most "my partner hits balls that are out"
+             * reports. Only the partner: the opponents' late shots are
+             * the ladder's balance (test_match_flow). */
+            if (!s_partner_human)
+                return 0;
+            while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
+                if (!g_ball_paced)
+                    ai_probe_step();
+                else
+                    for (n = GAME_BALL_STEPS_AHEAD(step); n; --n)
+                        ai_probe_step();
+                ++step;
+            }
+            return (player->team ? g_probe.x > s_reach_x :
+                    g_probe.x < s_reach_x) &&
+                !court_contains_ground_fp(g_probe.x, g_probe.y);
+        }
         /* First contact would be stretched; take it only as a last chance. */
         while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
             if (!g_ball_paced)
@@ -641,6 +670,27 @@ static u8 ai_plan_volley(const Player *player, u8 land_steps, s16 land_x)
     return 1;
 }
 
+/*
+ * Steps (at most `steps`) a ball at x, y moving vx, vy (12.4) can travel
+ * and still be over the court. A human's partner meets a bounced ball
+ * heading out before it leaves, lower on its bounce, not out past the
+ * lines: a deep ball into a corner had it standing out past both lines to
+ * hit it on the third shot, which looked like hitting balls that were out.
+ * Only the partner: the opponents' contacts are the ladder's balance.
+ * Steps back one at a time from the farthest: no multiply per step.
+ */
+static u8 ai_steps_inside(fx x, fx y, s16 vx, s16 vy, u8 steps)
+{
+    x += vx * steps;
+    y += vy * steps;
+    while (steps && !court_contains_ground_fp(x, y)) {
+        x -= vx;
+        y -= vy;
+        --steps;
+    }
+    return steps;
+}
+
 static void ai_plan_intercept(const Player *player)
 {
     u8 steps;
@@ -659,8 +709,10 @@ static void ai_plan_intercept(const Player *player)
          * one: a ball bouncing by the middle crosses it, and teammates
          * thinking on different frames would both take it (ADR-038).
          * Teamwork goes by who is nearer the ball now. */
-        g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * 6) + behind;
-        g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * 6);
+        rise = s_partner_human ? ai_steps_inside(g_ball.x_fp, g_ball.y_fp,
+            g_ball.vx_fp, g_ball.vy_fp, 6) : 6;
+        g_ai.target_x = FROM_FP(g_ball.x_fp + g_ball.vx_fp * rise) + behind;
+        g_ai.target_y = FROM_FP(g_ball.y_fp + g_ball.vy_fp * rise);
         if (!s_style->team && s_land_valid &&
                 s_land_serial == g_game_state.shot_serial &&
                 s_land_bounces == 0)
@@ -719,6 +771,8 @@ static void ai_plan_intercept(const Player *player)
         rise = 10;
     vx = ball_retain(g_ball.vx_fp, BALL_BOUNCE_PLANAR_256);
     vy = ball_retain(g_ball.vy_fp, BALL_BOUNCE_PLANAR_256);
+    if (s_partner_human)
+        rise = ai_steps_inside(TO_FP(land_x), TO_FP(land_y), vx, vy, rise);
     g_ai.target_x = land_x + FROM_FP(vx * rise) + behind;
     g_ai.target_y = land_y + FROM_FP(vy * rise);
     AI_AVOID_LAVA(player);
@@ -822,6 +876,12 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     u8 incoming;
     u8 home;
     s16 shift;
+    u16 elapsed;
+
+    /* Frames since this slot last thought (every think, whatever returns
+     * early below): 1 for a CPU that thinks every frame. */
+    elapsed = g_game_state.frame_count - s_last_think[player_index];
+    s_last_think[player_index] = g_game_state.frame_count;
 
     intent->move_x = 0;
     intent->move_y = 0;
@@ -878,8 +938,10 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     incoming = ball_incoming(player);
     if (!incoming)
         g_ai.incoming_frames = 0;
-    else if (g_ai.incoming_frames < 255)
-        ++g_ai.incoming_frames;
+    else if (elapsed >= (u16)(255 - g_ai.incoming_frames))
+        g_ai.incoming_frames = 255;
+    else
+        g_ai.incoming_frames += (u8)elapsed;
 
     if (incoming && g_ai.incoming_frames > g_ai.reaction_frames) {
         /* Replan only when a hit or bounce changed the trajectory, or while
