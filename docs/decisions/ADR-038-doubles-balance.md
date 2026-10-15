@@ -125,6 +125,11 @@ Both bots now see each rung harder than the one before (the tool prints
 `ladder order: yes`). `test_footwork` measures 30 matches: a tuning round's extra late shots
 left too few unforced outs in 10 to compare.
 
+*Amended again 2026-10-14 (ADR-043):* those numbers ran every CPU every
+frame; main.c doesn't. On its schedule, with the reaction counting frames
+and a steadier human's partner, the ladder is re-measured in ADR-043 (JADE
+late every 18th).
+
 ## Frame budget
 
 `ai_slide` is a few adds, once per swing check. `make perf`: every run

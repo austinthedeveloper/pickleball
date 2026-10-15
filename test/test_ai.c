@@ -553,6 +553,100 @@ static void test_doubles_aim(void)
     match_config_defaults();
 }
 
+/*
+ * Doubles on main.c's CPU schedule (test_step_scheduled) against `opponent`
+ * for `matches` matches, the P1 bot serving and returning. Counts P1's
+ * serves the CPUs never touched, and contacts by P1's CPU partner (slot 1)
+ * with the ball already past the lines.
+ */
+static void scheduled_doubles(u8 opponent, u8 matches, int *serves,
+    int *untouched, int *partner_out)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f = 0;
+    u8 m = 0;
+    u8 counted = 0;
+    u8 previous = 0xff;
+    u8 serve_serial = 0;
+    u8 p1_served = 0;
+    u8 serial;
+
+    *serves = *untouched = *partner_out = 0;
+    match_config_doubles();
+    match_config_opponent(opponent);
+    g_attract = 0;
+    game_new_match();
+    while (m < matches && f < 60UL * 60 * 60) {
+        test_bot_skill(4, m);
+        memset(in, 0, sizeof(in));
+        ai_update(0, &in[0]);
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+            g_serve_state.server_index == 0 && (f & 31) == 0)
+            in[0].hit_pressed = 1;
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
+            in[0].hit_pressed = 1;
+            if (!counted) {
+                counted = 1;
+                ++m;
+            }
+        } else {
+            counted = 0;
+        }
+        serial = g_game_state.shot_serial;
+        test_step_scheduled(in, (u16)f);
+        if (g_next_opponent)
+            game_new_match();
+        if (previous == GAME_PHASE_SERVE_TOSS &&
+                g_game_state.phase == GAME_PHASE_LIVE) {
+            serve_serial = g_game_state.shot_serial;
+            p1_served = g_serve_state.server_index < 2;
+            *serves += p1_served;
+        }
+        if (previous == GAME_PHASE_LIVE &&
+                g_game_state.phase == GAME_PHASE_POINT_RESULT && p1_served &&
+                g_game_state.shot_serial == serve_serial &&
+                g_game_state.last_fault == GAME_FAULT_SECOND_BOUNCE)
+            ++*untouched;
+        if (previous == GAME_PHASE_LIVE && g_game_state.shot_serial != serial &&
+                g_ball.last_hitter == 1 &&
+                !court_contains_ground_fp(g_ball.x_fp, g_ball.y_fp))
+            ++*partner_out;
+        previous = g_game_state.phase;
+        ++f;
+    }
+    match_config_defaults();
+}
+
+/* A doubles CPU covering its lane thinks every fourth frame (main.c); its
+ * reaction counts frames, not thinks. Counting thinks, GYM BROS (reaction
+ * 16 and 10) ignored a serve for 64 frames and let 40% bounce twice. */
+static void test_scheduled_reaction(void)
+{
+    int serves;
+    int untouched;
+    int partner_out;
+
+    scheduled_doubles(2, 6, &serves, &untouched, &partner_out);
+    printf("scheduled doubles vs GYM BROS: %d of %d serves untouched\n",
+        untouched, serves);
+    assert(serves >= 20 && untouched == 0);
+}
+
+/* A human's partner meets a deep ball before it leaves the court, and a
+ * deliberate late shot doesn't wait for a ball gone by and out past the
+ * lines: it used to hit from out past the corner on the third shot. */
+static void test_partner_stays_in(void)
+{
+    int serves;
+    int untouched;
+    int partner_out;
+
+    scheduled_doubles(0, 10, &serves, &untouched, &partner_out);
+    printf("partner contacts past the lines vs HENDERSON: %d\n",
+        partner_out);
+    assert(partner_out == 0);
+}
+
 int main(int argc, char **argv)
 {
     (void)argv;
@@ -571,6 +665,8 @@ int main(int argc, char **argv)
     test_tactics();
     test_footwork();
     test_doubles_aim();
+    test_scheduled_reaction();
+    test_partner_stays_in();
     puts("ai host checks passed");
     return 0;
 }

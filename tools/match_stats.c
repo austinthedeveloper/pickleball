@@ -79,10 +79,6 @@ static void play(int late, int matches, int opponent, int difficulty,
         test_bot_skill((u8)late, (u8)match);
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
-        if (mode & MODE_DOUBLES) {
-            ai_update(1, &intents[1]);
-            ai_update(3, &intents[3]);
-        }
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_serve_state.server_index == 0 && (frames & 31) == 0)
             intents[0].hit_pressed = 1;
@@ -96,7 +92,12 @@ static void play(int late, int matches, int opponent, int difficulty,
         } else {
             counted = 0;
         }
-        test_step(intents);
+        /* Doubles: the CPUs on main.c's schedule (a lane-covering CPU
+         * thinks every fourth frame). */
+        if (mode & MODE_DOUBLES)
+            test_step_scheduled(intents, (u16)frames);
+        else
+            test_step(intents);
         /* Measuring one opponent: a win's B rematches them here. */
         if (g_next_opponent) {
             game_new_match();
