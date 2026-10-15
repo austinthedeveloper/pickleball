@@ -107,8 +107,8 @@ static void serve_place_partner(u8 slot, u8 at_kitchen)
         x = player->team ? COURT_KITCHEN_RIGHT_X + SERVE_PARTNER_KITCHEN_GAP :
             COURT_KITCHEN_LEFT_X - SERVE_PARTNER_KITCHEN_GAP;
     else
-        x = player->team ? COURT_BASELINE_RIGHT - SERVE_RECEIVER_GAP :
-            COURT_BASELINE_LEFT + SERVE_RECEIVER_GAP;
+        x = player->team ? COURT_BASELINE_RIGHT + SERVE_RECEIVER_GAP :
+            COURT_BASELINE_LEFT - SERVE_RECEIVER_GAP;
     player_place(player, x, y);
     player->frozen = 0;
     player->pose = PLAYER_POSE_NONE;
@@ -146,20 +146,20 @@ void serve_setup(u8 serving_team)
     if (serving_team == 0) {
         player_place(server, COURT_BASELINE_LEFT - SERVE_BASELINE_GAP,
             server_y);
-        player_place(receiver, COURT_BASELINE_RIGHT - SERVE_RECEIVER_GAP,
+        player_place(receiver, COURT_BASELINE_RIGHT + SERVE_RECEIVER_GAP,
             receiver_y);
     } else {
         player_place(server, COURT_BASELINE_RIGHT + SERVE_BASELINE_GAP,
             server_y);
-        player_place(receiver, COURT_BASELINE_LEFT + SERVE_RECEIVER_GAP,
+        player_place(receiver, COURT_BASELINE_LEFT - SERVE_RECEIVER_GAP,
             receiver_y);
     }
     server->frozen = 1;
     receiver->frozen = 0;
     server->pose = PLAYER_POSE_NONE;
     receiver->pose = PLAYER_POSE_NONE;
-    /* Doubles partners: the server's at the baseline, the receiver's at the
-     * kitchen line. */
+    /* Doubles partners: the server's behind the baseline, the receiver's at
+     * the kitchen line. */
     if (g_players[g_serve_state.server_index ^ 1].active)
         serve_place_partner(g_serve_state.server_index ^ 1, 0);
     if (g_players[g_serve_state.receiver_index ^ 1].active)
