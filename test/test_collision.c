@@ -98,6 +98,28 @@ static void test_team_direction_and_live_ball_requirement(void)
         MAX_PLAYERS) == 0);
 }
 
+/* KNOWN_ISSUES #19: a teammate's active swing can't re-hit the team's
+ * shot; an opponent's can. */
+static void test_team_hits_once(void)
+{
+    reset_fixture();
+    players[1] = players[0];
+    players[1].state = PLAYER_STATE_ACTIVE;
+    players[1].contact_consumed = 0;
+    ball.last_hitter = 0;
+    assert(collision_resolve_player_hits(&ball, players, intents,
+        MAX_PLAYERS) == 0);
+    assert(players[1].contact_consumed == 0);
+
+    players[2] = players[1];
+    players[2].team = 1;
+    players[1].active = 0;
+    players[1].state = PLAYER_STATE_IDLE;
+    assert(collision_resolve_player_hits(&ball, players, intents,
+        MAX_PLAYERS) == 3);
+    assert(ball.last_hitter == 2);
+}
+
 static void assert_lands_near(s16 expected_x, s16 expected_y)
 {
     u8 events = BALL_EVENT_NONE;
@@ -271,6 +293,7 @@ int main(void)
     test_windup_cannot_contact();
     test_active_overlap_contacts_once();
     test_team_direction_and_live_ball_requirement();
+    test_team_hits_once();
     test_directional_target_lanes();
     test_shot_types();
     test_paddle_stats();
