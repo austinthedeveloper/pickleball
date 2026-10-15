@@ -35,6 +35,12 @@ says who set them, and asking for initials makes a new record an event.
 - **A beaten record's initials clear** at once and show `---` until they
   are entered. A match left early (RESTART, MAIN MENU) keeps the new
   number, but asks for no initials: only a finished match does.
+- **A run extends its own record** (amended 2026-10-14): once a win
+  streak takes the best streak and its initials are entered, the next wins
+  of that unbroken run raise the record under the same initials without
+  asking again (every win of a run used to ask). A loss ends the run; the
+  next record asks once more, as does the first one after a power cycle
+  (which run holds it is WRAM only, so the save layout is unchanged).
 - **Records page:** the initials are on the BEST STREAK and LONGEST RALLY
   rows, in yellow, before the count; `---` for nobody. Erasing the records
   erases them. The park's records board (ADR-034) is unchanged: its line

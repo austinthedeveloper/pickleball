@@ -6,6 +6,10 @@
 
 SaveData g_save;
 u8 g_save_new_records;
+/* The best streak was claimed during the current, unbroken run (ADR-040):
+ * the next wins extend it under the same initials, without asking again.
+ * WRAM only: after a power cycle the next record asks once more. */
+static u8 s_streak_held;
 /* Copy that holds g_save; the next write goes to the other one. */
 static u8 s_current;
 
@@ -111,6 +115,7 @@ void save_clear_records(void)
     memset(&g_save.records, 0, sizeof(g_save.records));
     memset(&g_save.initials, 0, sizeof(g_save.initials));
     g_save_new_records = 0;
+    s_streak_held = 0;
     save_write();
 }
 
@@ -214,6 +219,7 @@ void save_initialize(void)
     u8 pick;
 
     g_save_new_records = 0;
+    s_streak_held = 0;
     sram_read(raw[0], 0);
     sram_read(raw[1], SAVE_COPY_STRIDE);
     valid0 = save_raw_valid(raw[0]);
@@ -272,14 +278,19 @@ void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against)
             save_bump(&records->streak);
             if (records->streak > records->best_streak) {
                 records->best_streak = records->streak;
-                memset(g_save.initials.best_streak, 0, SAVE_INITIALS);
-                g_save_new_records |= SAVE_NEW_STREAK;
+                /* Extending one's own record keeps its initials. */
+                if (!s_streak_held || !g_save.initials.best_streak[0]) {
+                    memset(g_save.initials.best_streak, 0, SAVE_INITIALS);
+                    g_save_new_records |= SAVE_NEW_STREAK;
+                    s_streak_held = 1;
+                }
             }
             if (points_against == 0)
                 save_bump(&records->shutouts);
         } else {
             save_bump(&records->losses[mode]);
             records->streak = 0;
+            s_streak_held = 0;
         }
     }
     save_write();

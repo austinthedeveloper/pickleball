@@ -422,6 +422,31 @@ static void test_initials(void)
     assert(memcmp(g_save.initials.longest_rally, xyz, 3) == 0);
     assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
 
+    /* A run that holds the best streak extends it under the same initials,
+     * without asking again; a loss ends the run, and the next record asks
+     * once more. */
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == SAVE_NEW_STREAK);
+    save_set_initials(abc);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0 && g_save.records.best_streak == 3);
+    assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
+    save_record_match(MATCH_SINGLES, 1, 0, 3);              /* the run ends */
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0);                        /* a tie: 3 */
+    save_record_match(MATCH_SINGLES, 1, 1, 3);              /* 4: a record */
+    assert(g_save_new_records == SAVE_NEW_STREAK);
+    assert(g_save.initials.best_streak[0] == 0);
+    save_set_initials(xyz);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0);
+    assert(memcmp(g_save.initials.best_streak, xyz, 3) == 0);
+
     save_record_rally(9);
     save_clear_records();
     assert(g_save_new_records == 0);

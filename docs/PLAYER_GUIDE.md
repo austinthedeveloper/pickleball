@@ -155,7 +155,9 @@ Beat your best win streak or the longest rally and the match ends with
 **NEW RECORD!**: enter three initials, arcade style. Up and Down pick the
 letter (hold to scroll), B moves to the next, Y goes back, and Start keeps
 what's shown. The records page shows them next to BEST STREAK and LONGEST
-RALLY (`---` until someone claims them).
+RALLY (`---` until someone claims them). Once your run holds the best
+streak, each win after it raises the record under your initials without
+asking again.
 
 On the records page, Start, B, or Y goes back. To erase every record, hold
 L and R and press X. There is no confirmation. Court colours are kept.
