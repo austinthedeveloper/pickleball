@@ -60,8 +60,8 @@ Choose **PRACTICE** (the last title entry; Up from SINGLES wraps to it).
     machine feeds only once it points at the lane, which costs no time
     except on AT YOU, which follows P1 through the wait and locks when the
     wait ends.
-  - Each pose has its own left-half tiles (slots 22-25 of the small-object
-    sheet for up and down; the OBJ tile count is unchanged). A feed leaves
+  - Each pose has its own left-half tiles (slots 28-31 of the small-object
+    sheet for up and down, after the hats; the OBJ tile count is unchanged). A feed leaves
     that pose's muzzle (4 px toward the far sideline for up, 3 px toward
     the near one for down), and the machine kicks back 2 px, then 1, over
     6 frames.
@@ -94,14 +94,22 @@ machine's side that a return must land in to count:
   `practice_best`. The practice page's BEST STREAK shows the chosen zone's
   best and changes with RETURN TO. The RECORDS erase clears them too.
 - **On screen:** a corner object at each corner of the zone (the select
-  cursor's corner, flipped, in the objects palette; OAM 22-25), placed
+  cursor's corner, flipped, in the objects palette; OAM 34-37), placed
   through the court projection. The corners blink for 32 frames after a
   return lands in. The centre score panel names the zone (PRACTICE on
   ANY), and BEST is that zone's best.
-- **Save layout 9** (ADR-032): `practice[4]` takes the place of
-  `SaveSettingsV8.reserved`, and the records gain the four bests (46 bytes). A
-  v8 save (v0.6.0 to v0.9.0) carries everything over, with RETURN TO at ANY
-  and the zone bests at 0.
+- **Save layout 10** (ADR-032): `practice[4]` takes the place of
+  `SaveSettingsV8.reserved`, and the records gain the four bests (52 bytes,
+  with ADR-040's initials). Layout 9 (v0.13.0, the initials) went out
+  first, so this one is 10. A v8 save (v0.6.0 to v0.12.0) or a v9 save
+  (v0.13.0, its initials kept) carries everything over, with RETURN TO at
+  ANY and the zone bests at 0.
+- **Merged after v0.13.0:** the machine's up and down poses moved to
+  small-object cells 28-31 (the hats took 22-27) and the zone corners to
+  OAM 34-37 (after the close call and the watcher). Leaving practice for
+  the park sets the title demo up as the park loads, in forced blank: on
+  the pause frame, with the session's save, it went over the frame budget
+  (`clubhouse.timeline`).
 
 ## Code
 

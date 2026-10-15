@@ -16,6 +16,7 @@
 #include "practice.h"
 #include "save.h"
 #include "story.h"
+#include "replay.h"
 
 /*
  * Score panels and scene overlays (title, serve prompt, point and match
@@ -101,12 +102,6 @@ static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
 #define HUD_TITLE_MAX_WAITS 6
 static u8 s_title_waits;
 
-/* The prompt (a panel and its text) and the big logo each cost 60-100
- * scanlines: they wait for a lighter frame than a menu or page row. Back on
- * the title, the demo's light frames reach about 110 here, so 110 was a
- * coin flip; a miss waits out HUD_TITLE_MAX_WAITS and then draws on a heavy
- * frame (235 scanlines, a dropped frame). 116 + 98 still ends by 214. */
-#define HUD_TITLE_PROMPT_LIMIT 116
 
 /* The title prompt's rows (BANNER_ROW - 1 and its panel) as last drawn, for
  * TITLE_PAGE_* s_prompt_page (0xff: none yet). Its blink brings it back
@@ -116,6 +111,8 @@ static u8 s_title_waits;
 #define HUD_PROMPT_ROWS 4
 static u16 s_prompt_rows[HUD_PROMPT_ROWS * 32];
 static u8 s_prompt_page;
+/* A new prompt's panel is up and its text comes next (EXTRA2, EXTRA3). */
+static u8 s_prompt_text;
 
 /* Nonzero when title drawing should wait for a lighter frame: the frame's
  * work is past `limit`, and it has not waited HUD_TITLE_MAX_WAITS yet. */
@@ -304,6 +301,13 @@ static void hud_draw_scores(void)
 #define HUD_KEY_TITLE_BLINK 0x101
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 #define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
+#define HUD_KEY_INITIALS 0x800      /* the initials card (ADR-040) */
+/* The initials card: three big letters on rows 16-17, four columns apart
+ * and centred, the chosen one underlined on row 18. */
+#define INITIALS_ROW 16
+#define INITIALS_COL 11
+#define INITIALS_STEP 4
+#define INITIALS_LAST_ROW (INITIALS_ROW + 2)
 
 /* WIN BY 2 (ADR-033): one more point wins from a lead. */
 static u8 hud_win_by_2_match_point(void)
@@ -381,6 +385,8 @@ static u16 hud_scene_key(void)
 
     if (g_story.card == STORY_CARD_INTRO)
         return HUD_KEY_INTRO;
+    if (g_story.card == STORY_CARD_INITIALS)
+        return HUD_KEY_INITIALS;
     if (g_game_state.paused && !g_attract)
         return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
@@ -419,6 +425,14 @@ enum { HUD_STEP_CLEAR = 0, HUD_STEP_BIG = 1, HUD_STEP_PROMPT = 2,
 
 static u8 s_scene_step;
 static u16 s_prev_scene;
+/* The close call's frame is up (rows 14-23, ADR-041): the next clear takes
+ * those rows too. */
+static u8 s_replay_drawn;
+
+u8 hud_replay_framed(void)
+{
+    return s_replay_drawn;
+}
 
 /* The opponent speaking on the story cards: singles names the captain,
  * doubles the team. */
@@ -436,6 +450,129 @@ static void hud_center_text(u8 row, u8 palette, const char *text)
     while (text[length])
         ++length;
     hud_text((u8)(16 - length / 2), row, palette, text);
+}
+
+/* A count as text without leading zeros (no 816-tcc division); returns
+ * the end of the text. */
+static char *hud_count_text(char *out, u16 value)
+{
+    static const u16 powers[4] = { 10000, 1000, 100, 10 };
+    u8 i;
+    u8 leading = 1;
+    char digit;
+
+    for (i = 0; i < 4; ++i) {
+        digit = '0';
+        while (value >= powers[i]) {
+            value -= powers[i];
+            ++digit;
+        }
+        if (!leading || digit != '0') {
+            *out++ = digit;
+            leading = 0;
+        }
+    }
+    *out++ = (char)('0' + value);
+    *out = 0;
+    return out;
+}
+
+static char *hud_copy_text(char *out, const char *text)
+{
+    while (*text)
+        *out++ = *text++;
+    *out = 0;
+    return out;
+}
+
+/* The records just beaten: "BEST STREAK 5", "LONGEST RALLY 12", or both
+ * as "STREAK 5  RALLY 12". */
+static const char *hud_new_records_text(void)
+{
+    static char text[29];
+    char *end = text;
+    u8 both = g_save_new_records == (SAVE_NEW_STREAK | SAVE_NEW_RALLY);
+
+    if (g_save_new_records & SAVE_NEW_STREAK) {
+        end = hud_copy_text(end, both ? "STREAK " : "BEST STREAK ");
+        end = hud_count_text(end, g_save.records.best_streak);
+        if (both)
+            end = hud_copy_text(end, "  ");
+    }
+    if (g_save_new_records & SAVE_NEW_RALLY) {
+        end = hud_copy_text(end, both ? "RALLY " : "LONGEST RALLY ");
+        hud_count_text(end, g_save.records.longest_rally);
+    }
+    return text;
+}
+
+/* Letters and cursor as drawn; 0 forces a redraw. */
+static u8 s_initials_drawn[3];
+static u8 s_initials_cursor;
+
+/* The letters whose letter or underline changed: on idle frames. */
+static void hud_initials_refresh(void)
+{
+    static char letter[2];
+    u8 i;
+    u8 col;
+    u8 chosen;
+    u8 was = s_initials_cursor;
+
+    for (i = 0; i < 3; ++i) {
+        chosen = g_story.cursor == i;
+        if (s_initials_drawn[i] == g_story.letters[i] && (was == i) == chosen)
+            continue;
+        col = INITIALS_COL + i * INITIALS_STEP;
+        /* Statics are not zeroed at power-on: terminate it here. */
+        letter[0] = (char)g_story.letters[i];
+        letter[1] = 0;
+        hud_big_text(col, INITIALS_ROW, chosen ? HUD_PAL_YELLOW :
+            HUD_PAL_WHITE, letter);
+        hud_tile(col, INITIALS_LAST_ROW, chosen ?
+            hud_entry(HUD_TILE_BAR_ON, HUD_PAL_YELLOW) : HUD_TILE_CLEAR);
+        hud_tile(col + 1, INITIALS_LAST_ROW, chosen ?
+            hud_entry(HUD_TILE_BAR_ON, HUD_PAL_YELLOW) : HUD_TILE_CLEAR);
+        s_initials_drawn[i] = g_story.letters[i];
+    }
+    s_initials_cursor = g_story.cursor;
+}
+
+/* Initials card (ADR-040): NEW RECORD!, the records, and the prompt, one
+ * per frame; the letters draw on the idle frames after. */
+static void hud_initials_step(u8 step)
+{
+    if (step == HUD_STEP_BIG) {
+        hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, "NEW RECORD!");
+    } else if (step == HUD_STEP_PROMPT) {
+        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE,
+            hud_new_records_text());
+    } else if (step == HUD_STEP_EXTRA) {
+        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+            "UP DOWN  @ NEXT  START OK");
+    }
+}
+
+/* The close call (ADR-041): a frame around the BG2 close-up, then the
+ * caption under it ("OUT BY 2 INCHES!"). */
+static void hud_replay_step(u8 step)
+{
+    static char caption[20];
+    char *end;
+
+    if (step == HUD_STEP_EXTRA) {
+        hud_frame(REPLAY_COL - 1, REPLAY_ROW - 1, REPLAY_COLS, REPLAY_ROWS);
+        s_replay_drawn = 1;
+    } else if (step == HUD_STEP_EXTRA2) {
+        if (!g_replay.inches) {
+            hud_copy_text(caption, "OUT BY A HAIR!");
+        } else {
+            end = hud_copy_text(caption, "OUT BY ");
+            end = hud_count_text(end, g_replay.inches);
+            hud_copy_text(end, g_replay.inches == 1 ? " INCH!" : " INCHES!");
+        }
+        hud_center_text(REPLAY_ROW + REPLAY_ROWS + 1, HUD_PAL_YELLOW, caption);
+    }
 }
 
 /* Intro card (ADR-026): the opponent's name, their line, the prompt, and
@@ -542,6 +679,19 @@ static void hud_record_line(u8 row, const char *label, u16 value)
 {
     hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
     hud_count(RECORDS_COUNT_COL, row, value);
+}
+
+/* The holder's initials before the count (ADR-040), --- for nobody. */
+#define RECORDS_INITIALS_COL (RECORDS_COUNT_COL - 4)
+static void hud_record_initials(u8 row, const u8 *initials)
+{
+    static char text[4];
+
+    text[0] = initials[0] ? (char)initials[0] : '-';
+    text[1] = initials[0] ? (char)initials[1] : '-';
+    text[2] = initials[0] ? (char)initials[2] : '-';
+    text[3] = 0;
+    hud_text(RECORDS_INITIALS_COL, row, HUD_PAL_YELLOW, text);
 }
 
 /* " SINGLES  W nnnn  L nnnn " */
@@ -930,6 +1080,7 @@ static u8 hud_title_draw_part(u8 view, u8 part)
     case 5:
         hud_record_line(TITLE_MENU_ROW + 6, "BEST STREAK",
             g_save.records.best_streak);
+        hud_record_initials(TITLE_MENU_ROW + 6, g_save.initials.best_streak);
         return 0;
     case 6:
         hud_record_line(TITLE_MENU_ROW + 7, "SHUTOUTS",
@@ -938,6 +1089,8 @@ static u8 hud_title_draw_part(u8 view, u8 part)
     case 7:
         hud_record_line(TITLE_MENU_ROW + 8, "LONGEST RALLY",
             g_save.records.longest_rally);
+        hud_record_initials(TITLE_MENU_ROW + 8,
+            g_save.initials.longest_rally);
         return 0;
     case 8:
         hud_record_ladder(TITLE_MENU_ROW + 9);
@@ -999,10 +1152,15 @@ static void hud_title_area_update(void)
                 hud_modifiers_refresh();
             return;
         }
-        if (hud_title_draw_part(view, s_title_part))
-            s_title_part = 0xff;
-        else
+        /* Parts back to back while the frame stays under the limit
+         * (M4-UI-01): each fits after it, as the first one does. */
+        do {
+            if (hud_title_draw_part(view, s_title_part)) {
+                s_title_part = 0xff;
+                return;
+            }
             ++s_title_part;
+        } while (profile_scanline() <= HUD_TITLE_SCANLINE_LIMIT);
         return;
     }
     /* Otherwise draw the whole view a part per frame. Menu to menu still
@@ -1015,16 +1173,15 @@ static void hud_title_area_update(void)
     s_title_part = 0;
 }
 
-/* The scanline a title step waits under: a prompt drawn from scratch needs
- * a light frame; a logo row, a clear, or a restored prompt only an
- * ordinary one; the logo steps between two title views draw nothing. */
-static u16 hud_title_step_limit(u16 key, u8 step)
+/* The scanline a title step waits under: the logo steps between two title
+ * views draw nothing; every other step (a logo row, a clear, a prompt's
+ * panel or half its text, a restored prompt) fits an ordinary frame. A new
+ * prompt in one step (about 106 scanlines) needed a light frame, waited
+ * them out on the singles demo, and dropped one (court.timeline). */
+static u16 hud_title_step_limit(u8 step)
 {
     if (step == HUD_STEP_BIG || step == HUD_STEP_EXTRA)
         return HUD_IS_TITLE(s_prev_scene) ? 0xffff : HUD_TITLE_SCANLINE_LIMIT;
-    if (step == HUD_STEP_PROMPT && !(key & 1) &&
-            s_prompt_page != ((key >> 1) & 7))
-        return HUD_TITLE_PROMPT_LIMIT;
     return HUD_TITLE_SCANLINE_LIMIT;
 }
 
@@ -1065,16 +1222,28 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
             hud_center_big(TITLE_ROW + 2, HUD_PAL_YELLOW, "'94");
         break;
     case HUD_STEP_PROMPT:
+        s_prompt_text = 0;
         if (!(key & 1) && s_prompt_page == ((key >> 1) & 7)) {
             hud_restore_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
             break;
         }
         hud_clear_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS);
         if (!(key & 1)) {
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+            hud_center_prompt_panel(BANNER_ROW,
                 hud_title_prompt((key >> 1) & 7));
+            s_prompt_text = 1;
+        }
+        break;
+    /* A new prompt's text, in halves on the next two steps; then it is
+     * kept for the blink. */
+    case HUD_STEP_EXTRA2:
+    case HUD_STEP_EXTRA3:
+        hud_center_prompt_half(BANNER_ROW, HUD_PAL_WHITE,
+            hud_title_prompt((key >> 1) & 7), step == HUD_STEP_EXTRA3);
+        if (step == HUD_STEP_EXTRA3) {
             hud_save_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
             s_prompt_page = (key >> 1) & 7;
+            s_prompt_text = 0;
         }
         break;
     default:
@@ -1115,13 +1284,26 @@ static void hud_scene_step(u16 key, u8 step)
     }
 
     if (step == HUD_STEP_CLEAR) {
+        /* The initials card also uses rows 15-18 (ADR-040). */
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 6 + TITLE_AREA_ROWS : 7);
+            from_title ? 6 + TITLE_AREA_ROWS : s_replay_drawn ?
+                REPLAY_ROW + REPLAY_ROWS + 1 - CENTER_BIG_ROW :
+            (key == HUD_KEY_INITIALS || s_prev_scene == HUD_KEY_INITIALS) ?
+                INITIALS_LAST_ROW + 1 - CENTER_BIG_ROW : 7);
+        s_replay_drawn = 0;
         hud_clear_rows(BANNER_ROW - 1, 4);
+        s_initials_drawn[0] = 0;
+        s_initials_drawn[1] = 0;
+        s_initials_drawn[2] = 0;
+        s_initials_cursor = 0xff;
         return;
     }
     if (key == HUD_KEY_INTRO) {
         hud_intro_step(step);
+        return;
+    }
+    if (key == HUD_KEY_INITIALS) {
+        hud_initials_step(step);
         return;
     }
     if (key == HUD_KEY_PRACTICE) {
@@ -1147,6 +1329,22 @@ static void hud_scene_step(u16 key, u8 step)
             hud_result_story(step);
         return;
     }
+    if (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
+            step >= HUD_STEP_PROMPT) {
+        /* The point's panel, then its text in halves, each on its own
+         * frame: drawn whole on the frame after the big banner, with the
+         * score, it was the doubles budget's worst frame (as the match
+         * result's was, M4-UI-04). Then the close call's frame and caption
+         * (ADR-041). */
+        if (step == HUD_STEP_PROMPT)
+            hud_center_prompt_panel(CENTER_PANEL_ROW, hud_point_text(winner));
+        else if (step <= HUD_STEP_EXTRA2)
+            hud_center_prompt_half(CENTER_PANEL_ROW, team_hud_palette(winner),
+                hud_point_text(winner), step == HUD_STEP_EXTRA2);
+        else if (g_replay.active && !g_attract)
+            hud_replay_step(step - (HUD_STEP_EXTRA3 - HUD_STEP_EXTRA));
+        return;
+    }
     if (step >= HUD_STEP_EXTRA)
         return;
     switch (g_game_state.phase) {
@@ -1162,9 +1360,6 @@ static void hud_scene_step(u16 key, u8 step)
         if (step == HUD_STEP_BIG)
             hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW,
                 fault_word(g_game_state.last_fault));
-        else
-            hud_center_prompt(CENTER_PANEL_ROW, team_hud_palette(winner),
-                hud_point_text(winner));
         break;
     case GAME_PHASE_MATCH_RESULT:
         if (step == HUD_STEP_BIG)
@@ -1184,6 +1379,7 @@ void hud_scene_update(void)
      * the same frame (every point) would overrun 816-tcc's budget, as
      * would a redraw with the renderer's recolour (g_render_busy). */
     u8 busy = g_render_busy;
+    u8 idle;
 
     g_render_busy = 0;
     if (!s_hud_valid)
@@ -1209,25 +1405,42 @@ void hud_scene_update(void)
             s_scene_step = HUD_STEP_EXTRA;
     }
     /* Title steps also wait for a lighter frame (the demo runs behind). */
+    idle = 0;
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
-            hud_title_wait(hud_title_step_limit(key, s_scene_step))) {
+            hud_title_wait(hud_title_step_limit(s_scene_step))) {
         busy = 1;
     } else if (s_scene_step < HUD_STEP_DONE && !busy) {
+        /* The logo steps between two title views draw nothing, so the
+         * title area may still draw on their frames (M4-UI-01). */
+        idle = HUD_IS_TITLE(key) && HUD_IS_TITLE(s_prev_scene) &&
+            (s_scene_step == HUD_STEP_BIG || s_scene_step == HUD_STEP_EXTRA);
         PROFILE_MARK(15);
         hud_scene_step(key, s_scene_step);
-        /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT. */
+        /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT,
+         * and a new prompt's text in halves (EXTRA2, EXTRA3). */
         if (HUD_IS_TITLE(key))
             s_scene_step = s_scene_step == HUD_STEP_BIG ? HUD_STEP_EXTRA :
                 s_scene_step == HUD_STEP_EXTRA ? HUD_STEP_PROMPT :
-                s_scene_step == HUD_STEP_PROMPT ? HUD_STEP_DONE :
+                s_scene_step == HUD_STEP_PROMPT ? (s_prompt_text ?
+                    HUD_STEP_EXTRA2 : HUD_STEP_DONE) :
+                s_scene_step == HUD_STEP_EXTRA3 ? HUD_STEP_DONE :
                 s_scene_step + 1;
-        else if (++s_scene_step == HUD_STEP_EXTRA3 &&
-                g_game_state.phase != GAME_PHASE_MATCH_RESULT)
+        else if ((++s_scene_step == HUD_STEP_EXTRA3 &&
+                    g_game_state.phase != GAME_PHASE_MATCH_RESULT &&
+                    !(g_game_state.phase == GAME_PHASE_POINT_RESULT &&
+                      g_replay.active && !g_attract)) ||
+                (s_scene_step == HUD_STEP_EXTRA5 &&
+                    g_game_state.phase == GAME_PHASE_POINT_RESULT))
             s_scene_step = HUD_STEP_DONE;
     } else if (!busy) {
-        /* Only on otherwise idle frames: keeps each frame to one redraw. */
+        idle = 1;
+    }
+    /* Only on otherwise idle frames: keeps each frame to one redraw. */
+    if (idle) {
         if (HUD_IS_TITLE(key))
             hud_title_area_update();
+        else if (key == HUD_KEY_INITIALS)
+            hud_initials_refresh();
         else if (hud_sub_panel_wanted() != s_sub_panel)
             hud_draw_sub_panel(hud_sub_panel_wanted());
     }
@@ -1242,6 +1455,7 @@ void hud_scene_update(void)
 void hud_scene_initialize(void)
 {
     s_hud_valid = 0;
+    s_replay_drawn = 0;
     s_sub_panel = 0;
     s_hud_scene = 0xff;
     s_scene_step = HUD_STEP_DONE;
@@ -1250,5 +1464,6 @@ void hud_scene_initialize(void)
     s_title_part = 0;
     s_title_waits = 0;
     s_prompt_page = 0xff;
+    s_prompt_text = 0;
     s_title_stale = 0xff;
 }

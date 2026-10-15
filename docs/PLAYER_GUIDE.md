@@ -143,7 +143,8 @@ Start keeps your choices, which are saved for every later match; Y puts back
 what you had.
 
 - **VENUE**: PARK, LAKESIDE, or SUNSET. AUTO plays each opponent at their
-  home court. A new venue loads when you leave the page.
+  home court. Stop on a venue for a moment and it loads behind the page,
+  so you can see it; Y puts the old one back.
 - **KITCHEN** colours the non-volley zone; SAME makes it match the surface.
 - **DEFAULT** colours are the venue's own: a teal court with a navy kitchen
   on dirt at the park, green with a blue kitchen on grass by the lake, and
@@ -156,6 +157,14 @@ singles and doubles, your current and best win streak, shutouts (wins where
 the CPU scored nothing), and the longest rally (shots in one point, the serve
 included; 2P matches count for this one too). They update at the end of each
 match.
+
+Beat your best win streak or the longest rally and the match ends with
+**NEW RECORD!**: enter three initials, arcade style. Up and Down pick the
+letter (hold to scroll), B moves to the next, Y goes back, and Start keeps
+what's shown. The records page shows them next to BEST STREAK and LONGEST
+RALLY (`---` until someone claims them). Once your run holds the best
+streak, each win after it raises the record under your initials without
+asking again.
 
 On the records page, Start, B, or Y goes back. To erase every record, hold
 L and R and press X. There is no confirmation. Court colours are kept.
@@ -224,3 +233,10 @@ These are simplified rules; the HUD says **ARCADE RULES**.
 | FAULT! | The serve landed in the wrong service box. |
 | 2 BOUNCES | The receiving side failed to return the ball. |
 | VOLLEY! | The ball was hit before a required bounce. |
+
+In a singles ladder match, your opponent's doubles partner watches from
+the stands and cheers when their teammate scores.
+
+After a long rally, a ball that lands just out gets a **close call**
+replay: a close-up of the line shows the ball landing past it, and by how
+many inches.

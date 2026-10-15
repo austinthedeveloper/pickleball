@@ -13,25 +13,3 @@ whistle button.
 
 - Notes: the Multitap gives five pads (port 1 plus four on port 2;
   docs/04_INPUT_MULTITAP_PLAN.md), so the fifth pad is free in doubles.
-
-## Dramatic replay of a long rally that goes out
-
-When a long rally ends with a ball just out, cut to a **close-up camera** on
-the line, showing the ball landing just past it (or kissing the paint, and
-the call is wrong!). That would be too annoying after short rallies, so it
-only happens after long ones.
-
-- Notes: the rally length is already counted (records, ADR-021). A
-  close-up could be a separate BG scene, or a zoomed tile set, drawn while
-  the point result shows.
-
-## A crowd made of the players who are sitting out
-
-The bleachers show the players who aren't on court. For example, with four
-real players and two playing, the other two sit in the stands, cheering or
-heckling. They might even throw things.
-
-- Notes: the bleachers are backdrop art today. The waiting players could be
-  sprites placed over them, in their own colours, using the same palettes
-  as Player Select. Pairs naturally with the crowd sounds (M4-AUDIO-02) and
-  rotation-based play.

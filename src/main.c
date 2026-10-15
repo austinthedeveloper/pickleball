@@ -27,6 +27,8 @@ enum { SCENE_MATCH = 0, SCENE_SELECT = 1, SCENE_PARK = 2 };
 static u8 s_scene;
 static u8 s_open_select;
 static u8 s_open_park;
+/* s_open_park leaving practice: the title demo is set up first. */
+#define S_OPEN_PARK_FROM_PRACTICE 2
 /* Player Select is open on the way to practice (ADR-028). */
 static u8 s_practice_pending;
 /* This frame set up a new match (a scene switch for the overrun latch). */
@@ -57,12 +59,15 @@ static u8 update_pause_menu(u16 pressed)
     } else if (action == PAUSE_DO_MAIN_MENU) {
         if (g_match_config.practice)
             practice_finish();
-        game_start_attract();
-        /* Practice from the park (M4-OPEN-05): back to the ball machine. */
+        /* Practice from the park (M4-OPEN-05): back to the ball machine.
+         * The title demo behind the park is set up as the park loads, in
+         * forced blank: on this frame, with the session's save, it went
+         * past the frame budget. */
         if (g_pause_park) {
             g_pause_park = 0;
-            g_match_config_changed = 0;
-            s_open_park = 1;
+            s_open_park = S_OPEN_PARK_FROM_PRACTICE;
+        } else {
+            game_start_attract();
         }
     }
     return 1;
@@ -194,28 +199,63 @@ static void update_title_records(u16 pressed)
 }
 
 /* Court page (ADR-022/024): colour changes show on the court behind it at
- * once; B or Start keeps them (and saves), Y puts them back. A new venue
- * loads when the page closes. */
+ * once; B or Start keeps them (and saves), Y puts them back. A VENUE the
+ * cursor rests on loads behind the page with the short fade (M4-VENUE-02),
+ * so scrolling past venues loads none; closing loads the kept venue if it
+ * isn't showing, and Y the one that was showing before a preview. */
+#define COURT_PREVIEW_REST_FRAMES 20
+static u8 s_venue_rest;
+static u8 s_venue_previewed;
+
+/* The title court shows this saved VENUE (AUTO is the attract's PARK):
+ * a preview without the ambience, or with it on closing the page. */
+static void court_show_venue(u8 saved, u8 preview)
+{
+    if (court_style_venue(saved, OPPONENT_NONE) != render_court_venue()) {
+        if (preview)
+            render_preview_court();
+        else
+            render_open_match();
+        profile_resync();
+    }
+    /* Closing on a previewed venue: its ambience, under a fade. */
+    if (!preview && audio_ambience_venue() != render_court_venue()) {
+        render_fade(1);
+        audio_ambience(render_court_venue());
+        render_fade(0);
+        profile_resync();
+    }
+}
+
 static void update_title_court(u16 pressed)
 {
     SaveSettings *settings = &g_save.settings;
+    u8 venue = settings->venue;
     u8 result = court_edit_input(settings->court, &settings->venue, pressed);
 
     if (g_court_edit.recolor) {
         g_court_edit.recolor = 0;
         render_apply_court_colors();
     }
-    if (result == COURT_EDIT_STAY)
+    if (result == COURT_EDIT_STAY) {
+        if (settings->venue != venue)
+            s_venue_rest = 0;
+        else if (s_venue_rest < COURT_PREVIEW_REST_FRAMES &&
+                ++s_venue_rest == COURT_PREVIEW_REST_FRAMES &&
+                court_style_venue(settings->venue, OPPONENT_NONE) !=
+                    render_court_venue()) {
+            s_venue_previewed = 1;
+            court_show_venue(settings->venue, 1);
+        }
         return;
-    g_title_page = TITLE_PAGE_MENU;
-    if (result != COURT_EDIT_DONE ||
-            !court_edit_changed(settings->court, settings->venue))
-        return;
-    save_write();
-    if (settings->venue != g_court_edit.original_venue) {
-        render_open_match();
-        profile_resync();
     }
+    g_title_page = TITLE_PAGE_MENU;
+    if (result == COURT_EDIT_DONE &&
+            court_edit_changed(settings->court, settings->venue))
+        save_write();
+    /* Y restored the venue: only a preview changed what shows. */
+    if (s_venue_previewed || settings->venue != g_court_edit.original_venue)
+        court_show_venue(settings->venue, 0);
 }
 
 /* Options page (ADR-025): B or Start keeps (and saves), Y puts back. */
@@ -328,6 +368,8 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,
                     &g_save.settings.venue);
+                s_venue_rest = COURT_PREVIEW_REST_FRAMES;
+                s_venue_previewed = 0;
                 g_title_page = TITLE_PAGE_COURT;
             } else {
                 select_begin(g_title_mode == TITLE_DOUBLES ? MATCH_DOUBLES :
@@ -488,6 +530,10 @@ int main(void)
             continue;
         }
         if (s_open_park) {
+            if (s_open_park == S_OPEN_PARK_FROM_PRACTICE) {
+                game_start_attract();
+                g_match_config_changed = 0;
+            }
             s_open_park = 0;
             open_park();
             continue;
@@ -510,8 +556,11 @@ int main(void)
              * closes it is the card's too: the serve buffers presses, so the
              * closing B would otherwise serve. */
             if (g_story.card != STORY_CARD_NONE) {
-                if (!story_update(g_pad_snapshots[0].pressed))
+                if (!story_update(g_pad_snapshots[0].pressed,
+                        g_pad_snapshots[0].held))
                     audio_ui(SFX_CONFIRM);
+                else if (g_story.card == STORY_CARD_INITIALS)
+                    ui_sounds(g_pad_snapshots[0].pressed);
             } else {
                 update_controllers();
                 /* Pause, unpause, or back to the title. */
@@ -526,6 +575,9 @@ int main(void)
                     if (g_game_state.paused)
                         pause_begin();      /* just paused: on RESUME */
                 }
+                /* A record beaten (ADR-040): initials before the result. */
+                if (g_game_state.phase == GAME_PHASE_MATCH_RESULT)
+                    story_begin_initials();
             }
             if (g_next_opponent)
                 start_next_opponent();

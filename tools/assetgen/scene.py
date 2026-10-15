@@ -159,9 +159,17 @@ def court_assets():
                 raise AssetError(f"venue {venue['name']}: {part} {want!r} is "
                                  f"not a court colour preset")
             defaults.append(names.index(want))
+        watcher = venue.get("watcher")
+        if not (isinstance(watcher, list) and len(watcher) == 3 and
+                8 <= watcher[0] < 248 and 16 <= watcher[1] < 224 and
+                watcher[2] in ("sit", "stand")):
+            raise AssetError(f"venue {venue['name']}: watcher is [x, y, "
+                             "sit|stand] on screen (ADR-042)")
         header_rows.append((venue["name"], defaults,
                             len(files[f"venue_{i}.pic"]),
-                            len(files[f"venue_{i}.map"])))
+                            len(files[f"venue_{i}.map"]),
+                            (watcher[0], watcher[1],
+                             1 if watcher[2] == "sit" else 0)))
 
     files["venues.h"] = venues_header(header_rows).encode()
     files["venues.inc"] = venues_include(len(venues)).encode()
@@ -189,7 +197,7 @@ def venues_header(rows):
         lines.append(f"extern char venue{i}_tiles, venue{i}_map, "
                      f"venue{i}_palettes;")
     lines.append("const VenueData g_venue_data[VENUE_COUNT] = {")
-    for i, (_, _, tiles_size, map_size) in enumerate(rows):
+    for i, (_, _, tiles_size, map_size, _) in enumerate(rows):
         lines.append(f"    {{ (const u8 *)&venue{i}_tiles, {tiles_size}, "
                      f"(const u8 *)&venue{i}_map, {map_size}, "
                      f"(const u8 *)&venue{i}_palettes }},")
@@ -202,9 +210,14 @@ def venues_header(rows):
     lines.append("const u8 g_venue_ground[VENUE_COUNT][COURT_PARTS] = { " +
                  ", ".join("{ " + ", ".join(map(str, r[1])) + " }"
                            for r in rows) + " };")
+    lines.append("/* Where the opponent's partner watches a singles match "
+                 "(ADR-042): x, y of the feet, and 1 to sit. */")
+    lines.append("const u8 g_venue_watcher[VENUE_COUNT][3] = { " +
+                 ", ".join("{ %d, %d, %d }" % r[4] for r in rows) + " };")
     lines += ["#else",
               "extern const char *const g_venue_names[VENUE_COUNT];",
               "extern const u8 g_venue_ground[VENUE_COUNT][COURT_PARTS];",
+              "extern const u8 g_venue_watcher[VENUE_COUNT][3];",
               "#endif", "", "#endif", ""]
     return "\n".join(lines)
 

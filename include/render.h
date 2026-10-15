@@ -6,6 +6,15 @@
 /* VRAM word addresses; see docs/09_M1_VRAM_AND_BUILD.md. */
 #define RENDER_BG1_MAP_ADDR 0x0000
 #define RENDER_BG3_MAP_ADDR 0x0400
+/* The intro card's bust (M4-STORY-03): BG2, only while the card is up.
+ * The tile base steps by 0x1000 words, so BG2 counts from 0x4000 and the
+ * bust tiles start 128 tiles in (tools/assetgen/select.py). */
+#define RENDER_BG2_MAP_ADDR 0x0800
+#define RENDER_BG2_BASE_ADDR 0x4000
+#define RENDER_BG2_TILES_ADDR 0x4800
+/* The close call's close-up (ADR-041): its own BG2 map, rows 15-21 written
+ * when a point shows it. */
+#define RENDER_BG2_REPLAY_MAP_ADDR 0x0C00
 #define RENDER_BG1_TILES_ADDR 0x1000
 #define RENDER_BG3_TILES_ADDR 0x5000
 #define RENDER_OBJ_TILES_ADDR 0x6000
@@ -29,14 +38,23 @@ enum {
 enum {
     RENDER_OAM_BALL = 0,
     RENDER_OAM_BALL_SHADOW = 1,
-    RENDER_OAM_BODIES = 2,        /* 2-5: sorted nearest-first (ADR-012) */
-    RENDER_OAM_SHADOWS = 6,       /* 6-9: by slot */
-    RENDER_OAM_SPARK = 10,        /* 10-13: impact effects reserve */
-    RENDER_OAM_DEBUG_MARKER = 11,
-    RENDER_OAM_ACCESSORIES = 14,  /* 14-17: ponytails by slot (ADR-014) */
-    RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
-    RENDER_OAM_ZONE = 22,         /* 22-25: practice return zone corners */
-    RENDER_OAM_FIRST_HIDDEN = 26
+    /* 2-13: a group per player, nearest-first (ADR-012): the hat's two
+     * halves (M4-OPP-04), then the body. A lower entry draws in front, so
+     * a hat covers its own body's cap and stays behind nearer players. */
+    RENDER_OAM_BODIES = 2,
+    RENDER_OAM_GROUP_SIZE = 3,
+    RENDER_OAM_GROUP_BODY = 2,    /* the body's entry in its group */
+    RENDER_OAM_SHADOWS = 14,      /* 14-17: by slot */
+    RENDER_OAM_SPARK = 18,        /* 18-21: impact effects reserve */
+    RENDER_OAM_DEBUG_MARKER = 19,
+    RENDER_OAM_ACCESSORIES = 22,  /* 22-25: ponytails by slot (ADR-014) */
+    RENDER_OAM_MACHINE = 26,      /* 26-29: practice ball machine (ADR-028) */
+    RENDER_OAM_REPLAY = 30,       /* 30-31: the close call's ball and shadow
+                                     (ADR-041) */
+    RENDER_OAM_WATCHER = 32,      /* 32-33: the opponent's partner watching
+                                     a singles match (ADR-042) */
+    RENDER_OAM_ZONE = 34,         /* 34-37: practice return zone corners */
+    RENDER_OAM_FIRST_HIDDEN = 38
 };
 
 void render_initialize(void);
@@ -52,6 +70,11 @@ u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the
  * current g_match_config, or the Player Select screen. */
 void render_open_match(void);
+/* The venue the court shows (resolved: never AUTO). */
+u8 render_court_venue(void);
+/* render_open_match without the venue's ambience (M4-VENUE-02): loading a
+ * sound module takes about 45 frames, too long for a preview. */
+void render_preview_court(void);
 void render_select_open(void);
 /* Player Select frame: buffers before VBlank, uploads inside it. */
 void render_select_prepare(void);

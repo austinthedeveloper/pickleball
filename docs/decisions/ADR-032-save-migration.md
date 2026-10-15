@@ -13,8 +13,9 @@ Players now hold saves from released builds:
 |---|---|---:|
 | v0.4.0 | 4 | 32 bytes |
 | v0.5.0 | 7 | 40 bytes |
-| v0.6.0 to v0.9.0 | 8 | 42 bytes (ADR-033) |
-| next | 9 | 46 bytes (practice return zones, ADR-028) |
+| v0.6.0 to v0.12.0 | 8 | 42 bytes (ADR-033) |
+| v0.13.0 | 9 | 48 bytes: record initials (ADR-040) |
+| next | 10 | 52 bytes: practice return zones (ADR-028); 4, 7, 8, and 9 migrate |
 
 From now on a layout change keeps their records and settings.
 

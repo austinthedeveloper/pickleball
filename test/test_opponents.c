@@ -43,6 +43,11 @@ static void test_config(void)
     assert(match_slot_style(1) == &g_ai_partner_style);
     assert(match_slot_style(2) == &g_opponent_styles[o][0]);
     assert(match_slot_style(3) == &g_opponent_styles[o][1]);
+    /* Hats (M4-OPP-04): the opponents wear theirs; humans and the default
+     * CPU partner keep the cap. */
+    assert(match_slot_hat(2) == g_opponent_hat[o][0]);
+    assert(match_slot_hat(3) == g_opponent_hat[o][1]);
+    assert(match_slot_hat(0) == 0 && match_slot_hat(1) == 0);
     match_compose_palette(3, pal);
     assert(memcmp(pal, g_opponent_palettes[o][1], sizeof(pal)) == 0);
     assert(match_team_hud_colors(1) == g_opponent_hud[o]);
@@ -233,6 +238,7 @@ static void test_partner(void)
     assert(match_slot_style(2) == &g_opponent_styles[6][0]);
     assert(g_match_config.variant[1] == g_opponent_variant[7][0]);
     assert(g_match_config.paddle_id[1] == g_opponent_paddle[7][0]);
+    assert(match_slot_hat(1) == g_opponent_hat[7][0]);
     match_compose_palette(1, pal);
     assert(memcmp(pal, g_opponent_palettes[7][0], sizeof(pal)) == 0);
     game_new_match();

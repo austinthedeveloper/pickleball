@@ -6,18 +6,37 @@
 /*
  * Story cards (docs/decisions/ADR-026-story-cards.md). The intro card
  * shows before a ladder match from Player Select; the match waits under it.
- * The result lines are drawn from the match state (hud_scene.c). Pure.
+ * The result lines are drawn from the match state (hud_scene.c). The
+ * initials card (ADR-040) opens on the match result after a new record,
+ * arcade style, and the result waits under it. Pure.
  */
 
-enum { STORY_CARD_NONE = 0, STORY_CARD_INTRO = 1 };
+enum { STORY_CARD_NONE = 0, STORY_CARD_INTRO = 1, STORY_CARD_INITIALS = 2 };
 enum {
     STORY_INTRO_MIN_FRAMES = 30,    /* a held button cannot skip it */
-    STORY_INTRO_FRAMES = 300        /* then it goes by itself (5 s) */
+    STORY_INTRO_FRAMES = 300,       /* then it goes by itself (5 s) */
+    STORY_INITIALS_MIN_FRAMES = 30, /* mashing B past the result can't
+                                       enter AAA */
+    STORY_INITIALS_FRAMES = 1800,   /* then the letters shown are kept */
+    STORY_REPEAT_DELAY = 16,        /* a held Up/Down repeats after this, */
+    STORY_REPEAT_FRAMES = 4         /* then every this many frames */
 };
+
+/* The captain's bust on the intro card (M4-STORY-03): a 6x6-tile BG2
+ * frame, centred between the rung (row 14) and the prompt (row 24).
+ * tools/assetgen/select.py reads these. */
+#define STORY_BUST_COL 13
+#define STORY_BUST_ROW 16
+#define STORY_BUST_TILES 6
 
 typedef struct {
     u8 card;
     u16 timer;
+    /* The initials card: the letters, the one being chosen, and how long
+     * Up or Down has been held. */
+    u8 letters[3];
+    u8 cursor;
+    u8 held_frames;
 } StoryState;
 
 extern StoryState g_story;
@@ -27,9 +46,15 @@ extern StoryState g_story;
 void story_initialize(void);
 /* Shows the intro card when the match has a ladder opponent. */
 void story_begin_intro(void);
-/* One frame of 1P's newly pressed buttons; B, A, or Start ends the card
- * after STORY_INTRO_MIN_FRAMES. Nonzero while a card stays up. The caller
+/* Shows the initials card when a record was beaten (g_save_new_records)
+ * outside the attract demo, starting from the last initials entered. */
+void story_begin_initials(void);
+/* One frame of 1P's newly pressed and held buttons. Intro: B, A, or Start
+ * ends it after STORY_INTRO_MIN_FRAMES. Initials: Up and Down change the
+ * letter (held, they repeat), B, A, or Right moves to the next and past the
+ * third saves them, Y or Left goes back, Start saves them; after
+ * STORY_INITIALS_MIN_FRAMES. Nonzero while a card stays up. The caller
  * keeps that frame's input from the match even when the card closes. */
-u8 story_update(u16 pressed);
+u8 story_update(u16 pressed, u16 held);
 
 #endif

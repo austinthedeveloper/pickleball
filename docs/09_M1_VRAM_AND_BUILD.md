@@ -12,8 +12,11 @@ are uploaded once during forced blank.
 | BG1 scene map | `0x0000` | `0x0000–0x07ff` | 1,792 (rows 0–27, per venue) |
 | BG3 HUD map | `0x0400` | `0x0800–0x0fff` | 2,048 (rows 0–27 used) |
 | BG1 scene tiles | `0x1000` | `0x2000–0x8fff` | up to 21,152 (661 tiles: shared ground + the venue's own; ADR-024/027) |
+| BG2 intro card bust map (M4-STORY-03) | `0x0800` | `0x1000–0x17ff` | 2,048 (the captain's variant; only while the card is up) |
+| BG2 close call map (ADR-041) | `0x0c00` | `0x1800–0x1fff` | 2,048 (rows 15-21 written when a point shows it) |
+| BG2 intro card bust and close call tiles | `0x4800` | `0x9000–0x9fff` | 1,824 (57 tiles; budget 128). BG2's tile base is `0x4000` (it steps by `0x1000` words); the map counts from tile 128. |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
-| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 7,168 (224 tiles: the second objects row holds open play's people, ADR-034) |
+| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 7,968 (249 tiles: the second objects row holds open play's people, ADR-034, and opponent hats, M4-OPP-04; then the park fonts) |
 
 Player Select (ADR-020) replaces the court while it is open and reuses the
 BG3 and OBJ regions:
@@ -42,7 +45,7 @@ cannot overflow.
 | Entries | Use |
 |---:|---|
 | 0–15 | BG3 HUD palettes 0–3 (ADR-016): 0 neutral, 1 title gold / B button, 2 left-team label, 3 right-team label. Palettes 2–3 are rewritten from the match config. |
-| 16–31 | Unused (BG3 palettes 4–7 / BG 4bpp palette 1) |
+| 16–31 | BG 4bpp palette 1: the intro card bust (M4-STORY-03), the captain's colours with a frame in roles 10 and 13. Otherwise unused (BG3 palettes 4–7 are not drawn). |
 | 32–127 | BG1 palettes 2–7. BG1 never references 4bpp palette 0; the asset build fails if it does. Palette 2 (the ground) is shared by every venue and composed at runtime from the saved court colours (ADR-022); palettes 3–7 are the venue's (ADR-024). |
 | 128–255 | OBJ palettes; the layout depends on the match mode (ADR-018). In singles, OBJ 0–1 are the slot 0 and slot 2 players, 2 is the ball and spark, 3 the hit flash, and 4 the shadow (black, colour math). In doubles, OBJ 0–3 are players by slot, 4 the ball, 5 the flash, and 6 the opaque shadow, with colour math off. |
 
@@ -58,10 +61,12 @@ dark shadows (ADR-018). Singles keeps translucent shadows.
 ## OAM
 
 Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball (a 32×32 large object for BIG
-BALL, ADR-033), 1 ball shadow, 2–5 bodies
-sorted nearest-first, 6–9 shadows by slot (one 8×8 each), 10 spark, 11 debug
-landing marker (debug builds), 14–17 accessories (ponytails, ADR-014),
-18–21 the practice ball machine (ADR-028), 22–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
+BALL, ADR-033), 1 ball shadow, 2–13 a group of three per player sorted
+nearest-first (the hat's two halves, then the body; M4-OPP-04), 14–17 shadows
+by slot (one 8×8 each), 18 spark, 19 debug landing marker (debug builds),
+22–25 accessories (ponytails, ADR-014), 26–29 the practice ball machine
+(ADR-028), 30–31 the close call (ADR-041), 32–33 the partner sitting out
+(ADR-042), 34–127 hidden. Objects are written by `src/asm/oam_write.asm`, which sets the
 high-table X bit for negative x and parks hidden objects as small objects at
 y = 240. That is below every evaluated line, so they never show and never count
 toward the PPU's 32-object range-over limit.
@@ -79,7 +84,7 @@ on the way back.
 
 LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), 512 KiB (16 banks,
 header ROM size `$09`; 256 KiB until the sound effects filled it), NTSC, cartridge
-type `$02` with 2 KiB battery SRAM at `$70:0000` (two 28-byte save copies at
-offsets 0 and 1024; ADR-021, v2 since ADR-022);
+type `$02` with 2 KiB battery SRAM at `$70:0000` (two 48-byte save copies at
+offsets 0 and 1024; ADR-021, layout 9 since ADR-040);
 internal checksum and complement sum to
 `0xffff`. `make dist` records the full ROM SHA-256 in the distribution report.

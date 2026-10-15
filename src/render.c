@@ -23,6 +23,9 @@
 #include "save.h"
 #include "practice.h"
 #include "serve.h"
+#include "opponents.h"
+#include "story.h"
+#include "replay.h"
 
 
 /* The ground every venue shares (ADR-024); venues.h has the rest. */
@@ -32,8 +35,31 @@ extern char hud_tiles, hud_tiles_end;
 extern char hud_palette, hud_palette_end;
 extern char obj_tiles, obj_tiles_end;
 extern char objects_palette, objects_palette_end;
+extern char bust_tiles, bust_tiles_end;
+extern char bust_m_map, bust_m_map_end;
+extern char bust_f_map, bust_f_map_end;
+extern char closeup_map, closeup_map_end;
+
+/* The intro card's bust (M4-STORY-03) in BG palette 1, the one a match
+ * leaves free. Its frame uses two roles a bust never shows: 10 (shoe) is
+ * the inner border, in the HUD's border grey, and 13 (paddle edge) the
+ * backdrop (tools/art/prep_opponent_busts.py). */
+#define RENDER_BUST_CGRAM 16
+#define RENDER_BUST_FRAME 10
+#define RENDER_BUST_BACKDROP 13
+static u16 s_bust_palette[16];
+static u8 s_bust_shown;
+/* The close call's close-up is on BG2 (ADR-041); its ball's OAM is used. */
+static u8 s_replay_shown;
+static u8 s_replay_ball;
+/* The opponent's partner is in the stands (ADR-042). */
+static u8 s_watcher_shown;
 
 u16 g_obj_overflow_frames;
+/* Each slot's hat tile pair, 0 for the cap (M4-OPP-04); set with the match
+ * config, read by render_bodies (src/asm/render_bodies.asm). */
+u16 rb_hat[MAX_PLAYERS];
+static const u16 s_hat_tiles[HAT_COUNT] = HAT_TILES;
 
 /* Inputs for ram_copy (src/asm/ram_copy.asm). */
 u16 ram_copy_src;
@@ -60,6 +86,8 @@ static u8 s_ground_waits;
 static u8 s_ground_dirty;
 /* Venue on screen (ADR-024). */
 static u8 s_venue;
+/* A preview keeps the ambience that plays (render_preview_court). */
+static u8 s_keep_ambience;
 /* The LAVA kitchen is on the ground palette (ADR-033). */
 static u8 s_lava_shown;
 u8 g_render_busy;
@@ -100,6 +128,9 @@ void render_apply_match_config(void)
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (match_slot_active(slot))
             match_compose_palette(slot, s_player_palettes[slot]);
+    /* Hats (M4-OPP-04): render_bodies draws or parks them every frame. */
+    for (slot = 0; slot < MAX_PLAYERS; ++slot)
+        rb_hat[slot] = s_hat_tiles[match_slot_hat(slot)];
     /* Ponytails are written only for female players; park the rest. */
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (!match_slot_active(slot) ||
@@ -150,7 +181,10 @@ static void render_upload_palettes(void)
 typedef char oam_bodies_after_ball[
     (RENDER_OAM_BODIES > RENDER_OAM_BALL_SHADOW) ? 1 : -1];
 typedef char oam_shadows_after_bodies[
-    (RENDER_OAM_SHADOWS >= RENDER_OAM_BODIES + MAX_PLAYERS) ? 1 : -1];
+    (RENDER_OAM_SHADOWS >=
+        RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * MAX_PLAYERS) ? 1 : -1];
+typedef char oam_group_holds_hat_and_body[
+    (RENDER_OAM_GROUP_BODY == 2 && RENDER_OAM_GROUP_SIZE == 3) ? 1 : -1];
 typedef char oam_effects_after_shadows[
     (RENDER_OAM_SPARK >= RENDER_OAM_SHADOWS + MAX_PLAYERS) ? 1 : -1];
 typedef char oam_effects_within_reserve[
@@ -159,8 +193,12 @@ typedef char oam_accessories_after_effects[
     (RENDER_OAM_ACCESSORIES >= RENDER_OAM_SPARK + 4) ? 1 : -1];
 typedef char oam_machine_after_accessories[
     (RENDER_OAM_MACHINE >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
-typedef char oam_zone_after_machine[
-    (RENDER_OAM_ZONE >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_replay_after_machine[
+    (RENDER_OAM_REPLAY >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
+typedef char oam_watcher_after_replay[
+    (RENDER_OAM_WATCHER >= RENDER_OAM_REPLAY + 2) ? 1 : -1];
+typedef char oam_zone_after_watcher[
+    (RENDER_OAM_ZONE >= RENDER_OAM_WATCHER + 2) ? 1 : -1];
 typedef char oam_hidden_after_zone[
     (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ZONE + 4) ? 1 : -1];
 
@@ -205,6 +243,7 @@ s16 rb_sx;
 u16 rb_attr;
 u16 rb_count;
 u16 rb_frame;
+u16 rb_oam;
 extern void render_bodies(void);
 
 static u8 s_active_bodies;
@@ -266,8 +305,14 @@ static void render_players(void)
     if (rb_count != s_active_bodies) {
         s_active_bodies = (u8)rb_count;
         for (j = 0; j < MAX_PLAYERS; ++j) {
-            if (j >= rb_count)
-                render_obj_hide(RENDER_OAM_BODIES + j);
+            if (j >= rb_count) {
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j);
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j + 1);
+                render_obj_hide(RENDER_OAM_BODIES +
+                    RENDER_OAM_GROUP_SIZE * j + RENDER_OAM_GROUP_BODY);
+            }
             if (rb_depth[j] == -32767)
                 render_obj_hide(RENDER_OAM_SHADOWS + j);
         }
@@ -340,6 +385,8 @@ static void render_machine(void)
  * of its ground rectangle, the select cursor's corner flipped; they blink
  * after a return lands in it. Hidden once when there is none. */
 static u8 s_zone_drawn;
+/* The machine or the zone may be on screen: hide them once after practice. */
+static u8 s_practice_drawn;
 
 static void render_zone(void)
 {
@@ -398,6 +445,135 @@ static void render_effects(void)
 #endif
 }
 
+/* The close call (ADR-041) shows during its point result only. */
+#define RENDER_REPLAY_WANTED() \
+    (g_replay.active && !g_attract && \
+     g_game_state.phase == GAME_PHASE_POINT_RESULT)
+#define RENDER_REPLAY_ROWS_BYTES (REPLAY_ROWS * 32 * 2)
+#define RENDER_REPLAY_DROP_START 6
+#define RENDER_REPLAY_DROP_FRAMES 24  /* falls 36 px: (t * t) / 16 */
+#define RENDER_REPLAY_BOUNCE_FRAMES 16
+#define RENDER_REPLAY_BALL_RADIUS 7   /* the BIG BALL is 14 px */
+#define RENDER_REPLAY_LINE_HALF 4
+
+/* VBlank: the close-up's rows for this line and side, then BG2 on; off
+ * when the point result ends. */
+static void render_commit_replay(void)
+{
+    u8 variant;
+
+    /* After the HUD's frame is up: never a bare close-up for a frame. */
+    if (RENDER_REPLAY_WANTED() && hud_replay_framed()) {
+        if (s_replay_shown)
+            return;
+        variant = (g_replay.vertical ? 0 : 2) + (g_replay.out_dir > 0);
+        dmaCopyVram((u8 *)&closeup_map + variant * RENDER_REPLAY_ROWS_BYTES,
+            RENDER_BG2_REPLAY_MAP_ADDR + REPLAY_ROW * 32,
+            RENDER_REPLAY_ROWS_BYTES);
+        bgSetMapPtr(1, RENDER_BG2_REPLAY_MAP_ADDR, SC_32x32);
+        bgSetScroll(1, 0, 0);
+        bgSetEnable(1);
+        s_replay_shown = 1;
+    } else if (s_replay_shown) {
+        bgSetDisable(1);
+        s_replay_shown = 0;
+    }
+}
+
+/* The ball dropping onto its spot in slow motion, with a bounce, and its
+ * shadow; in front of the close-up (OBJ priority 3). Zoomed 4x: the ball's
+ * edge is 4 px per pixel past the line's edge. */
+static void render_replay_ball(void)
+{
+    s16 x = REPLAY_COL * 8 + REPLAY_COLS * 4;
+    s16 y = REPLAY_ROW * 8 + REPLAY_ROWS * 4;
+    s16 out = RENDER_REPLAY_LINE_HALF + RENDER_REPLAY_BALL_RADIUS +
+        (g_replay.dist_fp >> 2);
+    s16 t = (s16)g_game_state.phase_timer - RENDER_REPLAY_DROP_START;
+    s16 z;
+
+    if (!s_replay_shown || t < 0) {
+        if (s_replay_ball) {
+            render_obj_hide(RENDER_OAM_REPLAY);
+            render_obj_hide(RENDER_OAM_REPLAY + 1);
+            s_replay_ball = 0;
+        }
+        return;
+    }
+    /* Inside the close-up whatever the distance (the threshold keeps it
+     * there anyway: 6 inches is 10 zoomed pixels). */
+    if (g_replay.vertical) {
+        if (out > REPLAY_COLS * 4 - RENDER_REPLAY_BALL_RADIUS - 8)
+            out = REPLAY_COLS * 4 - RENDER_REPLAY_BALL_RADIUS - 8;
+        x = REPLAY_LINE_COL * 8 + 4 + g_replay.out_dir * out;
+    } else {
+        if (out > (REPLAY_ROWS / 2) * 8 + 3 - RENDER_REPLAY_BALL_RADIUS)
+            out = (REPLAY_ROWS / 2) * 8 + 3 - RENDER_REPLAY_BALL_RADIUS;
+        y = REPLAY_LINE_ROW * 8 + 4 + g_replay.out_dir * out;
+    }
+    if (t < RENDER_REPLAY_DROP_FRAMES) {
+        z = RENDER_REPLAY_DROP_FRAMES - t;
+        z = (s16)((z * z) >> 4);
+    } else if (t < RENDER_REPLAY_DROP_FRAMES + RENDER_REPLAY_BOUNCE_FRAMES) {
+        t -= RENDER_REPLAY_DROP_FRAMES;
+        z = (s16)((t * (RENDER_REPLAY_BOUNCE_FRAMES - t)) >> 3);
+    } else {
+        z = 0;
+    }
+    obj_put(RENDER_OAM_REPLAY + 1, x - 4, y - 4, OBJTILE_PLAYER_SHADOW,
+        (3 << 4) | (g_objpal_shadow << 1), 0);
+    obj_put(RENDER_OAM_REPLAY, x - 16, y - z - 16, OBJTILE_BIG_BALL,
+        (3 << 4) | (g_objpal_objects << 1), 1);
+    s_replay_ball = 1;
+}
+
+/*
+ * A crowd of the players sitting out (GOOFY_IDEAS.md, ADR-042): in a
+ * singles ladder match the opponent's doubles partner watches from the
+ * venue's stands, in the team's kit (the captain's palette: singles has no
+ * other OBJ palette outside the shadows' colour math), facing the court.
+ * They hop while their side wins a point or the match.
+ */
+#define RENDER_WATCHER_WANTED() \
+    (!g_attract && g_match_config.mode == MATCH_SINGLES && \
+     g_match_config.opponent < OPPONENT_COUNT && \
+     !g_match_config.open_play && !g_match_config.practice)
+
+static void render_watcher(void)
+{
+    const u8 *seat = g_venue_watcher[s_venue];
+    s16 x;
+    s16 y;
+    u8 attr;
+    u8 cheer;
+
+    if (!RENDER_WATCHER_WANTED()) {
+        if (s_watcher_shown) {
+            render_obj_hide(RENDER_OAM_WATCHER);
+            render_obj_hide(RENDER_OAM_WATCHER + 1);
+            s_watcher_shown = 0;
+        }
+        return;
+    }
+    x = seat[0] - 4;
+    y = seat[1] - 8;
+    cheer = (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
+            g_game_state.point_winner == 1) ||
+        (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
+            g_game_state.match_winner == 1);
+    if (cheer && (g_game_state.frame_count & 8))
+        y -= 2;
+    attr = OBJ_ATTR(g_players[2].palette, 1);
+    if (seat[2]) {
+        obj_put(RENDER_OAM_WATCHER, x, y, OBJTILE_PERSON_TOP, attr, 0);
+        render_obj_hide(RENDER_OAM_WATCHER + 1);
+    } else {
+        obj_put(RENDER_OAM_WATCHER, x, y - 8, OBJTILE_PERSON_TOP, attr, 0);
+        obj_put(RENDER_OAM_WATCHER + 1, x, y, OBJTILE_PERSON_LEGS, attr, 0);
+    }
+    s_watcher_shown = 1;
+}
+
 void render_prepare(void)
 {
 #ifdef RENDER_DIAGNOSTICS
@@ -409,9 +585,16 @@ void render_prepare(void)
     render_players();
     PROFILE_MARK(2);
     render_ball();
+    render_replay_ball();
+    render_watcher();
     render_effects();
-    render_machine();
-    render_zone();
+    /* The practice objects only in practice, and once more to hide them:
+     * outside it their per-frame hides cost the doubles budget. */
+    if ((g_match_config.practice && !g_attract) || s_practice_drawn) {
+        render_machine();
+        render_zone();
+        s_practice_drawn = g_match_config.practice && !g_attract;
+    }
     render_update_ground();
     PROFILE_MARK(3);
     hud_scene_update();
@@ -433,6 +616,12 @@ void render_commit(void)
         dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
         s_ground_dirty = 0;
     }
+    /* The card closed: the bust goes with the HUD's clear. */
+    if (s_bust_shown && g_story.card == STORY_CARD_NONE) {
+        bgSetDisable(1);
+        s_bust_shown = 0;
+    }
+    render_commit_replay();
     hud_commit();
 }
 
@@ -443,6 +632,9 @@ void render_initialize(void)
     /* RAM is not cleared at power-on (real hardware or emulators that
      * randomize it), so every piece of renderer state is set explicitly. */
     s_palette_dirty = 0;
+    s_keep_ambience = 0;
+    s_zone_drawn = 0;
+    s_practice_drawn = 1;          /* hidden on the first frame */
     s_ground_dirty = 0;
     s_ground_pending = 0;
     s_ground_waits = 0;
@@ -482,6 +674,47 @@ void render_initialize(void)
     setScreenOn();
 }
 
+/* The captain's bust on BG2 when the match opens on its intro card
+ * (M4-STORY-03), else BG2 off; forced blank only. The map follows the
+ * captain's variant; the colours are theirs. */
+static void render_load_bust(void)
+{
+    u8 opponent = g_match_config.opponent;
+    u8 i;
+
+    /* The tiles (busts and the close call's) and a blank close-up map go
+     * up with every court, BG2 off until a card or a close call. */
+    dmaCopyVram((u8 *)&bust_tiles, RENDER_BG2_TILES_ADDR,
+        (u16)(&bust_tiles_end - &bust_tiles));
+    dmaCopyVram((u8 *)&bust_m_map, RENDER_BG2_REPLAY_MAP_ADDR,
+        (u16)(&bust_m_map_end - &bust_m_map));
+    bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
+    s_replay_shown = 0;
+    s_replay_ball = 1;          /* parked on the first frame */
+    s_watcher_shown = 1;
+    s_bust_shown = g_story.card == STORY_CARD_INTRO &&
+        opponent < OPPONENT_COUNT;
+    if (!s_bust_shown) {
+        bgSetDisable(1);
+        return;
+    }
+    if (g_opponent_variant[opponent][0])
+        dmaCopyVram((u8 *)&bust_f_map, RENDER_BG2_MAP_ADDR,
+            (u16)(&bust_f_map_end - &bust_f_map));
+    else
+        dmaCopyVram((u8 *)&bust_m_map, RENDER_BG2_MAP_ADDR,
+            (u16)(&bust_m_map_end - &bust_m_map));
+    for (i = 0; i < 16; ++i)
+        s_bust_palette[i] = g_opponent_palettes[opponent][0][i];
+    s_bust_palette[RENDER_BUST_FRAME] = RGB5(21, 22, 26);
+    s_bust_palette[RENDER_BUST_BACKDROP] = RGB5(13, 16, 21);
+    dmaCopyCGram((u8 *)s_bust_palette, RENDER_BUST_CGRAM, 32);
+    bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
+    bgSetMapPtr(1, RENDER_BG2_MAP_ADDR, SC_32x32);
+    bgSetScroll(1, 0, 0);
+    bgSetEnable(1);
+}
+
 /* Court scene into VRAM/CGRAM and the match HUD; forced blank only. Also
  * how the match returns from the Player Select screen. The venue is the
  * saved choice, or for AUTO the opponent's home court (ADR-024): shared
@@ -496,7 +729,8 @@ static void render_load_court(void)
         (g_attract || g_match_config.open_play) ? OPPONENT_NONE :
             g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */
-    audio_ambience(s_venue);
+    if (!s_keep_ambience)
+        audio_ambience(s_venue);
     venue = &g_venue_data[s_venue];
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
@@ -510,7 +744,7 @@ static void render_load_court(void)
     render_compose_ground();
     dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
     s_ground_dirty = 0;
-    bgSetDisable(1);
+    render_load_bust();
     /* Match palettes are composed and uploaded inside this forced blank. */
     render_apply_match_config();
     render_upload_palettes();
@@ -522,6 +756,18 @@ static void render_load_court(void)
     hud_commit_all();
 }
 
+u8 render_court_venue(void)
+{
+    return s_venue;
+}
+
+void render_preview_court(void)
+{
+    s_keep_ambience = 1;
+    render_open_match();
+    s_keep_ambience = 0;
+}
+
 void render_open_match(void)
 {
     u8 i;
@@ -531,6 +777,7 @@ void render_open_match(void)
     for (i = 0; i < 128; ++i)
         render_obj_hide(i);
     s_zone_drawn = 0;
+    s_practice_drawn = 1;          /* hidden on the first frame */
     render_load_court();
     render_fade(0);
 }

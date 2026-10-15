@@ -5,6 +5,11 @@
 #include "save.h"
 
 SaveData g_save;
+u8 g_save_new_records;
+/* The best streak was claimed during the current, unbroken run (ADR-040):
+ * the next wins extend it under the same initials, without asking again.
+ * WRAM only: after a power cycle the next record asks once more. */
+static u8 s_streak_held;
 /* Copy that holds g_save; the next write goes to the other one. */
 static u8 s_current;
 
@@ -14,10 +19,11 @@ static const u8 s_magic[4] = { 'P', 'B', '9', '4' };
 typedef char save_v4_is_32_bytes[sizeof(SaveV4) == 32 ? 1 : -1];
 typedef char save_v7_is_40_bytes[sizeof(SaveV7) == 40 ? 1 : -1];
 typedef char save_v8_is_42_bytes[sizeof(SaveV8) == 42 ? 1 : -1];
-typedef char save_v9_is_46_bytes[sizeof(SaveData) == 46 ? 1 : -1];
+typedef char save_v9_is_48_bytes[sizeof(SaveV9) == 48 ? 1 : -1];
+typedef char save_v10_is_52_bytes[sizeof(SaveData) == 52 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 46
+#define SAVE_RAW_BYTES 52
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -110,6 +116,19 @@ static void save_bump(u16 *counter)
 void save_clear_records(void)
 {
     memset(&g_save.records, 0, sizeof(g_save.records));
+    memset(&g_save.initials, 0, sizeof(g_save.initials));
+    g_save_new_records = 0;
+    s_streak_held = 0;
+    save_write();
+}
+
+void save_set_initials(const u8 *letters)
+{
+    if (g_save_new_records & SAVE_NEW_STREAK)
+        memcpy(g_save.initials.best_streak, letters, SAVE_INITIALS);
+    if (g_save_new_records & SAVE_NEW_RALLY)
+        memcpy(g_save.initials.longest_rally, letters, SAVE_INITIALS);
+    g_save_new_records = 0;
     save_write();
 }
 
@@ -118,6 +137,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V9)
+        return sizeof(SaveV9);
     if (version == SAVE_V8)
         return sizeof(SaveV8);
     if (version == SAVE_V7)
@@ -179,6 +200,19 @@ static void save_copy_records_v8(const SaveRecordsV8 *old)
     g_save.records.practice_best = old->practice_best;
 }
 
+/* The settings of v0.6.0 to v0.13.0; the return zone is ANY. */
+static void save_copy_settings_v8(const SaveSettingsV8 *old)
+{
+    memcpy(g_save.settings.court, old->court, COURT_PARTS);
+    g_save.settings.ladder = old->ladder;
+    g_save.settings.venue = old->venue;
+    g_save.settings.points = old->points;
+    g_save.settings.difficulty = old->difficulty;
+    memcpy(g_save.settings.practice, old->practice, 3);
+    g_save.settings.sound = old->sound;
+    g_save.settings.modifiers = old->modifiers;
+}
+
 /* v0.5.0 to now: everything carries over; the modifiers start off. */
 static void save_migrate_v7(const u8 *raw)
 {
@@ -197,7 +231,8 @@ static void save_migrate_v7(const u8 *raw)
     g_save.settings.sound = old.settings.sound;
 }
 
-/* v0.6.0 to v0.9.0: everything carries over; the return zone is ANY. */
+/* v0.6.0 to v0.12.0: everything carries over; the return zone is ANY,
+ * and nobody holds a record yet. */
 static void save_migrate_v8(const u8 *raw)
 {
     static SaveV8 old;
@@ -206,14 +241,21 @@ static void save_migrate_v8(const u8 *raw)
     save_defaults();
     g_save.sequence = old.sequence;
     save_copy_records_v8(&old.records);
-    memcpy(g_save.settings.court, old.settings.court, COURT_PARTS);
-    g_save.settings.ladder = old.settings.ladder;
-    g_save.settings.venue = old.settings.venue;
-    g_save.settings.points = old.settings.points;
-    g_save.settings.difficulty = old.settings.difficulty;
-    memcpy(g_save.settings.practice, old.settings.practice, 3);
-    g_save.settings.sound = old.settings.sound;
-    g_save.settings.modifiers = old.settings.modifiers;
+    save_copy_settings_v8(&old.settings);
+}
+
+/* v0.13.0: everything carries over, the initials too; the return zone is
+ * ANY. */
+static void save_migrate_v9(const u8 *raw)
+{
+    static SaveV9 old;
+
+    memcpy(&old, raw, sizeof(old));
+    save_defaults();
+    g_save.sequence = old.sequence;
+    save_copy_records_v8(&old.records);
+    save_copy_settings_v8(&old.settings);
+    g_save.initials = old.initials;
 }
 
 void save_initialize(void)
@@ -224,6 +266,8 @@ void save_initialize(void)
     u8 ahead;
     u8 pick;
 
+    g_save_new_records = 0;
+    s_streak_held = 0;
     sram_read(raw[0], 0);
     sram_read(raw[1], SAVE_COPY_STRIDE);
     valid0 = save_raw_valid(raw[0]);
@@ -242,7 +286,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V8)
+    if (raw[pick][4] == SAVE_V9)
+        save_migrate_v9(raw[pick]);
+    else if (raw[pick][4] == SAVE_V8)
         save_migrate_v8(raw[pick]);
     else if (raw[pick][4] == SAVE_V7)
         save_migrate_v7(raw[pick]);
@@ -265,8 +311,11 @@ void save_advance_ladder(void)
 
 void save_record_rally(u8 shots)
 {
-    if (shots > g_save.records.longest_rally)
+    if (shots > g_save.records.longest_rally) {
         g_save.records.longest_rally = shots;
+        memset(g_save.initials.longest_rally, 0, SAVE_INITIALS);
+        g_save_new_records |= SAVE_NEW_RALLY;
+    }
 }
 
 void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against)
@@ -277,13 +326,21 @@ void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against)
         if (won) {
             save_bump(&records->wins[mode]);
             save_bump(&records->streak);
-            if (records->streak > records->best_streak)
+            if (records->streak > records->best_streak) {
                 records->best_streak = records->streak;
+                /* Extending one's own record keeps its initials. */
+                if (!s_streak_held || !g_save.initials.best_streak[0]) {
+                    memset(g_save.initials.best_streak, 0, SAVE_INITIALS);
+                    g_save_new_records |= SAVE_NEW_STREAK;
+                    s_streak_held = 1;
+                }
+            }
             if (points_against == 0)
                 save_bump(&records->shutouts);
         } else {
             save_bump(&records->losses[mode]);
             records->streak = 0;
+            s_streak_held = 0;
         }
     }
     save_write();

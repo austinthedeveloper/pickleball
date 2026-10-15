@@ -56,6 +56,24 @@ portrait_f_map:
 portrait_f_map_end:
 .ends
 
+; Intro card busts (M4-STORY-03): loaded in forced blank when a ladder
+; match opens on its card.
+.section ".rodata_bust" superfree
+bust_tiles:
+.incbin "assets/generated/bust.pic"
+bust_tiles_end:
+bust_m_map:
+.incbin "assets/generated/bust_m.map"
+bust_m_map_end:
+bust_f_map:
+.incbin "assets/generated/bust_f.map"
+bust_f_map_end:
+; The close call's close-ups (ADR-041): rows 15-21 of four BG2 maps.
+closeup_map:
+.incbin "assets/generated/closeup.map"
+closeup_map_end:
+.ends
+
 ; Open play park (ADR-034): loaded in forced blank when the park opens.
 .section ".rodata_park" superfree
 park_tiles:

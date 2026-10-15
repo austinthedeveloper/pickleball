@@ -65,6 +65,11 @@ void audio_events_initialize(void)
 #endif
 }
 
+u8 audio_ambience_venue(void)
+{
+    return s_ambience_venue;
+}
+
 void audio_ambience(u8 venue)
 {
     u8 want = audio_setting() == AUDIO_ALL ? venue : AUDIO_NO_AMBIENCE;

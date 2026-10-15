@@ -350,8 +350,9 @@ static void test_migrate_v7(void)
     assert(g_save.settings.modifiers == 9);
 }
 
-/* A v0.6.0-v0.9.0 save (layout 8) carries over; the return zone is ANY and
- * its bests start at 0 (M4-PRACTICE-03). */
+/* A v0.6.0-v0.12.0 save (layout 8) carries over; the return zone is ANY
+ * and its bests start at 0 (M4-PRACTICE-03), and nobody holds a record yet
+ * (ADR-040). */
 static void test_migrate_v8(void)
 {
     SaveV8 old;
@@ -398,6 +399,115 @@ static void test_migrate_v8(void)
     save_initialize();
     assert(g_save.settings.practice[3] == 2);
     assert(g_save.records.practice_zone_best[1] == 14);
+    assert(g_save.initials.best_streak[0] == 0);            /* new */
+    assert(g_save.initials.longest_rally[0] == 0);
+    assert(g_save_new_records == 0);
+}
+
+/* A v0.13.0 save (layout 9) carries over with its initials; the return
+ * zone is ANY (M4-PRACTICE-03). */
+static void test_migrate_v9(void)
+{
+    SaveV9 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V9;
+    old.sequence = 3;
+    old.records.best_streak = 6;
+    old.records.longest_rally = 21;
+    old.records.practice_best = 9;
+    old.settings.ladder = 5;
+    old.settings.practice[2] = 1;
+    old.settings.modifiers = 3;
+    memcpy(old.initials.best_streak, "ACE", 3);
+    memcpy(old.initials.longest_rally, "BOB", 3);
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram + SAVE_COPY_STRIDE, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.best_streak == 6 && g_save.records.longest_rally == 21);
+    assert(g_save.records.practice_best == 9);
+    assert(g_save.records.practice_zone_best[0] == 0);
+    assert(g_save.settings.ladder == 5 && g_save.settings.practice[2] == 1);
+    assert(g_save.settings.practice[3] == 0);              /* new: ANY */
+    assert(g_save.settings.modifiers == 3);
+    assert(memcmp(g_save.initials.best_streak, "ACE", 3) == 0);
+    assert(memcmp(g_save.initials.longest_rally, "BOB", 3) == 0);
+    memcpy(&a, g_host_sram, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+}
+
+/* ADR-040: beating a record clears its initials until they are entered;
+ * entering sets them for every record beaten, saves, and clears the
+ * flags. Erasing the records erases the initials. */
+static void test_initials(void)
+{
+    static const u8 abc[3] = { 'A', 'B', 'C' };
+    static const u8 xyz[3] = { 'X', 'Y', 'Z' };
+
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    save_record_rally(5);
+    assert(g_save_new_records == SAVE_NEW_RALLY);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == (SAVE_NEW_RALLY | SAVE_NEW_STREAK));
+    save_set_initials(abc);
+    assert(g_save_new_records == 0);
+    assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
+    assert(memcmp(g_save.initials.longest_rally, abc, 3) == 0);
+
+    /* A shorter rally and a loss beat nothing. */
+    save_record_rally(4);
+    save_record_match(MATCH_SINGLES, 1, 0, 3);
+    assert(g_save_new_records == 0);
+    /* A longer rally: only its initials change hands. */
+    save_record_rally(6);
+    assert(g_save_new_records == SAVE_NEW_RALLY);
+    assert(g_save.initials.longest_rally[0] == 0);
+    save_set_initials(xyz);
+    assert(memcmp(g_save.initials.longest_rally, xyz, 3) == 0);
+    assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
+
+    /* They persist. */
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(memcmp(g_save.initials.longest_rally, xyz, 3) == 0);
+    assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
+
+    /* A run that holds the best streak extends it under the same initials,
+     * without asking again; a loss ends the run, and the next record asks
+     * once more. */
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == SAVE_NEW_STREAK);
+    save_set_initials(abc);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0 && g_save.records.best_streak == 3);
+    assert(memcmp(g_save.initials.best_streak, abc, 3) == 0);
+    save_record_match(MATCH_SINGLES, 1, 0, 3);              /* the run ends */
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0);                        /* a tie: 3 */
+    save_record_match(MATCH_SINGLES, 1, 1, 3);              /* 4: a record */
+    assert(g_save_new_records == SAVE_NEW_STREAK);
+    assert(g_save.initials.best_streak[0] == 0);
+    save_set_initials(xyz);
+    save_record_match(MATCH_SINGLES, 1, 1, 3);
+    assert(g_save_new_records == 0);
+    assert(memcmp(g_save.initials.best_streak, xyz, 3) == 0);
+
+    save_record_rally(9);
+    save_clear_records();
+    assert(g_save_new_records == 0);
+    assert(g_save.initials.best_streak[0] == 0);
+    assert(g_save.initials.longest_rally[0] == 0);
 }
 
 int main(void)
@@ -411,6 +521,8 @@ int main(void)
     test_migrate_v4();
     test_migrate_v7();
     test_migrate_v8();
+    test_migrate_v9();
+    test_initials();
     test_game_hooks();
     printf("save host checks passed\n");
     return 0;

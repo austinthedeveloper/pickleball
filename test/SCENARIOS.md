@@ -31,12 +31,14 @@ sources the ROM uses).
 | OPP-03 | `test_opponents.c: test_difficulty_order`: the first rung is beaten clearly more than the last | PASS |
 | VEN-01 | `test_court_style.c: test_venues`, `test_editor`: DEFAULT = venue ground, AUTO = opponent home, VENUE row (ADR-024) | PASS |
 | VEN-02 | Asset build: shared ground palette and tiles, per-venue budget, names, ground presets | PASS |
+| REP-01 | `test_replay.c`: the close call shows for a long rally just out (each line, a hair, a corner), never for short rallies, other faults, or wide misses; MesenCE with dropped thresholds shows the close-up; zero overruns with it on every out (ADR-041) | PASS |
 | VEN-03 | `test/smoke/venue.timeline`, `lake.timeline`: SUNSET and LAKESIDE chosen on the title, a match at SUNSET | PASS (MesenCE smoke) |
+| VEN-04 | `test/smoke/venue_preview.timeline`: a rested VENUE previews behind the COURT page, one scrolled past doesn't, Y restores; zero overruns (M4-VENUE-02) | PASS (MesenCE smoke) |
 | OPT-01 | `test_options.c`: values, difficulty styles, slow-ball pattern, editor, first to 11 (ADR-025) | PASS |
 | OPT-02 | `test_options.c: test_difficulty_and_kid`: bot wins ordered KID >= EASY > MEDIUM > HARD; KID assist alone returns and wins | PASS |
 | OPT-03 | `test/smoke/options.timeline`: OPTIONS page, a KID match to 7, zero overruns | PASS (MesenCE smoke) |
 | STY-01 | `test_story.c`: intro card shows, can't be skipped instantly, ends by itself; ladder clears recorded; lines fit (ADR-026) | PASS |
-| STY-02 | `test/smoke/story.timeline`: DAD's intro card, B dismisses without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
+| STY-02 | `test/smoke/story.timeline`: DAD's intro card with his bust (M4-STORY-03), B dismisses it and the bust without serving; golden run with cards has zero overruns | PASS (MesenCE smoke) |
 | KIT-01 | `test_court_style.c: test_kitchen`: SAME follows the surface, other presets two-tone, every venue default two-toned (ADR-027) | PASS |
 | PRA-01 | `test_practice.c: test_feeds_land`: every shot x target lands in on P1's side where asked; unreturned feeds reset the streak (ADR-028) | PASS |
 | PRA-02 | `test_practice.c`: streaks build (bot, KID assist), best saved on leaving, Start exits | PASS |
@@ -50,6 +52,7 @@ sources the ROM uses).
 | MOD-01 | `test_modifiers.c`: editor, Player Select copies, fast steps and arc, big reach, WIN BY 2 through deuce, LAVA faults and colours, no CPU in the lava across the ladder (ADR-033) | PASS |
 | MOD-02 | `test/smoke/modifiers.timeline`: all four on, the lava preview, a big-ball singles match, LAVA! when P1 walks into the kitchen | PASS (MesenCE smoke) |
 | SAV-05 | `test_save.c: test_migrate_v7` + MesenCE `.srm` boot: v0.5.0 saves migrate to layout 8 (ADR-033) | PASS |
+| SAV-06 | `test_save.c: test_migrate_v8`, `test_initials`; `test_story.c: test_initials_card`, `test_initials_need_a_finished_match`; the golden run's first match ends on the initials card (ADR-040) | PASS |
 | OPN-01 | `test_open_play.c`: start, fences and sliding, stack / take back / move / full, your call and return, a 20-minute soak with every team in exactly one place (ADR-034) | PASS |
 | OPN-02 | `test/smoke/open_play.timeline`: the park, stacking at court 2, the call, the match at the park | PASS (MesenCE smoke) |
 | SAV-03 | `test/smoke/records.timeline`: records page, erase; persistence across MesenCE runs with `KEEP_SAVE=1` (`.srm`) | PASS (MesenCE smoke) |

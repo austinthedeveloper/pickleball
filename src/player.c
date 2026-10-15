@@ -7,8 +7,9 @@
 Player g_players[MAX_PLAYERS];
 
 /* limit * 181 / 256 for every limit the game uses (12.4 units, <= 31):
- * a table, because 816-tcc's multiply is a library call. */
-static const u8 s_diagonal_limit[32] = {
+ * a table, because 816-tcc's multiply is a library call. Also read by
+ * src/asm/player_step.asm. */
+const u8 g_player_diagonal_limit[32] = {
     0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 9, 10,
     11, 12, 12, 13, 14, 14, 15, 16, 16, 17, 18, 19, 19, 20, 21, 21
 };
@@ -16,7 +17,7 @@ static const u8 s_diagonal_limit[32] = {
 s16 player_diagonal_limit(s16 limit)
 {
     if (limit >= 0 && limit < 32)
-        return s_diagonal_limit[limit];
+        return g_player_diagonal_limit[limit];
     return (s16)((limit * 181) >> 8);
 }
 
@@ -68,6 +69,11 @@ void players_initialize(void)
     g_players[0].active = 1;
     player_place(&g_players[0], PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
 }
+
+#ifdef HOST_TEST
+/* The host tests run this C player_step; the SNES runs the same step in
+ * src/asm/player_step.asm (the doubles frame budget, M4-UI-03/04). A change
+ * here goes in both; the golden trace compares them. */
 
 /* Static scratch copy: one long access per field instead of pointer
  * dereferences, which 816-tcc compiles very expensively. */
@@ -128,7 +134,7 @@ static void player_step(const PlayerIntent *intent)
     accel = PLAYER_ACCEL_FP;
     if (move_x && move_y) {
         accel = PLAYER_DIAGONAL_ACCEL_FP;
-        limit = s_diagonal_limit[limit & 31];
+        limit = g_player_diagonal_limit[limit & 31];
     }
 
     if (move_x > 0)
@@ -221,35 +227,72 @@ void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
         RAM_COPY(player, &s_p, sizeof(Player));
     }
 }
+#else
+/* Inputs and working variables of src/asm/player_step.asm (all words). */
+u16 ps_player;
+u16 ps_intent;
+s16 ps_mx;
+s16 ps_my;
+u16 ps_hit;
+u16 ps_state;
+u16 ps_was;
+s16 ps_limit;
+s16 ps_accel;
+s16 ps_v;
+extern void player_step(void);
 
-/* Pushes a and b apart in y by 1 px each when they overlap; the upper one
- * moves up. Clamps keep both on court. */
-static void separate_pair(Player *a, Player *b)
+/* Constant slots: 816-tcc reads g_players[n] fields with one long access
+ * each; a remapped input (another slot's intent) is indexed. */
+#define STEP_SLOT(slot) \
+    do { \
+        if (g_players[slot].active) { \
+            ps_player = (u16)&g_players[slot]; \
+            ps_intent = (u16)(g_players[slot].logical_input_slot == (slot) ? \
+                &intents[slot] : \
+                &intents[g_players[slot].logical_input_slot]); \
+            player_step(); \
+        } \
+    } while (0)
+
+void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
 {
-    fx dx;
-    fx dy;
-
-    if (!a->active || !b->active)
+    if (paused)
         return;
-    dx = a->x_fp - b->x_fp;
-    dy = a->y_fp - b->y_fp;
-    if (dx < 0)
-        dx = -dx;
-    if (dx >= TO_FP(PLAYER_SEPARATION_X))
-        return;
-    if (dy >= TO_FP(PLAYER_SEPARATION_Y) || dy <= -TO_FP(PLAYER_SEPARATION_Y))
-        return;
-    if (dy < 0 || (dy == 0 && a < b)) {
-        a->y_fp = court_clamp_y_fp(a->y_fp - FP_ONE);
-        b->y_fp = court_clamp_y_fp(b->y_fp + FP_ONE);
-    } else {
-        a->y_fp = court_clamp_y_fp(a->y_fp + FP_ONE);
-        b->y_fp = court_clamp_y_fp(b->y_fp - FP_ONE);
-    }
+    STEP_SLOT(0);
+    STEP_SLOT(1);
+    STEP_SLOT(2);
+    STEP_SLOT(3);
 }
+#endif
+
+/* Pushes slots a and b (a < b) apart in y by 1 px each when they overlap;
+ * the upper one moves up (a, on a tie). Clamps keep both on court.
+ * Constant slots, as in STEP_SLOT: no pointer dereferences. */
+#define SEPARATE_PAIR(a, b) \
+    do { \
+        if (g_players[a].active && g_players[b].active) { \
+            dx = g_players[a].x_fp - g_players[b].x_fp; \
+            if (dx < 0) \
+                dx = -dx; \
+            dy = g_players[a].y_fp - g_players[b].y_fp; \
+            if (dx < TO_FP(PLAYER_SEPARATION_X) && \
+                    dy < TO_FP(PLAYER_SEPARATION_Y) && \
+                    dy > -TO_FP(PLAYER_SEPARATION_Y)) { \
+                step = dy <= 0 ? -FP_ONE : FP_ONE; \
+                g_players[a].y_fp = \
+                    court_clamp_y_fp(g_players[a].y_fp + step); \
+                g_players[b].y_fp = \
+                    court_clamp_y_fp(g_players[b].y_fp - step); \
+            } \
+        } \
+    } while (0)
 
 void players_separate_teammates(void)
 {
-    separate_pair(&g_players[0], &g_players[1]);
-    separate_pair(&g_players[2], &g_players[3]);
+    fx dx;
+    fx dy;
+    fx step;
+
+    SEPARATE_PAIR(0, 1);
+    SEPARATE_PAIR(2, 3);
 }

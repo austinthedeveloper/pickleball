@@ -1,14 +1,92 @@
 #include "game.h"
 #include "input.h"
 #include "match.h"
+#include "save.h"
 #include "story.h"
 
 StoryState g_story;
+/* The initials entered last this session: the next card starts there. */
+static u8 s_last[3];
 
 void story_initialize(void)
 {
     g_story.card = STORY_CARD_NONE;
     g_story.timer = 0;
+    s_last[0] = 'A';
+    s_last[1] = 'A';
+    s_last[2] = 'A';
+}
+
+void story_begin_initials(void)
+{
+    if (g_attract || !g_save_new_records)
+        return;
+    g_story.card = STORY_CARD_INITIALS;
+    g_story.timer = 0;
+    g_story.cursor = 0;
+    g_story.held_frames = 0;
+    g_story.letters[0] = s_last[0];
+    g_story.letters[1] = s_last[1];
+    g_story.letters[2] = s_last[2];
+}
+
+/* A letter step, A to Z around. */
+static void story_letter(s16 step)
+{
+    u8 *letter = &g_story.letters[g_story.cursor];
+
+    if (step > 0)
+        *letter = *letter == 'Z' ? 'A' : *letter + 1;
+    else
+        *letter = *letter == 'A' ? 'Z' : *letter - 1;
+}
+
+static void story_save_initials(void)
+{
+    s_last[0] = g_story.letters[0];
+    s_last[1] = g_story.letters[1];
+    s_last[2] = g_story.letters[2];
+    save_set_initials(g_story.letters);
+    g_story.card = STORY_CARD_NONE;
+}
+
+static u8 story_update_initials(u16 pressed, u16 held)
+{
+    u16 vertical = held & (PAD_UP | PAD_DOWN);
+
+    ++g_story.timer;
+    if (g_story.timer >= STORY_INITIALS_FRAMES) {
+        story_save_initials();
+        return 0;
+    }
+    /* Up/Down: a press steps; held, it repeats. */
+    if (pressed & (PAD_UP | PAD_DOWN)) {
+        story_letter((pressed & PAD_UP) ? 1 : -1);
+        g_story.held_frames = 0;
+    } else if (vertical) {
+        if (++g_story.held_frames >= STORY_REPEAT_DELAY) {
+            g_story.held_frames -= STORY_REPEAT_FRAMES;
+            story_letter((vertical & PAD_UP) ? 1 : -1);
+        }
+    } else {
+        g_story.held_frames = 0;
+    }
+    if (g_story.timer < STORY_INITIALS_MIN_FRAMES)
+        return 1;
+    if (pressed & PAD_START) {
+        story_save_initials();
+        return 0;
+    }
+    if (pressed & (PAD_B | PAD_A | PAD_RIGHT)) {
+        if (g_story.cursor == 2) {
+            story_save_initials();
+            return 0;
+        }
+        ++g_story.cursor;
+    } else if ((pressed & (PAD_Y | PAD_LEFT)) && g_story.cursor) {
+        --g_story.cursor;
+    }
+    return 1;
 }
 
 void story_begin_intro(void)
@@ -18,10 +96,12 @@ void story_begin_intro(void)
         STORY_CARD_INTRO : STORY_CARD_NONE;
 }
 
-u8 story_update(u16 pressed)
+u8 story_update(u16 pressed, u16 held)
 {
     if (g_story.card == STORY_CARD_NONE)
         return 0;
+    if (g_story.card == STORY_CARD_INITIALS)
+        return story_update_initials(pressed, held);
     ++g_story.timer;
     if (g_story.timer >= STORY_INTRO_FRAMES ||
             (g_story.timer >= STORY_INTRO_MIN_FRAMES &&

@@ -89,8 +89,18 @@ void hud_tile(u8 col, u8 row, u16 entry)
     hud_mark(row);
 }
 
+#ifndef HOST_TEST
+/* Inputs for hud_text_write (src/asm/hud_text.asm, M4-UI-01). */
+const char *hud_text_src;
+u16 hud_text_index;
+u16 hud_text_cols;
+u16 hud_text_attr;
+extern void hud_text_write(void);
+#endif
+
 void hud_text(u8 col, u8 row, u8 palette, const char *text)
 {
+#ifdef HOST_TEST
     u16 index = (u16)row * 32 + col;
     u8 c;
 
@@ -102,6 +112,15 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
         g_hud_map[index++] = hud_entry(c, palette);
         ++col;
     }
+#else
+    if (col < 32) {
+        hud_text_src = text;
+        hud_text_index = (u16)row * 32 + col;
+        hud_text_cols = 32 - col;
+        hud_text_attr = hud_entry(0, palette);
+        hud_text_write();
+    }
+#endif
     hud_mark(row);
 }
 
@@ -136,6 +155,33 @@ void hud_panel(u8 col, u8 row, u8 inner_cols)
         hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP | HUD_VFLIP;
     g_hud_map[mid + col] = hud_entry(HUD_TILE_PANEL_L, 0);
     g_hud_map[mid + right] = hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
+}
+
+/* A panel's border around inner_cols x inner_rows cells left clear, so a
+ * layer under the HUD shows through (the close call, ADR-041). */
+void hud_frame(u8 col, u8 row, u8 inner_cols, u8 inner_rows)
+{
+    u8 right = col + inner_cols + 1;
+    u8 bottom = row + inner_rows + 1;
+    u8 r;
+
+    hud_fill_box(col + 1, row, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0));
+    hud_fill_box(col + 1, row + 1, inner_cols, inner_rows, HUD_TILE_CLEAR);
+    hud_fill_box(col + 1, bottom, inner_cols, 1,
+        hud_entry(HUD_TILE_PANEL_T, 0) | HUD_VFLIP);
+    g_hud_map[(u16)row * 32 + col] = hud_entry(HUD_TILE_PANEL_TL, 0);
+    g_hud_map[(u16)row * 32 + right] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP;
+    g_hud_map[(u16)bottom * 32 + col] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_VFLIP;
+    g_hud_map[(u16)bottom * 32 + right] =
+        hud_entry(HUD_TILE_PANEL_TL, 0) | HUD_HFLIP | HUD_VFLIP;
+    for (r = row + 1; r < bottom; ++r) {
+        g_hud_map[(u16)r * 32 + col] = hud_entry(HUD_TILE_PANEL_L, 0);
+        g_hud_map[(u16)r * 32 + right] =
+            hud_entry(HUD_TILE_PANEL_L, 0) | HUD_HFLIP;
+    }
 }
 
 /* Index into HUD_BIG_CHARS ("A-Z0-9'!") without searching. */

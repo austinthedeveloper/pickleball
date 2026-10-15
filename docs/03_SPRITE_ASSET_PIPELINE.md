@@ -99,13 +99,15 @@ Reserve stable IDs so draw order and overflow behavior are reviewable:
 |---|---|
 | 0 | Ball |
 | 1 | Ball shadow |
-| 2–5 | Player bodies, sorted nearest-first each frame ([ADR-012](10_MOCKUP_DECISIONS.md#adr-012--depth-sorted-player-bodies-in-oam)) |
-| 6–9 | Player shadows 1–4 |
-| 10–13 | Impact effects reserve |
-| 14–17 | Accessories 1–4 ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)) |
-| 18–21 | Practice ball machine ([ADR-028](decisions/ADR-028-practice.md)) |
-| 22–25 | Practice return zone corners (ADR-028) |
-| 26–127 | Hidden/reserved |
+| 2–13 | A group of three per player, sorted nearest-first each frame ([ADR-012](10_MOCKUP_DECISIONS.md#adr-012--depth-sorted-player-bodies-in-oam)): the hat's two halves, then the body (ADR-014 hats amendment, M4-OPP-04) |
+| 14–17 | Player shadows 1–4 |
+| 18–21 | Impact effects reserve (18 spark, 19 debug landing marker) |
+| 22–25 | Accessories 1–4 ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)) |
+| 26–29 | Practice ball machine ([ADR-028](decisions/ADR-028-practice.md)) |
+| 30–31 | Close call replay: the ball and its shadow ([ADR-041](decisions/ADR-041-close-call-replay.md)) |
+| 32–33 | The opponent's partner watching a singles match ([ADR-042](decisions/ADR-042-sitting-out.md)) |
+| 34–37 | Practice return zone corners (ADR-028) |
+| 38–127 | Hidden/reserved |
 
 Confirm whether the selected PVSnesLib API expects byte offsets (`0, 4, 8...`) or logical indices at each call site. Wrap library calls in `render_obj_*` helpers so the game never mixes conventions.
 
@@ -130,7 +132,8 @@ For later characters, prefer this order:
 - [x] Every frame uses only declared palette roles.
 - [x] Frame anchors do not jitter.
 - [x] Worst-row object count remains at or below 30 planned slivers.
-- [ ] Each accessory is one 8×8 object in its owner's palette (hair index 15) at OAM 14–17, with a per-frame offset that mirrors around the body anchor under horizontal flip.
+- [ ] Each accessory is one 8×8 object in its owner's palette (hair index 15) at OAM 22–25, with a per-frame offset that mirrors around the body anchor under horizontal flip.
+- [ ] Each hat is 16×8 (two objects) in its owner's palette, covers every cap pixel (`tools/art/author_hats.py` checks), and sits at the accessory offset plus `hat_offset`, mirrored as 16 − x with its halves swapped.
 - [x] Asset conversion can be repeated from a clean checkout.
 - [x] Manifest report records tile, palette, and byte totals.
 

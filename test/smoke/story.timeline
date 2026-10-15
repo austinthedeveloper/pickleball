@@ -1,5 +1,5 @@
-# Story cards (ADR-026): a singles ladder match opens with DAD's intro card;
-# B dismisses it and the serve prompt follows.
+# Story cards (ADR-026): a singles ladder match opens with DAD's intro card
+# and his bust (M4-STORY-03); B dismisses both and the serve prompt follows.
 70 71 start
 110 111 start  # confirm Player Select
 shot 180
