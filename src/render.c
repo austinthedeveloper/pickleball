@@ -52,6 +52,8 @@ static u8 s_bust_shown;
 /* The close call's close-up is on BG2 (ADR-041); its ball's OAM is used. */
 static u8 s_replay_shown;
 static u8 s_replay_ball;
+/* The opponent's partner is in the stands (ADR-042). */
+static u8 s_watcher_shown;
 
 u16 g_obj_overflow_frames;
 
@@ -183,8 +185,10 @@ typedef char oam_machine_after_accessories[
     (RENDER_OAM_MACHINE >= RENDER_OAM_ACCESSORIES + MAX_PLAYERS) ? 1 : -1];
 typedef char oam_replay_after_machine[
     (RENDER_OAM_REPLAY >= RENDER_OAM_MACHINE + 4) ? 1 : -1];
-typedef char oam_hidden_after_replay[
-    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_REPLAY + 2) ? 1 : -1];
+typedef char oam_watcher_after_replay[
+    (RENDER_OAM_WATCHER >= RENDER_OAM_REPLAY + 2) ? 1 : -1];
+typedef char oam_hidden_after_watcher[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_WATCHER + 2) ? 1 : -1];
 
 /* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
@@ -458,6 +462,53 @@ static void render_replay_ball(void)
     s_replay_ball = 1;
 }
 
+/*
+ * A crowd of the players sitting out (GOOFY_IDEAS.md, ADR-042): in a
+ * singles ladder match the opponent's doubles partner watches from the
+ * venue's stands, in the team's kit (the captain's palette: singles has no
+ * other OBJ palette outside the shadows' colour math), facing the court.
+ * They hop while their side wins a point or the match.
+ */
+#define RENDER_WATCHER_WANTED() \
+    (!g_attract && g_match_config.mode == MATCH_SINGLES && \
+     g_match_config.opponent < OPPONENT_COUNT && \
+     !g_match_config.open_play && !g_match_config.practice)
+
+static void render_watcher(void)
+{
+    const u8 *seat = g_venue_watcher[s_venue];
+    s16 x;
+    s16 y;
+    u8 attr;
+    u8 cheer;
+
+    if (!RENDER_WATCHER_WANTED()) {
+        if (s_watcher_shown) {
+            render_obj_hide(RENDER_OAM_WATCHER);
+            render_obj_hide(RENDER_OAM_WATCHER + 1);
+            s_watcher_shown = 0;
+        }
+        return;
+    }
+    x = seat[0] - 4;
+    y = seat[1] - 8;
+    cheer = (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
+            g_game_state.point_winner == 1) ||
+        (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
+            g_game_state.match_winner == 1);
+    if (cheer && (g_game_state.frame_count & 8))
+        y -= 2;
+    attr = OBJ_ATTR(g_players[2].palette, 1);
+    if (seat[2]) {
+        obj_put(RENDER_OAM_WATCHER, x, y, OBJTILE_PERSON_TOP, attr, 0);
+        render_obj_hide(RENDER_OAM_WATCHER + 1);
+    } else {
+        obj_put(RENDER_OAM_WATCHER, x, y - 8, OBJTILE_PERSON_TOP, attr, 0);
+        obj_put(RENDER_OAM_WATCHER + 1, x, y, OBJTILE_PERSON_LEGS, attr, 0);
+    }
+    s_watcher_shown = 1;
+}
+
 void render_prepare(void)
 {
 #ifdef RENDER_DIAGNOSTICS
@@ -470,6 +521,7 @@ void render_prepare(void)
     PROFILE_MARK(2);
     render_ball();
     render_replay_ball();
+    render_watcher();
     render_effects();
     render_machine();
     render_update_ground();
@@ -566,6 +618,7 @@ static void render_load_bust(void)
     bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
     s_replay_shown = 0;
     s_replay_ball = 1;          /* parked on the first frame */
+    s_watcher_shown = 1;
     s_bust_shown = g_story.card == STORY_CARD_INTRO &&
         opponent < OPPONENT_COUNT;
     if (!s_bust_shown) {

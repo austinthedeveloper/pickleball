@@ -226,6 +226,14 @@ GOOFY_IDEAS.md. A long rally that ends just out shows a close-up of the
 line during the point result: the ball dropping just past it, and by how
 many inches. Still in the goofy pile: a wrong call that kisses the paint.
 
+## The players sitting out, watching
+
+**Done (in part):** [ADR-042](decisions/ADR-042-sitting-out.md), from
+GOOFY_IDEAS.md. In a singles ladder match the opponent's doubles partner
+watches from the venue's stands and cheers their teammate's points. Still
+open: four humans rotating, the two waiting in the stands heckling or
+throwing things.
+
 ## Battery save (SRAM)
 
 **Started:** [ADR-021](decisions/ADR-021-battery-save.md) adds the SRAM, the

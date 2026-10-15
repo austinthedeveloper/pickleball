@@ -105,7 +105,8 @@ Reserve stable IDs so draw order and overflow behavior are reviewable:
 | 14–17 | Accessories 1–4 ([ADR-014](10_MOCKUP_DECISIONS.md#adr-014--body-variants-via-accessory-object)) |
 | 18–21 | Practice ball machine (ADR-028) |
 | 22–23 | Close call replay: the ball and its shadow ([ADR-041](decisions/ADR-041-close-call-replay.md)) |
-| 24–127 | Hidden/reserved |
+| 24–25 | The opponent's partner watching a singles match ([ADR-042](decisions/ADR-042-sitting-out.md)) |
+| 26–127 | Hidden/reserved |
 
 Confirm whether the selected PVSnesLib API expects byte offsets (`0, 4, 8...`) or logical indices at each call site. Wrap library calls in `render_obj_*` helpers so the game never mixes conventions.
 

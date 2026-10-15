@@ -46,7 +46,9 @@ enum {
     RENDER_OAM_MACHINE = 18,      /* 18-21: practice ball machine (ADR-028) */
     RENDER_OAM_REPLAY = 22,       /* 22-23: the close call's ball and shadow
                                      (ADR-041) */
-    RENDER_OAM_FIRST_HIDDEN = 24
+    RENDER_OAM_WATCHER = 24,      /* 24-25: the opponent's partner watching
+                                     a singles match (ADR-042) */
+    RENDER_OAM_FIRST_HIDDEN = 26
 };
 
 void render_initialize(void);

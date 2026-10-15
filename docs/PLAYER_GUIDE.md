@@ -219,6 +219,9 @@ These are simplified rules; the HUD says **ARCADE RULES**.
 | 2 BOUNCES | The receiving side failed to return the ball. |
 | VOLLEY! | The ball was hit before a required bounce. |
 
+In a singles ladder match, your opponent's doubles partner watches from
+the stands and cheers when their teammate scores.
+
 After a long rally, a ball that lands just out gets a **close call**
 replay: a close-up of the line shows the ball landing past it, and by how
 many inches.

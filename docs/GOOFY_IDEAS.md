@@ -13,14 +13,3 @@ whistle button.
 
 - Notes: the Multitap gives five pads (port 1 plus four on port 2;
   docs/04_INPUT_MULTITAP_PLAN.md), so the fifth pad is free in doubles.
-
-## A crowd made of the players who are sitting out
-
-The bleachers show the players who aren't on court. For example, with four
-real players and two playing, the other two sit in the stands, cheering or
-heckling. They might even throw things.
-
-- Notes: the bleachers are backdrop art today. The waiting players could be
-  sprites placed over them, in their own colours, using the same palettes
-  as Player Select. Pairs naturally with the crowd sounds (M4-AUDIO-02) and
-  rotation-based play.
