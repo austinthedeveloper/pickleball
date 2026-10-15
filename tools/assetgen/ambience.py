@@ -80,7 +80,7 @@ def water():
     rng = random.Random(13)
     out = []
     low = 0.0
-    length = 0.7
+    length = 0.9
     for n in range(int(length * LOW_RATE)):
         t = n / LOW_RATE
         low += 0.15 * ((rng.random() * 2 - 1) - low)
@@ -148,7 +148,7 @@ def sweep():
     """A sci-fi sweep: a rising tone with a wobble."""
     out = []
     phase = 0.0
-    length = 0.4
+    length = 0.55
     for n in range(int(length * HIGH_RATE)):
         t = n / HIGH_RATE
         freq = 500 + 900 * t / length + 60 * math.sin(2 * math.pi * 9 * t)
@@ -176,7 +176,7 @@ def whale():
     """A whale far off: a slow rising and falling moan."""
     out = []
     phase = 0.0
-    length = 1.0
+    length = 1.3
     for n in range(int(length * LOW_RATE)):
         t = n / LOW_RATE
         freq = 190 + 80 * math.sin(math.pi * t / length)

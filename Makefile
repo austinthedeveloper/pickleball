@@ -25,16 +25,17 @@ SRAMSIZE := 01
 
 export ROMNAME ROMTITLE FASTROM
 
-# Sound (ADR-029/031): tools/assetgen writes sfx.it (the effects, first) and
-# one ambience module per venue; smconv turns them into a SNESMOD soundbank
-# in the last two ROM banks (14-15; over 32 KiB, it spans two). -f checks
-# that each ambience fits sound RAM alongside the effects.
+# Sound (ADR-029/031/046): tools/assetgen writes sfx.it (the effects, first)
+# and one ambience module per venue; smconv turns them into a SNESMOD
+# soundbank from bank 13, one bank per 32 KiB (up to 15: 96 KiB). profile
+# counts its banks into soundbank_banks.h for the boot code. -f checks that
+# each ambience fits sound RAM alongside the effects.
 AUDIOFILES := assets/generated/sfx.it assets/generated/ambience_0.it \
 	assets/generated/ambience_1.it assets/generated/ambience_2.it \
 	assets/generated/ambience_3.it assets/generated/ambience_4.it \
 	assets/generated/ambience_5.it
 export SOUNDBANK := assets/generated/soundbank
-SMCONVFLAGS := -s -o $(SOUNDBANK) -b 14 -f
+SMCONVFLAGS := -s -o $(SOUNDBANK) -b 13 -f
 
 CONFIG_TAG := $(CONFIG)
 ifeq ($(CONFIG),debug)
@@ -77,6 +78,9 @@ hardware-test:
 profile: assets
 	@$(MAKE) --no-print-directory cleanBuildRes CONFIG=$(CONFIG) PVSNESLIB_DEBUG=$(PVSNESLIB_DEBUG)
 	@rm -f $(ROMNAME).sfc $(ROMNAME).sym $(ROMNAME).symfull
+	@$(MAKE) --no-print-directory $(SOUNDBANK).asm CONFIG=$(CONFIG) PVSNESLIB_DEBUG=$(PVSNESLIB_DEBUG)
+	@echo "#define SOUNDBANK_BANKS $$(grep -c '^SOUNDBANK__' $(SOUNDBANK).asm)" \
+		> $(SOUNDBANK)_banks.h
 	@$(MAKE) --no-print-directory $(ROMNAME).sfc CONFIG=$(CONFIG) PVSNESLIB_DEBUG=$(PVSNESLIB_DEBUG)
 	@mkdir -p build/$(CONFIG)
 	@rm -f build/$(CONFIG)/pickleball-*.sfc \

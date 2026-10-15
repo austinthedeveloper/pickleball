@@ -10,8 +10,19 @@
 
 #ifndef HOST_TEST
 #include "soundbank.h"
-/* Over 32 KiB the soundbank spans two banks (ADR-031). */
-extern char SOUNDBANK__0, SOUNDBANK__1;
+/* The soundbank spans one ROM bank per 32 KiB from bank 13 (ADR-031,
+ * ADR-046); soundbank_banks.h counts smconv's banks for this build. */
+#include "soundbank_banks.h"
+#if SOUNDBANK_BANKS < 1 || SOUNDBANK_BANKS > 3
+#error "the soundbank has 1-3 banks (13-15); move -b in the Makefile"
+#endif
+extern char SOUNDBANK__0;
+#if SOUNDBANK_BANKS > 1
+extern char SOUNDBANK__1;
+#endif
+#if SOUNDBANK_BANKS > 2
+extern char SOUNDBANK__2;
+#endif
 #endif
 
 /* Module volume for the ambience: quiet under the effects. */
@@ -64,7 +75,12 @@ void audio_events_initialize(void)
 #ifndef HOST_TEST
     spcBoot();
     /* Banks are given last first. */
+#if SOUNDBANK_BANKS > 2
+    spcSetBank(&SOUNDBANK__2);
+#endif
+#if SOUNDBANK_BANKS > 1
     spcSetBank(&SOUNDBANK__1);
+#endif
     spcSetBank(&SOUNDBANK__0);
     spcStop();
 #endif

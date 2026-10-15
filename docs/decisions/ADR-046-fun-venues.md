@@ -35,11 +35,17 @@ run by hand; not part of the build):
 ## Sound
 
 Three new ambience kinds in `tools/assetgen/ambience.py` (`jungle`,
-`space`, `bubbles`), synthesized like the others. The soundbank is
-62,626 bytes of the 65,536 in banks 14-15: the longer calls were trimmed
-to fit (the rumble 0.7 s, the sweep 0.4 s, the whale 1.0 s). **A seventh
-venue's ambience needs the soundbank moved to start at bank 13** (smconv
-`-b 13`) and a third `spcSetBank` at boot.
+`space`, `bubbles`), synthesized like the others.
+
+*Amended 2026-10-15:* the soundbank starts at bank 13 (smconv `-b 13`), so
+it may span three banks (13-15, 96 KiB). With the full-length calls (the
+rumble 0.9 s, the sweep 0.55 s, the whale 1.3 s) it is 66,226 bytes, three
+banks. `make` (`profile`) builds the soundbank first and counts its banks
+into `assets/generated/soundbank_banks.h`; the boot code registers each
+(`spcSetBank`, last first) and fails to build outside 1-3. Verified: the
+MesenCE voice probe hears the ambience at UNDERSEA and SPACE (their
+modules end in bank 15), and `make perf`'s sound checks pass. (At first the
+calls were trimmed to fit 62,626 bytes in banks 14-15.)
 
 ## Choices
 
@@ -52,7 +58,8 @@ venue's ambience needs the soundbank moved to start at bank 13** (smconv
 
 ## Cost
 
-ROM: about 42 KiB of venue data and 20 KiB of sound; 142 KiB stays free.
+ROM: about 42 KiB of venue data and 24 KiB of sound; bank 13 now belongs
+to the soundbank (about 30 KiB of it free for more ambience).
 Six venues of the nine the build allows.
 
 ## Verified
