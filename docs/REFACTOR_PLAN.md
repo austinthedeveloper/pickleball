@@ -108,6 +108,28 @@ worst frame (work scanline, of 225) and overruns:
 - **Golden trace:** boot now ends near frame 10 (the sound CPU and the
   two-bank soundbank), so the trace skips 30 frames, not 2.
 
+Third pass (`feature/cld-frame-headroom`, KNOWN_ISSUES #22). Doubles with
+all four modifiers dropped a frame as a point ended: that loop ran to 223-226
+of 225 scanlines (four CPUs thinking with the ball still live, the second
+bounce, the point, the score). Measured with temporary scanline stamps in a
+release build (the profiler build's own marks overran), then:
+
+| Change | Saved on that loop |
+|---|---:|
+| The swing lookahead's first three frames as one exact block for a paced ball too (FAST BALL, the slow difficulties), as at a steady pace | ~3 |
+| The lookahead's ball step in assembly for its common cases (airborne, rising, resting; `src/asm/ai_probe.asm`); a landing falls back to the C | ~2 |
+| The LAVA check by constant slot, not a pointer walk and three-argument calls | ~8 |
+| The paddle collision only when a swing is in its active frames (most frames none is) | ~6 |
+
+Every change keeps the simulation identical: eight full-match host traces
+(singles and doubles, every difficulty, FAST BALL, LAVA, all modifiers) hash
+the same before and after, and the golden trace is identical (the probe
+runs in every swing check, so it also checks the assembly against the C).
+`modifiers_doubles.timeline` worst frame 221 → 209 with no overrun at any
+input alignment from -2 to +2 frames (one alignment dropped a frame in
+v0.13.0 and v0.14.0). A forced sound handover is never started past
+scanline 190 either: it takes 60-110 scanlines.
+
 ### R10 progress
 
 Done: the AI aims away from the first *active* opponent rather than slot 0. The main loop runs the AI for every CPU-owned active slot (per `g_input_owners`) rather than slot 2 only.

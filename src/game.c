@@ -222,19 +222,29 @@ u8 game_step_ball(void)
 
 /* LAVA (ADR-033): a player standing in their own kitchen while the ball
  * is in play loses the point for their team. */
+/* modifiers_in_kitchen for one slot, by a constant index: four
+ * three-argument calls, or a pointer walk, cost 816-tcc about 10 scanlines
+ * a live frame, on doubles' worst frame (KNOWN_ISSUES #22). */
+#define GAME_IN_LAVA(slot) \
+    (g_players[slot].active && \
+     g_players[slot].y_fp >= TO_FP(COURT_SIDELINE_TOP) && \
+     g_players[slot].y_fp <= TO_FP(COURT_SIDELINE_BOTTOM) && \
+     (g_players[slot].team ? \
+        (g_players[slot].x_fp < TO_FP(COURT_KITCHEN_RIGHT_X) && \
+         g_players[slot].x_fp > TO_FP(COURT_NET_X)) : \
+        (g_players[slot].x_fp > TO_FP(COURT_KITCHEN_LEFT_X) && \
+         g_players[slot].x_fp < TO_FP(COURT_NET_X))))
+
 static void game_check_lava(void)
 {
-    const Player *player = g_players;
-    u8 i;
-
-    for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
-        if (player->active &&
-                modifiers_in_kitchen(player->x_fp, player->y_fp,
-                    player->team)) {
-            rules_resolve_point(player->team, GAME_FAULT_LAVA);
-            return;
-        }
-    }
+    if (GAME_IN_LAVA(0))
+        rules_resolve_point(g_players[0].team, GAME_FAULT_LAVA);
+    else if (GAME_IN_LAVA(1))
+        rules_resolve_point(g_players[1].team, GAME_FAULT_LAVA);
+    else if (GAME_IN_LAVA(2))
+        rules_resolve_point(g_players[2].team, GAME_FAULT_LAVA);
+    else if (GAME_IN_LAVA(3))
+        rules_resolve_point(g_players[3].team, GAME_FAULT_LAVA);
 }
 
 static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
@@ -247,8 +257,15 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
         if (g_game_state.phase != GAME_PHASE_LIVE)
             return;
     }
-    hit_player = collision_resolve_player_hits(&g_ball, g_players, intents,
-        MAX_PLAYERS);
+    /* Only a swing in its active frames can hit: on most frames nobody's
+     * is, and the call (four arguments, a pointer walk) cost 816-tcc about
+     * 10 scanlines (#22). */
+    hit_player = (g_players[0].state == PLAYER_STATE_ACTIVE ||
+            g_players[1].state == PLAYER_STATE_ACTIVE ||
+            g_players[2].state == PLAYER_STATE_ACTIVE ||
+            g_players[3].state == PLAYER_STATE_ACTIVE) ?
+        collision_resolve_player_hits(&g_ball, g_players, intents,
+            MAX_PLAYERS) : 0;
     PROFILE_MARK(5);
     if (hit_player) {
         game_contact(hit_player - 1);

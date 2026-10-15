@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include "ai.h"
 #include "asm_shared.h"
+#include "ball.h"
 #include "court.h"
 #include "court_projection.h"
 #include "player.h"
@@ -10,6 +12,13 @@
 /* Every number the assembly uses must match the C definitions. */
 int main(void)
 {
+    assert(offsetof(AiProbe, x) == ASM_PROBE_X);
+    assert(offsetof(AiProbe, y) == ASM_PROBE_Y);
+    assert(offsetof(AiProbe, z) == ASM_PROBE_Z);
+    assert(offsetof(AiProbe, vx) == ASM_PROBE_VX);
+    assert(offsetof(AiProbe, vy) == ASM_PROBE_VY);
+    assert(offsetof(AiProbe, vz) == ASM_PROBE_VZ);
+    assert(BALL_GRAVITY_FP == -ASM_BALL_FALL);
     assert(sizeof(Player) == ASM_PLAYER_SIZE);
     assert(offsetof(Player, active) == ASM_PLAYER_ACTIVE);
     assert(offsetof(Player, x_fp) == ASM_PLAYER_X);

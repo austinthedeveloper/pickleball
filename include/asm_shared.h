@@ -8,6 +8,17 @@
  * (offsetof, enums), so C and asm cannot drift apart.
  */
 
+/* The swing lookahead's probe (include/ai.h AiProbe) and the gravity it
+ * falls by (include/ball.h BALL_GRAVITY_FP, negated: the include takes
+ * numbers >= 0), for src/asm/ai_probe.asm. */
+#define ASM_PROBE_X 0
+#define ASM_PROBE_Y 2
+#define ASM_PROBE_Z 4
+#define ASM_PROBE_VX 6
+#define ASM_PROBE_VY 8
+#define ASM_PROBE_VZ 10
+#define ASM_BALL_FALL 3
+
 /* Player struct layout (include/player.h). */
 #define ASM_PLAYER_SIZE 28
 #define ASM_PLAYER_ACTIVE 0

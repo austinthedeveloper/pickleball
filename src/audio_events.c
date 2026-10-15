@@ -40,6 +40,11 @@ static u8 s_skipped;
  * ended this early, or after this many frames of waiting. */
 #define AUDIO_PROCESS_SCANLINE 130
 #define AUDIO_PROCESS_MAX_SKIPS 3
+/* Never past this, skips or not: the handover took the rest of the frame,
+ * and a forced one at the end of a doubles point (several heavy frames in a
+ * row) went past VBlank (KNOWN_ISSUES #22). The next frame with room hands
+ * it over: doubles frames are rarely past it two frames running. */
+#define AUDIO_PROCESS_HARD_SCANLINE 190
 
 void audio_events_initialize(void)
 {
@@ -219,6 +224,8 @@ void audio_update(void)
     if (!s_pending)
         return;
 #ifndef HOST_TEST
+    if (profile_scanline() > AUDIO_PROCESS_HARD_SCANLINE)
+        return;
     if (profile_scanline() > AUDIO_PROCESS_SCANLINE &&
             s_skipped < AUDIO_PROCESS_MAX_SKIPS) {
         ++s_skipped;

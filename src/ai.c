@@ -410,6 +410,25 @@ void ai_probe_load(const Ball *ball)
     g_probe.bounces = ball->bounce_count;
 }
 
+/*
+ * On the SNES the common step (airborne, not landing) is assembly
+ * (src/asm/ai_probe.asm, KNOWN_ISSUES #22): AI_PROBE_STEP tries it and
+ * falls back to this C step for a landing or a resting ball. The host runs
+ * this C step for every one.
+ */
+#ifdef HOST_TEST
+#define AI_PROBE_STEP() ai_probe_step()
+#else
+u8 ai_probe_slow;
+extern void ai_probe_fast(void);
+#define AI_PROBE_STEP() \
+    do { \
+        ai_probe_fast(); \
+        if (ai_probe_slow) \
+            ai_probe_step(); \
+    } while (0)
+#endif
+
 void ai_probe_step(void)
 {
     fx previous_z;
@@ -504,6 +523,7 @@ static u8 ai_swing_connects(const Player *player)
     u8 n;
     u8 volleys;
     s16 rise;
+    s16 fall;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
     /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
@@ -546,13 +566,39 @@ static u8 ai_swing_connects(const Player *player)
             g_probe.y += g_probe.vy + g_probe.vy + g_probe.vy;
             step = PLAYER_WINDUP_FRAMES;
         }
+    } else if (g_ball_paced && (g_probe.z != 0 || g_probe.vz > 0)) {
+        /* A paced ball (FAST BALL, the slow difficulties) takes k steps on
+         * frames 0-2, k from its pace; airborne, they are the same exact
+         * block: k vz + g k(k-1)/2 on z, k g on vz (#22: the paced
+         * lookahead stepped every one, the doubles budget's worst frame). */
+        n = GAME_BALL_STEPS_AHEAD(0) + GAME_BALL_STEPS_AHEAD(1) +
+            GAME_BALL_STEPS_AHEAD(2);
+        rise = 0;
+        fall = 0;
+        while (n) {
+            rise += g_probe.vz + fall;
+            fall += BALL_GRAVITY_FP;
+            --n;
+        }
+        if (g_probe.z + rise > 0) {
+            n = GAME_BALL_STEPS_AHEAD(0) + GAME_BALL_STEPS_AHEAD(1) +
+                GAME_BALL_STEPS_AHEAD(2);
+            g_probe.z += rise;
+            g_probe.vz += fall;
+            while (n) {
+                g_probe.x += g_probe.vx;
+                g_probe.y += g_probe.vy;
+                --n;
+            }
+            step = PLAYER_WINDUP_FRAMES;
+        }
     }
     for (; step <= PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES; ++step) {
         if (!g_ball_paced)
-            ai_probe_step();
+            AI_PROBE_STEP();
         else
             for (n = GAME_BALL_STEPS_AHEAD(step - 1); n; --n)
-                ai_probe_step();
+                AI_PROBE_STEP();
         if (step < PLAYER_WINDUP_FRAMES)
             continue;
         if (!probe_in_reach())
@@ -588,10 +634,10 @@ static u8 ai_swing_connects(const Player *player)
                 return 0;
             while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
                 if (!g_ball_paced)
-                    ai_probe_step();
+                    AI_PROBE_STEP();
                 else
                     for (n = GAME_BALL_STEPS_AHEAD(step); n; --n)
-                        ai_probe_step();
+                        AI_PROBE_STEP();
                 ++step;
             }
             return (player->team ? g_probe.x > s_reach_x :
@@ -601,10 +647,10 @@ static u8 ai_swing_connects(const Player *player)
         /* First contact would be stretched; take it only as a last chance. */
         while (step < PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES) {
             if (!g_ball_paced)
-                ai_probe_step();
+                AI_PROBE_STEP();
             else
                 for (n = GAME_BALL_STEPS_AHEAD(step); n; --n)
-                    ai_probe_step();
+                    AI_PROBE_STEP();
             ++step;
         }
         return !probe_in_reach();

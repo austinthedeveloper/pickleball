@@ -81,6 +81,7 @@ typedef struct {
 
 extern AiProbe g_probe;
 void ai_probe_load(const Ball *ball);
+/* One probe step, exactly as ball_simulate_step moves the ball. */
 void ai_probe_step(void);
 
 void ai_initialize(void);
