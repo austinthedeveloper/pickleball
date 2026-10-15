@@ -153,6 +153,12 @@ u8 collision_resolve_player_hits(Ball *ball, Player players[MAX_PLAYERS],
             continue;
         if (player->contact_consumed)
             continue;
+        /* A team hits once (KNOWN_ISSUES #19): a teammate's swing still
+         * active can't re-hit the shot just made. Slots 0-1 are the left
+         * team (ADR-018); comparing slots skips a multiply on 816-tcc. */
+        if (ball->last_hitter < MAX_PLAYERS &&
+                (ball->last_hitter >= 2) == (i >= 2))
+            continue;
         if (!collision_ball_in_player_reach(player, ball))
             continue;
 
