@@ -52,6 +52,7 @@ typedef struct {
     u8 hit_pressed;     /* any swing button (B, A, Y) */
     u8 shot;            /* ShotType of that swing */
     u8 pause_pressed;
+    u8 hit_held;        /* a swing button is down (the charged serve) */
 } PlayerIntent;
 
 extern PadSnapshot g_pad_snapshots[MAX_PADS];

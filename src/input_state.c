@@ -71,6 +71,7 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
     intent->aim_x = intent->move_x;
     intent->aim_y = intent->move_y;
     intent->hit_pressed = (pad->pressed & (PAD_B | PAD_A | PAD_Y)) != 0;
+    intent->hit_held = (held & (PAD_B | PAD_A | PAD_Y)) != 0;
     if (pad->pressed & PAD_A)
         intent->shot = SHOT_DRIVE;
     else if (pad->pressed & PAD_Y)
@@ -104,6 +105,7 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
             g_player_intents[i].aim_x = 0; \
             g_player_intents[i].aim_y = 0; \
             g_player_intents[i].hit_pressed = 0; \
+            g_player_intents[i].hit_held = 0; \
             g_player_intents[i].shot = SHOT_STANDARD; \
             g_player_intents[i].pause_pressed = 0; \
         } \

@@ -196,11 +196,16 @@ partner. The CPUs take the remaining colours.
 | Button | Action |
 |---|---|
 | D-pad | Move. At contact, it also aims the shot. |
-| B | Standard swing. When you're holding the ball, B (or A/Y) serves. |
+| B | Standard swing. When you're holding the ball, hold B (or A/Y) to charge the serve and let go to serve. |
 | A | Drive: a faster, flatter shot. Mistimed drives spray wider. |
 | Y | Lob: a slow, high shot deep over an opponent at the net. With the D-pad away from the net, it's a dink that lands softly in the opponent's kitchen. |
 | Start | Open Player Select from the title; pause and unpause during play (in practice too); back to the title from the result screen. |
 | Select | Debug and hardware-test ROMs only: OBJ stress scene. |
+
+**Serving:** hold the button and watch the power bar fill and drain; let go
+to serve. The fuller the bar, the faster the serve. Let go with only the
+first (white) block lit, or none, and the serve dumps into the net. On KID
+the serve works as before: one press, or it goes by itself.
 
 **Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep. Away from the net (Left) hits short, a drop shot near the kitchen.
 

@@ -1,9 +1,23 @@
 #include "court.h"
 #include "events.h"
+#include "game.h"
 #include "match.h"
+#include "options.h"
 #include "serve.h"
 
 ServeState g_serve_state;
+ServeCharge g_serve_charge;
+
+u8 serve_charged(void)
+{
+    return !g_attract && g_match_config.difficulty != DIFFICULTY_KID &&
+        g_input_owners[g_serve_state.server_index] == INPUT_OWNER_HUMAN;
+}
+
+u8 serve_flight_frames(u8 power)
+{
+    return (u8)(SERVE_FLIGHT_FRAMES - ((power - SERVE_CHARGE_DUD) >> 1));
+}
 
 static void serve_hold_ball(void)
 {
@@ -55,8 +69,14 @@ static void serve_contact(const PlayerIntent *intent)
     Player *server = &g_players[g_serve_state.server_index];
 
     serve_select_target(server, intent);
-    ball_launch(&g_ball, g_serve_state.aim_x, g_serve_state.aim_y,
-        SERVE_FLIGHT_FRAMES);
+    if (g_serve_charge.power < SERVE_CHARGE_DUD)
+        /* A dud (ADR-044): low and slow, into the net. */
+        ball_launch(&g_ball,
+            court_target_x(server->team, COURT_NET_X + SERVE_DUD_PAST_NET),
+            g_serve_state.aim_y, SERVE_DUD_FRAMES);
+    else
+        ball_launch(&g_ball, g_serve_state.aim_x, g_serve_state.aim_y,
+            serve_flight_frames(g_serve_charge.power));
     g_ball.last_hitter = g_serve_state.server_index;
     g_ball.bounce_count = 0;
     g_ball.rally_state = BALL_RALLY_LIVE;
@@ -140,6 +160,10 @@ void serve_setup(u8 serving_team)
         serve_slot_for_lane(serving_team ? 0 : 1, !server_top);
     g_serve_state.landing_pending = 0;
     g_serve_state.requested = 0;
+    g_serve_charge.charging = 0;
+    g_serve_charge.level = 0;
+    g_serve_charge.rising = 1;
+    g_serve_charge.power = SERVE_CHARGE_CLASSIC;
     server = &g_players[g_serve_state.server_index];
     receiver = &g_players[g_serve_state.receiver_index];
 
@@ -180,14 +204,37 @@ void serve_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused)
 
     if (g_game_state.phase == GAME_PHASE_SERVE_SETUP) {
         serve_hold_ball();
-        /* Buffer an early press so it is not lost to the ready delay. */
-        if (intent->hit_pressed)
-            g_serve_state.requested = 1;
-        if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
-            return;
-        if (!g_serve_state.requested)
-            return;
-        g_serve_state.requested = 0;
+        if (serve_charged()) {
+            /* ADR-044: the meter runs while a button is held from the
+             * ready frame on; the release serves at its level. */
+            if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
+                return;
+            if (intent->hit_held) {
+                if (!g_serve_charge.charging)
+                    g_serve_charge.charging = 1;
+                else if (g_serve_charge.rising) {
+                    if (++g_serve_charge.level >= SERVE_CHARGE_MAX)
+                        g_serve_charge.rising = 0;
+                } else if (--g_serve_charge.level == 0) {
+                    g_serve_charge.rising = 1;
+                }
+                return;
+            }
+            if (!g_serve_charge.charging)
+                return;
+            g_serve_charge.charging = 0;
+            g_serve_charge.power = g_serve_charge.level;
+        } else {
+            /* Buffer an early press so it is not lost to the ready
+             * delay. */
+            if (intent->hit_pressed)
+                g_serve_state.requested = 1;
+            if (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
+                return;
+            if (!g_serve_state.requested)
+                return;
+            g_serve_state.requested = 0;
+        }
         g_ball.vz_fp = SERVE_TOSS_VZ_FP;
         server->pose = PLAYER_POSE_TOSS;
         game_set_phase(GAME_PHASE_SERVE_TOSS);

@@ -73,6 +73,13 @@ ADR-024.
 - [x] `M4-OPT-02` KID auto-serve: serve automatically after a short wait so a kid never needs a button.
   - Verified: ADR-025 (amended), `test_options.c` (a P1 with no button presses serves, returns, and wins 8 of 8).
 
+## Serves and shots
+
+- [x] `M4-SERVE-01` Charged serve: hold to run a power meter, release to serve; the bottom of the meter is a dud into the net. Not on KID.
+  - Accept: the meter rises and falls while held; more charge is a faster serve that still lands in; a release at the bottom hits the net; CPUs and KID serve as before; zero overruns.
+  - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land`, MesenCE (a tap is a NET fault, a full charge lands in, the bar follows the level); `make perf` zero overruns; golden trace re-recorded (its P1 taps are duds now).
+- [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
+
 ## Pause
 
 - [x] `M4-PAUSE-01` Pause menu: RESUME, RESTART, MAIN MENU in matches and practice.

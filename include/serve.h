@@ -29,7 +29,20 @@ enum {
     SERVE_TARGET_SHORT_LEFT = COURT_MIRROR_X(SERVE_TARGET_SHORT_RIGHT),
     SERVE_TARGET_NEUTRAL_LEFT = COURT_MIRROR_X(SERVE_TARGET_NEUTRAL_RIGHT),
     SERVE_TARGET_DEEP_LEFT = COURT_MIRROR_X(SERVE_TARGET_DEEP_RIGHT),
-    SERVE_FLIGHT_FRAMES = 40
+    SERVE_FLIGHT_FRAMES = 40,
+
+    /* The charged serve (ADR-044): holding a swing button runs a meter
+     * from 0 up to SERVE_CHARGE_MAX and back down, a frame a step; the
+     * release serves at that level. Below SERVE_CHARGE_DUD the serve is a
+     * dud into the net; from there the flight shortens a frame for every two
+     * levels, SERVE_FLIGHT_FRAMES down to 27. */
+    SERVE_CHARGE_MAX = 30,
+    SERVE_CHARGE_DUD = 4,
+    /* The serve without a meter (CPUs, KID): today's 40-frame flight. */
+    SERVE_CHARGE_CLASSIC = SERVE_CHARGE_DUD,
+    /* A dud lands just past the net, low and slow: it meets the net. */
+    SERVE_DUD_PAST_NET = 6,
+    SERVE_DUD_FRAMES = 30
 };
 
 typedef struct {
@@ -43,6 +56,23 @@ typedef struct {
 } ServeState;
 
 extern ServeState g_serve_state;
+
+/* The charged serve's meter (ADR-044); apart from ServeState, which the
+ * golden trace captures at a fixed size. */
+typedef struct {
+    u8 charging;        /* the meter is running (the button is held) */
+    u8 level;           /* 0 .. SERVE_CHARGE_MAX */
+    u8 rising;
+    u8 power;           /* the level the serve goes at */
+} ServeCharge;
+
+extern ServeCharge g_serve_charge;
+
+/* Nonzero when the current server serves with the meter: a human, not on
+ * KID, outside the attract demo. */
+u8 serve_charged(void);
+/* Flight frames of a serve at a charge level (SERVE_CHARGE_DUD or more). */
+u8 serve_flight_frames(u8 power);
 
 void serve_initialize(void);
 /* Places server/receiver for the serving team's current score parity. */

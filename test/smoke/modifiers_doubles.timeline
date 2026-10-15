@@ -18,6 +18,6 @@
 250 251 start
 290 291 start  # confirm Player Select
 370 371 b      # close the intro card
-400 401 b      # serve
+400 415 b      # serve: hold for the meter (ADR-044)
 shot 460
 shot 700

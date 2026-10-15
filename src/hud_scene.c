@@ -506,6 +506,45 @@ static const char *hud_new_records_text(void)
     return text;
 }
 
+/* The charged serve's meter (ADR-044): a bar over the serve prompt's
+ * text, one cell for two levels. The first cell is the dud zone, white;
+ * the rest fill yellow. */
+#define SERVE_PROMPT_CHARGED "HOLD @ TO SERVE"
+#define METER_CELLS 15
+#define METER_COL (16 - (METER_CELLS + 2) / 2 + 1)
+#define METER_UNDRAWN 0xff
+static u8 s_meter_cells;            /* cells lit as drawn; METER_UNDRAWN */
+
+/* Lights or clears the cells that changed; nonzero if it drew. On idle
+ * frames: one cell a frame once the bar is up. */
+static u8 hud_serve_meter_refresh(void)
+{
+    u8 cells = g_serve_charge.level >> 1;
+    u8 i;
+    u8 from;
+    u8 to;
+
+    if (!g_serve_charge.charging || cells == s_meter_cells)
+        return 0;
+    if (s_meter_cells == METER_UNDRAWN) {
+        from = 0;
+        to = METER_CELLS;
+    } else if (cells > s_meter_cells) {
+        from = s_meter_cells;
+        to = cells;
+    } else {
+        from = cells;
+        to = s_meter_cells;
+    }
+    for (i = from; i < to; ++i)
+        hud_tile(METER_COL + i, BANNER_ROW + 1, i >= cells ?
+            hud_entry(HUD_TILE_BAR_OFF, HUD_PAL_WHITE) :
+            hud_entry(HUD_TILE_BAR_ON,
+                i < (SERVE_CHARGE_DUD >> 1) ? HUD_PAL_WHITE : HUD_PAL_YELLOW));
+    s_meter_cells = cells;
+    return 1;
+}
+
 /* Letters and cursor as drawn; 0 forces a redraw. */
 static u8 s_initials_drawn[3];
 static u8 s_initials_cursor;
@@ -1351,7 +1390,12 @@ static void hud_scene_step(u16 key, u8 step)
     case GAME_PHASE_SERVE_SETUP:
         if (step != HUD_STEP_PROMPT)
             break;
-        if (g_input_owners[g_serve_state.server_index] == INPUT_OWNER_HUMAN)
+        s_meter_cells = METER_UNDRAWN;
+        if (serve_charged())
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+                SERVE_PROMPT_CHARGED);
+        else if (g_input_owners[g_serve_state.server_index] ==
+                INPUT_OWNER_HUMAN)
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "PRESS @ TO SERVE");
         else
             hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "CPU TO SERVE");
@@ -1441,6 +1485,9 @@ void hud_scene_update(void)
             hud_title_area_update();
         else if (key == HUD_KEY_INITIALS)
             hud_initials_refresh();
+        else if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+                hud_serve_meter_refresh())
+            ;
         else if (hud_sub_panel_wanted() != s_sub_panel)
             hud_draw_sub_panel(hud_sub_panel_wanted());
     }
@@ -1456,6 +1503,7 @@ void hud_scene_initialize(void)
 {
     s_hud_valid = 0;
     s_replay_drawn = 0;
+    s_meter_cells = METER_UNDRAWN;
     s_sub_panel = 0;
     s_hud_scene = 0xff;
     s_scene_step = HUD_STEP_DONE;

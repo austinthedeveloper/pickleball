@@ -320,6 +320,9 @@ player's own mistake: there is no auto-swing.
 
 ## Charged serve
 
+**Done:** [ADR-044](decisions/ADR-044-charged-serve.md) for human servers;
+CPU serve power is `M4-SERVE-02`. The notes below are the original idea.
+
 Hold during serve setup to run a meter that rises and falls (golf style);
 release to toss and serve at that power.
 

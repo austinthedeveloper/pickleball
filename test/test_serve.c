@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "match.h"
+#include "options.h"
 #include "serve.h"
 
 static PlayerIntent intents[MAX_PLAYERS];
@@ -8,6 +10,8 @@ static PlayerIntent intents[MAX_PLAYERS];
 static void reset_fixture(u8 serving_team)
 {
     memset(intents, 0, sizeof(intents));
+    memset(g_input_owners, INPUT_OWNER_NONE, sizeof(g_input_owners));
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
     players_initialize();
     g_players[2].active = 1;
     ball_initialize();
@@ -177,6 +181,116 @@ static void test_net_fault_stops_serve(void)
     assert(g_ball.rally_state == BALL_RALLY_INACTIVE);
 }
 
+/* A human server (ADR-044): hold from the ready frame until the meter is
+ * at level on its way up (on its way down when falling), then release. */
+static void charge_and_serve(u8 slot, u8 level, u8 falling)
+{
+    g_input_owners[slot] = INPUT_OWNER_HUMAN;
+    while (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES)
+        step();
+    intents[slot].hit_held = 1;
+    step();
+    assert(g_serve_charge.charging && g_serve_charge.level == 0);
+    if (falling)
+        while (g_serve_charge.rising)
+            step();
+    while (g_serve_charge.level != level)
+        step();
+    intents[slot].hit_held = 0;
+    step();
+    assert(g_serve_charge.power == level);
+    while (g_game_state.phase == GAME_PHASE_SERVE_TOSS)
+        step();
+}
+
+/* The first ball event of a live serve. */
+static u8 serve_flight_event(void)
+{
+    u8 events = BALL_EVENT_NONE;
+    u8 frame;
+
+    for (frame = 0; frame < 80 && !events; ++frame) {
+        events = ball_simulate_step(&g_ball);
+        serve_process_ball_events(events);
+    }
+    return events;
+}
+
+static void test_charged_meter(void)
+{
+    u16 frames = 0;
+
+    reset_fixture(0);
+    g_input_owners[0] = INPUT_OWNER_HUMAN;
+    assert(serve_charged());
+    /* A press before the ready frame does nothing; holding waits for it. */
+    intents[0].hit_held = 1;
+    while (g_game_state.phase_timer < GAME_SERVE_READY_FRAMES - 1)
+        step();
+    assert(!g_serve_charge.charging);
+    step();
+    assert(g_serve_charge.charging && g_serve_charge.level == 0);
+    /* Up to the top and back to the bottom, a level a frame. */
+    do {
+        step();
+        ++frames;
+    } while (g_serve_charge.level != 0);
+    assert(frames == 2 * SERVE_CHARGE_MAX);
+    assert(g_game_state.phase == GAME_PHASE_SERVE_SETUP);
+
+    /* Faster with more charge; the lowest serve is today's. */
+    assert(serve_flight_frames(SERVE_CHARGE_CLASSIC) == SERVE_FLIGHT_FRAMES);
+    assert(serve_flight_frames(SERVE_CHARGE_MAX) == 27);
+
+    /* No meter for the CPU, on KID, or in the attract demo. */
+    g_input_owners[0] = INPUT_OWNER_CPU;
+    assert(!serve_charged());
+    g_input_owners[0] = INPUT_OWNER_HUMAN;
+    g_match_config.difficulty = DIFFICULTY_KID;
+    assert(!serve_charged());
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
+    g_attract = 1;
+    assert(!serve_charged());
+    g_attract = 0;
+}
+
+/* A dud goes in the net; every other level, aim, box, and side lands in. */
+static void test_charged_serves_land(void)
+{
+    u8 team;
+    u8 parity;
+    u8 level;
+    s16 aim;
+    u8 slot;
+
+    for (team = 0; team < 2; ++team) {
+        slot = team ? 2 : 0;
+        for (parity = 0; parity < 2; ++parity) {
+            for (level = 0; level <= SERVE_CHARGE_MAX; ++level) {
+                for (aim = -1; aim <= 1; ++aim) {
+                    reset_fixture(team);
+                    g_game_state.team_score[team] = parity;
+                    serve_setup(team);
+                    intents[slot].aim_x = aim;
+                    intents[slot].aim_y = aim;
+                    charge_and_serve(slot, level, 0);
+                    if (level < SERVE_CHARGE_DUD) {
+                        assert(serve_flight_event() & BALL_EVENT_NET_FAULT);
+                        assert(g_game_state.last_fault == GAME_FAULT_NET);
+                    } else {
+                        assert(serve_flight_event() == BALL_EVENT_BOUNCE);
+                        assert(g_game_state.last_fault == GAME_FAULT_NONE);
+                    }
+                }
+            }
+        }
+    }
+    /* Released on the way down: the level it shows. */
+    reset_fixture(0);
+    charge_and_serve(0, 10, 1);
+    assert(serve_flight_event() == BALL_EVENT_BOUNCE);
+}
+
 static void test_pause_freezes_toss(void)
 {
     fx z;
@@ -204,6 +318,8 @@ int main(void)
     test_service_box_faults();
     test_net_fault_stops_serve();
     test_pause_freezes_toss();
+    test_charged_meter();
+    test_charged_serves_land();
     puts("serve host checks passed");
     return 0;
 }
