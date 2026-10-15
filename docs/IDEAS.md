@@ -274,3 +274,106 @@ Today the cart has none (ADR-017: "no SRAM").
 - Add a "clear save data" option (e.g. hold a button combo on the title screen).
 - Tests: round-trip the save struct and corrupt-checksum recovery in the host
   tests; smoke-test with Mesen's `.srm`.
+
+## Better aiming
+
+The D-pad both moves and aims: the shot reads the direction held at contact
+(`collision_apply_targeted_shot`, `intent->aim_x`/`aim_y`). A player running
+down to reach a ball is still holding down when they swing, so the ball goes
+to the bottom lane. There is no time to run, then change direction.
+
+- **Quick fix:** a direction held since before the swing counts as running,
+  not aiming. Only a direction pressed in the last ~16 frames before contact
+  aims; otherwise the shot takes a sensible default (away from the opponent,
+  as the CPU's `away` style does). Run down, tap up, swing: the top lane.
+  Mostly `input_state.c`, host-testable.
+- **The real fix** is the charge stance (next entry): while a swing button is
+  held, the D-pad only aims.
+- **Optional:** timing aim, as in classic tennis games: an early contact
+  goes cross-court, a late one down the line. Could be an OPTIONS choice.
+
+## Charged hit
+
+Hold a shot button to build a meter; **release** swings. Useful when the
+player is already in position. Releasing too early or too late is the
+player's own mistake: there is no auto-swing.
+
+- **Stance:** while held, the player plants (or moves at swing speed,
+  `g_paddle_swing_limit`) and the D-pad moves an aim marker on the far court
+  instead of the player. Practice mode already draws markers of this kind.
+- **Tap** (press and release in a frame or two) swings as today.
+- **Pace:** a full charge adds pace through the same n/64 multipliers paddle
+  POWER uses. A short charge is a normal shot.
+- **Costs:**
+  - A new player state in both `player.c` (host) and
+    `src/asm/player_step.asm` (SNES); the golden trace compares them.
+  - The doubles frame budget is tight (KNOWN_ISSUES #14, #22): `make perf`
+    must stay at zero overruns.
+  - The meter is a BG3 HUD bar: all eight OBJ palettes are in use in
+    doubles.
+- **First:** fix KNOWN_ISSUES #19 (a teammate re-hits a shot). A swing held
+  open longer makes that more likely.
+- **CPUs:** a `charge` style knob in `opponents.json`, later.
+- **KID:** the swing assist swings for you; no charge.
+
+## Charged serve
+
+Hold during serve setup to run a meter that rises and falls (golf style);
+release to toss and serve at that power.
+
+- **Power is speed:** flight time from `SERVE_FLIGHT_FRAMES` (40) down to
+  about 26 at full charge.
+- **The bottom band is the net:** a low arc that meets the net. The existing
+  `BALL_EVENT_NET_FAULT` and `GAME_FAULT_NET` handle it, so the rules engine
+  is unchanged.
+- **Aim** stays as today (D-pad at release).
+- **KID:** off; today's serve.
+- **CPUs:** a serve power from their personality (a risky CHAMPS, a safe
+  SNOWBIRDS), with a small chance of a net serve.
+- **Draw:** a BG3 bar near the server's score. The serve phase is quiet, so
+  frame time is not a concern.
+- Pairs with the charged hit: one meter, one look.
+
+## Career mode
+
+Create a character, save their name, and play every mode as them. Stats
+are kept per character, and playing unlocks cosmetics.
+
+- **Builder:** most of it exists. Opponents already have their own skin,
+  hair, shirt, and shorts colours (palette parts, ADR-013) and hats (cap,
+  visor, headband, tricorn, bandana, hair; M4-OPP-04). Add skin presets
+  (only `skin_light.json` today), and a builder page over the parts.
+  The ponytail variant and paddle choice carry over from Player Select.
+- **Name:** the initials entry (ADR-040), extended to about 8 letters.
+- **Stats:** wins and losses (singles, doubles), a record against each
+  ladder opponent, points won and lost, aces, kitchen faults, longest rally,
+  ladder clears, open play games, practice best.
+- **Unlocks:** cosmetics earned by playing: hats and colours after so many
+  wins, a ladder clear, a 20-shot rally, a shutout.
+- **Gear with stats:** some unlocked items change play a little, like the
+  paddles do today (POWER, CONTROL, SPEED). A visor for control, shoes for
+  speed. Always a trade-off, never strictly better, so looks still matter.
+- **Where it plugs in:** P1 in singles, doubles, the ladder, and open play.
+  Stats record at the same match-end hook as the records (ADR-021).
+- **Save:** each SRAM copy can be up to 1 KiB and uses 52 bytes, so one to
+  three career slots fit. A layout change with a migration (ADR-032).
+- **Open questions:** how many slots; whether 2P can load a second
+  character.
+
+## Night courts
+
+Play any venue at night: a **TIME** row on the COURT page (DAY, DUSK,
+NIGHT), saved with the other court settings.
+
+- **Mostly palettes:** darken and blue-shift the backdrop (BG1 palettes
+  3–7) and the ground (palette 2) when the venue loads. No new tiles.
+- **Lit court:** the court surface and lines stay brighter than the
+  surround, as under floodlights, so the ball and lines stay readable. The
+  asset build's line and ball contrast checks (CRT-02) cover each TIME.
+- **Players** keep their palettes (they are lit), or take a slight tint.
+- **Ambience:** crickets at night (ADR-031 already has the loop).
+- **Later:** light poles as backdrop tiles; a match that starts at DUSK and
+  darkens a step every few points (a palette fade between points).
+- **Pairs with:** the manager idea in GOOFY_IDEAS.md (lights as an
+  upgrade), and story flavour (GOTH CLUB at night).
+- **Save:** one settings byte, a layout change (ADR-032).
