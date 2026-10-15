@@ -2,8 +2,17 @@
 """Headless MesenCE probes and golden traces (docs/REFACTOR_PLAN.md R0/R1).
 
   probe CONFIG TIMELINE FRAMES name=symbol[+offset]:size ...
+        [--poke SPEC ...] [--shots DIR]
       Runs build/CONFIG's ROM with the timeline and prints the probes on
       every "shot" frame. Symbols come from the ROM's .sym file.
+      --poke writes work RAM to set up a bug repro fast (a score, a record)
+      instead of playing up to it. SPEC is
+        [@FIRST[-LAST]] [once] [if SYM[+OFF][:SIZE]==V] SYM[+OFF][:SIZE]=V
+      Without @, every frame; @F, frame F only; @F-, F onward; @F-L, F to L.
+      "once"
+      fires the first time it applies. SIZE is 1 (default) or 2. Example:
+        --poke "@420- once if g_game_state+1==0 g_game_state+6=4"
+      puts P1 on 4 points at the first serve setup after frame 420.
 
   golden-record [--config release]
   golden-compare [--config release]
@@ -71,10 +80,12 @@ MESEN_SAVES = Path(os.environ.get(
     Path.home() / "Library" / "Application Support" / "MesenCE" / "Saves"))
 
 
-def run(rom, timeline, frames, probes, every=False, shots_dir=None):
+def run(rom, timeline, frames, probes, every=False, shots_dir=None,
+        pokes=()):
     (MESEN_SAVES / (rom.stem + ".srm")).unlink(missing_ok=True)
     env = dict(os.environ, SMOKE_TIMELINE=str(timeline),
                SMOKE_FRAMES=str(frames), SMOKE_PROBES=",".join(probes),
+               SMOKE_POKES=";".join(pokes),
                SMOKE_OUT=shots_dir or tempfile.gettempdir(),
                SMOKE_NOSHOT="0" if shots_dir else "1",
                SMOKE_PROBE_EVERY="1" if every else "0")
@@ -87,17 +98,54 @@ def run(rom, timeline, frames, probes, every=False, shots_dir=None):
             if line.startswith("frame ")]
 
 
-def resolve(table, spec):
-    name, rest = spec.split("=")
-    sym, size = rest.rsplit(":", 1)
+def symbol_address(table, sym):
+    """SYM or SYM+OFF to a work-RAM address."""
     offset = 0
     if "+" in sym:
         sym, off = sym.split("+")
-        offset = int(off)
+        offset = int(off, 0)
     if sym not in table:
         raise SystemExit(f"symbol {sym} not found (static symbols are not "
-                         "exported; probe a global)")
-    return f"{name}={(table[sym] & 0xFFFF) + offset:x}:{size}"
+                         "exported; use a global)")
+    return (table[sym] & 0xFFFF) + offset
+
+
+def target(table, text):
+    """SYM[+OFF][:SIZE] to (address, size)."""
+    sym, _, size = text.partition(":")
+    return symbol_address(table, sym), int(size or 1)
+
+
+def resolve_poke(table, spec):
+    """A --poke SPEC (see the module docstring) to SMOKE_POKES fields."""
+    words = spec.split()
+    first, last, once = 0, -1, 0
+    caddr, csize, cvalue = 0, 0, 0
+    if words and words[0].startswith("@"):
+        start, dash, end = words.pop(0)[1:].partition("-")
+        first = int(start)
+        last = int(end) if end else (-1 if dash else first)
+    if words and words[0] == "once":
+        words.pop(0)
+        once = 1
+    if words and words[0] == "if":
+        cond = words[1]
+        words = words[2:]
+        lhs, value = cond.split("==")
+        caddr, csize = target(table, lhs)
+        cvalue = int(value, 0)
+    if len(words) != 1 or "=" not in words[0]:
+        raise SystemExit(f"bad --poke {spec!r}")
+    lhs, value = words[0].split("=")
+    addr, size = target(table, lhs)
+    return ",".join(str(n) for n in (first, last, once, caddr, csize, cvalue,
+                                     addr, size, int(value, 0)))
+
+
+def resolve(table, spec):
+    name, rest = spec.split("=")
+    sym, size = rest.rsplit(":", 1)
+    return f"{name}={symbol_address(table, sym):x}:{size}"
 
 
 def golden_probes(rom):
@@ -234,6 +282,8 @@ def main():
     p.add_argument("frames", type=int)
     p.add_argument("specs", nargs="+")
     p.add_argument("--shots", help="directory for screenshots")
+    p.add_argument("--poke", action="append", default=[],
+                   help="work-RAM write; see the module docstring")
     pf = sub.add_parser("perf")
     pf.add_argument("--config", default="release")
     for name in ("golden-record", "golden-compare"):
@@ -253,7 +303,8 @@ def main():
         table = symbols(rom)
         for line in run(rom, args.timeline.resolve(), args.frames,
                         [resolve(table, s) for s in args.specs],
-                        shots_dir=args.shots):
+                        shots_dir=args.shots,
+                        pokes=[resolve_poke(table, s) for s in args.poke]):
             print(line)
         return
 

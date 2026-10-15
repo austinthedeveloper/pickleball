@@ -1,6 +1,7 @@
 -- Headless MesenCE driver: plays a scripted pad timeline, saves screenshots,
--- and prints work-RAM probes. It only supplies controller input; it never
--- writes emulated memory.
+-- and prints work-RAM probes. It supplies controller input and writes
+-- emulated memory only when SMOKE_POKES asks (bug repros, never smoke or
+-- perf runs).
 --
 -- Environment:
 --   SMOKE_TIMELINE  file with lines "<first> <last> <buttons>" (inclusive
@@ -12,6 +13,10 @@
 --                   print as decimal; larger sizes print as a hex dump.
 --   SMOKE_PROBE_EVERY  "1" to print probes on every frame (golden traces).
 --   SMOKE_NOSHOT    "1" to skip screenshots (probes still print).
+--   SMOKE_POKES     optional work-RAM writes, ";"-separated, each
+--                   "first,last,once,condaddr,condsize,condvalue,addr,size,
+--                   value" in decimal (condsize 0: no condition; last -1:
+--                   no end). tools/mesen_probe.py builds them from symbols.
 
 local timeline_path = os.getenv("SMOKE_TIMELINE")
 local out = os.getenv("SMOKE_OUT") or "."
@@ -22,6 +27,7 @@ local ranges = {}
 local shots = {}
 local frame = 0
 local probes = {}
+local pokes = {}
 
 for name, addr, size in (os.getenv("SMOKE_PROBES") or ""):gmatch(
         "([%w_]+)=(%x+):(%d+)") do
@@ -48,6 +54,44 @@ local function probeLine()
         table.insert(parts, p.name .. "=" .. value)
     end
     return table.concat(parts, " ")
+end
+
+for spec in (os.getenv("SMOKE_POKES") or ""):gmatch("[^;]+") do
+    local v = {}
+    for n in spec:gmatch("-?%d+") do
+        v[#v + 1] = tonumber(n)
+    end
+    table.insert(pokes, { first = v[1], last = v[2], once = v[3] == 1,
+        caddr = v[4], csize = v[5], cvalue = v[6],
+        addr = v[7], size = v[8], value = v[9] })
+end
+
+local function readRam(addr, size)
+    if size == 2 then
+        return emu.readWord(addr, emu.memType.snesWorkRam, false)
+    end
+    return emu.read(addr, emu.memType.snesWorkRam, false)
+end
+
+-- Pokes run at the end of a frame, so the game sees them on the next one.
+local function applyPokes()
+    for _, p in ipairs(pokes) do
+        if not p.done and frame >= p.first and
+                (p.last < 0 or frame <= p.last) and
+                (p.csize == 0 or readRam(p.caddr, p.csize) == p.cvalue) then
+            if p.size == 2 then
+                emu.writeWord(p.addr, p.value, emu.memType.snesWorkRam)
+            else
+                emu.write(p.addr, p.value, emu.memType.snesWorkRam)
+            end
+            if not p.logged then
+                print(string.format("frame %d poke %x=%d", frame, p.addr,
+                    p.value))
+                p.logged = true
+            end
+            p.done = p.once
+        end
+    end
 end
 
 if timeline_path then
@@ -89,6 +133,7 @@ emu.addEventCallback(function()
 end, emu.eventType.inputPolled)
 
 emu.addEventCallback(function()
+    applyPokes()
     if #probes > 0 and (every or shots[frame]) then
         print(string.format("frame %d %s", frame, probeLine()))
     end
