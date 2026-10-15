@@ -59,7 +59,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
+.PHONY: all debug release hardware-test profile assets check host-check asset-check tcc-check clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
 
 all: debug
 
@@ -108,7 +108,11 @@ host-check: assets
 	done
 
 CC_HOST ?= cc
-check: host-check asset-check
+check: host-check asset-check tcc-check
+
+# C that 816-tcc miscompiles (CLAUDE.md): the host tests can't see it.
+tcc-check:
+	@python3 tools/check_tcc_pitfalls.py
 
 # Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE (0: three
 # bot skills), MATCHES, OPPONENT (-1 the default CPU, -2 the whole ladder,

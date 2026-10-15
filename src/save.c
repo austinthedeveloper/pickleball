@@ -361,7 +361,8 @@ void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against)
             if (records->streak > records->best_streak) {
                 records->best_streak = records->streak;
                 /* Extending one's own record keeps its initials. */
-                if (!s_streak_held || !g_save.initials.best_streak[0]) {
+                if (s_streak_held == 0 ||
+                        g_save.initials.best_streak[0] == 0) {
                     memset(g_save.initials.best_streak, 0, SAVE_INITIALS);
                     g_save_new_records |= SAVE_NEW_STREAK;
                     s_streak_held = 1;

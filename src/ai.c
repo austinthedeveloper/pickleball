@@ -205,7 +205,7 @@ static u8 ai_owns_point(const Player *player, s16 x, s16 y, u8 volley)
     s16 me;
     s16 mate;
 
-    if (!s_has_partner || !s_style->team ||
+    if (s_has_partner == 0 || s_style->team == 0 ||
             abs_s16(dy) > (volley ? AI_POACH_BAND : AI_MIDDLE_BAND))
         return ai_owns_y(y);
     me = abs_s16(x - FROM_FP(player->x_fp)) + abs_s16(y - FROM_FP(player->y_fp));
@@ -609,9 +609,10 @@ static u8 ai_swing_connects(const Player *player)
         s_contact_volley = g_probe.bounces == 0;
         /* A volley only from a volleying style, below the minimum height
          * never, and never at a ball that would land out (ADR-035). */
-        if (g_probe.bounces == 0 && (!volleys || g_probe.z < AI_VOLLEY_MIN_Z ||
-                !court_contains_ground_fp(TO_FP(g_ai.predicted_land_x),
-                    TO_FP(g_ai.predicted_land_y))))
+        if (g_probe.bounces == 0 && (volleys == 0 ||
+                g_probe.z < AI_VOLLEY_MIN_Z ||
+                court_contains_ground_fp(TO_FP(g_ai.predicted_land_x),
+                    TO_FP(g_ai.predicted_land_y)) == 0))
             return 0;
         if (!court_x_on_side(g_probe.x, player->team))
             return 0;
@@ -803,8 +804,8 @@ static void ai_plan_intercept(const Player *player)
         court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) &&
         court_x_on_side(TO_FP(land_x), player->team);
 
-    if (!court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) ||
-        !court_x_on_side(TO_FP(land_x), player->team)) {
+    if (court_contains_ground_fp(TO_FP(land_x), TO_FP(land_y)) == 0 ||
+        court_x_on_side(TO_FP(land_x), player->team) == 0) {
         /* Out (or short of the net): let it go and hold the middle. */
         g_ai.has_target = 0;
         return;
@@ -844,7 +845,7 @@ u8 ai_assist_swing(u8 player_index)
         return g_serve_state.server_index == player_index &&
             g_game_state.phase_timer >= AI_ASSIST_SERVE_FRAMES;
     if (g_game_state.phase != GAME_PHASE_LIVE || player_is_swinging(player) ||
-            !ball_incoming(player))
+            ball_incoming(player) == 0)
         return 0;
     RAM_COPY(&g_ai, &g_ai_slots[player_index], sizeof(g_ai));
     g_ai.late_this_ball = 0;

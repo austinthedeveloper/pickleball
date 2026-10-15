@@ -42,6 +42,12 @@ ROM headless for smoke, perf, and golden checks.
   of structs by walking a pointer or with constant slots, as `STEP_SLOT` and
   `SEPARATE_PAIR` do); pointer dereferences are expensive (hot code copies a
   struct into a static scratch, as `player_step` does). Team is `slot >= 2`.
+- **816-tcc miscompiles `a || !b`**: when `a` is true it takes the false
+  branch (in `if`s, ternaries, nested; `&&` with `!` is fine). Write
+  `b == 0` or split the test. `make check` fails on the pattern
+  (`tools/check_tcc_pitfalls.py`; KNOWN_ISSUES #25). Host tests can't catch
+  compiler bugs: when the ROM and the host tests disagree, read the
+  generated assembly (`make src/<file>.asm`, then delete it).
 - **`player_step` exists twice:** C in `src/player.c` (host, under
   `HOST_TEST`) and `src/asm/player_step.asm` (SNES). Change both; the golden
   trace compares them.

@@ -280,7 +280,7 @@ static u8 next_entry(u8 c)
     if (court->stack_count)
         return stack_pop(court);
     for (o = 0; o < OPEN_COURTS; ++o, ++other) {
-        if (other == court || !other->stack_count ||
+        if (other == court || other->stack_count == 0 ||
                 other->stack[0] == OPEN_YOU)
             continue;
         if (!best || other->stack_count > best->stack_count)

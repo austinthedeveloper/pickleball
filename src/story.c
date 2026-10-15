@@ -19,7 +19,12 @@ void story_initialize(void)
 
 void story_begin_initials(void)
 {
-    if (g_attract || !g_save_new_records)
+    /* Two tests, not `g_attract || !g_save_new_records`: 816-tcc
+     * miscompiles `|| !` (CLAUDE.md), and the attract demo's matches
+     * opened this card. */
+    if (g_attract)
+        return;
+    if (g_save_new_records == 0)
         return;
     g_story.card = STORY_CARD_INITIALS;
     g_story.timer = 0;
