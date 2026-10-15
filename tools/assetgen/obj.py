@@ -158,6 +158,28 @@ def obj_assets(manifest):
         header.append(f"#define FRAME_{name.upper()}_ACC_Y {ay}")
     for name, index in manifest["objects"].items():
         header.append(f"#define OBJTILE_{name.upper()} {object_base + index}")
+    # M4-OPP-04 hats: two objects each (the cell and the next), on blank
+    # objects.png cells; HAT_TILES[id] (id 0: no hat, the body's cap).
+    hat_tiles = ["0"]
+    taken = set(manifest["objects"].values())
+    for name, cell in manifest["hats"].items():
+        # Even: render_bodies swaps the halves of a flipped hat as tile ^ 1.
+        if cell % 2 or not 0 <= cell < (oh // 8) * 16 or \
+                {cell, cell + 1} & taken:
+            raise AssetError(f"hat {name}: cell {cell} is odd, off the "
+                             "objects row, or taken")
+        taken |= {cell, cell + 1}
+        header.append(f"#define OBJTILE_HAT_{name.upper()} "
+                      f"{object_base + cell}")
+        hat_tiles.append(str(object_base + cell))
+    dx, dy = manifest["hat_offset"]
+    if not 0 <= dx <= 16 or not -8 <= dy <= 0:
+        raise AssetError("hat_offset must be x 0..16, y -8..0 (a hat sits "
+                         "on the head)")
+    header.append(f"#define HAT_COUNT {len(hat_tiles)}")
+    header.append(f"#define HAT_TILES {{ {', '.join(hat_tiles)} }}")
+    header.append(f"#define HAT_DX {dx}")
+    header.append(f"#define HAT_RAISE {-dy}")
     # 32x32 objects in sheet slots no frame uses (the BIG BALL, ADR-033).
     used_slots = {info["slot"] for info in frames.values()}
     for name, slot in manifest.get("large_objects", {}).items():

@@ -57,7 +57,7 @@ Lines count as in. Use inclusive comparisons consistently.
 Debug scene places four 32×32 player objects, four shadows, four 8×8 accessories, ball, ball shadow, and four impact objects on overlapping scanlines. It must:
 
 - display all planned objects without dropout;
-- report the planned 30-sliver row budget in its source comment/test note;
+- report the planned 32-sliver row budget (head height, ADR-014 hats amendment) in its source comment/test note;
 - cycle all four player palettes;
 - flip players left/right;
 - animate every frame slot;

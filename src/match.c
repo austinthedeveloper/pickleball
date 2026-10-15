@@ -106,6 +106,19 @@ void match_config_partner(u8 team)
     g_match_config.paddle_id[1] = g_opponent_paddle[team][0];
 }
 
+u8 match_slot_hat(u8 slot)
+{
+    u8 member = match_slot_member(slot);
+
+    if (g_match_config.human[slot])
+        return 0;
+    if (match_slot_partner(slot))
+        return g_opponent_hat[g_match_config.partner][0];
+    if (member == 0xff)
+        return 0;
+    return g_opponent_hat[g_match_config.opponent][member];
+}
+
 const AiStyle *match_slot_style(u8 slot)
 {
     u8 member = match_slot_member(slot);

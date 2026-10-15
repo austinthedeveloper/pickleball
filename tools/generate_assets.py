@@ -70,7 +70,7 @@ def generated_files():
     paddle_header, paddle_names = paddle_stats_header()
     select_pic, select_map, select_pal, select_tiles = scene_assets()
     portrait_pic, portrait_m, portrait_f, portrait_tiles = portrait_assets()
-    bust_pic, bust_m, bust_f, bust_tiles = bust_assets()
+    bust_pic, bust_m, bust_f, bust_tiles, closeup_map = bust_assets()
     park_pic, park_map, park_pal, park_tiles = park_assets()
     projection = court_projection.header(court_projection.scale_table())
     hud_header = [
@@ -111,6 +111,7 @@ def generated_files():
         "bust.pic": bust_pic,
         "bust_m.map": bust_m,
         "bust_f.map": bust_f,
+        "closeup.map": closeup_map,
         "park.pic": park_pic,
         "park.map": park_map,
         "park.pal": park_pal,

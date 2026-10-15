@@ -134,7 +134,7 @@ shadow    = (screen_x, screen_y)
 **Decision.** Male and female variants share one 32×32 body tile set. The female variant adds one 8×8 accessory object (ponytail) drawn with the owner's palette, using index 15 for hair. This is escalation step 2 in the pipeline's reuse order.
 
 **Details.**
-- OAM IDs 14–17 hold accessories 1–4. Their higher index draws them behind the bodies, which is correct for a ponytail. Hidden objects move to 18–127.
+- OAM IDs 14–17 hold accessories 1–4. Their higher index draws them behind the bodies, which is correct for a ponytail. Hidden objects move to 18–127. (Now 22–25; see the hats amendment below.)
 - `player_frames.json` gains a per-frame accessory offset and tile. Horizontal flip mirrors the offset around the body's anchor.
 - Tile cost is at most 14 frames × 32 bytes = 448 bytes of OBJ VRAM.
 - The variant is a per-player match-config field, independent of palette.
@@ -158,6 +158,27 @@ Four slivers remain. The OAM stress scene adds four accessories and must stay dr
 - `02_TECHNICAL_PLAN.md` object budget: replace the table above and change 26 to 30 throughout.
 - `03_SPRITE_ASSET_PIPELINE.md`: update the OAM table and add the accessory rule to the review checklist.
 - `05_TEST_PLAN.md`: update the stress scene to 30 slivers.
+
+**Amendment 2026-10-14: hats (M4-OPP-04).** CPU opponents can wear a hat
+in place of the cap every body draws: a visor, a headband, a tricorn, a
+bandana, or bare hair (`opponents.json` `hat`, `assets/manifest/player_frames.json`
+`hats`).
+- A hat is 16×8, two small objects in the owner's palette, on blank cells of
+  `objects.png` (no new tiles: 249 of 256). It sits at the frame's accessory
+  offset plus `hat_offset` (4, −4), so no new per-frame data. Flipped, it
+  mirrors as 16 − x with its two halves swapped. A hat can only add pixels,
+  so each one covers the cap's pixels; `tools/art/author_hats.py` refuses a
+  hat that leaves any showing.
+- It must draw in front of its own body, so OAM 2–13 are now a group per
+  player in depth order: the hat's two halves, then the body. A hat stays
+  behind nearer players. Shadows move to 14–17, effects to 18–21,
+  accessories (ponytails) to 22–25, the ball machine to 26–29. A player
+  without a hat parks its group's hat entries every frame (the groups follow
+  the depth order).
+- Only CPU opponents and an open play partner wear hats, so at most three
+  are on court. The worst row is now at head height: bodies 16, hats 6,
+  ponytails 4, effects 4, ball and shadow 2: **32 / 34**. Shadows sit at the
+  feet, 26 px below. The stress scene draws that row and stays dropout-free.
 
 ---
 

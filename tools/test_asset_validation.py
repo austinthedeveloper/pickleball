@@ -125,6 +125,11 @@ def opponent_too_fast(spec):
     return spec
 
 
+def opponent_unknown_hat(spec):
+    spec["opponents"][0]["players"][0]["hat"] = "sombrero"
+    return spec
+
+
 def venue_unknown_ground(spec):
     spec["venues"][1]["ground"]["surface"] = "PLAID"
     return spec
@@ -164,6 +169,8 @@ CASES = [
      "'PLAID' is not a court colour preset"),
     ("venue name fits the COURT page (ADR-024)", "venues.json",
      venue_long_name, "1..8 cells"),
+    ("opponent hat is a known hat (M4-OPP-04)", "opponents.json",
+     opponent_unknown_hat, "hat is one of"),
     ("bust roles follow the captain (M4-STORY-03)", "opponent_busts.png",
      put_pixel(20, 20, 8), "bust uses role 8"),
 ]
