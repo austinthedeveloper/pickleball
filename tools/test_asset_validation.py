@@ -85,8 +85,8 @@ def erase_left_baseline(rows):
 
 
 def grow_sprite_sheet(rows):
-    # Two more 32-px frame rows push OBJ data past one 256-tile name table.
-    return rows + [[0] * 128 for _ in range(64)]
+    # Five more 32-px frame rows: name table 2 holds four (16 slots).
+    return rows + [[0] * 128 for _ in range(160)]
 
 
 def crop_scene(rows):

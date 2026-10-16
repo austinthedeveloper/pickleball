@@ -15,9 +15,10 @@ ROMTITLE := PICKLEBALL 94
 # the PVSnesLib FastROM runtime. Cartridges need 120 ns (or faster) ROM.
 FASTROM := 1
 
-# 512 KiB cart: 16 LoROM banks of 32 KiB; header ROM size $09 (2^9 KiB).
-ROMBANKS := 16
-ROMSIZE := 09
+# 1 MiB cart (R19): 32 LoROM banks of 32 KiB; header ROM size $0A (2^10
+# KiB). The soundbank stays at banks 13-15; banks 16-31 take new data.
+ROMBANKS := 32
+ROMSIZE := 0A
 
 # Battery-backed save RAM (ADR-021): ROM + RAM + battery, 2 KiB SRAM.
 CARTRIDGETYPE := 02

@@ -52,6 +52,8 @@ The first four variants are `PAL_BLUE`, `PAL_RED`, `PAL_GREEN`, and `PAL_GOLD`. 
 
 Target: 14 frames maximum for M3. At 32×32, each 4bpp frame is 512 bytes, so the uncompressed player tile target is at most 7 KiB. Duplicate horizontal or recolored exports fail review.
 
+*Since R17 (docs/REFACTOR_PLAN.md):* the sheet can grow to seven rows (28 slots). Rows 0–2 (slots 0–11) are OBJ name table 1, as before; rows 3–6 (slots 12–27) are name table 2 (`tools/assetgen/obj.py: slot_tile`). Animation loops are declared in the manifest's `cycles` (each a power-of-two list of frames; `ANIM_<NAME>_CELS` drives the simulation's loop length in `player.c` and `player_step.asm`), and the renderer's per-frame tile and accessory tables are generated (`assets/generated/frame_tables.inc`), indexed by frame index (manifest order, `FRAME_<NAME>_INDEX`). A new frame needs no assembly edit; a new pose still needs its selection rule in `render_bodies.asm`.
+
 ## Source layout
 
 ```text

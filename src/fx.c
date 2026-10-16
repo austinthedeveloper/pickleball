@@ -19,7 +19,8 @@ void fx_on_event(u8 kind, s16 x, s16 y, u8 detail)
         return;
     /* detail: hitter slot (low bits; 2-3 = right team) | shot type << 4. */
     g_fx.spark_timer = FX_SPARK_FRAMES;
-    g_fx.spark_x = x + court_toward_net((detail & 3) >= 2) * FX_SPARK_LEAD_X;
+    g_fx.spark_x = (detail & 3) >= 2 ? x - FX_SPARK_LEAD_X :
+        x + FX_SPARK_LEAD_X;
     if ((detail >> 4) == SHOT_DRIVE)
         g_fx.spark_style = FX_SPARK_BIG;
     else if ((detail >> 4) == SHOT_SOFT)

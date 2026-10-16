@@ -62,37 +62,42 @@ _oam_hide:
     sta.l oam_tmp_bits
 
 _oam_high:
-    rep #$20
+    ; The pair's place in its high-table byte from tables (R20): mask by
+    ; id & 3, bits by (id & 3) * 4 + bits. No shift loop; 8-bit indexes
+    ; (plp restores the caller's widths).
+    sep #$30
     lda.l oam_in_id
-    and.w #$007F
+    and.b #$03
+    tay
+    asl a
+    asl a
+    ora.l oam_tmp_bits
+    tax
+    lda.l _oam_pair_bits,x
+    sta.l oam_tmp_bits
+    tyx
+    lda.l _oam_pair_mask,x
+    sta.l oam_tmp_mask
+    lda.l oam_in_id
+    and.b #$7F
     lsr a
     lsr a
     tax
-    sep #$20
-    lda.b #$FC
-    sta.l oam_tmp_mask
-    lda.l oam_in_id
-    and.b #$03
-    beq _oam_apply
-    tay
--   lda.l oam_tmp_bits
-    asl a
-    asl a
-    sta.l oam_tmp_bits
-    lda.l oam_tmp_mask
-    sec
-    rol a
-    sec
-    rol a
-    sta.l oam_tmp_mask
-    dey
-    bne -
-_oam_apply:
     lda.l oamMemory+512,x
     and.l oam_tmp_mask
     ora.l oam_tmp_bits
     sta.l oamMemory+512,x
     plp
     rtl
+
+; The high-table byte's mask for entry id & 3, and its two bits (X bit 8,
+; large) shifted into place, indexed by (id & 3) * 4 + bits.
+_oam_pair_mask:
+    .db $FC, $F3, $CF, $3F
+_oam_pair_bits:
+    .db $00, $01, $02, $03
+    .db $00, $04, $08, $0C
+    .db $00, $10, $20, $30
+    .db $00, $40, $80, $C0
 
 .ENDS

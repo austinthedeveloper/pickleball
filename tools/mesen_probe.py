@@ -187,20 +187,24 @@ PERF_MIN_LOOPS = 0.3            # share of frames the main loop must run
 
 
 def perf_run(rom, table, timeline, frames):
-    """Final overrun and loop counts for a timeline (shots removed)."""
+    """Final overrun count, loop count, worst work scanline (of 225), and
+    worst VBlank lines used (of 37) for a timeline (shots removed)."""
     lines = [line for line in timeline.read_text().splitlines()
              if not line.strip().startswith("shot")]
     with tempfile.NamedTemporaryFile("w", suffix=".timeline",
                                      delete=False) as tmp:
         tmp.write("\n".join(lines + [f"shot {frames - 2}"]) + "\n")
     probes = [resolve(table, "ovr=g_overrun_frames:2"),
-              resolve(table, "loops=g_loop_count:2")]
+              resolve(table, "loops=g_loop_count:2"),
+              resolve(table, "worst=g_work_scanline_max:2"),
+              resolve(table, "vbl=g_vblank_used_max:2")]
     out = run(rom, Path(tmp.name), frames, probes)
     os.unlink(tmp.name)
     if not out:
-        return None, None
+        return None, None, None, None
     fields = dict(part.split("=", 1) for part in out[-1].split()[2:])
-    return int(fields["ovr"]), int(fields["loops"])
+    return (int(fields["ovr"]), int(fields["loops"]), int(fields["worst"]),
+            int(fields["vbl"]))
 
 
 def sound_run(rom, timeline, frames):
@@ -227,15 +231,17 @@ def perf(config):
     manifest = json.loads(PERF_MANIFEST.read_text())
     smoke = ROOT / "test" / "smoke"
     failures = []
-    print(f"{'timeline':<20} {'frames':>6} {'loops':>6} {'overruns':>9}")
+    print(f"{'timeline':<26} {'frames':>6} {'loops':>6} {'worst':>5} "
+          f"{'vblank':>6} {'overruns':>9}")
     for entry in manifest["runs"]:
         name = entry["timeline"]
         frames = entry["frames"]
         budget = entry.get("overruns", 0)
-        ovr, loops = perf_run(rom, table, smoke / name, frames)
+        ovr, loops, worst, vbl = perf_run(rom, table, smoke / name, frames)
         if ovr is None:
             failures.append(f"{name}: no output (emulator or script failed)")
-            print(f"{name:<20} {frames:>6} {'-':>6} {'-':>9}  FAIL")
+            print(f"{name:<26} {frames:>6} {'-':>6} {'-':>5} {'-':>6} "
+                  f"{'-':>9}  FAIL")
             continue
         problems = []
         if loops < frames * entry.get("min_loops", PERF_MIN_LOOPS):
@@ -245,7 +251,8 @@ def perf(config):
             problems.append(f"{ovr} overruns > budget {budget}")
         status = "FAIL" if problems else "ok"
         note = f"  ({entry['note']})" if "note" in entry else ""
-        print(f"{name:<20} {frames:>6} {loops:>6} {ovr:>5}/{budget:<3} "
+        print(f"{name:<26} {frames:>6} {loops:>6} {worst:>5} {vbl:>6} "
+              f"{ovr:>5}/{budget:<3} "
               f"{status}{note}")
         failures += [f"{name}: {p}" for p in problems]
     for entry in manifest.get("sound", []):

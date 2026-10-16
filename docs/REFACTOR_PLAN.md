@@ -1,6 +1,6 @@
 # Refactor Plan
 
-Status: **R0–R11 done; R12–R15 planned** (R11 on `feature/cld-perf`)
+Status: **R0–R11, R15 done; R12–R14 planned; R16–R25 (optimization before the character models) on `feature/cld-optimize`**
 
 The POC grew quickly, much of it while fighting 816-tcc's code generation
 for performance. These refactors make the code easier to change before the
@@ -38,6 +38,81 @@ gameplay.
 | R13 | One settings-page component: rows of (label, value names, count) with Up/Down rows, Left/Right wrapping values, B/Start keep, Y restore, and one HUD row renderer | `court_edit_input`, `options_edit_input`, and `practice_edit_input` repeat the same editor; their HUD pages repeat the row drawing | Medium | Planned |
 | R14 | One frame-budget helper: "defer if past scanline N, at most M frames in a row" | The same wait logic is written three times: `hud_title_wait` (hud_scene.c), `render_update_ground` (render.c), and `audio_update` (audio_events.c) | Low | Planned |
 | R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Done: 160 → 0 overruns in the doubles demo (see R15 notes) |
+| R16 | `make perf` prints each timeline's worst frame (`g_work_scanline_max`, of 225) | Overruns alone hide headroom: a saving or a cost shows only when it crosses the line | High | Done |
+| R17 | OBJ name table 2 (VRAM word `0x7000`, 256 tiles, free) for player frames past sheet row 3; the renderer's frame tables and the animation loop lengths generated from the manifest | Character models need frames: table 1 is 249 of 256 tiles, and every frame was hand-listed in `render_bodies.asm` | High | Done |
+| R18 | VBlank headroom: the scanline where `render_commit`'s uploads end, its worst in `make perf` | Streaming frames into VRAM (a character-model option) needs the free VBlank measured first | High | Done: VBlank used 23–32 → 13–22 of 37 lines (see R16–R22 notes) |
+| R19 | 1 MiB ROM (32 banks) | 114 KiB free; character frames, body sets, and venues need room. The user allows a bigger cart | Medium | Done: 1 MiB, ~624 KiB free; `build_report.py` checks the header size byte |
+| R20 | `oam_write`: high-table bits from a table, not a shift loop | ~280 cycles an object; better models add objects per player | High | Done |
+| R21 | No per-frame hides of objects already hidden (debug marker in release, spark, inactive ball) | ~2–3 scanlines a frame for nothing | Medium | Dropped: after R20 a hide costs under a scanline, and other scenes (select, park, the stress scene) reuse those OAM entries, so per-entry hidden flags would be fragile |
+| R22 | Small 816-tcc fixes on per-frame and hit-frame paths: multiplies by ±1 and by the player size (`ai_choose_aim`, `ai_plan_intercept`, `ai_opponent_at_net`, `rules`' last hitter team), the collision loop by pointer | Each a `tcc__mul` (16 iterations for a negative factor) | Medium | Done |
+| R23 | The swing lookahead skips its probe when the ball's x/y range over the window cannot reach the swing box | The lookahead is the largest single AI cost (R15 notes) | Medium | Done (steady pace only; see the notes) |
+| R24 | Metasprite OAM writer: a per-frame object list per player, written in one pass | Required for multi-object character models; ~4× cheaper per object | High | With the character models |
+| R25 | `ai_think` on a static scratch copy of the player and style | ~4–6 scanlines per think, 36 pointer accesses | Low | Later |
+
+### R16–R22 notes
+
+Release build, `make perf` (worst work scanline of 225 / worst VBlank lines
+used of 37), `main` → `feature/cld-optimize` (R16–R23):
+
+| Timeline | Worst frame | VBlank used |
+|---|---:|---:|
+| idle | 146 → 140 | 23 → 13 |
+| golden | 199 → 199 | 24 → 14 |
+| doubles_ladder | 192 → 180 | 24 → 14 |
+| modifiers (singles) | 193 → 182 | 24 → 14 |
+| modifiers_doubles | 197 → 190 | 24 → 14 |
+| options | 178 → 163 | 24 → 14 |
+| records / career | 210 / 203 → 208 / 196 | 32 → 22 |
+| clubhouse | 199 → 194 | 23 → 13 |
+| open_play | 219 → 219 | 23 → 13 |
+| demo | 191 → 189 | 28 → 18 |
+
+The worst frame is mostly a one-off (a page draw, a scene step); averages
+moved more. Profiler build (`PROFILE=1`), `doubles_ladder.timeline` to frame
+2,390, stage sums and worst frames:
+
+| Stage | Sum | Worst |
+|---|---:|---:|
+| 0: intents and the CPUs' thinks | 22,602 → 18,654 (−17%) | 22 → 22 |
+| 2: player bodies (`render_bodies`) | 16,507 → 12,063 (−27%) | 59 → 37 |
+| 3: ball, effects, machine, ground | 35,483 → 34,910 | 29 → 27 |
+
+The open play park (219) is now the tightest timeline. Its frames are the
+park's own one-heavy-job-per-frame draws, which the character models don't
+touch.
+
+- **VBlank (R18).** The wait for VBlank returns within 5 lines; `render_commit`
+  then took up to 20 more, almost all in `hud_commit`: each band went through
+  `dmaCopyVram` with two `tcc__mul` calls for its offsets, about four lines a
+  band for 256 bytes (1.5 lines of DMA). `src/asm/hud_commit.asm` programs
+  DMA channel 0 directly. The spare VBlank (about 15 lines in the worst
+  case) is what a streamed character frame would use: 512 bytes a player is
+  about 3 lines of DMA, so four players fit only with an uploader like this
+  one, and not on a frame that also sends three HUD bands.
+- **OAM (R20).** The high-table pair is placed from two small tables, with
+  8-bit index registers, instead of a shift loop of up to three passes
+  (the first table version, in 16-bit, was slower than the loop for
+  entries with `id & 3 == 0`, the ball among them).
+- **Lookahead (R23).** Over the window's seven steps the ball's x and y stay
+  between where it is and where seven steps of its velocity carry it (a
+  bounce shrinks |v| without flipping it); when that range misses the reach
+  box the probe is skipped. Steady pace only: a first version also summed a
+  paced ball's steps through a helper with six arguments, and FAST BALL
+  doubles' worst frame went from 197 to 213, because a paced window rarely
+  misses. `make stats` is identical in seven configurations (singles, both
+  doubles bots, KID, EASY, 70% and 120% ball speed).
+- **Multiplies (R22).** `court_aim_depth`, the spark lead, `ai_choose_aim`'s
+  depth, the AI's stand-behind offset and opponent pointers, `rules`' last
+  hitter and server team, and the collision loop. `make stats` is identical
+  for singles and both doubles bots (`LATE=0 MATCHES=20 OPPONENT=-2`), and
+  the golden trace is identical.
+- **Checked on the way:** emulator traces of doubles and practice timelines
+  are not repeatable run to run even on one ROM (MesenCE's randomized
+  power-on state reaches the attract demo, and the timelines start from
+  boot), so `make stats` and the golden trace (which skips boot) are the
+  identity checks. Screenshots differ only where the base ROM also differs
+  from itself, except a records frame where the new ROM shows the menu's
+  finished cursor a frame sooner.
 
 ### R15 notes
 

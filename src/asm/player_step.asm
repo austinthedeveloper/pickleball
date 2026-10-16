@@ -296,14 +296,14 @@ _ps_clamp_y:
     beq _ps_idle_tick
     stz.w ASM_PLAYER_ANIM_FRAME,x
 _ps_idle_tick:
-    PS_TICK ASM_IDLE_CEL_FRAMES, 2
+    PS_TICK ASM_IDLE_CEL_FRAMES, ANIM_IDLE_CELS
     bra _ps_done
 _ps_moving:
     lda.l ps_was
     bne _ps_run_tick
     stz.w ASM_PLAYER_ANIM_FRAME,x
 _ps_run_tick:
-    PS_TICK ASM_RUN_CEL_FRAMES, 4
+    PS_TICK ASM_RUN_CEL_FRAMES, ANIM_RUN_CELS
 _ps_done:
     plb
     plp

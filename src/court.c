@@ -61,7 +61,9 @@ u8 court_x_on_side(fx x_fp, u8 team)
 
 s16 court_aim_depth(u8 team, s16 aim_x)
 {
-    s16 toward = aim_x * court_toward_net(team);
+    /* team ? -aim_x : aim_x, not aim_x * court_toward_net(team): a
+     * multiply is a library call on 816-tcc (R22). */
+    s16 toward = team ? -aim_x : aim_x;
     if (toward > 0)
         return 1;
     if (toward < 0)

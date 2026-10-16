@@ -67,7 +67,8 @@ def generated_files():
     manifest = json.loads(paths.manifest.read_text(encoding="utf-8"))
     venue_files, court_tiles, ground_tiles = court_assets()
     hud_pic, hud_pal, big_chars, hud_tiles = hud_assets()
-    obj_pic, objects_pal, header, obj_tiles = obj_assets(manifest)
+    obj_pic, objects_pal, header, obj_tiles, frame_tables = \
+        obj_assets(manifest)
     paddle_header, paddle_names = paddle_stats_header()
     select_pic, select_map, select_pal, select_tiles = scene_assets()
     portrait_pic, portrait_m, portrait_f, portrait_tiles = portrait_assets()
@@ -94,6 +95,7 @@ def generated_files():
         "hud.pal": hud_pal,
         "obj.pic": obj_pic,
         "objects.pal": objects_pal,
+        "frame_tables.inc": frame_tables.encode(),
         "asset_frames.h": header.encode(),
         "hud_tiles.h": "\n".join(hud_header).encode(),
         "palette_parts.h": palette_parts_header(

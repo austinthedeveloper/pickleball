@@ -1,5 +1,6 @@
 #include <string.h>
 #include "ram_copy.h"
+#include "asset_frames.h"
 #include "court.h"
 #include "paddle_stats.h"
 #include "player.h"
@@ -200,7 +201,8 @@ static void player_step(const PlayerIntent *intent)
     cel_frames = moving ? PLAYER_RUN_CEL_FRAMES : PLAYER_IDLE_CEL_FRAMES;
     if (++s_p.animation_timer >= cel_frames) {
         s_p.animation_timer = 0;
-        if (++s_p.animation_frame >= (moving ? 4 : 2))
+        if (++s_p.animation_frame >=
+                (moving ? ANIM_RUN_CELS : ANIM_IDLE_CELS))
             s_p.animation_frame = 0;
     }
 }
