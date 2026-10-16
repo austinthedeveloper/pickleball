@@ -40,6 +40,10 @@ void career_record_point(u8 shots, u8 won, u8 served);
  * stats and the unlocks (g_career_new_unlocks); the caller writes. */
 void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     u8 open_play);
+/* The player's OBJ palette (ADR-013 roles): skin ramp and hair from the
+ * career looks, shirt and shorts from their team colour, their paddle. */
+void career_compose_palette(const CareerPlayer *player, u16 out[16]);
+
 /* Unlocks whose rules the player now meets and did not have; marks them.
  * Returns the new ones. */
 u16 career_check_unlocks(CareerPlayer *player);

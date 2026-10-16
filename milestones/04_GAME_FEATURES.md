@@ -89,7 +89,8 @@ ADR-024.
 
 - [x] `M4-CAREER-01` Career players, the data: three save slots, each a named player with a look, lifetime stats, and unlocks; stats from points and matches against the CPU; save layout 12.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md), `test/test_career.c`, the save written and reloaded in MesenCE; `make perf` zero overruns (the save sum in assembly).
-- [ ] `M4-CAREER-02` The CAREER page (RECORDS becomes CAREER): slot picker, player card with stats and unlocks, and the editor (name, body, skin, hair, shirt, hat, paddle; locked items shown locked).
+- [x] `M4-CAREER-02` The CAREER page (RECORDS becomes CAREER): slot picker, player card with stats and unlocks, and the editor (name, body, skin, hair, shirt, hat, paddle; locked items skipped).
+  - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 2), `test/test_career_page.c`, `career.timeline` and the updated `records.timeline` with zero overruns in `make perf`, MesenCE screenshots of each view and the live preview.
 - [ ] `M4-CAREER-03` Play as the active player: 1P's look and paddle, the name on the HUD, and new unlocks on the result screen.
 - [ ] `M4-CAREER-04` Gear that changes stats, always a trade-off (phase 2, with a balance pass).
 

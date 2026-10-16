@@ -32,6 +32,8 @@ typedef struct {
     u8 partner;                   /* ADR-034: a ladder team whose captain
                                      plays slot 1, or OPPONENT_NONE (the
                                      default CPU) */
+    u8 career_p1;                 /* ADR-047: slot 0 wears the active career
+                                     player's look (hat, hair, skin) */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */

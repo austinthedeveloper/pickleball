@@ -1,6 +1,7 @@
 #define PALETTE_PARTS_DEFINE
 #define PADDLE_STATS_DEFINE
 #define OPPONENTS_DEFINE
+#include "career.h"
 #include "match.h"
 #include "options.h"
 #include "player.h"
@@ -22,7 +23,8 @@ MatchConfig g_match_config = {
     0,
     0,
     0,
-    OPPONENT_NONE
+    OPPONENT_NONE,
+    0
 };
 #else
 MatchConfig g_match_config;
@@ -52,6 +54,7 @@ void match_config_defaults(void)
     g_match_config.modifiers = 0;
     g_match_config.open_play = 0;
     g_match_config.partner = OPPONENT_NONE;
+    g_match_config.career_p1 = 0;
 }
 
 void match_config_practice(void)
@@ -110,6 +113,8 @@ u8 match_slot_hat(u8 slot)
 {
     u8 member = match_slot_member(slot);
 
+    if (slot == 0 && g_match_config.career_p1 && career_active())
+        return career_active()->hat;
     if (g_match_config.human[slot])
         return 0;
     if (match_slot_partner(slot))
@@ -223,6 +228,10 @@ void match_compose_palette(u8 slot, u16 out[16])
     u8 member = match_slot_member(slot);
     u8 i;
 
+    if (slot == 0 && g_match_config.career_p1 && career_active()) {
+        career_compose_palette(career_active(), out);
+        return;
+    }
     if (match_slot_partner(slot)) {
         const u16 *look = g_opponent_palettes[g_match_config.partner][0];
 

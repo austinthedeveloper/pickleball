@@ -168,6 +168,25 @@ static u16 career_rule_count(const CareerPlayer *player, u8 rule, u16 value)
     }
 }
 
+void career_compose_palette(const CareerPlayer *player, u16 out[16])
+{
+    const u16 *team = g_pal_team[player->shirt % PAL_COUNT];
+    const u16 *skin = g_career_skins[player->skin % CAREER_SKINS];
+    const u16 *paddle = g_pal_paddle[player->paddle % PADDLE_PART_COUNT];
+    u8 i;
+
+    out[0] = 0;
+    out[1] = g_pal_shared[0][0];
+    for (i = 0; i < 3; ++i) {
+        out[2 + i] = skin[i];
+        out[11 + i] = paddle[i];
+    }
+    for (i = 0; i < 6; ++i)
+        out[5 + i] = team[i];
+    out[14] = g_pal_shared[0][1];
+    out[15] = g_career_hair[player->hair % CAREER_HAIRS];
+}
+
 u16 career_check_unlocks(CareerPlayer *player)
 {
     u16 earned = 0;

@@ -68,6 +68,8 @@ void render_apply_court_colors(void);
 /* The saved TIME changed (ADR-045): the ground and the backdrop recompose
  * on light frames and upload in VBlank. */
 void render_apply_court_time(void);
+/* Slot 0's palette, hat, and ponytail again (the career preview). */
+void render_apply_p1_look(void);
 /* Mode whose palettes/colour math are currently set up. */
 u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the

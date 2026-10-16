@@ -799,6 +799,17 @@ static void render_load_court(void)
     hud_commit_all();
 }
 
+/* Slot 0's look alone (ADR-047: the career player previewed on the title
+ * demo's P1): its palette, hat, and ponytail; uploads in render_commit. */
+void render_apply_p1_look(void)
+{
+    match_compose_palette(0, s_player_palettes[0]);
+    rb_hat[0] = s_hat_tiles[match_slot_hat(0)];
+    if (g_players[0].variant != PLAYER_VARIANT_FEMALE)
+        render_obj_hide(RENDER_OAM_ACCESSORIES);
+    s_palette_dirty = 1;
+}
+
 u8 render_court_venue(void)
 {
     return s_venue;

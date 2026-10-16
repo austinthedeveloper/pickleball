@@ -1,3 +1,4 @@
+#include <string.h>
 #include "game.h"
 #include "hud_tiles.h"
 #include "input.h"
@@ -10,6 +11,7 @@
 #include "render_internal.h"
 #include "court_style.h"
 #include "audio_events.h"
+#include "career_page.h"
 #include "modifiers.h"
 #include "options.h"
 #include "pause_menu.h"
@@ -379,6 +381,19 @@ static const char *hud_match_winner_text(void)
     return g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS";
 }
 
+/* The title prompt (bits 1-4 of a title key): the page, or for the
+ * CAREER page (ADR-047) its sub-view, so each has its own. */
+#define HUD_PROMPT_CAREER 8
+#define HUD_PROMPT_CAREER_NAMING 12
+static u8 hud_title_prompt_id(void)
+{
+    if (g_title_page != TITLE_PAGE_RECORDS)
+        return g_title_page;
+    if (g_career_page.view == CAREER_VIEW_EDIT && g_career_page.naming)
+        return HUD_PROMPT_CAREER_NAMING;
+    return HUD_PROMPT_CAREER + g_career_page.view;
+}
+
 static u16 hud_scene_key(void)
 {
     u8 phase = g_game_state.phase;
@@ -394,7 +409,7 @@ static u16 hud_scene_key(void)
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
-            HUD_KEY_TITLE) | (g_title_page << 1);
+            HUD_KEY_TITLE) | (hud_title_prompt_id() << 1);
     if (phase == GAME_PHASE_SERVE_TOSS || phase == GAME_PHASE_SERVE_FAULT)
         phase = GAME_PHASE_LIVE;
     if (phase == GAME_PHASE_SERVE_SETUP)
@@ -772,7 +787,7 @@ static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
         "  SINGLES  ", "  DOUBLES  ", "  OPEN PLAY", "  COURT    ",
-        "  RECORDS  ", "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
+        "  CAREER   ", "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
     };
 
     hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
@@ -1032,11 +1047,15 @@ static void hud_options_refresh(void)
 #define HUD_TITLE_VIEW_OPTIONS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_OPTIONS)
 #define HUD_TITLE_VIEW_PRACTICE HUD_TITLE_VIEW_PAGE(TITLE_PAGE_PRACTICE)
 #define HUD_TITLE_VIEW_MODIFIERS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_MODIFIERS)
+/* The CAREER page (ADR-047, the RECORDS entry): a view per sub-view. */
+#define HUD_TITLE_VIEW_CAREER 0x90
 
 /* Runs on every idle title frame behind the demo: one test, not one per
  * page. */
 static u8 hud_title_view(void)
 {
+    if (g_title_page == TITLE_PAGE_RECORDS)
+        return HUD_TITLE_VIEW_CAREER + g_career_page.view;
     if (g_title_page != TITLE_PAGE_MENU)
         return HUD_TITLE_VIEW_PAGE(g_title_page);
     return g_title_mode | (g_title_2p << 3);
@@ -1078,6 +1097,307 @@ static void hud_court_refresh(void)
     }
 }
 
+
+/* ---- The CAREER page (ADR-047, M4-CAREER-02) ---- */
+
+#define CAREER_SLOTS_ROWS 7         /* header, gap, 3 slots, gap, RECORDS */
+#define CAREER_EDIT_PAGE_ROWS 9     /* header, gap, 7 rows */
+#define CAREER_NAME_COL 8
+#define CAREER_UNDRAWN 0xff
+
+/* Slots view rows as drawn: cursor << 7 | active << 6 | used << 5. */
+static u8 s_career_slot_drawn[CAREER_SLOT_ROWS];
+/* Edit rows as drawn: value | cursor << 7; the name row keeps its own. */
+static u8 s_career_edit_drawn[CAREER_EDIT_ROWS];
+static u8 s_career_name_drawn[CAREER_NAME + 2];   /* letters, cursor, mode */
+
+static u8 hud_career_slot_state(u8 row)
+{
+    u8 state = (u8)((g_career_page.row == row) << 7);
+
+    if (row < CAREER_SLOTS) {
+        state |= (u8)((g_save.career_active == row) << 6);
+        state |= (u8)(g_save.career[row].used << 5);
+    }
+    return state;
+}
+
+/* "> 1 ACE          12W", "  2 NEW PLAYER", "  RECORDS". */
+static void hud_career_slot_row(u8 row)
+{
+    static char name[CAREER_NAME + 1];
+    const CareerPlayer *player;
+    u8 line = TITLE_MENU_ROW + 2 + row + (row == CAREER_ROW_RECORDS);
+    u8 cursor = g_career_page.row == row;
+    u8 i;
+
+    hud_fill_box(RECORDS_COL + 1, line, RECORDS_WIDTH - 2, 1,
+        hud_entry(' ', HUD_PAL_WHITE));
+    hud_tile(RECORDS_COL + 1, line, cursor ?
+        hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
+        hud_entry(' ', HUD_PAL_WHITE));
+    if (row == CAREER_ROW_RECORDS) {
+        hud_text(CAREER_NAME_COL, line,
+            cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE, "RECORDS");
+    } else {
+        player = &g_save.career[row];
+        name[0] = (char)('1' + row);
+        name[1] = 0;
+        hud_text(RECORDS_COL + 2, line, HUD_PAL_WHITE, name);
+        if (player->used) {
+            for (i = 0; i < CAREER_NAME; ++i)
+                name[i] = (char)player->name[i];
+            name[CAREER_NAME] = 0;
+            hud_text(CAREER_NAME_COL, line, g_save.career_active == row ?
+                HUD_PAL_YELLOW : HUD_PAL_WHITE, name);
+            hud_count(RECORDS_COUNT_COL - 1, line,
+                player->wins[0] + player->wins[1]);
+            hud_text(RECORDS_COUNT_COL + 3, line, HUD_PAL_YELLOW, "W");
+        } else {
+            hud_text(CAREER_NAME_COL, line, HUD_PAL_WHITE, "NEW PLAYER");
+        }
+    }
+    s_career_slot_drawn[row] = hud_career_slot_state(row);
+}
+
+static void hud_career_slots_refresh(void)
+{
+    u8 row;
+
+    for (row = 0; row < CAREER_SLOT_ROWS; ++row)
+        if (s_career_slot_drawn[row] != hud_career_slot_state(row)) {
+            hud_career_slot_row(row);
+            return;
+        }
+}
+
+/* " SINGLES  W nnnn  L nnnn " for the card's player. */
+static void hud_career_mode_line(u8 row, const char *label, u16 wins,
+    u16 losses)
+{
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
+    hud_text(RECORDS_COUNT_COL - 9, row, HUD_PAL_YELLOW, "W");
+    hud_count(RECORDS_COUNT_COL - 7, row, wins);
+    hud_text(RECORDS_COUNT_COL - 2, row, HUD_PAL_YELLOW, "L");
+    hud_count(RECORDS_COUNT_COL, row, losses);
+}
+
+/* "UNLOCKS             n/9" */
+static void hud_career_unlocks_line(u8 row, const CareerPlayer *player)
+{
+    static char text[6];
+    u8 count = career_unlock_count(player);
+    u8 i = 0;
+
+    if (count >= 10)
+        text[i++] = '1';
+    text[i++] = (char)('0' + count % 10);
+    text[i++] = '/';
+    text[i++] = (char)('0' + CAREER_UNLOCKS % 10);
+    text[i] = 0;
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "UNLOCKS");
+    hud_text(RECORDS_COUNT_COL + 4 - i, row, HUD_PAL_YELLOW, text);
+}
+
+/* "NEXT: HEADBAND" and how to earn it, or ALL UNLOCKED! */
+static void hud_career_next_lines(u8 row, const CareerPlayer *player)
+{
+    u8 next = career_next_unlock(player);
+
+    if (next >= CAREER_UNLOCKS) {
+        hud_text(RECORDS_COL + 1, row, HUD_PAL_YELLOW, "ALL UNLOCKED!");
+        return;
+    }
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "NEXT:");
+    hud_text(RECORDS_COL + 7, row, HUD_PAL_YELLOW,
+        g_career_unlock_names[next]);
+    hud_text(RECORDS_COL + 1, row + 1, HUD_PAL_WHITE,
+        g_career_unlock_how[next]);
+}
+
+static void hud_career_line(u8 row, const char *label, u16 value)
+{
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
+    hud_count(RECORDS_COUNT_COL, row, value);
+}
+
+/* The card: a part per frame, two rows at most. */
+static u8 hud_career_card_part(u8 part)
+{
+    static char name[CAREER_NAME + 1];
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 i;
+
+    switch (part) {
+    case 0:
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH, RECORDS_ROWS,
+            hud_entry(' ', HUD_PAL_WHITE));
+        return 0;
+    case 1:
+        for (i = 0; i < CAREER_NAME; ++i)
+            name[i] = (char)player->name[i];
+        name[CAREER_NAME] = 0;
+        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, name);
+        return 0;
+    case 2:
+        hud_career_mode_line(TITLE_MENU_ROW + 2, "SINGLES", player->wins[0],
+            player->losses[0]);
+        hud_career_mode_line(TITLE_MENU_ROW + 3, "DOUBLES", player->wins[1],
+            player->losses[1]);
+        return 0;
+    case 3:
+        hud_career_line(TITLE_MENU_ROW + 4, "ACES", player->aces);
+        hud_career_line(TITLE_MENU_ROW + 5, "SHUTOUTS", player->shutouts);
+        return 0;
+    case 4:
+        hud_career_line(TITLE_MENU_ROW + 6, "BEST STREAK",
+            player->best_streak);
+        hud_career_line(TITLE_MENU_ROW + 7, "LONGEST RALLY",
+            player->longest_rally);
+        return 0;
+    case 5:
+        hud_career_unlocks_line(TITLE_MENU_ROW + 8, player);
+        return 0;
+    default:
+        hud_career_next_lines(TITLE_MENU_ROW + 9, player);
+        return 1;
+    }
+}
+
+/* A look row's display name. */
+static const char *hud_career_look_name(const CareerPlayer *player, u8 row)
+{
+    u8 value = career_look_value(player, row);
+
+    switch (row) {
+    case CAREER_EDIT_BODY:
+        return career_body_name(value);
+    case CAREER_EDIT_SKIN:
+        return g_career_skin_names[value % CAREER_SKINS];
+    case CAREER_EDIT_HAIR:
+        return g_career_hair_names[value % CAREER_HAIRS];
+    case CAREER_EDIT_SHIRT:
+        return career_shirt_name(value);
+    case CAREER_EDIT_HAT:
+        return g_career_hat_names[value % CAREER_HATS];
+    default:
+        return career_paddle_name(value);
+    }
+}
+
+/* The name row: "<ACE     >"; typing, the letter at the cursor is yellow
+ * (a space shows as _). */
+static void hud_career_name_row(void)
+{
+    static char text[CAREER_NAME + 1];
+    static char letter[2];
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 row = TITLE_MENU_ROW + 2;
+    u8 cursor = g_career_page.cursor;
+    u8 i;
+
+    for (i = 0; i < CAREER_NAME; ++i)
+        text[i] = (char)player->name[i];
+    text[CAREER_NAME] = 0;
+    hud_setting_row(row, "NAME", text,
+        g_career_page.row == CAREER_EDIT_NAME);
+    if (g_career_page.naming) {
+        letter[0] = player->name[cursor] == ' ' ? '_' :
+            (char)player->name[cursor];
+        letter[1] = 0;
+        hud_text(COURT_VALUE_COL + 1 + cursor, row, HUD_PAL_YELLOW, letter);
+    }
+    memcpy(s_career_name_drawn, player->name, CAREER_NAME);
+    s_career_name_drawn[CAREER_NAME] = (u8)(cursor |
+        ((g_career_page.row == CAREER_EDIT_NAME) << 7));
+    s_career_name_drawn[CAREER_NAME + 1] = g_career_page.naming;
+}
+
+static void hud_career_edit_row(u8 row)
+{
+    static const char *const labels[CAREER_EDIT_ROWS] = {
+        "NAME", "BODY", "SKIN", "HAIR", "SHIRT", "HAT", "PADDLE"
+    };
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 cursor = g_career_page.row == row;
+
+    if (row == CAREER_EDIT_NAME) {
+        hud_career_name_row();
+        return;
+    }
+    hud_setting_row(TITLE_MENU_ROW + 2 + row, labels[row],
+        hud_career_look_name(player, row), cursor);
+    s_career_edit_drawn[row] = (u8)(career_look_value(player, row) |
+        (cursor << 7));
+}
+
+static u8 hud_career_name_changed(void)
+{
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+
+    return memcmp(s_career_name_drawn, player->name, CAREER_NAME) != 0 ||
+        s_career_name_drawn[CAREER_NAME] != (u8)(g_career_page.cursor |
+            ((g_career_page.row == CAREER_EDIT_NAME) << 7)) ||
+        s_career_name_drawn[CAREER_NAME + 1] != g_career_page.naming;
+}
+
+static void hud_career_edit_refresh(void)
+{
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 row;
+
+    if (hud_career_name_changed()) {
+        hud_career_name_row();
+        return;
+    }
+    for (row = 1; row < CAREER_EDIT_ROWS; ++row)
+        if (s_career_edit_drawn[row] != (u8)(career_look_value(player, row) |
+                ((g_career_page.row == row) << 7))) {
+            hud_career_edit_row(row);
+            return;
+        }
+}
+
+/* One part of a CAREER view. */
+static u8 hud_career_draw_part(u8 view, u8 part)
+{
+    u8 i;
+
+    if (view == CAREER_VIEW_CARD)
+        return hud_career_card_part(part);
+    if (view == CAREER_VIEW_EDIT) {
+        if (part == 0) {
+            hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+                CAREER_EDIT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+            for (i = 0; i < CAREER_EDIT_ROWS; ++i)
+                s_career_edit_drawn[i] = CAREER_UNDRAWN;
+            return 0;
+        }
+        if (part == 1) {
+            hud_text(13, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PLAYER");
+            return 0;
+        }
+        hud_career_edit_row(part - 2);
+        return part - 2 == CAREER_EDIT_ROWS - 1;
+    }
+    /* SLOTS */
+    if (part == 0) {
+        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+            CAREER_SLOTS_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        for (i = 0; i < CAREER_SLOT_ROWS; ++i)
+            s_career_slot_drawn[i] = CAREER_UNDRAWN;
+        return 0;
+    }
+    if (part == 1) {
+        hud_text(13, TITLE_MENU_ROW, HUD_PAL_YELLOW, "CAREER");
+        return 0;
+    }
+    hud_career_slot_row(part - 2);
+    return part - 2 == CAREER_SLOT_ROWS - 1;
+}
+
+static u8 hud_records_draw_part(u8 part);
+
 /* One part of the area; returns nonzero when the view is complete. One
  * row per part: the title demo leaves little frame time. */
 static u8 hud_title_draw_part(u8 view, u8 part)
@@ -1090,16 +1410,23 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         return hud_practice_draw_part(part);
     if (view == HUD_TITLE_VIEW_MODIFIERS)
         return hud_modifiers_draw_part(part);
-    if (view != HUD_TITLE_VIEW_RECORDS) {
-        /* Parts stay at most two rows: each waits for a frame under
-         * HUD_TITLE_SCANLINE_LIMIT, which leaves room for no more. */
-        if (part < 4) {
-            hud_title_menu(view & 7, part);
-            return 0;
-        }
-        hud_title_2p_line();
-        return 1;
+    if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_RECORDS)
+        return hud_records_draw_part(part);
+    if (view >= HUD_TITLE_VIEW_CAREER)
+        return hud_career_draw_part(view - HUD_TITLE_VIEW_CAREER, part);
+    /* Parts stay at most two rows: each waits for a frame under
+     * HUD_TITLE_SCANLINE_LIMIT, which leaves room for no more. */
+    if (part < 4) {
+        hud_title_menu(view & 7, part);
+        return 0;
     }
+    hud_title_2p_line();
+    return 1;
+}
+
+/* The records table (ADR-021), now a section of the CAREER page. */
+static u8 hud_records_draw_part(u8 part)
+{
     switch (part) {
     case 0:
         /* The font's space is a dark cell: a solid box over the court. */
@@ -1192,6 +1519,10 @@ static void hud_title_area_update(void)
                 hud_practice_refresh();
             else if (view == HUD_TITLE_VIEW_MODIFIERS)
                 hud_modifiers_refresh();
+            else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_SLOTS)
+                hud_career_slots_refresh();
+            else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_EDIT)
+                hud_career_edit_refresh();
             return;
         }
         /* Parts back to back while the frame stays under the limit
@@ -1229,12 +1560,21 @@ static u16 hud_title_step_limit(u8 step)
 
 static const char *hud_title_prompt(u8 page)
 {
+    /* The CAREER page's prompts (hud_title_prompt_id). */
+    if (page == HUD_PROMPT_CAREER + CAREER_VIEW_SLOTS)
+        return "@ OPEN  Y BACK";
+    if (page == HUD_PROMPT_CAREER + CAREER_VIEW_CARD)
+        return "@ EDIT  Y BACK";
+    if (page == HUD_PROMPT_CAREER + CAREER_VIEW_EDIT)
+        return "@ OK  Y CANCEL";
+    if (page == HUD_PROMPT_CAREER_NAMING)
+        return "@ NEXT  START OK";
     if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS ||
             page == TITLE_PAGE_MODIFIERS)
         return "@ OK  Y CANCEL";
     if (page == TITLE_PAGE_PRACTICE)
         return "@ PLAY  Y BACK";
-    if (page == TITLE_PAGE_RECORDS)
+    if (page == HUD_PROMPT_CAREER + CAREER_VIEW_RECORDS)
         return "@ BACK";
     return "PRESS START";
 }
@@ -1265,14 +1605,14 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
         break;
     case HUD_STEP_PROMPT:
         s_prompt_text = 0;
-        if (!(key & 1) && s_prompt_page == ((key >> 1) & 7)) {
+        if (!(key & 1) && s_prompt_page == ((key >> 1) & 15)) {
             hud_restore_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
             break;
         }
         hud_clear_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS);
         if (!(key & 1)) {
             hud_center_prompt_panel(BANNER_ROW,
-                hud_title_prompt((key >> 1) & 7));
+                hud_title_prompt((key >> 1) & 15));
             s_prompt_text = 1;
         }
         break;
@@ -1281,10 +1621,10 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
     case HUD_STEP_EXTRA2:
     case HUD_STEP_EXTRA3:
         hud_center_prompt_half(BANNER_ROW, HUD_PAL_WHITE,
-            hud_title_prompt((key >> 1) & 7), step == HUD_STEP_EXTRA3);
+            hud_title_prompt((key >> 1) & 15), step == HUD_STEP_EXTRA3);
         if (step == HUD_STEP_EXTRA3) {
             hud_save_rows(BANNER_ROW - 1, HUD_PROMPT_ROWS, s_prompt_rows);
-            s_prompt_page = (key >> 1) & 7;
+            s_prompt_page = (key >> 1) & 15;
             s_prompt_text = 0;
         }
         break;

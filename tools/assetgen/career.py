@@ -6,6 +6,7 @@ from .common import AssetError, bgr15, paths
 RULES = ("WINS", "RALLY", "ACES", "SHUTOUTS", "STREAK", "BEAT", "CLEARS",
          "OPEN")
 NAME_CELLS = 12
+HOW_CELLS = 18                  # after "NEXT: " on the 24-cell card
 LOCKED_NONE = 0xff
 MAX_UNLOCKS = 16                # a u16 mask per player
 
@@ -38,7 +39,11 @@ def load_career():
             value = teams.index(value)
         elif not 1 <= value <= 9999:
             raise AssetError(f"career unlock {u['name']}: value 1..9999")
-        rules.append((u["name"], RULES.index(u["rule"]), value))
+        how = u.get("how", "")
+        if not 1 <= len(how) <= HOW_CELLS:
+            raise AssetError(f"career unlock {u['name']}: 'how' is 1.."
+                             f"{HOW_CELLS} cells")
+        rules.append((u["name"], RULES.index(u["rule"]), value, how))
 
     def locked_by(entry, kind):
         """The unlock named after a choice's own fields, or LOCKED_NONE."""
@@ -109,6 +114,9 @@ def career_header():
                  ", ".join(f"0x{h[1]:02x}" for h in hats) + " };")
     lines.append("const char *const g_career_unlock_names[CAREER_UNLOCKS] "
                  "= { " + ", ".join(f'"{r[0]}"' for r in rules) + " };")
+    lines.append("/* The card's hint for each (ADR-047). */")
+    lines.append("const char *const g_career_unlock_how[CAREER_UNLOCKS] "
+                 "= { " + ", ".join(f'"{r[3]}"' for r in rules) + " };")
     lines.append("const u8 g_career_unlock_rule[CAREER_UNLOCKS] = { " +
                  ", ".join(str(r[1]) for r in rules) + " };")
     lines.append("const u16 g_career_unlock_value[CAREER_UNLOCKS] = { " +
@@ -122,6 +130,7 @@ def career_header():
               "extern const char *const g_career_hat_names[CAREER_HATS];",
               "extern const u8 g_career_hat_unlock[CAREER_HATS];",
               "extern const char *const g_career_unlock_names[CAREER_UNLOCKS];",
+              "extern const char *const g_career_unlock_how[CAREER_UNLOCKS];",
               "extern const u8 g_career_unlock_rule[CAREER_UNLOCKS];",
               "extern const u16 g_career_unlock_value[CAREER_UNLOCKS];",
               "#endif", "", "#endif", ""]

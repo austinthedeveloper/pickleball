@@ -1,6 +1,6 @@
 # ADR-047 — Career Players
 
-Status: **Accepted 2026-10-15** (stage 1 of 3: the data)
+Status: **Accepted 2026-10-15** (stages 1-2: the data, the page)
 Milestone: `M4-CAREER-01` to `-04`. From [IDEAS.md](../IDEAS.md), "Career
 mode". Depends on: ADR-021/032 (save and migration), ADR-013/014 (palette
 parts, hats), ADR-020 (Player Select), ADR-023 (the ladder), ADR-040
@@ -35,6 +35,38 @@ stats comes later (stage 4), with its own balance pass.
    player (Player Select starts on them), the name on the HUD, and
    "UNLOCKED: VISOR!" on the result screen (`g_career_new_unlocks`).
 4. **Gear stats** (`M4-CAREER-04`): small trade-offs like the paddles'.
+
+## The CAREER page (stage 2)
+
+The title's RECORDS entry reads CAREER and opens a page with four views
+(`src/career_page.c`, pure input logic like the court and options
+editors; `hud_scene.c` draws, `main.c` writes the save and previews):
+
+- **SLOTS**: the three players (name, yellow for the active one, and
+  total wins) or NEW PLAYER, then RECORDS. B opens a player, which makes
+  them active (a save write), or creates one and opens EDIT on the name.
+- **CARD**: SINGLES and DOUBLES W/L, aces, shutouts, best streak, longest
+  rally, UNLOCKS n/9, and the next unlock with its hint (`how` in
+  career.json, 18 cells), or ALL UNLOCKED!. B edits; L+R+X deletes (the
+  records erase's guard); Y back.
+- **EDIT**: NAME, BODY, SKIN, HAIR, SHIRT, HAT, PADDLE. B on NAME types
+  it (Up/Down letters A-Z and space, held to repeat; B/Right next; Y/Left
+  back; Start done; the letter at the cursor is yellow, a space shows as
+  `_`; a name of spaces becomes A). Left/Right change a look; locked hair
+  and hats are skipped. B elsewhere keeps (a save write); Y restores the
+  look, or drops a player just created.
+- **RECORDS**: the old table; L+R+X erases.
+
+Each view has its own prompt: title keys carry a 4-bit prompt id (was the
+3-bit page), ids 8-12 for the CAREER views. The views draw a part (one or
+two rows) per frame and then redraw only changed rows, like the others.
+
+**The preview:** while a player's CARD or EDIT is open, the title demo's
+P1 wears their look: `MatchConfig.career_p1` makes slot 0's palette
+(`career_compose_palette`: the career skin ramp and hair, the shirt's team
+colours, the paddle) and hat come from the active player, and
+`render_apply_p1_look` recomposes slot 0 alone. It is re-applied if the
+demo restarts under the page. Stage 3 uses the same flag in matches.
 
 ## The player record
 

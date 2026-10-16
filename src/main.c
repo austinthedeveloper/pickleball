@@ -2,6 +2,7 @@
 #include "ai.h"
 #include "audio_events.h"
 #include "collision.h"
+#include "career_page.h"
 #include "court_style.h"
 #include "game.h"
 #include "hud_scene.h"
@@ -185,16 +186,43 @@ static void start_next_opponent(void)
     profile_resync();
 }
 
-/* Records page (ADR-021): Start, B, or Y closes it; holding L+R and
- * pressing X erases the records (court colours stay). */
-static void update_title_records(u16 pressed)
+/* The CAREER page (ADR-047, the RECORDS entry): career_page.c reads the
+ * input; here the save is written, and the title demo's P1 wears the
+ * player's look while their card or editor is open (also again after the
+ * demo restarts under the page). */
+static void career_preview(u8 on)
 {
-    if ((g_pad_snapshots[0].held & (PAD_L | PAD_R)) == (PAD_L | PAD_R) &&
-            (pressed & PAD_X)) {
-        save_clear_records();
-        hud_scene_refresh_title();
-    } else if (pressed & (PAD_START | PAD_B | PAD_Y)) {
+    const CareerPlayer *player = career_active();
+
+    if (on && player) {
+        g_match_config.career_p1 = 1;
+        g_players[0].variant = player->variant;
+    } else {
+        g_match_config.career_p1 = 0;
+        g_players[0].variant = g_match_config.variant[0];
+    }
+    render_apply_p1_look();
+}
+
+static void update_title_career(u16 pressed)
+{
+    u8 result = career_page_input(pressed, g_pad_snapshots[0].held);
+    u8 want = (g_career_page.view == CAREER_VIEW_CARD ||
+        g_career_page.view == CAREER_VIEW_EDIT) && career_active() != 0;
+
+    if (result == CAREER_PAGE_SAVE)
+        save_write();
+    if (result == CAREER_PAGE_CLOSE) {
         g_title_page = TITLE_PAGE_MENU;
+        want = 0;
+    }
+    /* RECORDS erased: the table redraws. */
+    if (g_career_page.look_changed &&
+            g_career_page.view == CAREER_VIEW_RECORDS)
+        hud_scene_refresh_title();
+    if (g_career_page.look_changed || want != g_match_config.career_p1) {
+        g_career_page.look_changed = 0;
+        career_preview(want);
     }
 }
 
@@ -339,7 +367,7 @@ static void update_title(void)
     ui_sounds(pressed | (g_pad_snapshots[1].pressed & PAD_START));
 
     if (g_title_page == TITLE_PAGE_RECORDS)
-        update_title_records(pressed);
+        update_title_career(pressed);
     else if (g_title_page == TITLE_PAGE_COURT)
         update_title_court(pressed);
     else if (g_title_page == TITLE_PAGE_OPTIONS)
@@ -359,6 +387,7 @@ static void update_title(void)
             g_title_2p ^= 1;
         if (pressed & (PAD_START | PAD_B)) {
             if (g_title_mode == TITLE_RECORDS) {
+                career_page_begin();
                 g_title_page = TITLE_PAGE_RECORDS;
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);

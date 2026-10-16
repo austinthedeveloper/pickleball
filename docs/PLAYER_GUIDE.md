@@ -5,7 +5,7 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
 On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **OPEN PLAY**,
-**COURT**, **RECORDS**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
+**COURT**, **CAREER**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
 (`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
 Player Select (or the park, or the court, records, options, or modifiers page).
 
@@ -157,9 +157,30 @@ what you had.
   among the dinosaurs, navy with a purple kitchen and cyan lines in space,
   and aqua with a navy kitchen on sand under the sea.
 
+## Career
+
+**CAREER** holds up to three players, so a family or friends can share the
+cartridge. Pick a slot and press B:
+
+- **NEW PLAYER** makes one and starts on their name: Up and Down pick the
+  letter, B moves to the next, Y goes back, Start finishes. Then choose
+  their look: BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE (Left/Right; the
+  title's demo player on the court wears it as you go). B keeps it; Y
+  drops the new player.
+- **A player** opens their card: wins and losses, aces, shutouts, best
+  streak, longest rally, and the unlocks. Opening a player makes them the
+  one you play as. B edits their name and look; Y puts the look back.
+- **Unlocks**: playing earns hats and hair colours. The card shows the next
+  one and how to get it (WIN A MATCH for the visor, BEAT THE PIRATES for
+  the tricorn, and so on). Locked choices don't show up until earned.
+- To delete a player, open their card, hold L and R, and press X.
+
+Career stats count matches against the CPU.
+
 ## Records
 
-The cartridge saves your records against the CPU: wins and losses for
+**RECORDS** is the last row of the CAREER page. The cartridge saves your
+records against the CPU: wins and losses for
 singles and doubles, your current and best win streak, shutouts (wins where
 the CPU scored nothing), and the longest rally (shots in one point, the serve
 included; 2P matches count for this one too). They update at the end of each
@@ -173,7 +194,7 @@ RALLY (`---` until someone claims them). Once your run holds the best
 streak, each win after it raises the record under your initials without
 asking again.
 
-On the records page, Start, B, or Y goes back. To erase every record, hold
+On the records table, Start, B, or Y goes back. To erase every record, hold
 L and R and press X. There is no confirmation. Court colours are kept.
 
 ## Player Select
