@@ -145,7 +145,14 @@ hand-offs landing on heavy frames.
    that host tests run, with a trace that compares the two.
 *Prevention:* the perf gate from Phase 0, with the worst case named; keep
 5–10% headroom, because "under budget" at one input alignment wasn't at
-another.
+another. Report **headroom**, not just failures: the worst frame per
+scenario, the time the per-frame uploads use (VBlank on the SNES, the GPU
+upload window elsewhere), and per-stage averages from a profiler build. An
+overrun count of zero hid a commit step using 32 of 37 VBlank lines, which
+ruled out streaming animation frames until it was measured and cut to 22.
+*Also:* an optimization can make the worst case slower while helping the
+average (a lookahead filter that rarely fires on the hardest mode). Check
+the worst case after every optimization, not just the typical one.
 
 ### 4.2 AI balance drift **[ANY]**
 
