@@ -404,3 +404,53 @@ NIGHT), saved with the other court settings.
 - **Pairs with:** the manager idea in GOOFY_IDEAS.md (lights as an
   upgrade), and story flavour (GOTH CLUB at night).
 - **Save:** one settings byte, a layout change (ADR-032).
+
+## Lob hang time
+
+From the user (2026-10-16). A lob slows near the top of its arc, and the
+ball grows a little as it climbs, back to normal size on the way down, so
+a high ball reads as high (and gives the player under it a moment).
+
+- **Slow at the top:** the ball's pace (ADR-025, ADR-049 already step it
+  at fractional speeds) eases off while a SHOT_SOFT ball is near its peak
+  height and climbs back as it falls. The landing spot must not move:
+  the AI and the landing prediction read the flight, so the hang is in
+  time only, not distance.
+- **Bigger at the top:** the SNES has no sprite scaling, so it is a few
+  ball frames by height. BIG BALL (ADR-033) already has larger ball art
+  to start from; the shadow stays the same size, which sells the height.
+- **Watch:** `player_step` exists in C and assembly; a change to ball
+  flight changes the golden trace and needs `make stats` in all three
+  modes.
+
+## Slice on X
+
+From the user (2026-10-16). X is unused in play. Make it a slice: a
+slower, lower shot that buys time to get back into position (the reset
+in real pickleball).
+
+- **A fourth `SHOT_*`:** slower than STANDARD, a lower arc than the lob,
+  and maybe a skid (a lower, shorter bounce) so it is not just a weak
+  standard shot. Aim works as for the others.
+- **Sound and look:** its own hit sound (ADR-029 has standard, drive,
+  and soft) and swing pose if the frames allow.
+- **CPUs:** an `AiStyle` weight for it per personality (a slicer like
+  the GOTH CLUB's soft game), tuned against the ladder order.
+- **Manual:** the controls table lists X as unused today.
+
+## Hold L or R for a drop shot
+
+From the user (2026-10-16). Hold L (or R) and press a face button to hit
+that shot as a drop into the kitchen: L+A a fast drop, L+B a standard
+drop, L+Y the dink. Pressing away from the net still makes a drop, as it
+does now; the shoulder button is a second way that frees the D-pad to aim
+side to side while dropping.
+
+- **Input:** `input_state.c` sets `intent->shot` from the face button;
+  a held shoulder adds a "short" flag that does what "away from the net"
+  does to the depth, and the D-pad keeps the sideline aim.
+- **A fast drop** (L+A) is new: drive pace with a short landing. It needs
+  care so it is not strictly better than a drive (a net risk, or more
+  spray when mistimed).
+- **Pairs with:** the slice on X; together all four face buttons and the
+  shoulders have a job.
