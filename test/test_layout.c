@@ -13,6 +13,12 @@
 /* Every number the assembly uses must match the C definitions. */
 int main(void)
 {
+    /* src/asm/camera.asm (ADR-050). */
+    assert(offsetof(Ball, active) == ASM_BALL_ACTIVE);
+    assert(offsetof(Ball, x_fp) == ASM_BALL_X);
+    assert(offsetof(Ball, y_fp) == ASM_BALL_Y);
+    assert(TO_FP(COURT_NET_X) == ASM_CAM_CENTER_X_FP);
+    assert(TO_FP(COURT_CENTERLINE_Y) == ASM_CAM_CENTER_Y_FP);
     /* src/asm/hud_commit.asm: one bit per band in a byte. */
     assert(ASM_HUD_MAP_ADDR == RENDER_BG3_MAP_ADDR);
     assert(ASM_HUD_BANDS == HUD_BANDS && HUD_BANDS < 8);

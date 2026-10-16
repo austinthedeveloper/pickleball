@@ -7,7 +7,7 @@ Status: **Living record**
 | ID | Decision | Why | Revisit when |
 |---|---|---|---|
 | ADR-001 | PVSnesLib + C | Fastest path to a real SNES ROM with maintained input/graphics examples | Profiling shows an unsolved limitation |
-| ADR-002 | Static 256×224 Mode 1 court | Readable, inexpensive, no scrolling/camera edge cases | A later mode truly needs scrolling |
+| ADR-002 | Static 256×224 Mode 1 court (amended by [ADR-050](decisions/ADR-050-camera.md): a small camera lean toward the ball, up to 8 px, OFF on the OPTIONS page) | Readable, inexpensive, no scrolling/camera edge cases | A later mode truly needs scrolling |
 | ADR-003 | 8×8 / 32×32 object pair | One object per player plus small ball/effects | Character silhouette cannot fit 32×32 |
 | ADR-004 | Shared player tiles + palette variants | Directly solves reuse and preserves VRAM | A character requires gameplay-readable silhouette |
 | ADR-005 | Preload animation frames | Predictable frame timing and simple M1–M3 renderer | Content outgrows OBJ VRAM |

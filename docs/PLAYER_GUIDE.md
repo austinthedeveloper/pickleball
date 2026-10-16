@@ -85,6 +85,10 @@ and B chooses. Start or Y also resumes.
 the standard game. It works with every difficulty (KID and EASY are slower
 again) and with the FAST BALL modifier.
 
+**CAMERA** sets how much the court leans toward the ball as it moves, from
+50% to 100%, or OFF for a still court. The default is 85%. Change it with
+the title demo running behind the page to see it live.
+
 **SOUND** is ALL, NO CROWD (effects without the applause or the
 background crowd), or OFF. With ALL, each venue has a quiet background:
 birds at the park, gulls and water by the lake, crickets at sunset (and

@@ -18,6 +18,7 @@
 #include "profile.h"
 #include "projection.h"
 #include "render.h"
+#include "options.h"
 #include "render_internal.h"
 #include "hud_scene.h"
 #include "save.h"
@@ -233,6 +234,12 @@ u8 oam_in_attr;
 u8 oam_in_large;
 u8 oam_tmp_bits;
 u8 oam_tmp_mask;
+/* The camera's offset (ADR-050), taken off every object oam_write places;
+ * 0 outside the court. */
+s16 oam_cam_x;
+s16 oam_cam_y;
+s16 oam_tmp_x;
+s16 oam_tmp_y;
 
 void render_obj_hide(u8 id)
 {
@@ -592,6 +599,9 @@ static void render_replay_ball(void)
     } else {
         z = 0;
     }
+    /* The close-up is BG2, which doesn't pan: undo the camera. */
+    x += oam_cam_x;
+    y += oam_cam_y;
     obj_put(RENDER_OAM_REPLAY + 1, x - 4, y - 4, OBJTILE_PLAYER_SHADOW,
         (3 << 4) | (g_objpal_shadow << 1), 0);
     obj_put(RENDER_OAM_REPLAY, x - 16, y - z - 16, OBJTILE_BIG_BALL,
@@ -650,14 +660,57 @@ static void render_watcher(void)
     s_watcher_shown = 1;
 }
 
+/*
+ * The camera (ADR-050): the court leans a little toward the ball, as on
+ * older consoles' sports games. Presentation only: it reads the ball and
+ * never changes the match. At 100% (the OPTIONS page's CAMERA) the target
+ * is a sixteenth of the ball's distance from the net across (up to 8 px)
+ * and an eighth of it from the centre line along (up to 4 px), or the
+ * centre with no ball in play; the setting scales it (85% by default, OFF
+ * keeps it still). The camera eases toward it, an eighth of the way a
+ * frame in 1/16 px, at most half a pixel a frame, so it drifts and never
+ * jumps. The step is src/asm/camera.asm (in C it took about 8 scanlines).
+ * BG1 scrolls by the whole-pixel camera in VBlank; oam_write takes it off
+ * every object, so sprites stay on the court. The map has a mirrored tile
+ * beyond each edge to pan into (scene.py: camera_map).
+ */
+s16 g_cam_fx;                           /* 1/16 px */
+s16 g_cam_fy;
+s16 g_cam_tx;                           /* this frame's target */
+s16 g_cam_ty;
+s16 g_cam_sign;                         /* camera.asm's scratch */
+s16 g_cam_mag;
+u8 g_cam_k;                             /* CAMERA in 1/128ths */
+u8 g_cam_dirty;
+static u8 s_cam_saved;                  /* the g_save.camera g_cam_k is for */
+extern void render_camera(void);
+
+/* Centre the camera at once (a new court, or leaving it for another
+ * screen, where nothing pans). */
+void render_camera_reset(void)
+{
+    g_cam_fx = 0;
+    g_cam_fy = 0;
+    oam_cam_x = 0;
+    oam_cam_y = 0;
+    g_cam_dirty = 1;                    /* render_commit scrolls BG1 home */
+    s_cam_saved = 0xff;                 /* g_cam_k on the next frame */
+}
+
 void render_prepare(void)
 {
 #ifdef RENDER_DIAGNOSTICS
     if (render_stress_active()) {
+        render_camera_reset();
         diag_stress_render();
         return;
     }
 #endif
+    if (g_save.camera != s_cam_saved) {
+        s_cam_saved = g_save.camera;
+        g_cam_k = g_options_camera_k[options_camera_index(s_cam_saved)];
+    }
+    render_camera();
     render_players();
     PROFILE_MARK(2);
     render_ball();
@@ -695,6 +748,10 @@ void render_commit(void)
     if (s_ground_dirty) {
         dmaCopyCGram((u8 *)s_ground_palette, 32, 32);
         s_ground_dirty = 0;
+    }
+    if (g_cam_dirty) {
+        bgSetScroll(0, (u16)oam_cam_x, (u16)oam_cam_y);
+        g_cam_dirty = 0;
     }
     /* The card closed: the bust goes with the HUD's clear. */
     if (s_bust_shown && g_story.card == STORY_CARD_NONE) {
@@ -741,7 +798,7 @@ void render_initialize(void)
         (u16)(&hud_palette_end - &hud_palette));
 
     bgSetGfxPtr(0, RENDER_BG1_TILES_ADDR);
-    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
+    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_64x32);
     bgSetGfxPtr(2, RENDER_BG3_TILES_ADDR);
     bgSetMapPtr(2, RENDER_BG3_MAP_ADDR, SC_32x32);
     oamInitGfxAttr(RENDER_OBJ_TILES_ADDR, OBJ_SIZE8_L32);
@@ -819,8 +876,10 @@ static void render_load_court(void)
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
         venue->tiles_size);
     dmaCopyVram((u8 *)venue->map, RENDER_BG1_MAP_ADDR, venue->map_size);
-    /* The park (M4-OPEN-05) scrolls a 64x32 map of its own. */
-    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
+    /* 64x32 for the camera's edges (ADR-050); the park (M4-OPEN-05)
+     * scrolls a 64x32 map of its own elsewhere. */
+    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_64x32);
+    render_camera_reset();
     bgSetScroll(0, 0, 0);
     memcpy(s_backdrop_painted, venue->palettes, sizeof(s_backdrop_painted));
     render_compose_backdrop();

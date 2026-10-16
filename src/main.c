@@ -324,14 +324,14 @@ static void update_title_options(u16 pressed)
 {
     SaveSettings *settings = &g_save.settings;
     u8 result = options_edit_input(&settings->points, &settings->difficulty,
-        &settings->sound, &settings->ball_speed, pressed);
+        &settings->sound, &settings->ball_speed, &g_save.camera, pressed);
 
     if (result == OPTIONS_EDIT_STAY)
         return;
     g_title_page = TITLE_PAGE_MENU;
     if (result == OPTIONS_EDIT_DONE &&
             options_edit_changed(settings->points, settings->difficulty,
-                settings->sound, settings->ball_speed)) {
+                settings->sound, settings->ball_speed, g_save.camera)) {
         save_write();
         audio_refresh();            /* SOUND may start or stop ambience */
     }
@@ -426,7 +426,7 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_OPTIONS) {
                 options_edit_begin(&g_save.settings.points,
                     &g_save.settings.difficulty, &g_save.settings.sound,
-                    &g_save.settings.ball_speed);
+                    &g_save.settings.ball_speed, &g_save.camera);
                 g_title_page = TITLE_PAGE_OPTIONS;
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,

@@ -66,48 +66,83 @@ static void test_ball_pattern(void)
     assert(options_ball_speed(OPTIONS_SPEED_CHOICES) == 120);
 }
 
+/* CAMERA (ADR-050): saved choices, and the multiplier table is the
+ * percent in 1/128ths, rounded. */
+static void test_camera(void)
+{
+    u8 i;
+
+    assert(options_camera_index(0) == OPTIONS_CAMERA_DEFAULT);
+    assert(options_camera_index(99) == OPTIONS_CAMERA_DEFAULT);
+    assert(g_options_cameras[options_camera_index(1)] == 0);     /* OFF */
+    assert(g_options_cameras[options_camera_index(OPTIONS_CAMERA_CHOICES)] ==
+        100);
+    for (i = 0; i < OPTIONS_CAMERA_CHOICES; ++i)
+        assert(g_options_camera_k[i] ==
+            (g_options_cameras[i] * 128 + 50) / 100);
+}
+
 static void test_editor(void)
 {
     u8 points = 4;          /* invalid */
     u8 difficulty = 7;      /* invalid */
     u8 sound = 9;           /* invalid */
     u8 speed = 0;           /* an older save: the default */
+    u8 camera = 0;          /* an older save: the default, 85% */
 
-    options_edit_begin(&points, &difficulty, &sound, &speed);
+    options_edit_begin(&points, &difficulty, &sound, &speed, &camera);
     assert(speed == OPTIONS_SPEED_DEFAULT + 1);
+    assert(camera == OPTIONS_CAMERA_DEFAULT + 1);
+    assert(g_options_cameras[OPTIONS_CAMERA_DEFAULT] == 85);
     assert(sound == AUDIO_ALL);
     assert(points == OPTIONS_POINTS_DEFAULT);
     assert(difficulty == DIFFICULTY_MEDIUM);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_RIGHT);
     assert(points == 7);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
     assert(points == 21);                       /* wraps */
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_DOWN);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_DOWN);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_RIGHT);
     assert(difficulty == DIFFICULTY_KID);       /* wraps */
-    assert(options_edit_changed(points, difficulty, sound, speed));
-    assert(options_edit_input(&points, &difficulty, &sound, &speed, PAD_Y) ==
+    assert(options_edit_changed(points, difficulty, sound, speed, camera));
+    assert(options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_Y) ==
         OPTIONS_EDIT_CANCEL);
     assert(points == 5 && difficulty == DIFFICULTY_MEDIUM);
+    /* Up from POINTS wraps to CAMERA (ADR-050), the last row: Left from
+     * OFF wraps to 100%, Right from 85% is 90%, and Y puts it back. */
+    options_edit_begin(&points, &difficulty, &sound, &speed, &camera);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
+    assert(g_options_edit.row == OPTIONS_ROW_CAMERA);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera,
+        PAD_RIGHT);
+    assert(g_options_cameras[options_camera_index(camera)] == 90);
+    assert(options_edit_changed(points, difficulty, sound, speed, camera));
+    camera = 1;                                 /* OFF */
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera,
+        PAD_LEFT);
+    assert(g_options_cameras[options_camera_index(camera)] == 100);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_Y);
+    assert(camera == OPTIONS_CAMERA_DEFAULT + 1);
+    options_edit_begin(&points, &difficulty, &sound, &speed, &camera);
     /* Rows wrap through BALL SPEED (ADR-049): Up from POINTS. */
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
     assert(g_options_edit.row == OPTIONS_ROW_SPEED);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
     assert(options_ball_speed(speed) == 90);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
     assert(g_options_edit.row == OPTIONS_ROW_SOUND);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_LEFT);
     assert(sound == AUDIO_OFF);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
-    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
-    assert(options_edit_input(&points, &difficulty, &sound, &speed, PAD_B) ==
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_RIGHT);
+    assert(options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_B) ==
         OPTIONS_EDIT_DONE);
-    assert(options_edit_changed(points, difficulty, sound, speed));
+    assert(options_edit_changed(points, difficulty, sound, speed, camera));
 }
 
 static void test_select_and_styles(void)
@@ -261,6 +296,7 @@ int main(void)
     test_values();
     test_difficulty_styles();
     test_ball_pattern();
+    test_camera();
     test_editor();
     test_select_and_styles();
     test_points_to_win();

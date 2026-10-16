@@ -149,7 +149,7 @@ def court_assets():
         pal = [rgb8_to_15(palette[slot]) if slot < len(palette) else 0
                for slot in range(48, 128)]
         files[f"venue_{i}.pic"] = b"".join(own.tiles)
-        files[f"venue_{i}.map"] = struct.pack(f"<{len(tilemap)}H", *tilemap)
+        files[f"venue_{i}.map"] = struct.pack("<2048H", *camera_map(tilemap))
         files[f"venue_{i}.pal"] = struct.pack("<80H", *pal)
         defaults = []
         for part, _, presets in color_parts:
@@ -174,6 +174,40 @@ def court_assets():
     files["venues.h"] = venues_header(header_rows).encode()
     files["venues.inc"] = venues_include(len(venues)).encode()
     return files, most, len(ground.tiles)
+
+
+H_FLIP = 0x4000
+V_FLIP = 0x8000
+
+
+def camera_map(tilemap):
+    """A 64x32 BG1 map (two 32x32 screens) for the camera (ADR-050).
+
+    The 32x28 scene is screen 0. The camera pans up to a tile past each
+    edge, so the scene's edge column or row is mirrored once beyond it by
+    the map's flip bits (no new tiles): column 32 (screen 1, column 0) and
+    column -1 (column 63, where a negative scroll wraps), row 28 below and
+    row -1 (row 31) above."""
+    rows, cols = 28, 32
+    out = [0] * 2048
+
+    def put(col, row, entry):
+        col %= 64
+        row %= 32
+        base = 1024 if col >= 32 else 0
+        out[base + row * 32 + col % 32] = entry
+
+    def at(col, row):
+        return tilemap[row * cols + col]
+
+    for row in range(-1, rows + 1):
+        src_row = min(max(row, 0), rows - 1)
+        vflip = V_FLIP if row != src_row else 0
+        for col in range(-1, cols + 1):
+            src_col = min(max(col, 0), cols - 1)
+            hflip = H_FLIP if col != src_col else 0
+            put(col, row, at(src_col, src_row) ^ hflip ^ vflip)
+    return out
 
 
 def venues_header(rows):

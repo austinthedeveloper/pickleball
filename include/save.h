@@ -108,7 +108,8 @@ typedef struct {
     SaveInitials initials;
     CareerPlayer career[CAREER_SLOTS];
     u8 career_active;           /* slot, or CAREER_NONE */
-    u8 career_reserved;
+    u8 camera;                  /* CAMERA choice + 1 (ADR-050); 0, in
+                                   saves before it, is the default (85%) */
     u16 checksum;               /* over every byte before it */
 } SaveData;
 

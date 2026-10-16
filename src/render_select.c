@@ -237,6 +237,7 @@ void render_select_open(void)
 
     render_fade(1);
     setScreenOff();
+    render_camera_reset();              /* ADR-050: Player Select is still */
     for (i = 0; i < 128; ++i)
         render_obj_hide(i);
 
@@ -244,6 +245,8 @@ void render_select_open(void)
         (u16)(&select_tiles_end - &select_tiles));
     dmaCopyVram((u8 *)&select_map, RENDER_BG1_MAP_ADDR,
         (u16)(&select_map_end - &select_map));
+    bgSetMapPtr(0, RENDER_BG1_MAP_ADDR, SC_32x32);
+    bgSetScroll(0, 0, 0);
     dmaCopyVram((u8 *)&portrait_tiles, SEL_BG2_TILES,
         (u16)(&portrait_tiles_end - &portrait_tiles));
     dmaCopyVram((u8 *)&portrait_m_map, SEL_BG2_MAP_MALE,

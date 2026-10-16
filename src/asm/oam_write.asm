@@ -4,7 +4,8 @@
 ;
 ; Writes one OAM shadow entry (oamMemory, uploaded by the PVSnesLib NMI) from
 ; the C globals oam_in_id, oam_in_x, oam_in_y, oam_in_tile, oam_in_attr and
-; oam_in_large. Inputs travel through globals so no stack ABI is involved.
+; oam_in_large, less the camera's oam_cam_x/oam_cam_y (ADR-050; 0 off the
+; court). Inputs travel through globals so no stack ABI is involved.
 ; Entries outside x -32..255 / y -32..223 are parked as small objects at
 ; y = 240: below every evaluated line, so they neither show nor count toward
 ; the PPU's 32-object range-over limit. Long addressing only,
@@ -20,21 +21,28 @@ oam_write:
     asl a
     asl a
     tax
+    ; The camera (ADR-050): the object moves against the court's scroll.
     lda.l oam_in_y
+    sec
+    sbc.l oam_cam_y
+    sta.l oam_tmp_y
     clc
     adc.w #32
     cmp.w #256
     bcs _oam_hide
     lda.l oam_in_x
+    sec
+    sbc.l oam_cam_x
+    sta.l oam_tmp_x
     clc
     adc.w #32
     cmp.w #288
     bcs _oam_hide
 
     sep #$20
-    lda.l oam_in_x
+    lda.l oam_tmp_x
     sta.l oamMemory,x
-    lda.l oam_in_y
+    lda.l oam_tmp_y
     sta.l oamMemory+1,x
     lda.l oam_in_tile
     sta.l oamMemory+2,x
@@ -47,7 +55,7 @@ oam_write:
     beq +
     lda.b #2
 +   sta.l oam_tmp_bits
-    lda.l oam_in_x+1
+    lda.l oam_tmp_x+1
     bpl _oam_high
     lda.l oam_tmp_bits
     ora.b #1

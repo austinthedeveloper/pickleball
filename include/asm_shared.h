@@ -21,10 +21,21 @@
 
 /* The HUD map's upload (include/hud.h, include/render.h) for
  * src/asm/hud_commit.asm: 4-row bands of 32 words, at most three a VBlank. */
-#define ASM_HUD_MAP_ADDR 0x0400
+#define ASM_HUD_MAP_ADDR 0x5C00
 #define ASM_HUD_BANDS 7
 #define ASM_HUD_BAND_BYTES 256
 #define ASM_HUD_MAX_BANDS 3
+
+/* The camera (src/asm/camera.asm, ADR-050): the ball's fields
+ * (include/ball.h) and the court's centre and the lean's reach in 1/16 px
+ * (include/court.h: the net x, the centre line y; 128 and 32 px). */
+#define ASM_BALL_ACTIVE 0
+#define ASM_BALL_X 2
+#define ASM_BALL_Y 4
+#define ASM_CAM_CENTER_X_FP 2048
+#define ASM_CAM_CENTER_Y_FP 2080
+#define ASM_CAM_REACH_X_FP 2048
+#define ASM_CAM_REACH_Y_FP 512
 
 /* Player struct layout (include/player.h). */
 #define ASM_PLAYER_SIZE 28

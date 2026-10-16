@@ -58,8 +58,8 @@
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
-#define OPTIONS_PAGE_ROWS 6         /* header, gap, points, difficulty, sound,
-                                       ball speed */
+#define OPTIONS_PAGE_ROWS 7         /* header, gap, points, difficulty, sound,
+                                       ball speed, camera */
 #define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
 #define MODIFIERS_PAGE_ROWS 6       /* header, gap, 4 rows */
 
@@ -950,6 +950,8 @@ static u8 hud_options_value(u8 index)
         return g_save.settings.sound;
     if (index == OPTIONS_ROW_SPEED)
         return g_save.settings.ball_speed;
+    if (index == OPTIONS_ROW_CAMERA)
+        return g_save.camera;
     return g_save.settings.difficulty;
 }
 
@@ -978,6 +980,17 @@ static void hud_options_row(u8 index)
         speed[4] = 0;
         hud_setting_row(COURT_FIRST_ROW + 3, "BALL SPEED",
             speed[0] == '0' ? speed + 1 : speed, cursor);
+    } else if (index == OPTIONS_ROW_CAMERA) {
+        /* ADR-050: "OFF", "85%", "100%". */
+        value = g_options_cameras[options_camera_index(value)];
+        speed[0] = (char)('0' + value / 100);
+        speed[1] = (char)('0' + value / 10 % 10);
+        speed[2] = (char)('0' + value % 10);
+        speed[3] = '%';
+        speed[4] = 0;
+        hud_setting_row(COURT_FIRST_ROW + 4, "CAMERA", value == 0 ? "OFF" :
+            speed[0] == '0' ? speed + 1 : speed, cursor);
+        value = g_save.camera;
     } else {
         hud_setting_row(COURT_FIRST_ROW + 1, "DIFFICULTY",
             options_difficulty_name(value), cursor);

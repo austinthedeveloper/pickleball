@@ -764,6 +764,7 @@ void render_park_open(void)
 
     render_fade(1);
     setScreenOff();
+    render_camera_reset();              /* ADR-050: the park has its own */
     for (i = 0; i < 128; ++i)
         render_obj_hide(i);
     for (i = 0; i < PARK_OAM_COUNT; ++i)

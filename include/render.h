@@ -5,7 +5,9 @@
 
 /* VRAM word addresses; see docs/09_M1_VRAM_AND_BUILD.md. */
 #define RENDER_BG1_MAP_ADDR 0x0000
-#define RENDER_BG3_MAP_ADDR 0x0400
+/* The court's BG1 map is 64x32 (ADR-050, the camera): words 0x0000-0x07ff.
+ * The HUD map sits past the HUD font (0x5000-0x58bf, 280 tiles). */
+#define RENDER_BG3_MAP_ADDR 0x5C00
 /* The intro card's bust (M4-STORY-03): BG2, only while the card is up.
  * The tile base steps by 0x1000 words, so BG2 counts from 0x4000 and the
  * bust tiles start 128 tiles in (tools/assetgen/select.py). */
@@ -58,6 +60,9 @@ enum {
 };
 
 void render_initialize(void);
+/* The camera (ADR-050) back to the centre at once; for screens that don't
+ * pan (Player Select, the park) and a new court. */
+void render_camera_reset(void);
 /* Composes player palettes and HUD team colours from g_match_config; the
  * upload happens in the next render_commit (or immediately in forced blank
  * during render_initialize). */

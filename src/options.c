@@ -82,6 +82,20 @@ static u8 speed_index(u8 saved)
     return saved - 1;
 }
 
+const u8 g_options_cameras[OPTIONS_CAMERA_CHOICES] = {
+    0, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100
+};
+const u8 g_options_camera_k[OPTIONS_CAMERA_CHOICES] = {
+    0, 64, 70, 77, 83, 90, 96, 102, 109, 115, 122, 128
+};
+
+u8 options_camera_index(u8 saved)
+{
+    if (saved == 0 || saved > OPTIONS_CAMERA_CHOICES)
+        return OPTIONS_CAMERA_DEFAULT;
+    return saved - 1;
+}
+
 u8 options_ball_speed(u8 saved)
 {
     return g_options_speeds[speed_index(saved)];
@@ -97,7 +111,8 @@ u8 options_ball_per_cycle(u8 difficulty, u8 percent)
     return (u8)((base * percent + 50) / 100);
 }
 
-void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed)
+void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
+    u8 *camera)
 {
     *points = options_points(*points);
     *difficulty = options_difficulty(*difficulty);
@@ -109,18 +124,22 @@ void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed)
     g_options_edit.original_sound = *sound;
     *speed = speed_index(*speed) + 1;
     g_options_edit.original_speed = *speed;
+    *camera = options_camera_index(*camera) + 1;
+    g_options_edit.original_camera = *camera;
 }
 
-u8 options_edit_changed(u8 points, u8 difficulty, u8 sound, u8 speed)
+u8 options_edit_changed(u8 points, u8 difficulty, u8 sound, u8 speed,
+    u8 camera)
 {
     return points != g_options_edit.original_points ||
         difficulty != g_options_edit.original_difficulty ||
         sound != g_options_edit.original_sound ||
-        speed != g_options_edit.original_speed;
+        speed != g_options_edit.original_speed ||
+        camera != g_options_edit.original_camera;
 }
 
 u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
-    u16 pressed)
+    u8 *camera, u16 pressed)
 {
     u8 index;
     u8 row = g_options_edit.row;
@@ -131,6 +150,7 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
         *difficulty = g_options_edit.original_difficulty;
         *sound = g_options_edit.original_sound;
         *speed = g_options_edit.original_speed;
+        *camera = g_options_edit.original_camera;
         return OPTIONS_EDIT_CANCEL;
     }
     if (pressed & (PAD_B | PAD_START))
@@ -140,7 +160,14 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
     else if (pressed & PAD_DOWN)
         g_options_edit.row = row == OPTIONS_ROWS - 1 ? 0 : row + 1;
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row == OPTIONS_ROW_SPEED) {
+        if (row == OPTIONS_ROW_CAMERA) {
+            index = options_camera_index(*camera);
+            if (left)
+                index = index ? index - 1 : OPTIONS_CAMERA_CHOICES - 1;
+            else
+                index = index + 1 >= OPTIONS_CAMERA_CHOICES ? 0 : index + 1;
+            *camera = index + 1;
+        } else if (row == OPTIONS_ROW_SPEED) {
             index = speed_index(*speed);
             if (left)
                 index = index ? index - 1 : OPTIONS_SPEED_CHOICES - 1;

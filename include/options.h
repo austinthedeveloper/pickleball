@@ -26,8 +26,18 @@ enum {
     /* BALL SPEED: 70% to 120% in 5% steps; saved as choice + 1, so 0 (every
      * older save) is the default, 100%. */
     OPTIONS_SPEED_CHOICES = 11,
-    OPTIONS_SPEED_DEFAULT = 6
+    OPTIONS_SPEED_DEFAULT = 6,
+    /* CAMERA (ADR-050): OFF, then 50% to 100% in 5% steps; saved as choice
+     * + 1, so 0 (every older save) is the default, 85%. */
+    OPTIONS_CAMERA_CHOICES = 12,
+    OPTIONS_CAMERA_DEFAULT = 8
 };
+
+/* 0 (OFF), 50, 55, ... 100 (percent of the camera's full lean). */
+extern const u8 g_options_cameras[OPTIONS_CAMERA_CHOICES];
+/* The same as a multiplier in 1/128ths (percent * 128 / 100, rounded), for
+ * the hardware multiplier in render.c. */
+extern const u8 g_options_camera_k[OPTIONS_CAMERA_CHOICES];
 
 /* 70, 75, ... 120 (percent). */
 extern const u8 g_options_speeds[OPTIONS_SPEED_CHOICES];
@@ -49,10 +59,13 @@ u8 options_ball_speed(u8 saved);
  * 3, EASY 3 in 4, else all) times the ball speed. Over 60 the ball takes
  * two steps on some frames. Arcs and bounces are unchanged. */
 u8 options_ball_per_cycle(u8 difficulty, u8 percent);
+/* CAMERA (ADR-050): a saved choice as its index (0 or invalid: 85%). */
+u8 options_camera_index(u8 saved);
 
 /* Options page editor (like the court page, ADR-022). */
 enum { OPTIONS_ROW_POINTS = 0, OPTIONS_ROW_DIFFICULTY = 1,
-       OPTIONS_ROW_SOUND = 2, OPTIONS_ROW_SPEED = 3, OPTIONS_ROWS = 4 };
+       OPTIONS_ROW_SOUND = 2, OPTIONS_ROW_SPEED = 3, OPTIONS_ROW_CAMERA = 4,
+       OPTIONS_ROWS = 5 };
 enum { OPTIONS_EDIT_STAY = 0, OPTIONS_EDIT_DONE = 1, OPTIONS_EDIT_CANCEL = 2 };
 
 typedef struct {
@@ -61,17 +74,20 @@ typedef struct {
     u8 original_difficulty;
     u8 original_sound;
     u8 original_speed;
+    u8 original_camera;
 } OptionsEdit;
 
 extern OptionsEdit g_options_edit;
 
 /* Opens the editor on the saved values (made valid in place); sound is an
  * AUDIO_* setting (ADR-029). */
-void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed);
+void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
+    u8 *camera);
 /* Up/Down rows, Left/Right values (wrapping), B or Start keeps, Y cancels.
  * speed is the saved BALL SPEED (choice + 1). */
 u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
-    u16 pressed);
-u8 options_edit_changed(u8 points, u8 difficulty, u8 sound, u8 speed);
+    u8 *camera, u16 pressed);
+u8 options_edit_changed(u8 points, u8 difficulty, u8 sound, u8 speed,
+    u8 camera);
 
 #endif

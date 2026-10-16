@@ -22,7 +22,7 @@ class Paths:
 paths = Paths()
 
 COURT_TILE_BUDGET = 896      # BG1: 28 KiB at VRAM word 0x1000 (ADR-016)
-HUD_TILE_BUDGET = 512        # BG3 tiles at VRAM word 0x5000..0x5fff
+HUD_TILE_BUDGET = 384        # BG3 tiles at VRAM word 0x5000..0x5bff (map at 0x5c00)
 OBJ_TILE_BUDGET = 256        # each OBJ name table: 0x6000 and 0x7000 (words)
 OBJ_TABLE1_SLOTS = 12        # player sheet slots (rows 0-2) in name table 1
 
