@@ -210,6 +210,11 @@ static void career_preview(u8 on)
             g_ball.active = 0;
         }
         g_match_config.career_p1 = 1;
+        /* The palette takes the match's shirt and paddle (Player Select
+         * may change them for a match): here, the saved ones. The fresh
+         * demo after the editor puts the demo's back. */
+        g_match_config.palette_id[0] = player->shirt;
+        g_match_config.paddle_id[0] = player->paddle;
         g_players[0].variant = player->variant;
         render_apply_p1_look();
         return;
