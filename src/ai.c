@@ -637,11 +637,13 @@ static u8 ai_swing_connects(const Player *player)
         s_contact_z = g_probe.z;
         s_contact_volley = g_probe.bounces == 0;
         /* A volley only from a volleying style, below the minimum height
-         * never, and never at a ball that would land out (ADR-035). */
+         * never, never at a ball that would land out (ADR-035), and never
+         * with the feet in the kitchen (the kitchen fault, ADR-052). */
         if (g_probe.bounces == 0 && (volleys == 0 ||
                 g_probe.z < AI_VOLLEY_MIN_Z ||
                 court_contains_ground_fp(TO_FP(g_ai.predicted_land_x),
-                    TO_FP(g_ai.predicted_land_y)) == 0))
+                    TO_FP(g_ai.predicted_land_y)) == 0 ||
+                COURT_IN_KITCHEN_FP(s_reach_x, s_reach_y, player->team)))
             return 0;
         if (!court_x_on_side(g_probe.x, player->team))
             return 0;
@@ -731,6 +733,9 @@ static u8 ai_plan_volley(const Player *player, u8 land_steps, s16 land_x)
      * frame a shot is planned): the ball passes the player before it would
      * land, so the player stands between the two. */
     if (!vx || (px - bx < 0) != (land_x - px < 0) || px == land_x)
+        return 0;
+    /* Not from the kitchen (ADR-052): that ball is played off the bounce. */
+    if (COURT_IN_KITCHEN_FP(x, player->y_fp, player->team))
         return 0;
     t = (s16)((x - g_ball.x_fp) / vx);
     if (t <= 0 || t >= (s16)land_steps)

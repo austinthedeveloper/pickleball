@@ -53,3 +53,32 @@ Players say something when they miss or fault, in the point-result banner
 - **Not every time:** at most one miss in three, never the same line
   twice in a row.
 - **Cost:** a few hundred bytes of text.
+
+## More modifiers
+
+More rows or choices for the MODIFIERS page (ADR-033), next to BIG BALL,
+FAST BALL, WIN BY 2, and LAVA. The user likes LAVA as it is; these sit
+beside it. Each is mostly a constant or a flag, so the ROM cost is small,
+but each needs a test and a doubles `make perf` run (ball-step costs are
+the usual budget breaker, KNOWN_ISSUES #22).
+
+- **MOON:** low gravity. Lobs hang forever, and drives sail long. The
+  ball's gravity constant, halved; the AI's landing prediction already
+  reads it (check the exact-block maths in `ai_swing_connects`).
+- **BOUNCY:** the ball keeps more height on each bounce (the restitution
+  in `ball_update`). Dinks pop up, which is great for put-aways.
+- **GHOST BALL:** in flight, the ball blinks out for a few frames at a
+  time; the shadow stays. Read the shadow to play it. Costs nothing but a
+  skipped OBJ write.
+- **POPCORN:** every hit adds a little pace, so long rallies get frantic.
+  Reset on the serve. Pairs with the close-call replay.
+- **DINK OR DIE:** only soft shots (dinks, drops, lobs) are legal; a drive
+  loses the point (**DRIVE!**, a new banner). A rules-engine modifier,
+  like LAVA.
+- **TINY PADDLE / HUGE PADDLE:** the reach box shrinks or grows (BIG BALL
+  already grows it, so this is the same knob on its own).
+- **ICE:** players slide; acceleration and braking cut to a third.
+  `player_step` exists twice (C and asm), so change both.
+- **SUDDEN DEATH:** one point, winner takes the match. Pure scoring.
+- **WIND** is already in IDEAS.md under Play modifiers; a venue flag (the
+  beach, the lake) could pick its direction.

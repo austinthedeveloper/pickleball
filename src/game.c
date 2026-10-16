@@ -260,6 +260,7 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
 {
     u8 hit_player;
     u8 ball_events;
+    u8 volley;
 
     if (g_match_config.modifiers & MODIFIER_LAVA) {
         game_check_lava();
@@ -268,7 +269,9 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
     }
     /* Only a swing in its active frames can hit: on most frames nobody's
      * is, and the call (four arguments, a pointer walk) cost 816-tcc about
-     * 10 scanlines (#22). */
+     * 10 scanlines (#22). A contact resets the bounce count: a volley is
+     * read before. */
+    volley = g_ball.bounce_count == 0;
     hit_player = (g_players[0].state == PLAYER_STATE_ACTIVE ||
             g_players[1].state == PLAYER_STATE_ACTIVE ||
             g_players[2].state == PLAYER_STATE_ACTIVE ||
@@ -279,6 +282,8 @@ static void game_update_live(const PlayerIntent intents[MAX_PLAYERS])
     if (hit_player) {
         game_contact(hit_player - 1);
         rules_process_player_hit(hit_player - 1);
+        if (volley)
+            rules_process_volley(hit_player - 1);
         if (g_game_state.phase != GAME_PHASE_LIVE)
             return;
     }

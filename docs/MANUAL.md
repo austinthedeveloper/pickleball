@@ -187,7 +187,7 @@ The net divides the court in half. On each side, the **kitchen** (the non-volley
 4. **Ending a rally.** A ball that lands out, hits the net, or bounces twice on one side loses the point for the side responsible.
 5. **Winning.** The first side to reach the target score wins (5 by default; change it in OPTIONS).
 
-Kitchen foot faults are not called, unless you turn on the LAVA modifier.
+**The kitchen** is the non-volley zone. You may walk in it, and play a ball there after it bounces, but volley from it (with your feet in it or on its line) and you lose the point: **KITCHEN!** With the LAVA modifier, just stepping in loses the point.
 
 ### Doubles
 
@@ -201,7 +201,7 @@ When a rally ends, a banner tells you why.
 | --- | --- |
 | OUT! | The shot landed outside the court. |
 | NET! | The shot didn't clear the net. |
-| KITCHEN! | The serve landed in the kitchen. |
+| KITCHEN! | The serve landed in the kitchen, or a player volleyed from their own. |
 | FAULT! | The serve landed in the wrong service box. |
 | 2 BOUNCES | The receiving side failed to return the ball. |
 | VOLLEY! | The ball was hit before a required bounce. |
@@ -313,7 +313,7 @@ To erase every record, hold L and R on the records page and press X. **There is 
 ## Tips from the Pros
 
 - **Swing early, hit close.** Press the button a moment before the ball arrives. A ball met close to your body goes where you aim; a stretch sprays it out.
-- **Mind the bounces.** Let the serve and the return bounce. Volley too soon and you'll see **VOLLEY!**
+- **Mind the bounces.** Let the serve and the return bounce. Volley too soon and you'll see **VOLLEY!** Volley from your kitchen and you'll see **KITCHEN!** Stay behind the line to volley.
 - **Lob the net-rushers.** When opponents crowd the kitchen line, a Y lob sails over their heads.
 - **Keep it low.** Against a team at the net, aim at their feet, or dink into their kitchen (Y with the Control Pad held away from the net).
 - **Don't split up in doubles.** Stay level with your partner. Split one-up, one-back, and smart teams pick on the player in back.

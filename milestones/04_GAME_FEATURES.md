@@ -91,6 +91,12 @@ ADR-024.
   - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
 - [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
 
+## Rules
+
+- [x] `M4-RULES-01` The kitchen fault: a volley with the feet in your own kitchen, or on its line, loses the point (KITCHEN!). Walking in it, and hitting a bounced ball there, stay legal. CPUs never volley from it. LAVA is unchanged.
+  - Accept: a rules test for the zone, its line, and the sidelines on both sides; CPUs draw no kitchen faults; the ladder tables unchanged; zero overruns.
+  - Verified: [ADR-052](../docs/decisions/ADR-052-kitchen-fault.md), `test_rules.c: test_kitchen_volley_loses_point`, `test_ai.c: test_net_play`, MesenCE (a poked volley in the kitchen ends the point with KITCHEN!); `make stats` identical in all three modes; golden trace identical.
+
 ## Fun
 
 - [x] `M4-FUN-01` Quips: the side that loses a point sometimes says a PG line (from GOOFY_IDEAS.md).

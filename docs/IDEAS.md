@@ -224,6 +224,15 @@ no-volley-anywhere.
 - Could double as story flavour: a pirate match with wind, a beach match with a
   fast ball.
 
+## The momentum rule
+
+The kitchen fault (ADR-052) is called at contact only. In pickleball a
+volley whose momentum carries you into the kitchen afterwards is a fault
+too, until you've regained balance. A simple version: after a volley, a
+step into your kitchen before the ball next bounces or is hit loses the
+point. Players run fast in this game, so the window may need tuning
+(or a forgiveness of a few pixels) so it doesn't feel unfair.
+
 ## Close call replay
 
 **Done:** [ADR-041](decisions/ADR-041-close-call-replay.md), grown up from

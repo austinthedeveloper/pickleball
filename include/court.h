@@ -48,6 +48,19 @@ enum {
  */
 #define COURT_MIRROR_X(x) (2 * COURT_NET_X - (x))
 
+/* Nonzero when a ground point (12.4) is in that team's kitchen, the line
+ * included: a volley from there is a fault (rules_process_volley). Only
+ * between the sidelines; past them is not the kitchen. A macro: no call
+ * on a contact frame. LAVA keeps its own test (the line is safe there). */
+#define COURT_IN_KITCHEN_FP(x_fp, y_fp, team) \
+    ((y_fp) >= TO_FP(COURT_SIDELINE_TOP) && \
+     (y_fp) <= TO_FP(COURT_SIDELINE_BOTTOM) && \
+     ((team) ? \
+        ((x_fp) <= TO_FP(COURT_KITCHEN_RIGHT_X) && \
+         (x_fp) > TO_FP(COURT_NET_X)) : \
+        ((x_fp) >= TO_FP(COURT_KITCHEN_LEFT_X) && \
+         (x_fp) < TO_FP(COURT_NET_X))))
+
 /* +1 for the left team (toward the net is +x), -1 for the right team. */
 s16 court_toward_net(u8 team);
 /* Team whose half contains x; the net plane itself counts as the right. */

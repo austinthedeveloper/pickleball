@@ -148,6 +148,43 @@ static void test_return_volley_before_bounce_loses_point(void)
     assert_stopped_with_winner(1, GAME_FAULT_EARLY_VOLLEY);
 }
 
+/* The kitchen fault (ADR-052): a volley with the feet in your own kitchen,
+ * or on its line, loses the point; behind the line, or past a sideline,
+ * it is fine. Mirrored for the right team. */
+static void kitchen_volley_case(u8 slot, s16 x, s16 y, u8 faults)
+{
+    reset_live_fixture();
+    g_game_state.required_bounce = GAME_REQUIRED_BOUNCE_NONE;
+    g_players[slot].active = 1;
+    g_players[slot].x_fp = TO_FP(x);
+    g_players[slot].y_fp = TO_FP(y);
+    rules_process_volley(slot);
+    if (faults)
+        assert_stopped_with_winner(g_players[slot].team ^ 1,
+            GAME_FAULT_KITCHEN);
+    else
+        assert(g_game_state.phase == GAME_PHASE_LIVE);
+}
+
+static void test_kitchen_volley_loses_point(void)
+{
+    kitchen_volley_case(0, COURT_NET_X - 20, 130, 1);
+    kitchen_volley_case(0, COURT_KITCHEN_LEFT_X, 130, 1);       /* the line */
+    kitchen_volley_case(0, COURT_KITCHEN_LEFT_X - 1, 130, 0);
+    kitchen_volley_case(0, COURT_NET_X - 20, COURT_SIDELINE_TOP - 2, 0);
+    kitchen_volley_case(0, COURT_NET_X - 20, COURT_SIDELINE_BOTTOM, 1);
+    kitchen_volley_case(2, COURT_NET_X + 20, 130, 1);
+    kitchen_volley_case(2, COURT_KITCHEN_RIGHT_X, 130, 1);
+    kitchen_volley_case(2, COURT_KITCHEN_RIGHT_X + 1, 130, 0);
+    /* Over the point already: nothing more. */
+    reset_live_fixture();
+    g_game_state.phase = GAME_PHASE_POINT_RESULT;
+    g_players[0].x_fp = TO_FP(COURT_NET_X - 20);
+    g_players[0].y_fp = TO_FP(130);
+    rules_process_volley(0);
+    assert(g_game_state.team_score[1] == 0);
+}
+
 int main(void)
 {
     test_net_penalizes_last_hitter();
@@ -159,6 +196,7 @@ int main(void)
     test_legal_required_bounce_sequence();
     test_serve_volley_before_bounce_loses_point();
     test_return_volley_before_bounce_loses_point();
+    test_kitchen_volley_loses_point();
     puts("rules host checks passed");
     return 0;
 }

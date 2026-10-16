@@ -69,6 +69,22 @@ void rules_process_player_hit(u8 player_index)
         rules_resolve_point(player_team, GAME_FAULT_EARLY_VOLLEY);
 }
 
+/* The non-volley zone: a volley (a ball hit before it bounced) with the
+ * hitter's feet in their own kitchen, or on its line, loses the point.
+ * Walking in the kitchen is legal; only the hit is a fault. */
+void rules_process_volley(u8 player_index)
+{
+    const Player *player;
+
+    if (g_game_state.phase != GAME_PHASE_LIVE)
+        return;
+    if (player_index >= MAX_PLAYERS)
+        return;
+    player = &g_players[player_index];
+    if (COURT_IN_KITCHEN_FP(player->x_fp, player->y_fp, player->team))
+        rules_resolve_point(player->team, GAME_FAULT_KITCHEN);
+}
+
 void rules_process_ball_events(u8 events)
 {
     u8 side;

@@ -193,12 +193,12 @@ static void test_cpu_returns_standard_serves(void)
     assert(returned >= 8);
 }
 
-/* A flat ball from P1 passing the CPU (at its kitchen-line spot) at
- * about 15 px, in a rally at the given bounce stage. Returns 1 if the CPU
+/* A flat ball from P1 passing the CPU (standing `net` px from the net)
+ * at about 15 px, in a rally at the given bounce stage. Returns 1 if the CPU
  * hit it before it bounced, 0 if after, -1 if not at all; *fault is the
  * point's fault against the CPU's team, if any. */
-static int volley_case(const AiStyle *style, u8 required, u8 serving,
-    u8 *fault)
+static int volley_case(const AiStyle *style, s16 net, u8 required,
+    u8 serving, u8 *fault)
 {
     PlayerIntent idle;
     u8 serial;
@@ -212,7 +212,7 @@ static int volley_case(const AiStyle *style, u8 required, u8 serving,
     g_game_state.phase = GAME_PHASE_LIVE;
     g_game_state.required_bounce = required;
     g_game_state.serving_team = serving;
-    g_players[2].x_fp = TO_FP(COURT_NET_X + 44);
+    g_players[2].x_fp = TO_FP(COURT_NET_X + net);
     g_players[2].y_fp = TO_FP(130);
     g_players[2].state = PLAYER_STATE_IDLE;
     g_players[0].x_fp = TO_FP(40);
@@ -251,13 +251,22 @@ static void test_net_play(void)
     int r;
 
     assert(twins->volley && twins->net == 44);
-    r = volley_case(twins, GAME_REQUIRED_BOUNCE_NONE, 0, &fault);
+    r = volley_case(twins, 44, GAME_REQUIRED_BOUNCE_NONE, 0, &fault);
     assert(r == 1);
+    /* Standing in the kitchen (ADR-052) it doesn't volley the same ball.
+     * From its line it may, once it has drifted back behind it: never a
+     * kitchen fault. */
+    r = volley_case(twins, 20, GAME_REQUIRED_BOUNCE_NONE, 0, &fault);
+    assert(r != 1 && fault != GAME_FAULT_KITCHEN);
+    r = volley_case(twins, COURT_KITCHEN_RIGHT_X - COURT_NET_X,
+        GAME_REQUIRED_BOUNCE_NONE, 0, &fault);
+    assert(fault != GAME_FAULT_KITCHEN);
+    assert(r != 1 || g_players[2].x_fp > TO_FP(COURT_KITCHEN_RIGHT_X));
     /* The return still has to bounce for the serving team. */
-    r = volley_case(twins, GAME_REQUIRED_BOUNCE_RETURN, 1, &fault);
+    r = volley_case(twins, 44, GAME_REQUIRED_BOUNCE_RETURN, 1, &fault);
     assert(r != 1 && fault != GAME_FAULT_EARLY_VOLLEY);
     /* The default CPU lets it bounce. */
-    r = volley_case(&g_ai_default_style, GAME_REQUIRED_BOUNCE_NONE, 0,
+    r = volley_case(&g_ai_default_style, 44, GAME_REQUIRED_BOUNCE_NONE, 0,
         &fault);
     assert(r != 1);
     /* Coming in: with the ball going away, home is the style's net spot;
