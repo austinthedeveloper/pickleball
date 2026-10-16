@@ -1,6 +1,7 @@
 # ADR-047 — Career Players
 
-Status: **Accepted 2026-10-15** (stages 1-3: the data, the page, play)
+Status: **Accepted 2026-10-15** (stages 1-4: the data, the page, play,
+gear)
 Milestone: `M4-CAREER-01` to `-04`. From [IDEAS.md](../IDEAS.md), "Career
 mode". Depends on: ADR-021/032 (save and migration), ADR-013/014 (palette
 parts, hats), ADR-020 (Player Select), ADR-023 (the ladder), ADR-040
@@ -112,6 +113,39 @@ power-on RAM decides how the rallies go). The SRAM copy is now
 `src/asm/sram_copy.asm` (MVN into bank $70, about 7 cycles a byte, was the
 library's copy); six forced match ends there: zero overruns, worst
 scanline 199.
+
+## Gear (stage 4)
+
+A career player's hat moves one paddle stat point to another (`gear` in
+career.json), so the 9-point paddle budget holds and every pairing stays
+inside ADR-015's 15%:
+
+| Hat | Gear |
+|---|---|
+| CAP, NONE | nothing |
+| VISOR | CONTROL +1, POWER -1 |
+| HEADBAND | SPEED +1, CONTROL -1 |
+| TRICORN | POWER +1, CONTROL -1 |
+| BANDANA | POWER +1, SPEED -1 |
+
+- **No room:** a stat can't pass 5. On a paddle that already maxes the
+  stat a hat raises (WOOD's control, RED's power, GOLD's speed), that hat
+  changes nothing, so no cost comes without the gain. (GOLD + HEADBAND
+  would put the swing limit past 15% once rounded.)
+- **Tables:** `paddle_stats.h` holds every paddle with every hat, row
+  `PADDLE_PROFILE(paddle, hat)` = hat x PADDLE_COUNT + paddle; rows 0-3
+  are the plain paddles. Slot 0's `Player.paddle` is the career player's
+  row (`game_activate_players`); every other player, and play without a
+  career player, use the plain rows, so the golden trace and the balance
+  tables are unchanged. The C and the assembly (`player_step`) index the
+  tables as before.
+- **Shown:** Player Select's bars for 1P include the hat; the editor has a
+  line under the look, `PWR 2  CTL 4  SPD 3`.
+- CPUs' hats are looks only.
+
+Tests: `test_career.c: test_gear` (every row on budget and in range, the
+cap and bare hair plain, VISOR on BLUE and on WOOD, slot 0 alone in a
+match); MesenCE: the editor's line and Player Select's bars with a visor.
 
 ## The player record
 

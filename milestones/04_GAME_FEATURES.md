@@ -98,7 +98,8 @@ ADR-024.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 2), `test/test_career_page.c`, `career.timeline` and the updated `records.timeline` with zero overruns in `make perf`, MesenCE screenshots of each view and the live preview.
 - [x] `M4-CAREER-03` Play as the active player: 1P's look and paddle, the name on the HUD, and new unlocks on the result screen.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 3), `test_career_page.c: test_no_player`, `test_story.c: test_unlock_card`; MesenCE: Player Select on the player's look, ACE on the score panel, UNLOCKED! VISOR after a win; `make perf` zero overruns (the SRAM copy in assembly).
-- [ ] `M4-CAREER-04` Gear that changes stats, always a trade-off (phase 2, with a balance pass).
+- [x] `M4-CAREER-04` Gear that changes stats, always a trade-off: a career player's hat moves a paddle stat point.
+  - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 4), `test_career.c: test_gear`, the asset build's budget and 15% checks for every pairing, MesenCE (the editor's stat line, Player Select's bars); golden trace identical, `make perf` zero overruns.
 
 ## Pause
 

@@ -124,8 +124,13 @@ static void draw_stats(const PlayerChoice *choice)
     u8 cell;
     u8 value;
 
+    /* ADR-047 stage 4: 1P's bars with their career hat's gear. */
+    u8 profile = (g_select.current == 0 && career_active()) ?
+        PADDLE_PROFILE(choice->paddle_id, career_active()->hat) :
+        choice->paddle_id;
+
     for (stat = 0; stat < 3; ++stat) {
-        value = g_paddle_stats[choice->paddle_id][stat];
+        value = g_paddle_stats[profile][stat];
         for (cell = 0; cell < PADDLE_STAT_MAX; ++cell)
             hud_tile(SEL_BAR_COL + cell, SEL_BAR_ROW + stat * 2,
                 cell < value ? hud_entry(HUD_TILE_BAR_ON, HUD_PAL_YELLOW) :

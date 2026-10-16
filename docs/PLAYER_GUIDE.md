@@ -177,6 +177,12 @@ cartridge. Pick a slot and press B:
 - **A player** opens their card: wins and losses, aces, shutouts, best
   streak, longest rally, and the unlocks. Opening a player makes them the
   one you play as. B edits their name and look; Y puts the look back.
+- **Gear**: hats aren't just for looks. Each one trades a little of one
+  paddle stat for another: VISOR more CONTROL, less POWER; HEADBAND more
+  SPEED, less CONTROL; TRICORN and BANDANA more POWER (less CONTROL or
+  SPEED). The editor shows the result (PWR, CTL, SPD), and so do Player
+  Select's bars. A stat can't go past 5, so a hat does nothing for a
+  paddle that already maxes what it raises.
 - **Unlocks**: playing earns hats and hair colours. The card shows the next
   one and how to get it (WIN A MATCH for the visor, BEAT THE PIRATES for
   the tricorn, and so on). Locked choices don't show up until earned.

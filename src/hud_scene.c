@@ -14,6 +14,7 @@
 #include "career_page.h"
 #include "modifiers.h"
 #include "options.h"
+#include "paddle_stats.h"
 #include "pause_menu.h"
 #include "practice.h"
 #include "save.h"
@@ -1424,11 +1425,40 @@ static void hud_career_edit_row(u8 row)
         (cursor << 7));
 }
 
+/* The look's paddle stats with the hat's gear (stage 4): "PWR 2  CTL 4
+ * SPD 3" at the box's foot. */
+#define CAREER_STATS_ROW (TITLE_MENU_ROW + 10)
+static u8 s_career_stats_drawn;
+
+static u8 hud_career_profile(void)
+{
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+
+    return PADDLE_PROFILE(player->paddle % PADDLE_COUNT,
+        player->hat % PADDLE_GEARS);
+}
+
+static void hud_career_stats_line(void)
+{
+    static char text[] = "PWR 0  CTL 0  SPD 0";
+    u8 profile = hud_career_profile();
+
+    text[4] = (char)('0' + g_paddle_stats[profile][0]);
+    text[11] = (char)('0' + g_paddle_stats[profile][1]);
+    text[18] = (char)('0' + g_paddle_stats[profile][2]);
+    hud_text(CAREER_EDIT_COL + 1, CAREER_STATS_ROW, HUD_PAL_YELLOW, text);
+    s_career_stats_drawn = profile;
+}
+
 static void hud_career_edit_refresh(void)
 {
     const CareerPlayer *player = &g_save.career[g_career_page.slot];
     u8 row;
 
+    if (s_career_stats_drawn != hud_career_profile()) {
+        hud_career_stats_line();
+        return;
+    }
     for (row = 0; row < CAREER_EDIT_ROWS; ++row)
         if (s_career_edit_drawn[row] != (u8)((row == CAREER_EDIT_NAME ? 0 :
                 career_look_value(player, row)) |
@@ -1569,8 +1599,9 @@ static u8 hud_career_draw_part(u8 view, u8 part)
         return hud_career_naming_part(part);
     if (view == CAREER_VIEW_EDIT) {
         if (part == 0) {
+            /* Two more rows than the keyboard's: the stats line. */
             hud_fill_box(CAREER_EDIT_COL, TITLE_MENU_ROW, CAREER_EDIT_WIDTH,
-                CAREER_EDIT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+                CAREER_EDIT_PAGE_ROWS + 2, hud_entry(' ', HUD_PAL_WHITE));
             for (i = 0; i < CAREER_EDIT_ROWS; ++i)
                 s_career_edit_drawn[i] = CAREER_UNDRAWN;
             return 0;
@@ -1579,8 +1610,12 @@ static u8 hud_career_draw_part(u8 view, u8 part)
             hud_text(15, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PLAYER");
             return 0;
         }
-        hud_career_edit_row(part - 2);
-        return part - 2 == CAREER_EDIT_ROWS - 1;
+        if (part - 2 < CAREER_EDIT_ROWS) {
+            hud_career_edit_row(part - 2);
+            return 0;
+        }
+        hud_career_stats_line();
+        return 1;
     }
     /* SLOTS */
     if (part == 0) {

@@ -4,6 +4,8 @@
 #include "career.h"
 #include "match.h"
 #include "opponents.h"
+#include "paddle_stats.h"
+#include "game.h"
 #include "test_support.h"
 
 /* ADR-047: career players, their stats, and unlocks. */
@@ -146,12 +148,59 @@ static void test_migrate_v11(void)
     assert(g_save.career[0].used == 0 && g_save.career[2].used == 0);
 }
 
+/* Stage 4: hats shift paddle stats. Every pairing keeps the budget; a
+ * stat a paddle maxes leaves that hat with nothing to do on it; the
+ * career player's match uses the pairing, everyone else the paddle. */
+static void test_gear(void)
+{
+    u8 profile;
+    u8 hat;
+    u8 paddle;
+    const u8 *stats;
+
+    for (profile = 0; profile < PADDLE_PROFILES; ++profile) {
+        stats = g_paddle_stats[profile];
+        assert(stats[0] + stats[1] + stats[2] == 9);
+        assert(stats[0] <= PADDLE_STAT_MAX && stats[1] <= PADDLE_STAT_MAX &&
+            stats[2] <= PADDLE_STAT_MAX);
+    }
+    /* The cap and bare hair are the plain paddles. */
+    for (paddle = 0; paddle < PADDLE_COUNT; ++paddle) {
+        assert(memcmp(g_paddle_stats[PADDLE_PROFILE(paddle, 0)],
+            g_paddle_stats[paddle], 3) == 0);
+        assert(memcmp(g_paddle_stats[PADDLE_PROFILE(paddle,
+            CAREER_HATS - 1)], g_paddle_stats[paddle], 3) == 0);
+    }
+    /* VISOR on BLUE: control up, power down; on WOOD (control 5): none. */
+    hat = 1;
+    stats = g_paddle_stats[PADDLE_PROFILE(PADDLE_BLUE, hat)];
+    assert(stats[0] == 2 && stats[1] == 4 && stats[2] == 3);
+    assert(memcmp(g_paddle_stats[PADDLE_PROFILE(PADDLE_WOOD, hat)],
+        g_paddle_stats[PADDLE_WOOD], 3) == 0);
+
+    /* In a match: the career player's pairing on slot 0 only. */
+    fresh();
+    career_create(0, "ACE");
+    career_active()->hat = hat;
+    match_config_defaults();
+    g_match_config.career_p1 = 1;
+    g_match_config.paddle_id[0] = PADDLE_BLUE;
+    game_new_match();
+    assert(g_players[0].paddle == PADDLE_PROFILE(PADDLE_BLUE, hat));
+    assert(g_players[2].paddle == PADDLE_STANDARD);
+    /* Without a career player: the plain paddle. */
+    g_match_config.career_p1 = 0;
+    game_new_match();
+    assert(g_players[0].paddle == PADDLE_BLUE);
+}
+
 int main(void)
 {
     test_slots();
     test_points_and_matches();
     test_unlocks();
     test_migrate_v11();
+    test_gear();
     puts("career host checks passed");
     return 0;
 }

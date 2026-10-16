@@ -9,6 +9,7 @@
 #include "match.h"
 #include "modifiers.h"
 #include "options.h"
+#include "paddle_stats.h"
 #include "practice.h"
 #include "game.h"
 #include "player.h"
@@ -123,6 +124,11 @@ static void game_activate_players(void)
         player->palette = doubles ? i : player->team;
         player->variant = g_match_config.variant[i];
         player->paddle = g_match_config.paddle_id[i];
+        /* ADR-047 stage 4: a career player's hat shifts their paddle's
+         * stats (the paddle tables hold every pairing). */
+        if (i == 0 && g_match_config.career_p1 && career_active())
+            player->paddle = PADDLE_PROFILE(g_match_config.paddle_id[0],
+                career_active()->hat);
         if (player->cpu_controlled) {
             /* ADR-023: the slot's play style (the default CPU unless an
              * opponent is set). One lookup: this runs on a new match's
