@@ -495,6 +495,35 @@ static void test_matches(void)
     assert(stats[6].shots > 2 * stats[6].points);
 }
 
+/* GLOW's neon shirts (ADR-054): brighter and more saturated, a ramp keeps
+ * its order, grey stays grey, and nothing goes past the channel range. */
+#define NEON_RGB(r, g, b) ((u16)((r) | ((g) << 5) | ((b) << 10)))
+static void test_neon(void)
+{
+    u16 dark = modifiers_neon(NEON_RGB(4, 8, 18));
+    u16 mid = modifiers_neon(NEON_RGB(8, 14, 26));
+    u16 light = modifiers_neon(NEON_RGB(14, 20, 30));
+
+    /* Blue: top 18 lifted to 24; twice as far would clip red (28 > 24),
+     * so one and a half: 21 and 15 below. */
+    assert(dark == NEON_RGB(3, 9, 24));
+    /* Top 26 lifted to 31: 1.5 x 18 = 27 fits. */
+    assert(mid == NEON_RGB(4, 13, 31));
+    /* Top 30 lifted to 31: 2 x 16 = 32 doesn't, 24 does. */
+    assert(light == NEON_RGB(7, 16, 31));
+    /* A saturated orange keeps its hue: nothing to stretch. */
+    assert(modifiers_neon(NEON_RGB(31, 18, 8)) == NEON_RGB(31, 18, 8));
+    /* A dull green doubles. */
+    assert(modifiers_neon(NEON_RGB(8, 14, 10)) == NEON_RGB(8, 20, 12));
+    /* The ramp stays dark to light (blue, then green). */
+    assert(((dark >> 10) & 31) <= ((mid >> 10) & 31));
+    assert(((mid >> 5) & 31) < ((light >> 5) & 31));
+    assert(modifiers_neon(NEON_RGB(10, 10, 10)) == NEON_RGB(16, 16, 16));
+    assert(modifiers_neon(NEON_RGB(31, 31, 31)) == NEON_RGB(31, 31, 31));
+    assert(modifiers_neon(NEON_RGB(31, 0, 0)) == NEON_RGB(31, 0, 0));
+    assert(modifiers_neon(0) == 0 + NEON_RGB(6, 6, 6));
+}
+
 /* POPCORN's steps: five a level in a cycle, on ticks FAST BALL leaves
  * alone, the lookahead past the cycle the same as its start, and all of it
  * taken back. */
@@ -640,6 +669,7 @@ int main(void)
     test_lava_colors();
     test_popcorn_pace();
     test_ice();
+    test_neon();
     test_matches();
     test_lava_cpus();
     printf("modifiers host checks passed\n");

@@ -204,6 +204,13 @@ def court_colors_header():
     lines.append(f"#define COURT_PARTS {len(parts)}")
     lines.append("/* Kitchen preset that follows the surface (ADR-027). */")
     lines.append("#define COURT_KITCHEN_SAME 1")
+    lines_presets = [name for part, _, presets in parts if part == "lines"
+                     for name, _ in presets]
+    if "LIME" not in lines_presets:
+        raise AssetError("court_colors.json: GLOW (ADR-054) needs a LIME "
+                         "lines preset")
+    lines.append("/* Lines preset GLOW plays on (ADR-054). */")
+    lines.append(f"#define COURT_LINES_LIME {lines_presets.index('LIME')}")
     lines.append(f"#define COURT_PART_MAX_ENTRIES {MAX_ENTRIES}")
     lines.append(f"#define COURT_PRESETS {total}")
     lines.append(f"#define COURT_TIMES {time_count}")

@@ -10,6 +10,44 @@ u8 modifiers_valid(u8 saved)
     return saved & MODIFIER_ALL;
 }
 
+/* One channel's distance below the brightest, stretched: 2 (halves: 4 is
+ * twice, 3 one and a half, 2 the same). */
+static u16 neon_channel(s16 v, s16 top, s16 lifted, u8 halves)
+{
+    s16 d = top - v;
+
+    if (halves == 4)
+        d <<= 1;
+    else if (halves == 3)
+        d += d >> 1;
+    return (u16)(lifted - d);
+}
+
+u16 modifiers_neon(u16 color)
+{
+    s16 r = color & 31;
+    s16 g = (color >> 5) & 31;
+    s16 b = (color >> 10) & 31;
+    s16 top = r > g ? r : g;
+    s16 low = r < g ? r : g;
+    s16 lifted;
+    s16 d;
+    u8 halves;
+
+    if (b > top)
+        top = b;
+    if (b < low)
+        low = b;
+    lifted = top + MODIFIER_NEON_LIFT > 31 ? 31 : top + MODIFIER_NEON_LIFT;
+    /* As far as the darkest channel stays at 0 or more: clipping it would
+     * turn the hue (an orange went red). */
+    d = top - low;
+    halves = (d << 1) <= lifted ? 4 : (d + (d >> 1)) <= lifted ? 3 : 2;
+    return neon_channel(r, top, lifted, halves) |
+        (neon_channel(g, top, lifted, halves) << 5) |
+        (neon_channel(b, top, lifted, halves) << 10);
+}
+
 u8 modifiers2_valid(u8 saved)
 {
     return saved & MODIFIER2_ALL;

@@ -121,8 +121,9 @@ and they combine:
 - **FOOTING**: NORMAL or **ICE**. Players take longer to get going and
   slide when they let go. Start moving early, and let go before you get
   there.
-- **LIGHTS**: NORMAL or **GLOW**. The lights go out: a night court, and
-  the players and the ball glow with neon green outlines and neon paddles.
+- **LIGHTS**: NORMAL or **GLOW**. The lights go out: a night court with
+  lime lines, and the players and the ball glow with neon green outlines,
+  neon outfits and hats, and neon paddles.
 - **COLORS**: NORMAL or **INVERSE**. Every colour on the court is
   inverted, like a photo negative. The scoreboard stays as it is.
 

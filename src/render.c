@@ -135,7 +135,8 @@ static u16 s_flash_palette[16];
  * near the budget, KNOWN_ISSUES #29). */
 static u8 s_objects_look;
 /* GLOW's neon: every outline (palette entry 1 of the players and the
- * ball, ADR-013) and the paddles (11-13: face dark, face light, edge). */
+ * ball, ADR-013) and the paddles (11-13: face dark, face light, edge).
+ * The court's lines are the LIME preset. */
 #define RENDER_GLOW_OUTLINE RGB5(4, 31, 8)
 #define RENDER_GLOW_PADDLE_DARK RGB5(20, 0, 24)
 #define RENDER_GLOW_PADDLE_LIGHT RGB5(31, 6, 28)
@@ -150,12 +151,21 @@ static void render_invert(u16 *colors, u8 count)
     }
 }
 
-/* A player's composed palette (or the objects', paddle = 0) in the look. */
-static void render_apply_look(u16 *colors, u8 look, u8 paddle)
+/* A player's composed palette (or the objects', player = 0) in the look.
+ * GLOW's shirts, caps, and shorts (entries 5-9, the team part, ADR-013) go
+ * neon; the shoe colour (10), which is also the visors' and headbands'
+ * (tools/art/author_hats.py), takes the neon shirt's, so a white visor
+ * glows too. */
+static void render_apply_look(u16 *colors, u8 look, u8 player)
 {
+    u8 i;
+
     if (look & RENDER_LOOK_GLOW) {
         colors[1] = RENDER_GLOW_OUTLINE;
-        if (paddle) {
+        if (player) {
+            for (i = 5; i <= 9; ++i)
+                colors[i] = modifiers_neon(colors[i]);
+            colors[10] = colors[6];
             colors[11] = RENDER_GLOW_PADDLE_DARK;
             colors[12] = RENDER_GLOW_PADDLE_LIGHT;
             colors[13] = RENDER_GLOW_PADDLE_EDGE;
@@ -366,9 +376,12 @@ static u8 render_dark_surface(void)
 static void render_compose_ground(void)
 {
     u8 look = RENDER_LOOK();
+    u8 court[COURT_PARTS];
 
-    court_style_compose(s_ground_palette, s_painted_ground,
-        g_save.settings.court, s_venue);
+    memcpy(court, g_save.settings.court, sizeof(court));
+    if (look & RENDER_LOOK_GLOW)
+        court[COURT_PART_LINES] = COURT_LINES_LIME;
+    court_style_compose(s_ground_palette, s_painted_ground, court, s_venue);
     s_lava_shown = RENDER_LAVA_WANTED();
     if (s_lava_shown)
         court_style_lava(s_ground_palette);

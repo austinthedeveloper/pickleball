@@ -82,9 +82,8 @@ the usual budget breaker, KNOWN_ISSUES #22).
 - **WIND** is already in IDEAS.md under Play modifiers; a venue flag (the
   beach, the lake) could pick its direction.
 - **GLOW IN THE DARK:** **Done:** [ADR-054](decisions/ADR-054-glow-and-inverse.md),
-  as LIGHTS: GLOW. Neon outlines and paddles on a night court. Still open:
-  darkening the skin and shirt a step so the outlines pop, like a
-  blacklight; a trail behind the ball (needs OBJ slots).
+  as LIGHTS: GLOW. Neon outlines, outfits, and paddles on a night court
+  with lime lines. Still open: a trail behind the ball (needs OBJ slots).
 - **INVERSE:** **Done:** [ADR-054](decisions/ADR-054-glow-and-inverse.md),
   as COLORS: INVERSE (the colours; the HUD and shadows stay as they are).
   Reversed controls are still an idea.

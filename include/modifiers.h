@@ -46,6 +46,13 @@ enum {
     MODIFIER_POPCORN_LEVELS = 6
 };
 
+/* GLOW (ADR-054): a shirt colour (15-bit) made neon: brighter by
+ * MODIFIER_NEON_LIFT, and each channel twice as far below the brightest
+ * (one and a half, or the same, where that would clip the darkest and
+ * turn the hue), so a ramp keeps its light and dark. */
+enum { MODIFIER_NEON_LIFT = 6 };
+u16 modifiers_neon(u16 color);
+
 /* A saved value with unknown bits cleared. */
 u8 modifiers_valid(u8 saved);
 u8 modifiers2_valid(u8 saved);

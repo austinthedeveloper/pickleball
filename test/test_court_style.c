@@ -268,8 +268,16 @@ static void test_times(void)
     assert(court_style_ambience(1, night) < VENUE_COUNT);
 }
 
+/* GLOW (ADR-054) plays on the LIME lines. */
+static void test_glow_lines(void)
+{
+    assert(strcmp(g_court_preset_names[g_court_part_first[COURT_PART_LINES] +
+        COURT_LINES_LIME], "LIME") == 0);
+}
+
 int main(void)
 {
+    test_glow_lines();
     test_default_is_painted();
     test_presets_replace_only_their_part();
     test_names_fit();

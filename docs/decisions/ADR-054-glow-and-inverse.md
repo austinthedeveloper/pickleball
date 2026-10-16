@@ -47,8 +47,19 @@ keep the checksum at an even offset: 214 bytes.
   the same green, in a work-RAM copy of `objects_palette`.
 - **Paddles:** entries 11-13 (face dark, face light, edge) become purple,
   hot pink, and cyan.
+- **Outfits** (the user's follow-up): the shirt, cap, and shorts entries
+  (5-9) go neon (`modifiers_neon`): 6 brighter (to 31 at most), and each
+  channel's distance below the brightest doubled, so a colour is more
+  saturated and a ramp keeps its light and dark. Where doubling would
+  push the darkest channel below 0, which turns the hue (an orange went
+  red), it stretches by one and a half, or not at all. The shoe colour
+  (10) is also the visors' and headbands' (`author_hats.py`), and a white
+  one stayed white; it takes the neon shirt's mid colour, so every hat
+  glows with its shirt.
 - **Court:** composed at NIGHT (`RENDER_TIME`), whatever the COURT page's
-  TIME; the NIGHT ambience and the NIGHT crowd watcher too.
+  TIME, with the LINES preset LIME (`COURT_LINES_LIME`, generated from
+  `court_colors.json`; the asset build fails without a LIME). The NIGHT
+  ambience and the NIGHT crowd watcher too.
 - No new palettes or tiles: the same OBJ palettes with other colours.
 - The hit spark, the practice machine, and the hats share those palettes
   and take the green outline too.
@@ -80,7 +91,8 @@ keep the checksum at an even offset: 214 bytes.
 
 - `make perf`: every timeline 0 overruns, including the two new ones
   (`modifiers_glow.timeline` worst 168 scanlines, `modifiers_inverse`
-  189, which ends back on the title).
+  190, which ends back on the title). `court.timeline` 216 (214 before:
+  the ground's compose copies the court choices to swap in LIME).
 - The golden trace and `make stats` (singles, doubles, net bot) are
   identical: presentation only.
 - MesenCE: the GLOW page and match (green outlines on the players and the
@@ -94,6 +106,10 @@ keep the checksum at an even offset: 214 bytes.
   to the second byte alone counts, Y puts both back.
   `test_select_copies`: Player Select copies the second byte (unknown bits
   cleared) and the demo clears it.
+- `test_modifiers.c: test_neon`: the blue ramp stretches by one and a
+  half and keeps its order, a saturated orange keeps its hue, a dull green
+  doubles, greys stay grey.
+- `test_court_style.c: test_glow_lines`: `COURT_LINES_LIME` is LIME.
 - `test_save.c: test_migrate_v12`: a v12 save keeps its records,
   settings, initials, career players, and camera; the second byte starts
   off and then saves.

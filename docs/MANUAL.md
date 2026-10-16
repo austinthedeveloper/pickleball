@@ -171,7 +171,7 @@ Modifiers change the rules of your matches. Left/Right switches a row, and they 
 | VISION | NORMAL, GHOST | High in the air, the ball only flickers into view. Watch its shadow. |
 | RALLY | NORMAL, POPCORN | Every hit speeds the ball up a little. Each serve starts fresh. |
 | FOOTING | NORMAL, ICE | Players slide. Start early and let go before you arrive. |
-| LIGHTS | NORMAL, GLOW | Lights out: neon outlines and paddles on a night court. |
+| LIGHTS | NORMAL, GLOW | Lights out: neon outlines, outfits, and paddles on a night court with lime lines. |
 | COLORS | NORMAL, INVERSE | Every colour inverted, like a photo negative. |
 
 B or START keeps your choices; Y puts back what you had.
