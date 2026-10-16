@@ -99,7 +99,9 @@ ADR-024.
 - [x] `M4-SHOT-02` Hold L or R to hit any shot short (L+A a fast drop), with the D-pad free to move and aim at a sideline; a stretched fast drop flies past the kitchen.
   - Accept: L or R aims away from your own net on either team; pressing away still works; a fast drop met off a stretch lands past neutral; CPUs unchanged.
   - Verified: as `M4-SHOT-01`.
-- [ ] `M4-SHOT-03` CPUs slice: a per-style choice in `opponents.json` (a soft-game team resets with it), tuned against the ladder order.
+- [x] `M4-SHOT-03` CPUs slice: a per-style choice in `opponents.json` (a soft-game team resets with it), tuned against the ladder order.
+  - Accept: a `slice` knob (a slice every Nth rally shot, 0 never), the default and partner styles 0; GOTH CLUB and CHAMPS slice; every ladder table in order; zero overruns.
+  - Verified: [ADR-057](../docs/decisions/ADR-057-cpu-slice.md), `test_ai.c: test_slice`, `make stats` in all three modes (ladder order: yes), MesenCE (RAVEN slices on the ROM); golden trace identical; `make perf` zero overruns.
 
 ## Rules
 

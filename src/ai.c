@@ -332,6 +332,7 @@ static void ai_plan_shot(const Player *player, fx contact_z)
 {
     u8 n = g_ai.shot_counter;
     u8 dink = s_style->dink_period;
+    u8 slice = s_style->slice;
     s16 to_net = abs_s16(FROM_FP(player->x_fp) - COURT_NET_X);
 
     s_block_volley[s_slot] = 0;
@@ -363,6 +364,10 @@ static void ai_plan_shot(const Player *player, fx contact_z)
     } else if (dink && (n % dink) == dink - 1) {
         g_ai.planned_shot = SHOT_SOFT;
         g_ai.planned_depth = -1;
+    } else if (slice && (n % slice) == slice - 1) {
+        /* ADR-057: a slice every Nth rally shot (neutral). */
+        g_ai.planned_shot = SHOT_SLICE;
+        g_ai.planned_depth = 0;
     } else {
         g_ai.planned_shot = SHOT_STANDARD;
         g_ai.planned_depth = (s_style->depth == AI_DEPTH_DEEP || (n & 1)) ?

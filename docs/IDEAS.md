@@ -425,8 +425,8 @@ a high ball reads as high (and gives the player under it a moment).
 
 ## Slice on X
 
-**Done:** [ADR-056](decisions/ADR-056-slice-and-short-hold.md) (humans;
-CPUs are `M4-SHOT-03`). It keeps the one gravity, so it is slow but not
+**Done:** [ADR-056](decisions/ADR-056-slice-and-short-hold.md) (humans)
+and [ADR-057](decisions/ADR-057-cpu-slice.md) (CPUs). It keeps the one gravity, so it is slow but not
 lower; see the ADR. The notes below are the original idea.
 
 From the user (2026-10-16). X is unused in play. Make it a slice: a

@@ -60,8 +60,8 @@ the net it can catch the tape, and from the back it crosses the net about
 
 CPUs don't slice yet, and never drive short, so the ladder and the golden
 trace are unchanged (`make golden-compare` identical). They return slices
-and fast drops with their usual prediction. A per-style slice choice is a
-follow-up (IDEAS.md).
+and fast drops with their usual prediction. *Amended:* CPUs slice by
+style since [ADR-057](ADR-057-cpu-slice.md).
 
 ## Cost
 

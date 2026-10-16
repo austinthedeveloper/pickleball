@@ -477,6 +477,68 @@ static int unforced_outs(u8 footwork, u8 matches)
     return outs;
 }
 
+/* Slices RAVEN (GOTH CLUB's captain, slot 2) hits in `matches` singles
+ * against the bot with her style's slice period set to `slice`. *presses
+ * counts all her rally swings. */
+static int raven_slices(u8 slice, u8 matches, int *presses)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f = 0;
+    u8 m = 0;
+    u8 counted = 0;
+    int slices = 0;
+
+    *presses = 0;
+    match_config_defaults();
+    match_config_opponent(4);
+    g_attract = 0;
+    game_new_match();
+    while (m < matches && f < 60UL * 60 * 60) {
+        g_ai_styles[2].slice = slice;
+        test_bot_skill(4, m);
+        memset(in, 0, sizeof(in));
+        ai_update(0, &in[0]);
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+            g_serve_state.server_index == 0 && (f & 31) == 0)
+            in[0].hit_pressed = 1;
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
+            in[0].hit_pressed = 1;
+            if (!counted) {
+                counted = 1;
+                ++m;
+            }
+        } else {
+            counted = 0;
+        }
+        ai_update(2, &in[2]);
+        if (in[2].hit_pressed && g_game_state.phase == GAME_PHASE_LIVE) {
+            ++*presses;
+            if (in[2].shot == SHOT_SLICE)
+                ++slices;
+        }
+        game_update(in);
+        if (g_next_opponent)
+            game_new_match();
+        ++f;
+    }
+    match_config_defaults();
+    return slices;
+}
+
+/* ADR-057: a style with a slice period slices some rally shots; without
+ * it, never. */
+static void test_slice(void)
+{
+    int presses;
+    int slices = raven_slices(g_opponent_styles[4][0].slice, 10, &presses);
+
+    printf("slice: RAVEN sliced %d of %d swings in 10 singles matches\n",
+        slices, presses);
+    assert(g_opponent_styles[4][0].slice && !g_ai_default_style.slice);
+    assert(slices * 10 >= presses && slices * 3 < presses);
+    assert(raven_slices(0, 3, &presses) == 0);
+}
+
 /* ADR-038: footwork plans the swing where the player stops; without it, a
  * CPU still sliding meets a ball at the sweet spot's edge stretched, and
  * those mis-hits spray out. With it, only the deliberate late shots do. */
@@ -673,6 +735,7 @@ int main(int argc, char **argv)
     test_teamwork();
     test_tactics();
     test_footwork();
+    test_slice();
     test_doubles_aim();
     test_scheduled_reaction();
     test_partner_stays_in();
