@@ -17,6 +17,11 @@ extern u16 g_loop_count;
 /* Scanline reached when the frame's CPU work finished; worst case kept. */
 extern u16 g_work_scanline;
 extern u16 g_work_scanline_max;
+/* Scanlines of VBlank (37 on NTSC, from line 225) used when the frame's
+ * uploads ended: the NMI's OAM DMA and joypad read, then the commit's
+ * palettes and HUD rows. Worst case kept; past 37 the uploads ran into
+ * the display. */
+extern u16 g_vblank_used_max;
 /* Per-stage worst and wrapping-sum scanline costs. */
 extern u16 g_stage_scanline_max[PROFILE_STAGES];
 extern u16 g_stage_scanline_sum[PROFILE_STAGES];
@@ -29,6 +34,8 @@ void profile_frame_begin(void);
 void profile_resync(void);
 /* After all CPU work, before WaitForVBlank. */
 void profile_work_done(void);
+/* After the VBlank uploads (render_commit and the scene commits). */
+void profile_vblank_done(void);
 /* After WaitForVBlank: latches a missed frame. */
 void profile_frame_end(void);
 

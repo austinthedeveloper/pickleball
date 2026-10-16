@@ -145,10 +145,10 @@ u8 collision_resolve_player_hits(Ball *ball, Player players[MAX_PLAYERS],
     const PlayerIntent intents[MAX_PLAYERS], u8 player_count)
 {
     u8 i;
-    Player *player;
+    Player *player = players;
 
-    for (i = 0; i < player_count; ++i) {
-        player = &players[i];
+    /* The pointer walks the slots: &players[i] is a multiply (R22). */
+    for (i = 0; i < player_count; ++i, ++player) {
         if (player->state != PLAYER_STATE_ACTIVE)
             continue;
         if (player->contact_consumed)

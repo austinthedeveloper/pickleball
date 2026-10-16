@@ -10,6 +10,7 @@ u16 g_overrun_frames;
 u16 g_loop_count;
 u16 g_work_scanline;
 u16 g_work_scanline_max;
+u16 g_vblank_used_max;
 u16 g_stage_scanline_max[PROFILE_STAGES];
 u16 g_stage_scanline_sum[PROFILE_STAGES];
 
@@ -39,6 +40,7 @@ void profile_initialize(void)
     g_loop_count = 0;
     g_work_scanline = 0;
     g_work_scanline_max = 0;
+    g_vblank_used_max = 0;
     for (i = 0; i < PROFILE_STAGES; ++i) {
         g_stage_scanline_max[i] = 0;
         g_stage_scanline_sum[i] = 0;
@@ -66,6 +68,16 @@ void profile_work_done(void)
     if (g_work_scanline < VISIBLE_SCANLINES &&
         g_work_scanline > g_work_scanline_max)
         g_work_scanline_max = g_work_scanline;
+}
+
+void profile_vblank_done(void)
+{
+    u16 line = profile_scanline();
+    u16 used = line >= VISIBLE_SCANLINES ? line - VISIBLE_SCANLINES :
+        line + SCANLINES_PER_FRAME - VISIBLE_SCANLINES;
+
+    if (used > g_vblank_used_max)
+        g_vblank_used_max = used;
 }
 
 void profile_frame_end(void)

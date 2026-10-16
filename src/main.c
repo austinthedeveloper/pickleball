@@ -173,6 +173,7 @@ static void update_park(void)
     audio_update();
     WaitForVBlank();
     render_park_commit();
+    profile_vblank_done();
 }
 
 /* B after a ladder win (ADR-023): the next opponent, with their intro card
@@ -521,6 +522,7 @@ static void update_select(void)
         audio_update();
         WaitForVBlank();
         render_select_commit();
+        profile_vblank_done();
         return;
     }
     if (result == SELECT_DONE) {
@@ -677,6 +679,7 @@ int main(void)
         audio_update();
         WaitForVBlank();
         render_commit();
+        profile_vblank_done();
         /* A new match set up this frame (game_new_match, about 180
          * scanlines, then the first draw) runs past one VBlank: a scene
          * switch, like a fade, so the held frame is not an overrun. */

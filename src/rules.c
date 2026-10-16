@@ -13,12 +13,13 @@ static u8 last_hitter_team(void)
 {
     if (g_ball.last_hitter >= MAX_PLAYERS)
         return 0;
-    return g_players[g_ball.last_hitter].team;
+    /* Team is slot >= 2 (ADR-018): no multiply indexing g_players. */
+    return g_ball.last_hitter >= 2;
 }
 
 static u8 server_team(void)
 {
-    return g_players[g_serve_state.server_index].team;
+    return g_serve_state.server_index >= 2;
 }
 
 void rules_resolve_point(u8 losing_team, u8 fault)

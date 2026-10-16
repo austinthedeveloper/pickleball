@@ -19,6 +19,13 @@
 #define ASM_PROBE_VZ 10
 #define ASM_BALL_FALL 3
 
+/* The HUD map's upload (include/hud.h, include/render.h) for
+ * src/asm/hud_commit.asm: 4-row bands of 32 words, at most three a VBlank. */
+#define ASM_HUD_MAP_ADDR 0x0400
+#define ASM_HUD_BANDS 7
+#define ASM_HUD_BAND_BYTES 256
+#define ASM_HUD_MAX_BANDS 3
+
 /* Player struct layout (include/player.h). */
 #define ASM_PLAYER_SIZE 28
 #define ASM_PLAYER_ACTIVE 0

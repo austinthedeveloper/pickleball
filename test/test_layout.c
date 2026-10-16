@@ -6,12 +6,18 @@
 #include "ball.h"
 #include "court.h"
 #include "court_projection.h"
+#include "hud.h"
 #include "player.h"
 #include "render.h"
 
 /* Every number the assembly uses must match the C definitions. */
 int main(void)
 {
+    /* src/asm/hud_commit.asm: one bit per band in a byte. */
+    assert(ASM_HUD_MAP_ADDR == RENDER_BG3_MAP_ADDR);
+    assert(ASM_HUD_BANDS == HUD_BANDS && HUD_BANDS < 8);
+    assert(ASM_HUD_BAND_BYTES == 32 * HUD_BAND_ROWS * 2);
+    assert(HUD_BANDS * HUD_BAND_ROWS == HUD_ROWS);
     assert(offsetof(AiProbe, x) == ASM_PROBE_X);
     assert(offsetof(AiProbe, y) == ASM_PROBE_Y);
     assert(offsetof(AiProbe, z) == ASM_PROBE_Z);

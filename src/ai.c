@@ -230,7 +230,7 @@ static s16 abs_s16(s16 value)
 /* Nonzero when an active opponent stands within `distance` of the net. */
 static u8 ai_opponent_at_net(u8 team, s16 distance)
 {
-    const Player *a = &g_players[team ? 0 : 2];
+    const Player *a = team ? &g_players[0] : &g_players[2];
     const Player *b = a + 1;
 
     if (a->active && abs_s16(FROM_FP(a->x_fp) - COURT_NET_X) < distance)
@@ -355,7 +355,7 @@ static void ai_plan_shot(const Player *player, fx contact_z)
  * pattern; depth from the planned shot. */
 static void ai_choose_aim(const Player *player, PlayerIntent *intent)
 {
-    const Player *opponent = &g_players[player->team ? 0 : 2];
+    const Player *opponent = player->team ? &g_players[0] : &g_players[2];
 
     /* First active player on the other team (slots 0-1 left, 2-3 right). */
     if (!opponent->active)
@@ -380,7 +380,7 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
         if (s_style->aim == AI_AIM_BODY)
             intent->aim_y = -intent->aim_y;
     }
-    intent->aim_x = g_ai.planned_depth * court_toward_net(player->team);
+    intent->aim_x = player->team ? -g_ai.planned_depth : g_ai.planned_depth;
     intent->shot = g_ai.planned_shot;
 }
 
@@ -747,7 +747,7 @@ static void ai_plan_intercept(const Player *player)
     s16 vx;
     s16 vy;
     u8 rise;
-    s16 behind = -court_toward_net(player->team) * AI_CONTACT_OFFSET_X;
+    s16 behind = player->team ? AI_CONTACT_OFFSET_X : -AI_CONTACT_OFFSET_X;
 
     if (g_ball.bounce_count > 0 &&
         court_x_on_side(g_ball.x_fp, player->team)) {
