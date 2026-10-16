@@ -462,3 +462,70 @@ side to side while dropping.
   spray when mistimed).
 - **Pairs with:** the slice on X; together all four face buttons and the
   shoulders have a job.
+
+## Character models
+
+The next big art job: better player models. What it must cover, collected
+from the work so far:
+
+- **Bareheaded bodies.** Draw the frames with real hair and no cap, and
+  make the cap one of the hats. Today the cap is drawn into every frame,
+  so "no hat" has to paint hair over the cap's whole shape, brim and all
+  (KNOWN_ISSUES #32). Watch the head-height scanline budget: four 16x8
+  hats are 34 of 34 slivers with the bodies, ponytails, effects, and ball
+  (ADR-014 hats amendment). Either keep a capped body variant, or rebudget
+  (for example a hat and a ponytail never on the same player).
+- **Poses for hitting** (below): an overhead windup and contact, a reach
+  to the side (mirrored by the flip), maybe a low scoop.
+- **Handedness under flip** (KNOWN_ISSUES #7): decide whether a
+  left-facing player is mirrored (paddle in the other hand) or drawn
+  facing left.
+- **Room:** OBJ name table 2 holds sixteen more 32x32 frames (R17); the
+  frame tables and loop lengths come from the manifest. A model taller or
+  wider than one 32x32 object needs the metasprite writer (R24) and a new
+  per-row budget.
+
+## Hitting: reach, height, and overheads
+
+**Waiting on the character models**, which must include the poses below
+(they'd be redrawn anyway). The mechanics don't depend on art; build them
+right after the models, or before with placeholder poses (TOSS has the arm
+up).
+
+Today the hit box is centred on the player's feet: ±22 px along the court,
+±16 across, and from the ground to 24 px up (`collision.c`,
+`HIT_REACH_*`). It ignores facing and the paddle hand, so the body is the
+paddle: run into a ball below head height, swing, and it goes. A ball
+behind you counts like one in front. Nothing above 24 px can be hit, and
+there is no overhead.
+
+- **In front, on the paddle side.** Shift the reach box toward the net and
+  the forehand side (mirrored with the sprite's flip, so it matches the
+  art; KNOWN_ISSUES #7). A ball behind you, or at the far backhand edge, is
+  a stretch or a miss.
+- **Reach.** The D-pad held at the swing extends the box that way by a few
+  pixels (a lunge across the court), as a stretched contact (it sprays,
+  `HIT_STRETCH_*`). Holding nothing is the safe, centred swing: the simple
+  input stays safe (ADR-044's rule).
+- **Height bands.** Low (near the ground: a scoop that can only lift soft,
+  dink or lob), normal (today's 0-24 px), and high (about 24-40 px):
+  overhead territory.
+- **Overhead smash.** A swing at a ball in the high band is an overhead:
+  fast and steep, landing deep or at the feet. Its timing window is
+  tighter than a groundstroke's, and a mistimed one goes long or into the
+  net. B (or any shot button) does it; no new input.
+- **CPUs.** They smash short lobs (by ladder rung, like net play,
+  ADR-035) and lob deeper to avoid being smashed; a smash at a net player
+  is a put-away (ADR-037). KID's swing assist covers overheads too.
+- **Poses for the character models:** overhead windup (paddle back over
+  the shoulder) and overhead contact/follow-through; a reach or lunge to
+  each side (two, mirrored by the flip); maybe a low scoop. That is 4-5
+  frames, which fit OBJ name table 2's 16 free slots (R17).
+- **Cost:** a rules and physics change: the golden trace is re-recorded,
+  `test_collision.c`/`test_ai.c` grow cases (in-front box, reach, bands,
+  smash), and the ladder is retuned with `make stats` (singles and both
+  doubles bots), since lobs against net players get riskier. The swing
+  lookahead (`ai_swing_connects`, R23's range filter) learns the new box.
+- **Open questions:** whether reach also works along the court (toward or
+  away from the net), not just across; whether a smash can be aimed or
+  always goes deep.
