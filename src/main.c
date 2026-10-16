@@ -58,6 +58,7 @@ static u8 update_pause_menu(u16 pressed)
     if (action == PAUSE_DO_RESTART) {
         game_new_match();
     } else if (action == PAUSE_DO_MAIN_MENU) {
+        game_quit_match();
         if (g_match_config.practice)
             practice_finish();
         /* Practice from the park (M4-OPEN-05): back to the ball machine.
@@ -182,7 +183,7 @@ static void update_park(void)
 static void start_next_opponent(void)
 {
     g_next_opponent = 0;
-    match_config_opponent(g_save.settings.ladder);
+    match_config_opponent(save_ladder(g_match_config.mode));
     game_start_match();
     story_begin_intro();
     /* render_open_match applies the new config itself. */

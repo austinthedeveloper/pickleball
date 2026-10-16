@@ -125,7 +125,7 @@ void select_apply(void)
     g_match_config.career_p1 = career_active() != 0;
     /* ADR-023: against the CPU, the next opponent on the ladder. */
     if (g_select.humans == 1)
-        match_config_opponent(g_save.settings.ladder);
+        match_config_opponent(save_ladder(g_select.mode));
     /* ADR-025: the saved options. */
     g_match_config.points_to_win = options_points(g_save.settings.points);
     g_match_config.difficulty = options_difficulty(g_save.settings.difficulty);

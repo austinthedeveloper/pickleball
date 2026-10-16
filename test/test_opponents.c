@@ -73,9 +73,13 @@ static void test_select_uses_ladder(void)
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     g_save.settings.ladder = 3;
+    g_save.ladder_doubles = 5;
     select_begin(MATCH_SINGLES, 1);
     select_apply();
     assert(g_match_config.opponent == 3);
+    select_begin(MATCH_DOUBLES, 1);             /* its own rung (ADR-055) */
+    select_apply();
+    assert(g_match_config.opponent == 5);
     select_begin(MATCH_SINGLES, 2);
     select_apply();
     assert(g_match_config.opponent == OPPONENT_NONE);
@@ -185,6 +189,53 @@ static void test_difficulty_order(void)
     assert(first > last + 8);
 }
 
+/* ADR-055: doubles climbs its own ladder, and pause, MAIN MENU on a
+ * ladder match starts that mode's ladder over (saved). RESTART, a loss,
+ * and other matches keep it. */
+static void test_ladder_per_mode_and_quit(void)
+{
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    g_attract = 0;
+    match_config_doubles();
+    match_config_opponent(save_ladder(MATCH_DOUBLES));
+    play_match(1);
+    assert(g_save.ladder_doubles == 1 && g_save.settings.ladder == 0);
+    match_config_opponent(save_ladder(MATCH_DOUBLES));
+    play_match(1);
+    assert(save_ladder(MATCH_DOUBLES) == 2);
+    match_config_defaults();
+    match_config_opponent(save_ladder(MATCH_SINGLES));
+    play_match(1);
+    assert(save_ladder(MATCH_SINGLES) == 1 && save_ladder(MATCH_DOUBLES) == 2);
+
+    /* Quitting singles leaves doubles alone, and is saved. */
+    game_new_match();
+    game_quit_match();
+    assert(save_ladder(MATCH_SINGLES) == 0 && save_ladder(MATCH_DOUBLES) == 2);
+    save_initialize();
+    assert(save_ladder(MATCH_SINGLES) == 0 && save_ladder(MATCH_DOUBLES) == 2);
+
+    /* No opponent (2P, the default CPU), open play, and the demo keep it. */
+    match_config_doubles();
+    game_quit_match();
+    assert(save_ladder(MATCH_DOUBLES) == 2);
+    match_config_opponent(1);
+    g_match_config.open_play = 1;
+    game_quit_match();
+    assert(save_ladder(MATCH_DOUBLES) == 2);
+    g_match_config.open_play = 0;
+    g_attract = 1;
+    game_quit_match();
+    assert(save_ladder(MATCH_DOUBLES) == 2);
+    g_attract = 0;
+    game_quit_match();
+    assert(save_ladder(MATCH_DOUBLES) == 0);
+    save_initialize();
+    assert(save_ladder(MATCH_DOUBLES) == 0);
+    match_config_defaults();
+}
+
 /* B on the result: after a ladder win, the next opponent is asked for
  * (main.c sets it up); after a loss, a rematch. */
 static void test_result_buttons(void)
@@ -259,6 +310,7 @@ int main(void)
     test_select_uses_ladder();
     test_ladder();
     test_result_buttons();
+    test_ladder_per_mode_and_quit();
     test_difficulty_order();
     match_config_defaults();
     printf("opponents host checks passed\n");

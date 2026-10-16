@@ -51,14 +51,18 @@ static void test_ladder_clear_record(void)
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     g_save.settings.ladder = OPPONENT_COUNT - 2;
-    save_advance_ladder();
+    save_advance_ladder(MATCH_SINGLES);
     assert(g_save.records.ladder_clears == 0);
-    save_advance_ladder();                      /* beat the last one */
+    save_advance_ladder(MATCH_SINGLES);                      /* beat the last one */
     assert(g_save.settings.ladder == 0);
     assert(g_save.records.ladder_clears == 1);
+    /* A doubles clear counts too (ADR-055). */
+    g_save.ladder_doubles = OPPONENT_COUNT - 1;
+    save_advance_ladder(MATCH_DOUBLES);
+    assert(g_save.ladder_doubles == 0 && g_save.records.ladder_clears == 2);
     save_write();
     save_initialize();
-    assert(g_save.records.ladder_clears == 1);
+    assert(g_save.records.ladder_clears == 2);
 }
 
 /* Every opponent has all three lines, in the HUD's limits. */

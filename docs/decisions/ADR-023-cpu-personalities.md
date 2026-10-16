@@ -113,6 +113,9 @@ wins out of 180: 30 matches at each bot mistake period from 3 to 8.
   this, B after a win replayed the same opponent, which looked like the
   ladder never moved.
 - The attract demo and the default config never set an opponent.
+- *Amended by [ADR-055](ADR-055-ladder-per-mode.md):* singles and doubles
+  each have their own rung (save layout 14), and pause, MAIN MENU on a
+  ladder match starts that mode's ladder over.
 
 ## HUD
 

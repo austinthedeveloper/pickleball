@@ -1,4 +1,5 @@
 #include <string.h>
+#include "match.h"
 #include "opponents.h"
 #include "options.h"
 #include "practice.h"
@@ -24,7 +25,8 @@ typedef char save_v10_is_52_bytes[sizeof(SaveV10) == 52 ? 1 : -1];
 typedef char save_v11_is_54_bytes[sizeof(SaveV11) == 54 ? 1 : -1];
 typedef char career_player_is_52_bytes[sizeof(CareerPlayer) == 52 ? 1 : -1];
 typedef char save_v12_is_212_bytes[sizeof(SaveV12) == 212 ? 1 : -1];
-typedef char save_v13_is_214_bytes[sizeof(SaveData) == 214 ? 1 : -1];
+typedef char save_v13_is_214_bytes[sizeof(SaveV13) == 214 ? 1 : -1];
+typedef char save_v14_is_214_bytes[sizeof(SaveData) == 214 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
 #define SAVE_RAW_BYTES 214
@@ -170,6 +172,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V13)
+        return sizeof(SaveV13);
     if (version == SAVE_V12)
         return sizeof(SaveV12);
     if (version == SAVE_V11)
@@ -332,6 +336,14 @@ static void save_migrate_v12(const u8 *raw)
     g_save.version = SAVE_VERSION;
 }
 
+/* v0.19.0: the same layout; the reserved byte is now the doubles ladder,
+ * set in save_initialize. */
+static void save_migrate_v13(const u8 *raw)
+{
+    memcpy(&g_save, raw, sizeof(SaveV13) - sizeof(u16));
+    g_save.version = SAVE_VERSION;
+}
+
 /* Layouts before 11 knew 7 surface colours, so the kitchen's own presets
  * (LIME, TEAL) came at 9 and 10; the surface colours added with layout 11
  * (mirrored in the kitchen, ADR-027) moved them up. */
@@ -373,7 +385,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V12)
+    if (raw[pick][4] == SAVE_V13)
+        save_migrate_v13(raw[pick]);
+    else if (raw[pick][4] == SAVE_V12)
         save_migrate_v12(raw[pick]);
     else if (raw[pick][4] == SAVE_V11)
         save_migrate_v11(raw[pick]);
@@ -389,19 +403,44 @@ void save_initialize(void)
         save_migrate_v4(raw[pick]);
     if (raw[pick][4] < SAVE_V11)
         save_remap_kitchen_v10();
+    /* One ladder for both modes before ADR-055: doubles starts where it
+     * was. */
+    g_save.ladder_doubles = g_save.settings.ladder;
     save_write();
     save_write();
 }
 
-void save_advance_ladder(void)
+u8 save_ladder(u8 mode)
 {
-    u8 next = g_save.settings.ladder + 1;
+    u8 rung = mode == MATCH_DOUBLES ? g_save.ladder_doubles :
+        g_save.settings.ladder;
+
+    return rung < OPPONENT_COUNT ? rung : 0;
+}
+
+void save_advance_ladder(u8 mode)
+{
+    u8 next = save_ladder(mode) + 1;
 
     if (next >= OPPONENT_COUNT) {
         next = 0;
         save_bump(&g_save.records.ladder_clears);
     }
-    g_save.settings.ladder = next;
+    if (mode == MATCH_DOUBLES)
+        g_save.ladder_doubles = next;
+    else
+        g_save.settings.ladder = next;
+}
+
+void save_quit_ladder(u8 mode)
+{
+    if (save_ladder(mode) == 0)
+        return;
+    if (mode == MATCH_DOUBLES)
+        g_save.ladder_doubles = 0;
+    else
+        g_save.settings.ladder = 0;
+    save_write();
 }
 
 void save_record_rally(u8 shots)

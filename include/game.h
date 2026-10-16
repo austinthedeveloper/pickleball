@@ -82,6 +82,9 @@ void game_new_match(void);
 void game_start_attract(void);
 /* Leaves attract and starts a human match in the given mode. */
 void game_start_match(void);
+/* Pause, MAIN MENU on a match (ADR-055): a ladder match gives up the run,
+ * and that mode's ladder starts over. */
+void game_quit_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 /* Nonzero when the ball's pace varies by frame: a slow ball (ADR-025),

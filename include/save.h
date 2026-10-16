@@ -13,14 +13,15 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 13,          /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 14,          /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033); 9: record initials (ADR-040);
                                    10: practice return zones (ADR-028);
                                    11: the court's time (ADR-045);
                                    12: career players (ADR-047);
-                                   13: more modifiers (ADR-054).
+                                   13: more modifiers (ADR-054);
+                                   14: a doubles ladder (ADR-055).
                                    Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
                                    v0.6.0 to v0.12.0, 9 in v0.13.0
                                    (ADR-032). */
@@ -45,7 +46,8 @@ typedef struct {
 /* Choices that persist (ADR-022). */
 typedef struct {
     u8 court[COURT_PARTS];      /* court colour preset per part; 0 DEFAULT */
-    u8 ladder;                  /* next opponent (ADR-023) */
+    u8 ladder;                  /* next singles opponent (ADR-023); the
+                                   doubles one is SaveData.ladder_doubles */
     u8 venue;                   /* COURT_VENUE_AUTO or venue + 1 (ADR-024) */
     u8 points;                  /* points to win (ADR-025) */
     u8 difficulty;              /* Difficulty (ADR-025) */
@@ -113,7 +115,7 @@ typedef struct {
                                    saves before it, is the default (OFF) */
     u8 modifiers2;              /* MODIFIER2_* bits (ADR-054): the
                                    modifiers past settings.modifiers' 8 */
-    u8 reserved;                /* keeps the checksum at an even offset */
+    u8 ladder_doubles;          /* next doubles opponent (ADR-055) */
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
@@ -132,10 +134,10 @@ extern u8 g_save_new_records;
  */
 enum {
     SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10,
-    SAVE_V11 = 11, SAVE_V12 = 12
+    SAVE_V11 = 11, SAVE_V12 = 12, SAVE_V13 = 13
 };
 /* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0, v0.15.0,
- * v0.16.0 to v0.18.1 */
+ * v0.16.0 to v0.18.1, v0.19.0 */
 
 typedef struct {
     u8 magic[4];
@@ -270,6 +272,22 @@ typedef struct {
     u16 checksum;
 } SaveV12;
 
+/* v0.19.0: SaveData before the doubles ladder (ADR-055). */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 13 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettings settings;
+    SaveInitials initials;
+    CareerPlayer career[CAREER_SLOTS];
+    u8 career_active;
+    u8 camera;
+    u8 modifiers2;
+    u8 reserved;
+    u16 checksum;
+} SaveV13;
+
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */
 void save_initialize(void);
@@ -286,9 +304,15 @@ void save_set_initials(const u8 *letters);
 /* A finished human match. vs_cpu: the opponents were all CPU (1P is always
  * on team 0). Updates the records and writes. */
 void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against);
+/* The next ladder opponent in a MatchMode: singles and doubles each have
+ * their own rung (ADR-055). Anything out of range reads as the first. */
+u8 save_ladder(u8 mode);
 /* A win over a ladder opponent: the next one is up (after the last, the
  * first again, and a ladder clear is recorded). Written with the match. */
-void save_advance_ladder(void);
+void save_advance_ladder(u8 mode);
+/* A ladder match quit from the pause menu (ADR-055): the mode's ladder
+ * starts over at the first opponent. Writes when it moved. */
+void save_quit_ladder(u8 mode);
 /* A finished point with this many shots; written with the match. */
 void save_record_rally(u8 shots);
 

@@ -772,8 +772,7 @@ static void hud_result_story(u8 step)
             "LADDER CLEARED!");
         return;
     }
-    team = g_opponent_team[g_save.settings.ladder < OPPONENT_COUNT ?
-        g_save.settings.ladder : 0];
+    team = g_opponent_team[save_ladder(g_match_config.mode)];
     for (i = 0; team[i]; ++i)
         next[9 + i] = team[i];
     next[9 + i] = 0;
@@ -837,26 +836,24 @@ static void hud_record_mode_line(u8 row, const char *label, u8 mode)
 }
 
 /* Two menu items per call (half 0 or 1); the cursor marks the choice. */
-/* " LADDER 4/8       PIRATES ": the rung and the team up next (ADR-023). */
+/* " LADDER     S  4/8  D  2/8 ": each mode's rung, in the W and L columns
+ * of the lines above (ADR-023, ADR-055). */
+static void hud_record_rung(u8 col, u8 row, u8 mode)
+{
+    static char text[] = "1/8";
+
+    text[0] = (char)('1' + save_ladder(mode));
+    text[2] = (char)('0' + OPPONENT_COUNT);
+    hud_text(col, row, HUD_PAL_WHITE, text);
+}
+
 static void hud_record_ladder(u8 row)
 {
-    u8 rung = g_save.settings.ladder;
-    const char *team;
-    char text[4];
-    u8 length = 0;
-
-    if (rung >= OPPONENT_COUNT)
-        rung = 0;
-    team = g_opponent_team[rung];
-    text[0] = (char)('1' + rung);
-    text[1] = '/';
-    text[2] = (char)('0' + OPPONENT_COUNT);
-    text[3] = 0;
     hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "LADDER");
-    hud_text(RECORDS_COL + 8, row, HUD_PAL_YELLOW, text);
-    while (team[length])
-        ++length;
-    hud_text(RECORDS_COUNT_COL + 4 - length, row, HUD_PAL_WHITE, team);
+    hud_text(RECORDS_COUNT_COL - 9, row, HUD_PAL_YELLOW, "S");
+    hud_record_rung(RECORDS_COUNT_COL - 6, row, MATCH_SINGLES);
+    hud_text(RECORDS_COUNT_COL - 2, row, HUD_PAL_YELLOW, "D");
+    hud_record_rung(RECORDS_COUNT_COL + 1, row, MATCH_DOUBLES);
 }
 
 /* One menu item; the choice is yellow with the cursor. Items overwrite
@@ -1860,8 +1857,12 @@ static void hud_title_step(u16 key, u8 step, u8 from_title)
 {
     switch (step) {
     case HUD_STEP_CLEAR:
+        /* From the sub-panel down: a match's VS or MATCH POINT panel
+         * (rows 4-6) never redraws on the title (KNOWN_ISSUES #31). */
         if (!from_title) {
-            hud_clear_rows(CENTER_BIG_ROW - 2, 6 + TITLE_AREA_ROWS);
+            hud_clear_rows(SUB_PANEL_ROW,
+                CENTER_BIG_ROW - 2 - SUB_PANEL_ROW + 6 + TITLE_AREA_ROWS);
+            s_sub_panel = 0;
             s_title_view = HUD_TITLE_CLEARED;
         }
         break;

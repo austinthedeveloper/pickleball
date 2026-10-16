@@ -201,6 +201,14 @@ void game_start_match(void)
     g_attract = 0;
 }
 
+void game_quit_match(void)
+{
+    if (g_attract == 0 && g_match_config.open_play == 0 &&
+            g_match_config.practice == 0 &&
+            g_match_config.opponent != OPPONENT_NONE)
+        save_quit_ladder(g_match_config.mode);
+}
+
 void game_contact(u8 player_index)
 {
     Player *player = &g_players[player_index];
@@ -358,7 +366,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
          * ADR-023: beating the ladder opponent brings on the next. */
         if (!g_attract && winner == 0 && !g_match_config.open_play &&
                 g_match_config.opponent != OPPONENT_NONE)
-            save_advance_ladder();
+            save_advance_ladder(g_match_config.mode);
         /* ADR-047: before save_record_match, whose write keeps both. */
         if (!g_attract && g_match_config.human[2] == 0)
             career_record_match(g_match_config.mode, winner == 0,

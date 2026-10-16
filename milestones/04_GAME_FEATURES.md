@@ -44,6 +44,9 @@ ADR-024.
 
 - [x] `M4-OPP-01` Eight CPU personalities with looks, play styles, and a saved ladder.
   - Verified: [ADR-023](../docs/decisions/ADR-023-cpu-personalities.md), `test/test_opponents.c`, `make stats OPPONENT=n`.
+- [x] `M4-OPP-05` A ladder per mode (singles and doubles each keep their rung), and quitting a ladder match from the pause menu starts that mode's ladder over. Save layout 14.
+  - Accept: doubles climbs without moving singles; pause, MAIN MENU resets the mode's rung and saves it; a loss, RESTART, and power-off keep it; a v13 save keeps its place in both modes; zero overruns.
+  - Verified: [ADR-055](../docs/decisions/ADR-055-ladder-per-mode.md), `test_save.c: test_migrate_v13`, `test_opponents.c: test_ladder_per_mode_and_quit`, MesenCE (doubles rung 3 is 0 after the quit, singles unchanged; the records page reads `S 5/8 D 3/8`); golden trace identical; `make perf` zero overruns.
 - [x] `M4-OPP-02` Tune the doubles partners.
   - Accept: a doubles balance run (`tools/match_stats.c` is singles only today) shows each team's difficulty in ladder order.
   - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md) (amended): `make stats LATE=0 OPPONENT=-2 MODE=1` (and `MODE=3`, the net bot) prints the doubles ladder in order for both bots (bot wins of 60: 59, 44, 36, 26, 21, 9, 3, 2 and 60, 59, 42, 29, 20, 17, 7, 2, after the singles pass); four partners retuned, singles unchanged.

@@ -1,0 +1,19 @@
+# KNOWN_ISSUES #31: a doubles ladder match, then pause, MAIN MENU. The
+# title must not keep the match's VS panel under the scoreboard.
+70 71 up       # PRACTICE
+80 81 up       # MODIFIERS
+90 91 start
+140 141 b      # close MODIFIERS
+160 161 down   # MODIFIERS -> PRACTICE -> SINGLES -> DOUBLES
+166 167 down
+172 173 down
+180 181 start
+220 221 start  # confirm Player Select
+300 301 b      # close the intro card
+shot 360
+620 621 start  # pause
+640 641 down
+650 651 down
+670 671 b      # MAIN MENU
+shot 760
+shot 900

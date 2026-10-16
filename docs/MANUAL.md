@@ -288,6 +288,8 @@ Eight teams stand between you and the title, each with its own look, style, and 
 
 Win and press B to face the next team straight away; lose and B is a rematch. Beat the Champs to clear the ladder, and it starts over. Your records count every ladder clear.
 
+Singles and doubles are separate ladders, each remembering where you are. Quit a ladder match from the pause menu (MAIN MENU) and you give up your climb: that ladder starts over with the first team. Losing keeps your place.
+
 ### How They Play
 
 The higher you climb, the more your opponents play the net. From the Gym Bros on, they move up once the serve and return have bounced and volley the ball out of the air. The Pirates through the Twins play right at the kitchen line. Come to the net yourself, and the smarter teams (the Pirates on) answer with soft drops into your kitchen and dink rallies, just like real players.
@@ -309,7 +311,7 @@ Do not turn the power off while a match is ending or while you are leaving a men
 
 ### Records
 
-RECORDS is the last row of the CAREER page. It shows wins and losses in singles and doubles, your current and best win streak, shutouts (wins where the CPU scored nothing), the longest rally (shots in one point, counting the serve), and ladder clears.
+RECORDS is the last row of the CAREER page. It shows wins and losses in singles and doubles, your current and best win streak, shutouts (wins where the CPU scored nothing), the longest rally (shots in one point, counting the serve), your place on the singles (S) and doubles (D) ladders, and ladder clears.
 
 Beat your best win streak or your longest rally, and the match ends with **NEW RECORD!** Enter three initials, arcade style: Up and Down pick a letter (hold to scroll), B moves to the next letter, Y goes back, and START keeps what's shown. Your initials appear beside the record until someone beats it.
 

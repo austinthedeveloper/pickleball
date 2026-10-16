@@ -522,7 +522,7 @@ static void test_migrate_v12(void)
         memcmp(g_save.career[1].name, "PICKLES ", CAREER_NAME) == 0);
     assert(g_save.career[1].wins[MATCH_DOUBLES] == 4);
     assert(g_save.career_active == 1 && g_save.camera == 3);
-    assert(g_save.modifiers2 == 0 && g_save.reserved == 0);   /* new */
+    assert(g_save.modifiers2 == 0);                         /* new */
     memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
     assert(save_valid(&a) && a.version == SAVE_VERSION);
 
@@ -531,6 +531,45 @@ static void test_migrate_v12(void)
     memset(&g_save, 0, sizeof(g_save));
     save_initialize();
     assert(g_save.modifiers2 == MODIFIER2_INVERSE);
+}
+
+/* ADR-055: a v13 save (v0.19.0) keeps everything, and doubles starts on
+ * the rung the shared ladder was on. */
+static void test_migrate_v13(void)
+{
+    SaveV13 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V13;
+    old.sequence = 4;
+    old.records.ladder_clears = 2;
+    old.settings.ladder = 3;
+    old.career[0].used = 1;
+    old.career_active = 0;
+    old.camera = 2;
+    old.modifiers2 = MODIFIER2_INVERSE;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.ladder_clears == 2);
+    assert(g_save.career[0].used && g_save.career_active == 0);
+    assert(g_save.camera == 2 && g_save.modifiers2 == MODIFIER2_INVERSE);
+    assert(g_save.settings.ladder == 3);
+    assert(g_save.ladder_doubles == 3);                     /* new */
+    assert(save_ladder(MATCH_SINGLES) == 3 && save_ladder(MATCH_DOUBLES) == 3);
+    memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+
+    g_save.ladder_doubles = 5;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.ladder_doubles == 5 && g_save.settings.ladder == 3);
 }
 
 /* ADR-040: beating a record clears its initials until they are entered;
@@ -616,6 +655,7 @@ int main(void)
     test_migrate_v9();
     test_migrate_v10();
     test_migrate_v12();
+    test_migrate_v13();
     test_initials();
     test_game_hooks();
     printf("save host checks passed\n");
