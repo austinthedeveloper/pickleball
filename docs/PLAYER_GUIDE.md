@@ -267,9 +267,11 @@ partner. The CPUs take the remaining colours.
 | Button | Action |
 |---|---|
 | D-pad | Move. At contact, it also aims the shot. |
-| B | Standard swing. When you're holding the ball, press B (or A/Y) to serve, or hold it to charge a faster serve. |
+| B | Standard swing. When you're holding the ball, press B (or A/Y/X) to serve, or hold it to charge a faster serve. |
 | A | Drive: a faster, flatter shot. Mistimed drives spray wider. |
 | Y | Lob: a slow, high shot deep over an opponent at the net. With the D-pad away from the net, it's a dink that lands softly in the opponent's kitchen. |
+| X | Slice: slow (time to get back), never deep, and it sprays half as much off a stretch. |
+| L or R (held) | Every shot goes short, as if aimed away from the net, while the D-pad moves and aims at a sideline: L+B a drop, L+A a fast drop, L+Y a dink, L+X a short slice. A stretched fast drop sails past the kitchen. |
 | Start | Open Player Select from the title; pause and unpause during play (in practice too); back to the title from the result screen. |
 | Select | Debug and hardware-test ROMs only: OBJ stress scene. |
 
@@ -279,7 +281,7 @@ the bar, the faster the serve. Wait too long and let go as it drains to the
 first (white) block or below, and the serve dumps into the net. On KID the
 serve works as before: one press, or it goes by itself.
 
-**Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep. Away from the net (Left) hits short, a drop shot near the kitchen.
+**Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep. Away from the net (Left), or L or R held, hits short, a drop shot near the kitchen.
 
 **Timing:** a swing hits on its first frame with the ball in reach. Meet the ball with it close to your body and the shot goes where you aimed. Reach for it at the edge and it sprays wide and long, often out. Press B a moment before the ball arrives, not when it is far away.
 

@@ -44,6 +44,15 @@ enum {
     HIT_LOB_MIN_FRAMES = 44,
     HIT_LOB_MAX_FRAMES = 50,                /* apex ~58 px; < AI horizon */
     HIT_PACE_DINK_FP = 24,                  /* 1.5 px/frame */
+    /* Slice (ADR-056): slow (time to get back), never deep, and steady
+     * off a stretch; no higher than a standard shot's longest flight. */
+    HIT_PACE_SLICE_FP = 30,                 /* 1.875 px/frame */
+    HIT_SLICE_MIN_FRAMES = 34,
+    HIT_SLICE_STRETCH_WIDE = 10,
+    HIT_SLICE_STRETCH_LONG = 8,
+    /* A fast drop (a drive aimed short, ADR-056) is flat: off a stretch it
+     * flies on past the kitchen, where it can be attacked. */
+    HIT_FAST_DROP_STRETCH_LONG = 34,
     /* A dink lands inside the opponent's kitchen. */
     HIT_TARGET_DINK_RIGHT = COURT_NET_X + 18,
     HIT_TARGET_DINK_LEFT = COURT_MIRROR_X(HIT_TARGET_DINK_RIGHT)

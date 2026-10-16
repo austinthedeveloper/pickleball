@@ -93,6 +93,13 @@ ADR-024.
   - Accept: a tap (also an early one) is the classic serve; the meter rises and falls while held; more charge is a faster serve that still lands in; a release at the bottom on the way down hits the net; CPUs and KID serve as before; zero overruns.
   - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
 - [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
+- [x] `M4-SHOT-01` Slice on X: a slow shot that buys time, never deep, steady off a stretch.
+  - Accept: slower than a standard shot from mid-court and the net, never above a standard shot's longest flight; neutral or short; less stretch spray; its own sound; CPUs unchanged; zero overruns.
+  - Verified: [ADR-056](../docs/decisions/ADR-056-slice-and-short-hold.md), `test_collision.c: test_slice_and_fast_drop`, `test_input.c: test_slice_and_short_hold`, MesenCE (ball machine landings per shot); golden trace identical; `make perf` zero overruns.
+- [x] `M4-SHOT-02` Hold L or R to hit any shot short (L+A a fast drop), with the D-pad free to move and aim at a sideline; a stretched fast drop flies past the kitchen.
+  - Accept: L or R aims away from your own net on either team; pressing away still works; a fast drop met off a stretch lands past neutral; CPUs unchanged.
+  - Verified: as `M4-SHOT-01`.
+- [ ] `M4-SHOT-03` CPUs slice: a per-style choice in `opponents.json` (a soft-game team resets with it), tuned against the ladder order.
 
 ## Rules
 

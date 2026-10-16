@@ -38,7 +38,8 @@ static fx absolute_fp(fx value)
 /*
  * Target and flight for a rally shot (ADR-019). Standard and drive choose
  * a deep/neutral/short target from the aim; soft is a lob (deep, high) or,
- * aimed away from the net, a dink into the opponent's kitchen. Targets are
+ * aimed away from the net, a dink into the opponent's kitchen; a slice
+ * (ADR-056) is neutral or short, slow, and sprays less. Targets are
  * chosen for a left-team hitter and mirrored. A stretched (off-centre)
  * contact sprays wide and long, more so for a drive.
  */
@@ -70,6 +71,13 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
         pace = HIT_PACE_LOB_FP;
         min_frames = HIT_LOB_MIN_FRAMES;
         max_frames = HIT_LOB_MAX_FRAMES;
+    } else if (shot == SHOT_SLICE) {
+        target_x = depth < 0 ? HIT_TARGET_SHORT_RIGHT :
+            HIT_TARGET_NEUTRAL_RIGHT;
+        pace = HIT_PACE_SLICE_FP;
+        min_frames = HIT_SLICE_MIN_FRAMES;
+        wide = HIT_SLICE_STRETCH_WIDE;
+        longer = HIT_SLICE_STRETCH_LONG;
     } else {
         if (depth > 0) {
             target_x = HIT_TARGET_DEEP_RIGHT;
@@ -86,7 +94,8 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
             min_frames = HIT_DRIVE_MIN_FRAMES;
             max_frames = HIT_DRIVE_MAX_FRAMES;
             wide = HIT_DRIVE_STRETCH_WIDE;
-            longer = HIT_DRIVE_STRETCH_LONG;
+            longer = depth < 0 ? HIT_FAST_DROP_STRETCH_LONG :
+                HIT_DRIVE_STRETCH_LONG;
         }
     }
 

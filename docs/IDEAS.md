@@ -425,6 +425,10 @@ a high ball reads as high (and gives the player under it a moment).
 
 ## Slice on X
 
+**Done:** [ADR-056](decisions/ADR-056-slice-and-short-hold.md) (humans;
+CPUs are `M4-SHOT-03`). It keeps the one gravity, so it is slow but not
+lower; see the ADR. The notes below are the original idea.
+
 From the user (2026-10-16). X is unused in play. Make it a slice: a
 slower, lower shot that buys time to get back into position (the reset
 in real pickleball).
@@ -439,6 +443,10 @@ in real pickleball).
 - **Manual:** the controls table lists X as unused today.
 
 ## Hold L or R for a drop shot
+
+**Done:** [ADR-056](decisions/ADR-056-slice-and-short-hold.md), with the
+fast drop's downside (it sails long off a stretch). The notes below are
+the original idea.
 
 From the user (2026-10-16). Hold L (or R) and press a face button to hit
 that shot as a drop into the kitchen: L+A a fast drop, L+B a standard

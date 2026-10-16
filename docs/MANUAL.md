@@ -36,7 +36,9 @@ You move with the Control Pad and hit with B, A, and Y. The Control Pad also aim
 | A | Drive: a fast, flat shot. A mistimed drive sprays wide. |
 | Y | Lob: a slow, high shot over an opponent at the net. Hold the Control Pad away from the net for a dink that drops softly into the opponent's kitchen. |
 | START | Pause and resume. |
-| X, L, R, SELECT | Not used during play. |
+| X | Slice: a slow shot that gives you time to get back in position. It never goes deep, and it stays steady even when you have to stretch for the ball. |
+| L or R (hold) | Hit short: hold L or R and press a swing button to drop the ball short, while the Control Pad moves you and aims at a sideline. L+A is a fast drop, L+Y a dink. |
+| SELECT | Not used during play. |
 
 ### In the Menus
 
@@ -51,7 +53,7 @@ You move with the Control Pad and hit with B, A, and Y. The Control Pad also aim
 
 - **Up or Down** sends the ball toward that sideline.
 - **Toward the net** hits deep.
-- **Away from the net** hits short: a drop shot near the kitchen.
+- **Away from the net** hits short: a drop shot near the kitchen. Holding L or R does the same.
 
 ### Timing Your Swing
 
@@ -321,6 +323,8 @@ To erase every record, hold L and R on the records page and press X. **There is 
 
 - **Swing early, hit close.** Press the button a moment before the ball arrives. A ball met close to your body goes where you aim; a stretch sprays it out.
 - **Mind the bounces.** Let the serve and the return bounce. Volley too soon and you'll see **VOLLEY!** Volley from your kitchen and you'll see **KITCHEN!** Stay behind the line to volley.
+- **Buy some time.** Pulled out of position? Slice it (X) and get back while it floats over.
+- **Fast drops are a gamble.** L+A is quick and low, but stretch for it and it sails long, right where they want it.
 - **Lob the net-rushers.** When opponents crowd the kitchen line, a Y lob sails over their heads.
 - **Keep it low.** Against a team at the net, aim at their feet, or dink into their kitchen (Y with the Control Pad held away from the net).
 - **Don't split up in doubles.** Stay level with your partner. Split one-up, one-back, and smart teams pick on the player in back.

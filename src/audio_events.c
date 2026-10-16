@@ -205,11 +205,13 @@ void audio_on_event(u8 kind, s16 x, u8 detail)
         break;
     case EVENT_HIT:
         /* detail: hitter | ShotType << 4. Drives are sharper, soft shots
-         * duller. */
+         * duller, a slice duller and quieter still (ADR-056). */
         if ((detail >> 4) == SHOT_DRIVE)
             audio_play(SFX_HIT, SFX_PITCH + 1, 14, audio_pan(x));
         else if ((detail >> 4) == SHOT_SOFT)
             audio_play(SFX_HIT, SFX_PITCH - 1, 11, audio_pan(x));
+        else if ((detail >> 4) == SHOT_SLICE)
+            audio_play(SFX_HIT, SFX_PITCH - 2, 10, audio_pan(x));
         else
             audio_play(SFX_HIT, SFX_PITCH, 13, audio_pan(x));
         break;

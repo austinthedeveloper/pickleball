@@ -53,8 +53,11 @@ void input_assign_match(const u8 active[MAX_PLAYERS],
         g_input_pad_for_player[1] = g_multitap_present ? 2 : INPUT_NO_PAD;
 }
 
+/* away: the aim_x that points away from this player's net (-1 on the
+ * left team): a held L or R aims there, a short shot (ADR-056), and the
+ * D-pad still moves and aims at a sideline. */
 static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
-    u8 may_pause)
+    u8 may_pause, s16 away)
 {
     u16 held = pad->held;
 
@@ -68,14 +71,16 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
         intent->move_y = -1;
     else if (held & PAD_DOWN)
         intent->move_y = 1;
-    intent->aim_x = intent->move_x;
+    intent->aim_x = (held & PAD_SHORT) ? away : intent->move_x;
     intent->aim_y = intent->move_y;
-    intent->hit_pressed = (pad->pressed & (PAD_B | PAD_A | PAD_Y)) != 0;
-    intent->hit_held = (held & (PAD_B | PAD_A | PAD_Y)) != 0;
+    intent->hit_pressed = (pad->pressed & PAD_SWING) != 0;
+    intent->hit_held = (held & PAD_SWING) != 0;
     if (pad->pressed & PAD_A)
         intent->shot = SHOT_DRIVE;
     else if (pad->pressed & PAD_Y)
         intent->shot = SHOT_SOFT;
+    else if (pad->pressed & PAD_X)
+        intent->shot = SHOT_SLICE;
     else
         intent->shot = SHOT_STANDARD;
     /* Pause is arbitrated centrally; only P1 pauses in the POC. */
@@ -98,7 +103,8 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
         if (g_input_owners[i] == INPUT_OWNER_HUMAN && \
                 g_input_pad_for_player[i] != INPUT_NO_PAD) { \
             build_intent(&g_player_intents[i], \
-                &g_pad_snapshots[g_input_pad_for_player[i]], (i) == 0); \
+                &g_pad_snapshots[g_input_pad_for_player[i]], (i) == 0, \
+                (i) >= 2 ? 1 : -1); \
         } else { \
             g_player_intents[i].move_x = 0; \
             g_player_intents[i].move_y = 0; \

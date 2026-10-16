@@ -24,12 +24,17 @@
 #define PAD_L 0x0020
 #define PAD_R 0x0010
 
-/* Shot types (docs/decisions/ADR-019-shots.md): B, A, Y. */
+/* Shot types (docs/decisions/ADR-019-shots.md): B, A, Y, and X
+ * (ADR-056). Holding L or R hits any of them short (ADR-056). */
 typedef enum {
     SHOT_STANDARD = 0,
     SHOT_DRIVE = 1,     /* A: faster, flatter */
-    SHOT_SOFT = 2       /* Y: lob, or a dink when aimed away from the net */
+    SHOT_SOFT = 2,      /* Y: lob, or a dink when aimed away from the net */
+    SHOT_SLICE = 3      /* X: slow, never deep, steady off a stretch */
 } ShotType;
+
+#define PAD_SWING (PAD_B | PAD_A | PAD_Y | PAD_X)
+#define PAD_SHORT (PAD_L | PAD_R)
 
 typedef enum {
     INPUT_OWNER_NONE = 0,
@@ -49,7 +54,7 @@ typedef struct {
     /* Shot direction read at contact; humans aim with the D-pad (= move). */
     s16 aim_x;
     s16 aim_y;
-    u8 hit_pressed;     /* any swing button (B, A, Y) */
+    u8 hit_pressed;     /* any swing button (B, A, Y, X) */
     u8 shot;            /* ShotType of that swing */
     u8 pause_pressed;
     u8 hit_held;        /* a swing button is down (the charged serve) */

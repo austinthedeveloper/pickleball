@@ -61,6 +61,33 @@ static void test_pause_only_from_p1(void)
     assert(g_player_intents[0].pause_pressed);
 }
 
+/* ADR-056: X is a swing (the slice); a held L or R aims away from the
+ * player's own net (a short shot) while the D-pad still moves. */
+static void test_slice_and_short_hold(void)
+{
+    input_configure(1);
+    all_human();
+    memset(raw, 0, sizeof(raw));
+    input_map_frame(raw);
+    raw[0] = PAD_X | PAD_RIGHT;
+    raw[1] = PAD_A | PAD_R | PAD_LEFT;  /* P3: the right team */
+    input_map_frame(raw);
+    assert(g_player_intents[0].hit_pressed && g_player_intents[0].hit_held);
+    assert(g_player_intents[0].shot == SHOT_SLICE);
+    assert(g_player_intents[0].aim_x == 1);
+    assert(g_player_intents[2].shot == SHOT_DRIVE);
+    assert(g_player_intents[2].aim_x == 1 && g_player_intents[2].move_x == -1);
+    raw[0] = PAD_L | PAD_RIGHT | PAD_UP;
+    input_map_frame(raw);
+    assert(!g_player_intents[0].hit_pressed);
+    assert(g_player_intents[0].aim_x == -1 && g_player_intents[0].move_x == 1);
+    assert(g_player_intents[0].aim_y == -1);
+    raw[0] = PAD_L | PAD_B;
+    input_map_frame(raw);
+    assert(g_player_intents[0].shot == SHOT_STANDARD);
+    assert(g_player_intents[0].aim_x == -1);
+}
+
 static void test_poc_ownership_without_multitap(void)
 {
     input_configure(0);
@@ -82,6 +109,7 @@ int main(void)
 {
     test_four_independent_slots();
     test_pause_only_from_p1();
+    test_slice_and_short_hold();
     test_poc_ownership_without_multitap();
     puts("input host checks passed");
     return 0;

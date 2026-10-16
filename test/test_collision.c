@@ -235,6 +235,46 @@ static void test_shot_types(void)
     assert(ball.x_fp > TO_FP(COURT_KITCHEN_LEFT_X));
 }
 
+/* ADR-056: a slice is slower than a standard shot, never deep, short when
+ * aimed away, and sprays less off a stretch; a fast drop (a drive aimed
+ * short) lands short in the sweet spot and flies on past it off one. */
+static void test_slice_and_fast_drop(void)
+{
+    fx apex;
+    fx standard_y;
+    u8 standard;
+    u8 frames;
+
+    standard = fly_shot(0, SHOT_STANDARD, 0, &apex);
+    frames = fly_shot(0, SHOT_SLICE, 0, &apex);
+    assert(frames > standard + 6);
+    assert(frames <= HIT_FLIGHT_MAX_FRAMES);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_NEUTRAL_RIGHT)) < TO_FP(3));
+    fly_shot(0, SHOT_SLICE, 1, &apex);                  /* never deep */
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_NEUTRAL_RIGHT)) < TO_FP(3));
+    fly_shot(0, SHOT_SLICE, -1, &apex);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_SHORT_RIGHT)) < TO_FP(3));
+    fly_shot(1, SHOT_SLICE, 1, &apex);                  /* mirrored */
+    assert(absolute_fp(ball.x_fp -
+        TO_FP(COURT_MIRROR_X(HIT_TARGET_SHORT_RIGHT))) < TO_FP(3));
+
+    s_offset_y = HIT_SWEET_Y + 4;
+    fly_shot(0, SHOT_STANDARD, 0, &apex);
+    standard_y = ball.y_fp;
+    fly_shot(0, SHOT_SLICE, 0, &apex);
+    assert(ball.y_fp < standard_y);                     /* sprays less */
+    assert(ball.y_fp > TO_FP(HIT_TARGET_LANE_CENTER));
+
+    fly_shot(0, SHOT_DRIVE, -1, &apex);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_SHORT_RIGHT +
+        HIT_FAST_DROP_STRETCH_LONG)) < TO_FP(3));
+    assert(ball.x_fp > TO_FP(HIT_TARGET_NEUTRAL_RIGHT));
+    s_offset_y = 0;
+    frames = fly_shot(0, SHOT_DRIVE, -1, &apex);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_SHORT_RIGHT)) < TO_FP(3));
+    assert(frames < fly_shot(0, SHOT_STANDARD, -1, &apex));
+}
+
 /* ADR-020: POWER shortens flights, CONTROL narrows the stretch spray, and
  * the standard paddle is exactly the ADR-019 tunables. */
 static void test_paddle_stats(void)
@@ -297,6 +337,7 @@ int main(void)
     test_directional_target_lanes();
     test_shot_types();
     test_paddle_stats();
+    test_slice_and_fast_drop();
     test_new_swing_restores_contact();
     puts("collision host checks passed");
     return 0;

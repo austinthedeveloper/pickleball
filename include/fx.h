@@ -15,7 +15,7 @@ enum {
 enum {
     FX_SPARK_ALTERNATE = 0,     /* standard: big and small frames */
     FX_SPARK_BIG = 1,           /* drive */
-    FX_SPARK_SMALL = 2          /* lob / dink */
+    FX_SPARK_SMALL = 2          /* lob / dink / slice */
 };
 
 typedef struct {

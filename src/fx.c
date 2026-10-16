@@ -23,7 +23,7 @@ void fx_on_event(u8 kind, s16 x, s16 y, u8 detail)
         x + FX_SPARK_LEAD_X;
     if ((detail >> 4) == SHOT_DRIVE)
         g_fx.spark_style = FX_SPARK_BIG;
-    else if ((detail >> 4) == SHOT_SOFT)
+    else if ((detail >> 4) >= SHOT_SOFT)        /* soft, slice */
         g_fx.spark_style = FX_SPARK_SMALL;
     else
         g_fx.spark_style = FX_SPARK_ALTERNATE;
