@@ -165,7 +165,7 @@ cartridge. Pick a slot and press B:
 - **NEW PLAYER** makes one and starts on their name, on a keyboard: move
   to a letter with the D-pad and press B to type it. The empty boxes are
   the places left. DEL (or Y) erases the last letter; END (or Start) is
-  done. Then choose their look: BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE
+  done. With nothing left to erase, Y backs out. Then choose their look: BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE
   with Left/Right. The demo player on the court stops at the baseline and
   wears it as you go. B keeps it; Y drops the new player.
 - **A player** opens their card: wins and losses, aces, shutouts, best

@@ -404,12 +404,14 @@ static const char *hud_match_winner_text(void)
  * CAREER page (ADR-047) its sub-view, so each has its own. */
 #define HUD_PROMPT_CAREER 8
 #define HUD_PROMPT_CAREER_NAMING 12
+#define HUD_PROMPT_CAREER_NAMING_EMPTY 13   /* nothing to erase: Y backs out */
 static u8 hud_title_prompt_id(void)
 {
     if (g_title_page != TITLE_PAGE_RECORDS)
         return g_title_page;
     if (g_career_page.view == CAREER_VIEW_EDIT && g_career_page.naming)
-        return HUD_PROMPT_CAREER_NAMING;
+        return g_career_page.cursor ? HUD_PROMPT_CAREER_NAMING :
+            HUD_PROMPT_CAREER_NAMING_EMPTY;
     return HUD_PROMPT_CAREER + g_career_page.view;
 }
 
@@ -1436,7 +1438,10 @@ static void hud_career_edit_refresh(void)
 #define CAREER_NAME_LINE_COL 14
 #define CAREER_KEYS_COL (CAREER_EDIT_COL + 1)
 #define CAREER_KEYS_ROW (TITLE_MENU_ROW + 4)
-static u8 s_career_key_drawn = 0xff;
+/* The key last drawn picked, and a keyboard row still to redraw (the old
+ * key's, when the pick moved to another row), or 0xff. */
+static u8 s_career_key_drawn;
+static u8 s_career_row_pending;
 
 static void hud_career_name_line(void)
 {
@@ -1513,16 +1518,17 @@ static void hud_career_naming_refresh(void)
         hud_career_name_line();
         return;
     }
-    if (old == picked)
-        return;
-    /* The old key's row, then (next frame, if another row) the new one's. */
-    if (old != 0xff && hud_career_key_row_of(old) !=
-            hud_career_key_row_of(picked)) {
-        hud_career_key_row(hud_career_key_row_of(old));
-        s_career_key_drawn = 0xfe;      /* the new row still to draw */
+    /* The old key's row, a frame after the new one's. */
+    if (s_career_row_pending != 0xff) {
+        hud_career_key_row(s_career_row_pending);
+        s_career_row_pending = 0xff;
         return;
     }
+    if (old == picked)
+        return;
     hud_career_key_row(hud_career_key_row_of(picked));
+    if (hud_career_key_row_of(old) != hud_career_key_row_of(picked))
+        s_career_row_pending = hud_career_key_row_of(old);
     s_career_key_drawn = picked;
 }
 
@@ -1531,6 +1537,7 @@ static u8 hud_career_naming_part(u8 part)
     if (part == 0) {
         hud_fill_box(CAREER_EDIT_COL, TITLE_MENU_ROW, CAREER_EDIT_WIDTH,
             CAREER_EDIT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        s_career_row_pending = 0xff;
         return 0;
     }
     if (part == 1) {
@@ -1761,6 +1768,8 @@ static const char *hud_title_prompt(u8 page)
         return "@ OK  Y CANCEL";
     if (page == HUD_PROMPT_CAREER_NAMING)
         return "@ TYPE  Y ERASE";
+    if (page == HUD_PROMPT_CAREER_NAMING_EMPTY)
+        return "@ TYPE  Y BACK";
     if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS ||
             page == TITLE_PAGE_MODIFIERS)
         return "@ OK  Y CANCEL";

@@ -265,6 +265,21 @@ static u8 page_naming(CareerPlayer *player, u16 pressed)
     u8 key;
 
     if (pressed & PAD_Y) {
+        /* Nothing left to erase: Y backs out. A new player is dropped;
+         * an old one gets their name back. */
+        if (g_career_page.cursor == 0) {
+            g_career_page.naming = 0;
+            g_career_page.look_changed = 1;
+            if (g_career_page.creating) {
+                career_delete(g_career_page.slot);
+                g_career_page.creating = 0;
+                g_career_page.view = CAREER_VIEW_SLOTS;
+                g_career_page.row = g_career_page.slot;
+                return CAREER_PAGE_STAY;
+            }
+            memcpy(player->name, g_career_page.original.name, CAREER_NAME);
+            return CAREER_PAGE_STAY;
+        }
         key = CAREER_KEY_DEL;
     } else if (pressed & PAD_START) {
         key = CAREER_KEY_END;

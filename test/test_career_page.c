@@ -196,6 +196,44 @@ static void test_delete_and_records(void)
     assert(press(PAD_Y) == CAREER_PAGE_CLOSE);
 }
 
+/* Y with nothing left to erase backs out of typing. */
+static void test_back_out_of_name(void)
+{
+    CareerPlayer *p;
+
+    /* A new player: dropped, back to the slots. */
+    fresh();
+    press(PAD_B);
+    assert(g_career_page.naming && g_career_page.cursor == 0);
+    press(PAD_Y);
+    assert(!g_career_page.naming && g_career_page.view == CAREER_VIEW_SLOTS);
+    assert(g_save.career[0].used == 0);
+    /* Typed, erased, then back out: still dropped. */
+    press(PAD_B);
+    press(PAD_B);                               /* A */
+    press(PAD_Y);                               /* erased */
+    assert(g_career_page.naming);
+    press(PAD_Y);
+    assert(g_save.career[0].used == 0);
+
+    /* An old player: erasing then backing out keeps the old name. */
+    fresh();
+    career_create(0, "MAX");
+    career_page_begin();
+    press(PAD_B);                               /* card */
+    press(PAD_B);                               /* edit, on NAME */
+    press(PAD_B);                               /* typing, after "MAX" */
+    p = &g_save.career[0];
+    assert(g_career_page.naming && g_career_page.cursor == 3);
+    press(PAD_Y);
+    press(PAD_Y);
+    press(PAD_Y);
+    assert(memcmp(p->name, "        ", CAREER_NAME) == 0);
+    press(PAD_Y);                               /* back out */
+    assert(!g_career_page.naming && g_career_page.view == CAREER_VIEW_EDIT);
+    assert(memcmp(p->name, "MAX     ", CAREER_NAME) == 0 && p->used);
+}
+
 /* NO PLAYER: nobody active; the page opens there. */
 static void test_no_player(void)
 {
@@ -233,6 +271,7 @@ int main(void)
     test_edit_look();
     test_delete_and_records();
     test_no_player();
+    test_back_out_of_name();
     test_card_helpers();
     puts("career page host checks passed");
     return 0;

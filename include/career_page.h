@@ -17,7 +17,9 @@
  *           hats are skipped); B on NAME types it, B elsewhere keeps, Y
  *           puts the look back (and drops a player just created).
  *           Typing is an arcade keyboard: the D-pad picks a key, B types
- *           it, DEL or Y erases the last letter, END or Start is done.
+ *           it, DEL or Y erases the last letter, END or Start is done; Y
+ *           with nothing to erase backs out (a new player is dropped, an
+ *           old one keeps their name).
  *   RECORDS the old records table. L+R+X erases; B, Y, or Start back.
  */
 enum {

@@ -58,7 +58,9 @@ editors; `hud_scene.c` draws, `main.c` writes the save and previews):
   an empty box per place left (the next one yellow; the font has no
   visible underscore), then A-Z, space (a box), and `-` in rows of ten,
   and DEL and END. The D-pad picks a key, B types it, DEL or Y erases the
-  last letter, END or Start finishes (not with no letters). Eight letters
+  last letter, END or Start finishes (not with no letters); Y with
+  nothing left to erase backs out (a new player is dropped, an old one
+  keeps their name), and the prompt then reads `@ TYPE  Y BACK`. Eight letters
   put the cursor on END. A new player starts here with a blank name and
   goes on to BODY. *(Amended 2026-10-15: at first Up/Down cycled the
   letter in place, with no sign of the blank places or of being done.)*
