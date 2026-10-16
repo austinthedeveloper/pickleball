@@ -24,6 +24,7 @@ MatchConfig g_match_config = {
     0,
     0,
     0,
+    0,
     OPPONENT_NONE,
     0,
     100
@@ -54,6 +55,7 @@ void match_config_defaults(void)
     g_match_config.difficulty = DIFFICULTY_MEDIUM;
     g_match_config.practice = 0;
     g_match_config.modifiers = 0;
+    g_match_config.modifiers2 = 0;
     g_match_config.open_play = 0;
     g_match_config.partner = OPPONENT_NONE;
     g_match_config.career_p1 = 0;

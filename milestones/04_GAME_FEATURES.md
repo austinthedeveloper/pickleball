@@ -169,6 +169,9 @@ touching the simulation.
 - [x] `M4-MOD-02` More modifiers: GHOST BALL (the ball blinks out in flight; its shadow stays), POPCORN (every hit speeds the ball up, reset each serve), and ICE (players slide). LAVA unchanged.
   - Accept: each has a test; the CPUs still rally with each; old saves load with the new rows off; zero overruns in a doubles match with all three and FAST BALL; the golden trace unchanged with them off.
   - Verified: [ADR-053](../docs/decisions/ADR-053-fun-modifiers.md), `test_modifiers.c: test_popcorn_pace, test_ice, test_matches`, `modifiers_fun.timeline` (in `make perf`, 0 overruns), MesenCE (the ghost ball over the net, POPCORN's level per hit, the ICE slide on the asm `player_step`); `make stats` and the golden trace identical.
+- [x] `M4-MOD-03` GLOW (neon outlines on the players and the ball, neon paddles, a night court) and INVERSE (every court and player colour inverted). Save layout 13 for the second modifiers byte.
+  - Accept: a v12 save loads with everything kept and INVERSE off; the title after a GLOW or INVERSE match shows its own colours; zero overruns; the golden trace unchanged.
+  - Verified: [ADR-054](../docs/decisions/ADR-054-glow-and-inverse.md), `test_save.c: test_migrate_v12`, `test_modifiers.c: test_values_and_editor, test_select_copies`, `modifiers_glow.timeline` and `modifiers_inverse.timeline` (in `make perf`, 0 overruns), MesenCE screenshots; `make stats` and the golden trace identical.
 
 ## Multiplayer
 

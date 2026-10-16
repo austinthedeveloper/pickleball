@@ -131,4 +131,5 @@ void select_apply(void)
     g_match_config.difficulty = options_difficulty(g_save.settings.difficulty);
     /* ADR-033: the saved modifiers. */
     g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
+    g_match_config.modifiers2 = modifiers2_valid(g_save.modifiers2);
 }

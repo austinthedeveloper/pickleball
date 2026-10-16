@@ -23,10 +23,11 @@ typedef char save_v9_is_48_bytes[sizeof(SaveV9) == 48 ? 1 : -1];
 typedef char save_v10_is_52_bytes[sizeof(SaveV10) == 52 ? 1 : -1];
 typedef char save_v11_is_54_bytes[sizeof(SaveV11) == 54 ? 1 : -1];
 typedef char career_player_is_52_bytes[sizeof(CareerPlayer) == 52 ? 1 : -1];
-typedef char save_v12_is_212_bytes[sizeof(SaveData) == 212 ? 1 : -1];
+typedef char save_v12_is_212_bytes[sizeof(SaveV12) == 212 ? 1 : -1];
+typedef char save_v13_is_214_bytes[sizeof(SaveData) == 214 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 212
+#define SAVE_RAW_BYTES 214
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -169,6 +170,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V12)
+        return sizeof(SaveV12);
     if (version == SAVE_V11)
         return sizeof(SaveV11);
     if (version == SAVE_V10)
@@ -320,6 +323,15 @@ static void save_migrate_v11(const u8 *raw)
     g_save.initials = old.initials;
 }
 
+/* v0.16.0 to v0.18.1: the same layout up to the camera; the second
+ * modifiers byte starts with every modifier off. */
+static void save_migrate_v12(const u8 *raw)
+{
+    save_defaults();
+    memcpy(&g_save, raw, sizeof(SaveV12) - sizeof(u16));
+    g_save.version = SAVE_VERSION;
+}
+
 /* Layouts before 11 knew 7 surface colours, so the kitchen's own presets
  * (LIME, TEAL) came at 9 and 10; the surface colours added with layout 11
  * (mirrored in the kitchen, ADR-027) moved them up. */
@@ -361,7 +373,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V11)
+    if (raw[pick][4] == SAVE_V12)
+        save_migrate_v12(raw[pick]);
+    else if (raw[pick][4] == SAVE_V11)
         save_migrate_v11(raw[pick]);
     else if (raw[pick][4] == SAVE_V10)
         save_migrate_v10(raw[pick]);
@@ -373,7 +387,7 @@ void save_initialize(void)
         save_migrate_v7(raw[pick]);
     else
         save_migrate_v4(raw[pick]);
-    if (raw[pick][4] != SAVE_V11)
+    if (raw[pick][4] < SAVE_V11)
         save_remap_kitchen_v10();
     save_write();
     save_write();

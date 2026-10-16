@@ -7,7 +7,8 @@
 /*
  * Play modifiers (docs/decisions/ADR-033-modifiers.md): rule and physics
  * toggles for a match, one bit each in MatchConfig.modifiers, kept in the
- * save. Pure helpers; game.c, rules.c, ai.c, and render.c apply them.
+ * save; past the eighth, in MatchConfig.modifiers2 (ADR-054). Pure
+ * helpers; game.c, rules.c, ai.c, and render.c apply them.
  */
 
 enum {
@@ -18,8 +19,16 @@ enum {
     MODIFIER_GHOST_BALL = 16,   /* high in flight, the ball only blinks */
     MODIFIER_POPCORN = 32,      /* every hit in a rally adds pace */
     MODIFIER_ICE = 64,          /* players slide */
-    MODIFIER_ALL = 127,
-    MODIFIER_COUNT = 7
+    MODIFIER_GLOW = 128,        /* lights out: neon outlines, a night court */
+    MODIFIER_ALL = 255,
+    MODIFIER_COUNT = 8
+};
+
+/* The second byte (ADR-054): presentation only, read when a match loads. */
+enum {
+    MODIFIER2_INVERSE = 1,      /* every colour inverted */
+    MODIFIER2_ALL = 1,
+    MODIFIER2_COUNT = 1
 };
 
 enum {
@@ -39,6 +48,7 @@ enum {
 
 /* A saved value with unknown bits cleared. */
 u8 modifiers_valid(u8 saved);
+u8 modifiers2_valid(u8 saved);
 
 /* The ball's steps on each of `ticks` frames from a cycle's start: the
  * difficulty's slow ball (ADR-025) times BALL SPEED (ADR-049), spread
@@ -68,26 +78,31 @@ s16 modifiers_lava_target(s16 x, u8 team);
 enum { MODIFIERS_ROW_BALL = 0, MODIFIERS_ROW_SPEED = 1,
        MODIFIERS_ROW_SCORING = 2, MODIFIERS_ROW_KITCHEN = 3,
        MODIFIERS_ROW_VISION = 4, MODIFIERS_ROW_RALLY = 5,
-       MODIFIERS_ROW_FOOTING = 6, MODIFIERS_ROWS = MODIFIER_COUNT };
+       MODIFIERS_ROW_FOOTING = 6, MODIFIERS_ROW_LIGHTS = 7,
+       MODIFIERS_ROW_COLORS = 8,
+       MODIFIERS_ROWS = MODIFIER_COUNT + MODIFIER2_COUNT };
 enum { MODIFIERS_EDIT_STAY = 0, MODIFIERS_EDIT_DONE = 1,
        MODIFIERS_EDIT_CANCEL = 2 };
 
 typedef struct {
     u8 row;
     u8 original;
+    u8 original2;
 } ModifiersEdit;
 
 extern ModifiersEdit g_modifiers_edit;
 
-/* Row labels and the value names (off, on) of each row. */
+/* Row labels and the value names (off, on) of each row. Rows 0-7 are
+ * modifiers' bits, rows 8 on modifiers2's. */
 const char *modifiers_row_label(u8 row);
-const char *modifiers_value_name(u8 row, u8 modifiers);
+u8 modifiers_row_on(u8 row, u8 modifiers, u8 modifiers2);
+const char *modifiers_value_name(u8 row, u8 modifiers, u8 modifiers2);
 
-/* Opens the editor on the saved value (made valid in place). */
-void modifiers_edit_begin(u8 *modifiers);
+/* Opens the editor on the saved values (made valid in place). */
+void modifiers_edit_begin(u8 *modifiers, u8 *modifiers2);
 /* Up/Down rows, Left/Right toggle (both wrap), B or Start keeps, Y
  * cancels. */
-u8 modifiers_edit_input(u8 *modifiers, u16 pressed);
-u8 modifiers_edit_changed(u8 modifiers);
+u8 modifiers_edit_input(u8 *modifiers, u8 *modifiers2, u16 pressed);
+u8 modifiers_edit_changed(u8 modifiers, u8 modifiers2);
 
 #endif

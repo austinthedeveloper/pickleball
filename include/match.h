@@ -28,6 +28,7 @@ typedef struct {
     u8 difficulty;                /* ADR-025: Difficulty */
     u8 practice;                  /* ADR-028: P1 alone vs the ball machine */
     u8 modifiers;                 /* ADR-033: MODIFIER_* bits */
+    u8 modifiers2;                /* ADR-054: MODIFIER2_* bits */
     u8 open_play;                 /* ADR-034: a game from the park's stack */
     u8 partner;                   /* ADR-034: a ladder team whose captain
                                      plays slot 1, or OPPONENT_NONE (the

@@ -1,0 +1,29 @@
+# INVERSE (ADR-054): Up from BALL wraps to COLORS; INVERSE on, keep with B.
+# A doubles match against DAD and MOM in a photo negative; the HUD and the
+# shadows keep their colours. Then back to the title (Start, MAIN MENU),
+# which must show its own colours again.
+70 71 up
+80 81 up
+90 91 start
+110 111 up     # COLORS
+120 121 right  # INVERSE
+shot 135
+140 141 b
+160 161 down   # MODIFIERS -> PRACTICE -> SINGLES -> DOUBLES
+166 167 down
+172 173 down
+180 181 start
+220 221 start  # confirm Player Select
+300 301 b      # close the intro card
+330 345 b      # serve: hold for the meter (ADR-044)
+shot 400
+420 435 b      # serve, if the card took the first press
+shot 470
+shot 500
+shot 600
+620 621 start  # pause
+640 641 down
+650 651 down
+670 671 b      # MAIN MENU: the title in its own colours
+shot 760
+shot 900

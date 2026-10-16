@@ -1020,11 +1020,13 @@ static u8 hud_options_draw_part(u8 part)
 /* One modifiers page row (ADR-033): the row's bit is its value. */
 static void hud_modifiers_row(u8 index)
 {
-    u8 value = (g_save.settings.modifiers >> index) & 1;
+    u8 value = modifiers_row_on(index, g_save.settings.modifiers,
+        g_save.modifiers2);
     u8 cursor = g_modifiers_edit.row == index;
 
     hud_setting_row(COURT_FIRST_ROW + index, modifiers_row_label(index),
-        modifiers_value_name(index, g_save.settings.modifiers), cursor);
+        modifiers_value_name(index, g_save.settings.modifiers,
+            g_save.modifiers2), cursor);
     s_modifiers_row_drawn[index] = value | (cursor << 7);
 }
 
@@ -1055,7 +1057,8 @@ static void hud_modifiers_refresh(void)
 
     for (index = 0; index < MODIFIERS_ROWS; ++index) {
         if (s_modifiers_row_drawn[index] !=
-                (((g_save.settings.modifiers >> index) & 1) |
+                (modifiers_row_on(index, g_save.settings.modifiers,
+                    g_save.modifiers2) |
                  ((g_modifiers_edit.row == index) << 7))) {
             hud_modifiers_row(index);
             return;

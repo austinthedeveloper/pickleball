@@ -13,13 +13,14 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 12,          /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 13,          /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033); 9: record initials (ADR-040);
                                    10: practice return zones (ADR-028);
                                    11: the court's time (ADR-045);
-                                   12: career players (ADR-047).
+                                   12: career players (ADR-047);
+                                   13: more modifiers (ADR-054).
                                    Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
                                    v0.6.0 to v0.12.0, 9 in v0.13.0
                                    (ADR-032). */
@@ -110,6 +111,9 @@ typedef struct {
     u8 career_active;           /* slot, or CAREER_NONE */
     u8 camera;                  /* CAMERA choice + 1 (ADR-050); 0, in
                                    saves before it, is the default (OFF) */
+    u8 modifiers2;              /* MODIFIER2_* bits (ADR-054): the
+                                   modifiers past settings.modifiers' 8 */
+    u8 reserved;                /* keeps the checksum at an even offset */
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
@@ -128,9 +132,10 @@ extern u8 g_save_new_records;
  */
 enum {
     SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10,
-    SAVE_V11 = 11
+    SAVE_V11 = 11, SAVE_V12 = 12
 };
-/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0, v0.15.0 */
+/* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0, v0.15.0,
+ * v0.16.0 to v0.18.1 */
 
 typedef struct {
     u8 magic[4];
@@ -250,6 +255,20 @@ typedef struct {
     SaveInitials initials;
     u16 checksum;
 } SaveV11;
+
+/* v0.16.0 to v0.18.1: SaveData before the second modifiers byte. */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 12 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettings settings;
+    SaveInitials initials;
+    CareerPlayer career[CAREER_SLOTS];
+    u8 career_active;
+    u8 camera;
+    u16 checksum;
+} SaveV12;
 
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */

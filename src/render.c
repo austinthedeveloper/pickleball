@@ -112,6 +112,58 @@ static u8 s_venue;
 static u8 s_keep_ambience;
 /* The LAVA kitchen is on the ground palette (ADR-033). */
 static u8 s_lava_shown;
+/* GLOW and INVERSE (ADR-054) in a match: RENDER_LOOK_* bits. The court's
+ * palettes record the look they were composed with, so a match with
+ * another look (or the title after one) recomposes them. */
+#define RENDER_LOOK_GLOW 1
+#define RENDER_LOOK_INVERSE 2
+#define RENDER_LOOK() \
+    (g_attract ? 0 : \
+     (((g_match_config.modifiers & MODIFIER_GLOW) ? RENDER_LOOK_GLOW : 0) | \
+      ((g_match_config.modifiers2 & MODIFIER2_INVERSE) ? \
+        RENDER_LOOK_INVERSE : 0)))
+/* GLOW plays at NIGHT, whatever the COURT page's TIME. */
+#define RENDER_TIME(look) \
+    (((look) & RENDER_LOOK_GLOW) ? COURT_TIMES - 1 : g_save.settings.time)
+static u8 s_ground_look;
+static u8 s_backdrop_look;
+/* The objects' and the impact flash's palettes, from ROM with the look
+ * applied (ADR-054). */
+static u16 s_objects_palette[16];
+static u16 s_flash_palette[16];
+/* Their look: copied only on a change (the title demo restarts on a frame
+ * near the budget, KNOWN_ISSUES #29). */
+static u8 s_objects_look;
+/* GLOW's neon: every outline (palette entry 1 of the players and the
+ * ball, ADR-013) and the paddles (11-13: face dark, face light, edge). */
+#define RENDER_GLOW_OUTLINE RGB5(4, 31, 8)
+#define RENDER_GLOW_PADDLE_DARK RGB5(20, 0, 24)
+#define RENDER_GLOW_PADDLE_LIGHT RGB5(31, 6, 28)
+#define RENDER_GLOW_PADDLE_EDGE RGB5(6, 31, 31)
+
+/* INVERSE: each colour's photo negative. */
+static void render_invert(u16 *colors, u8 count)
+{
+    while (count--) {
+        *colors ^= 0x7FFF;
+        ++colors;
+    }
+}
+
+/* A player's composed palette (or the objects', paddle = 0) in the look. */
+static void render_apply_look(u16 *colors, u8 look, u8 paddle)
+{
+    if (look & RENDER_LOOK_GLOW) {
+        colors[1] = RENDER_GLOW_OUTLINE;
+        if (paddle) {
+            colors[11] = RENDER_GLOW_PADDLE_DARK;
+            colors[12] = RENDER_GLOW_PADDLE_LIGHT;
+            colors[13] = RENDER_GLOW_PADDLE_EDGE;
+        }
+    }
+    if (look & RENDER_LOOK_INVERSE)
+        render_invert(colors, 16);
+}
 u8 g_render_busy;
 /* A LAVA match, or its preview on the title's MODIFIERS page. A macro: it
  * runs on a new match's frame, which is near the budget. */
@@ -138,6 +190,7 @@ void render_apply_match_config(void)
 {
     u8 team;
     u8 slot;
+    u8 look = RENDER_LOOK();
 
     s_doubles = g_match_config.mode == MATCH_DOUBLES;
     s_applied_mode = g_match_config.mode;
@@ -148,8 +201,19 @@ void render_apply_match_config(void)
     g_objpal_shadow = s_doubles ? RENDER_OBJPAL_DOUBLES_SHADOW :
         RENDER_OBJPAL_SHADOW;
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
-        if (match_slot_active(slot))
+        if (match_slot_active(slot)) {
             match_compose_palette(slot, s_player_palettes[slot]);
+            if (look)
+                render_apply_look(s_player_palettes[slot], look, 1);
+        }
+    if (s_objects_look != look) {
+        s_objects_look = look;
+        memcpy(s_objects_palette, &objects_palette, sizeof(s_objects_palette));
+        memcpy(s_flash_palette, g_pal_flash, sizeof(s_flash_palette));
+        render_apply_look(s_objects_palette, look, 0);
+        if (look & RENDER_LOOK_INVERSE)
+            render_invert(s_flash_palette, 16);
+    }
     /* Hats (M4-OPP-04): render_bodies draws or parks them every frame. */
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         rb_hat[slot] = s_hat_tiles[match_slot_hat(slot)];
@@ -166,6 +230,11 @@ void render_apply_match_config(void)
     /* Back to the title from a LAVA match, or into one: the kitchen. */
     if (s_lava_shown != RENDER_LAVA_WANTED())
         s_ground_pending = 1;
+    /* Or from (or into) a GLOW or INVERSE match: the whole court. */
+    if (s_ground_look != look)
+        s_ground_pending = 1;
+    if (s_backdrop_look != look)
+        s_backdrop_pending = 1;
 }
 
 /* Every OBJ palette of the active layout, the HUD team colours, and the
@@ -190,9 +259,9 @@ static void render_upload_palettes(void)
          * the subscreen, i.e. half-brightness court under every shadow. */
         setColorEffect(0x02, 0x50);
     }
-    dmaCopyCGram((u8 *)&objects_palette, CGRAM_OBJ + g_objpal_objects * 16,
+    dmaCopyCGram((u8 *)s_objects_palette, CGRAM_OBJ + g_objpal_objects * 16,
         32);
-    dmaCopyCGram((u8 *)g_pal_flash, CGRAM_OBJ + g_objpal_flash * 16, 32);
+    dmaCopyCGram((u8 *)s_flash_palette, CGRAM_OBJ + g_objpal_flash * 16, 32);
     /* BG3 palettes 2/3 colours 1-2 are the team label colours. */
     for (team = 0; team < 2; ++team)
         dmaCopyCGram((u8 *)s_hud_team_colors[team],
@@ -296,12 +365,17 @@ static u8 render_dark_surface(void)
 
 static void render_compose_ground(void)
 {
+    u8 look = RENDER_LOOK();
+
     court_style_compose(s_ground_palette, s_painted_ground,
         g_save.settings.court, s_venue);
     s_lava_shown = RENDER_LAVA_WANTED();
     if (s_lava_shown)
         court_style_lava(s_ground_palette);
-    court_style_time_ground(s_ground_palette, g_save.settings.time);
+    court_style_time_ground(s_ground_palette, RENDER_TIME(look));
+    if (look & RENDER_LOOK_INVERSE)
+        render_invert(s_ground_palette, 16);
+    s_ground_look = look;
     s_ground_dirty = 1;
     /* A dark surface changes the shadows' colour (uploaded with the other
      * OBJ palettes). Entry 4 is the surface. */
@@ -335,8 +409,13 @@ void render_apply_court_colors(void)
 /* The backdrop as painted, then at the saved TIME (ADR-045). */
 static void render_compose_backdrop(void)
 {
+    u8 look = RENDER_LOOK();
+
     court_style_time_copy(s_backdrop_painted, s_backdrop, 5 * 16,
-        g_save.settings.time, 0);
+        RENDER_TIME(look), 0);
+    if (look & RENDER_LOOK_INVERSE)
+        render_invert(s_backdrop, 5 * 16);
+    s_backdrop_look = look;
     s_backdrop_pending = 0;
 }
 
@@ -668,7 +747,7 @@ static void render_watcher(void)
     /* KNOWN_ISSUES #24: at NIGHT the watcher is a silhouette in the dark
      * stands (the shadow palette: the stands behind at half brightness),
      * not lit like the players. Singles only, where it is palette 4. */
-    attr = g_save.settings.time == COURT_TIMES - 1 ?
+    attr = RENDER_TIME(s_ground_look) == COURT_TIMES - 1 ?
         OBJ_ATTR(g_objpal_shadow, 1) : OBJ_ATTR(g_players[2].palette, 1);
     if (seat[2]) {
         obj_put(RENDER_OAM_WATCHER, x, y, OBJTILE_PERSON_TOP, attr, 0);
@@ -819,6 +898,9 @@ void render_initialize(void)
     s_ground_waits = 0;
     s_backdrop_pending = 0;
     s_backdrop_dirty = 0;
+    s_ground_look = 0;
+    s_backdrop_look = 0;
+    s_objects_look = 0xff;          /* copied by the first court load */
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
     hud_scene_initialize();
@@ -911,7 +993,8 @@ static void render_load_court(void)
             g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */
     if (!s_keep_ambience)
-        audio_ambience(court_style_ambience(s_venue, g_save.settings.time));
+        audio_ambience(court_style_ambience(s_venue,
+            RENDER_TIME(RENDER_LOOK())));
     venue = &g_venue_data[s_venue];
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,

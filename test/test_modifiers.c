@@ -21,48 +21,78 @@
 
 static void test_values_and_editor(void)
 {
-    u8 mods = 0x85;
+    u8 mods = 0x05;
+    u8 mods2 = 0xfe;
 
     assert(modifiers_valid(0xff) == MODIFIER_ALL);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, 0), "NORMAL") == 0);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, MODIFIER_BIG_BALL),
-        "BIG") == 0);
+    assert(modifiers2_valid(0xff) == MODIFIER2_ALL);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, 0, 0),
+        "NORMAL") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, MODIFIER_BIG_BALL,
+        0), "BIG") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_SCORING,
-        MODIFIER_WIN_BY_2), "WIN BY 2") == 0);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_KITCHEN, MODIFIER_LAVA),
-        "LAVA") == 0);
+        MODIFIER_WIN_BY_2, 0), "WIN BY 2") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_KITCHEN, MODIFIER_LAVA,
+        0), "LAVA") == 0);
     assert(strcmp(modifiers_row_label(MODIFIERS_ROW_VISION), "VISION") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_VISION,
-        MODIFIER_GHOST_BALL), "GHOST") == 0);
+        MODIFIER_GHOST_BALL, 0), "GHOST") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_RALLY,
-        MODIFIER_POPCORN), "POPCORN") == 0);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, MODIFIER_ICE),
-        "ICE") == 0);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, 0),
+        MODIFIER_POPCORN, 0), "POPCORN") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, MODIFIER_ICE,
+        0), "ICE") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, 0, 0),
         "NORMAL") == 0);
+    /* ADR-054: LIGHTS is the first byte's last bit, COLORS the second's
+     * first. */
+    assert(strcmp(modifiers_row_label(MODIFIERS_ROW_LIGHTS), "LIGHTS") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_LIGHTS, MODIFIER_GLOW,
+        0), "GLOW") == 0);
+    assert(strcmp(modifiers_row_label(MODIFIERS_ROW_COLORS), "COLORS") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_COLORS, MODIFIER_ALL,
+        0), "NORMAL") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_COLORS, 0,
+        MODIFIER2_INVERSE), "INVERSE") == 0);
     /* Each row is its bit. */
     assert(MODIFIER_GHOST_BALL == 1 << MODIFIERS_ROW_VISION);
     assert(MODIFIER_POPCORN == 1 << MODIFIERS_ROW_RALLY);
     assert(MODIFIER_ICE == 1 << MODIFIERS_ROW_FOOTING);
+    assert(MODIFIER_GLOW == 1 << MODIFIERS_ROW_LIGHTS);
+    assert(MODIFIER2_INVERSE == 1 << (MODIFIERS_ROW_COLORS - MODIFIER_COUNT));
+    assert(MODIFIERS_ROWS == MODIFIERS_ROW_COLORS + 1);
 
-    /* The editor makes the value valid, toggles a row's bit with
-     * Left/Right, wraps rows, and Y puts the value back. */
-    modifiers_edit_begin(&mods);
-    assert(mods == 5 && g_modifiers_edit.row == MODIFIERS_ROW_BALL);
-    assert(modifiers_edit_input(&mods, PAD_RIGHT) == MODIFIERS_EDIT_STAY);
-    assert(mods == 4 && modifiers_edit_changed(mods));
-    modifiers_edit_input(&mods, PAD_UP);
-    assert(g_modifiers_edit.row == MODIFIERS_ROW_FOOTING);
-    modifiers_edit_input(&mods, PAD_LEFT);
-    assert(mods == (MODIFIER_WIN_BY_2 | MODIFIER_ICE));
-    modifiers_edit_input(&mods, PAD_DOWN);
+    /* The editor makes the values valid, toggles a row's bit with
+     * Left/Right, wraps rows, and Y puts both values back. */
+    modifiers_edit_begin(&mods, &mods2);
+    assert(mods == 5 && mods2 == 0);
     assert(g_modifiers_edit.row == MODIFIERS_ROW_BALL);
-    assert(modifiers_edit_input(&mods, PAD_Y) == MODIFIERS_EDIT_CANCEL);
-    assert(mods == 5 && !modifiers_edit_changed(mods));
-    modifiers_edit_input(&mods, PAD_DOWN);
-    modifiers_edit_input(&mods, PAD_RIGHT);
-    assert(modifiers_edit_input(&mods, PAD_B) == MODIFIERS_EDIT_DONE);
-    assert(mods == 7);
+    assert(modifiers_edit_input(&mods, &mods2, PAD_RIGHT) ==
+        MODIFIERS_EDIT_STAY);
+    assert(mods == 4 && modifiers_edit_changed(mods, mods2));
+    modifiers_edit_input(&mods, &mods2, PAD_UP);
+    assert(g_modifiers_edit.row == MODIFIERS_ROW_COLORS);
+    modifiers_edit_input(&mods, &mods2, PAD_LEFT);
+    assert(mods == MODIFIER_WIN_BY_2 && mods2 == MODIFIER2_INVERSE);
+    modifiers_edit_input(&mods, &mods2, PAD_UP);
+    modifiers_edit_input(&mods, &mods2, PAD_RIGHT);
+    assert(mods == (MODIFIER_WIN_BY_2 | MODIFIER_GLOW));
+    modifiers_edit_input(&mods, &mods2, PAD_DOWN);
+    modifiers_edit_input(&mods, &mods2, PAD_DOWN);
+    assert(g_modifiers_edit.row == MODIFIERS_ROW_BALL);
+    assert(modifiers_edit_input(&mods, &mods2, PAD_Y) ==
+        MODIFIERS_EDIT_CANCEL);
+    assert(mods == 5 && mods2 == 0 && !modifiers_edit_changed(mods, mods2));
+    /* A change to the second byte alone is a change. */
+    modifiers_edit_begin(&mods, &mods2);
+    modifiers_edit_input(&mods, &mods2, PAD_UP);
+    modifiers_edit_input(&mods, &mods2, PAD_RIGHT);
+    assert(modifiers_edit_changed(mods, mods2));
+    modifiers_edit_input(&mods, &mods2, PAD_RIGHT);
+    modifiers_edit_input(&mods, &mods2, PAD_DOWN);
+    modifiers_edit_input(&mods, &mods2, PAD_DOWN);
+    modifiers_edit_input(&mods, &mods2, PAD_RIGHT);
+    assert(modifiers_edit_input(&mods, &mods2, PAD_B) == MODIFIERS_EDIT_DONE);
+    assert(mods == 7 && mods2 == 0);
 }
 
 /* Player Select copies the saved modifiers; the demo plays without. */
@@ -71,12 +101,14 @@ static void test_select_copies(void)
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     assert(g_save.settings.modifiers == 0);
-    g_save.settings.modifiers = MODIFIER_FAST_BALL | MODIFIER_LAVA | 0x80;
+    g_save.settings.modifiers = MODIFIER_FAST_BALL | MODIFIER_LAVA;
+    g_save.modifiers2 = MODIFIER2_INVERSE | 0x80;
     select_begin(MATCH_SINGLES, 1);
     select_apply();
     assert(g_match_config.modifiers == (MODIFIER_FAST_BALL | MODIFIER_LAVA));
+    assert(g_match_config.modifiers2 == MODIFIER2_INVERSE);
     game_start_attract();
-    assert(g_match_config.modifiers == 0);
+    assert(g_match_config.modifiers == 0 && g_match_config.modifiers2 == 0);
     match_config_defaults();
     g_attract = 0;
 }

@@ -4,6 +4,7 @@
 #include "game.h"
 #include "match.h"
 #include "rules.h"
+#include "modifiers.h"
 #include "save.h"
 
 /* ADR-021 battery save: validation, copy selection, records, game hooks. */
@@ -487,6 +488,51 @@ static void test_migrate_v10(void)
     assert(g_save.settings.time == 2);
 }
 
+/* ADR-054: a v12 save (v0.16.0 to v0.18.1) keeps everything, and the
+ * second modifiers byte starts off. */
+static void test_migrate_v12(void)
+{
+    SaveV12 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V12;
+    old.sequence = 9;
+    old.records.wins[MATCH_SINGLES] = 12;
+    old.settings.modifiers = MODIFIER_LAVA | MODIFIER_ICE;
+    old.settings.time = 2;
+    memcpy(old.initials.best_streak, "ACE", 3);
+    old.career[1].used = 1;
+    memcpy(old.career[1].name, "PICKLES ", CAREER_NAME);
+    old.career[1].wins[MATCH_DOUBLES] = 4;
+    old.career_active = 1;
+    old.camera = 3;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram, &old, sizeof(old));
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.wins[MATCH_SINGLES] == 12);
+    assert(g_save.settings.modifiers == (MODIFIER_LAVA | MODIFIER_ICE));
+    assert(g_save.settings.time == 2);
+    assert(memcmp(g_save.initials.best_streak, "ACE", 3) == 0);
+    assert(g_save.career[1].used &&
+        memcmp(g_save.career[1].name, "PICKLES ", CAREER_NAME) == 0);
+    assert(g_save.career[1].wins[MATCH_DOUBLES] == 4);
+    assert(g_save.career_active == 1 && g_save.camera == 3);
+    assert(g_save.modifiers2 == 0 && g_save.reserved == 0);   /* new */
+    memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+
+    g_save.modifiers2 = MODIFIER2_INVERSE;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.modifiers2 == MODIFIER2_INVERSE);
+}
+
 /* ADR-040: beating a record clears its initials until they are entered;
  * entering sets them for every record beaten, saves, and clears the
  * flags. Erasing the records erases the initials. */
@@ -569,6 +615,7 @@ int main(void)
     test_migrate_v8();
     test_migrate_v9();
     test_migrate_v10();
+    test_migrate_v12();
     test_initials();
     test_game_hooks();
     printf("save host checks passed\n");

@@ -121,6 +121,10 @@ and they combine:
 - **FOOTING**: NORMAL or **ICE**. Players take longer to get going and
   slide when they let go. Start moving early, and let go before you get
   there.
+- **LIGHTS**: NORMAL or **GLOW**. The lights go out: a night court, and
+  the players and the ball glow with neon green outlines and neon paddles.
+- **COLORS**: NORMAL or **INVERSE**. Every colour on the court is
+  inverted, like a photo negative. The scoreboard stays as it is.
 
 B or Start keeps your choices (they're saved); Y puts back what you had.
 The title demo always plays without modifiers.

@@ -92,6 +92,7 @@ static void start_open_play_match(void)
     g_match_config.difficulty = open_court_difficulty(g_open_play.called,
         options_difficulty(g_save.settings.difficulty));
     g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
+    g_match_config.modifiers2 = modifiers2_valid(g_save.modifiers2);
     g_match_config.open_play = 1;
     /* ADR-047: you play as your career player, in their saved look. */
     match_config_career_p1();
@@ -343,14 +344,15 @@ static void update_title_modifiers(u16 pressed)
 {
     u8 *modifiers = &g_save.settings.modifiers;
     u8 lava = *modifiers & MODIFIER_LAVA;
-    u8 result = modifiers_edit_input(modifiers, pressed);
+    u8 result = modifiers_edit_input(modifiers, &g_save.modifiers2, pressed);
 
     if (result != MODIFIERS_EDIT_STAY)
         g_title_page = TITLE_PAGE_MENU;
     if (lava != (*modifiers & MODIFIER_LAVA) ||
             (result != MODIFIERS_EDIT_STAY && lava))
         render_apply_court_colors();
-    if (result == MODIFIERS_EDIT_DONE && modifiers_edit_changed(*modifiers))
+    if (result == MODIFIERS_EDIT_DONE &&
+            modifiers_edit_changed(*modifiers, g_save.modifiers2))
         save_write();
 }
 
@@ -419,7 +421,8 @@ static void update_title(void)
                 s_open_park = 1;
                 return;
             } else if (g_title_mode == TITLE_MODIFIERS) {
-                modifiers_edit_begin(&g_save.settings.modifiers);
+                modifiers_edit_begin(&g_save.settings.modifiers,
+                    &g_save.modifiers2);
                 g_title_page = TITLE_PAGE_MODIFIERS;
                 if (g_save.settings.modifiers & MODIFIER_LAVA)
                     render_apply_court_colors();
