@@ -161,6 +161,11 @@ touching the simulation.
   - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
   - Verified: [ADR-033](../docs/decisions/ADR-033-modifiers.md), `test/test_modifiers.c`, `test_save.c: test_migrate_v7`, `modifiers.timeline`. First to 11 was already a POINTS choice (ADR-025), so the scoring modifier is WIN BY 2. Doubles with all four drops frames (budgeted; see `M4-UI-04`).
 
+## Multiplayer
+
+- [ ] `M4-MP-01` Four humans in doubles with a Super Multitap in port 2 (the M3 seams; [Input and Multitap Plan](../docs/04_INPUT_MULTITAP_PLAN.md)). Players 3 and 4 join with Start on the title (`3P JOINED!`, `4P JOINED!`), as 2P does. Teams by controller: 1P and 3P on the left, 2P and 4P on the right; a slot with no human is a CPU. Each human picks a colour on Player Select (no two the same), and Career players can sit in any slot. Open play takes up to four humans too. The instruction manual (`docs/MANUAL.md`) already describes this.
+  - Accept: host tests for the pad-to-slot mapping with 1-4 humans (with and without a Multitap, KNOWN_ISSUES #13); a doubles match with four humans holds the frame budget; the activation checklist in the Multitap plan, on real hardware with a Multitap (`M3-IN-03`).
+
 ## Polish
 
 - [x] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.

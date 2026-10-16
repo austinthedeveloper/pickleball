@@ -1,6 +1,6 @@
 # Input and Multitap Plan
 
-Status: **POC API required; four-human activation deferred**
+Status: **POC API required; four-human activation planned as `M4-MP-01`**
 
 ## Physical topology
 
