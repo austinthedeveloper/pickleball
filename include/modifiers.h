@@ -15,15 +15,26 @@ enum {
     MODIFIER_FAST_BALL = 2,     /* one extra ball step every 3rd frame */
     MODIFIER_WIN_BY_2 = 4,      /* first to POINTS, but by two */
     MODIFIER_LAVA = 8,          /* stepping into your kitchen loses the point */
-    MODIFIER_ALL = 15,
-    MODIFIER_COUNT = 4
+    MODIFIER_GHOST_BALL = 16,   /* high in flight, the ball only blinks */
+    MODIFIER_POPCORN = 32,      /* every hit in a rally adds pace */
+    MODIFIER_ICE = 64,          /* players slide */
+    MODIFIER_ALL = 127,
+    MODIFIER_COUNT = 7
 };
 
 enum {
     /* Big ball: the hit box grows by the ball's extra radius. */
     MODIFIER_BIG_REACH = 4,
     /* Lava: CPUs keep their feet this far behind their kitchen line. */
-    MODIFIER_LAVA_MARGIN = 8
+    MODIFIER_LAVA_MARGIN = 8,
+    /* Ghost ball: at or above this height (px) the ball shows only on
+     * MODIFIER_GHOST_SHOWN frames in every 16. */
+    MODIFIER_GHOST_Z = 8,
+    MODIFIER_GHOST_SHOWN = 2,
+    /* Popcorn: each level adds a ball step on one tick in every
+     * MODIFIER_POPCORN_STRIDE (5 a cycle, about +8%), up to the cap (+50%). */
+    MODIFIER_POPCORN_STRIDE = 12,
+    MODIFIER_POPCORN_LEVELS = 6
 };
 
 /* A saved value with unknown bits cleared. */
@@ -34,6 +45,11 @@ u8 modifiers_valid(u8 saved);
  * evenly, plus one more every 3rd frame with FAST BALL. 0 to 3 each. */
 void modifiers_ball_pace(u8 *pace, u8 ticks, u8 difficulty, u8 modifiers,
     u8 percent);
+
+/* POPCORN: adds (or takes back) level `level`'s steps (0-based) in a pace
+ * table of GAME_BALL_PACE_TICKS. A few increments: it runs on a hit. */
+void modifiers_popcorn_add(u8 *pace, u8 level);
+void modifiers_popcorn_remove(u8 *pace, u8 level);
 
 /* Nonzero when `score` against `other` wins a match to `points`: with WIN
  * BY 2, only by two. A macro: the frames that score and end a point run
@@ -51,7 +67,8 @@ s16 modifiers_lava_target(s16 x, u8 team);
 /* Modifiers page editor (like the options page, ADR-025). */
 enum { MODIFIERS_ROW_BALL = 0, MODIFIERS_ROW_SPEED = 1,
        MODIFIERS_ROW_SCORING = 2, MODIFIERS_ROW_KITCHEN = 3,
-       MODIFIERS_ROWS = MODIFIER_COUNT };
+       MODIFIERS_ROW_VISION = 4, MODIFIERS_ROW_RALLY = 5,
+       MODIFIERS_ROW_FOOTING = 6, MODIFIERS_ROWS = MODIFIER_COUNT };
 enum { MODIFIERS_EDIT_STAY = 0, MODIFIERS_EDIT_DONE = 1,
        MODIFIERS_EDIT_CANCEL = 2 };
 

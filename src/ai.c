@@ -160,6 +160,25 @@ static s16 move_toward(s16 from, s16 to)
     return 0;
 }
 
+/* ICE (ADR-053): how far (px) a player moving at v (12.4, 0-31) coasts to
+ * a stop with the ice's friction, 1: v (v - 1) / 32. */
+static const u8 s_ice_coast[32] = {
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 6,
+    7, 8, 9, 10, 11, 13, 14, 15, 17, 18, 20, 21, 23, 25, 27, 29
+};
+
+/* On ice, let go once the slide would carry the player to the target. */
+static s16 move_toward_ice(s16 from, s16 to, s16 v)
+{
+    s16 delta = to - from;
+
+    if (delta > 0 && v > 0 && s_ice_coast[v & 31] >= delta)
+        return 0;
+    if (delta < 0 && v < 0 && s_ice_coast[(-v) & 31] >= -delta)
+        return 0;
+    return move_toward(from, to);
+}
+
 static u8 ball_incoming(const Player *player)
 {
     if (g_ball.rally_state != BALL_RALLY_LIVE)
@@ -467,7 +486,7 @@ static fx s_reach_y;
 /*
  * How far a player slides after pressing swing (ADR-038): the swing stops
  * the feet, so friction takes the speed, held under the paddle's swing
- * limit, to zero in at most three frames (13, 7, 1). The contact check
+ * limit, to zero in at most three frames (13, 7, 1); on ICE, twelve. The contact check
  * sees the player there, not where they pressed. Without footwork, a CPU
  * plans from where it pressed, and a ball at the sweet spot's edge is met
  * stretched: those mis-hits spray out.
@@ -476,16 +495,16 @@ static s16 ai_slide(s16 v, s16 limit)
 {
     s16 total;
 
-    v = v > PLAYER_FRICTION_FP ? v - PLAYER_FRICTION_FP :
-        v < -PLAYER_FRICTION_FP ? v + PLAYER_FRICTION_FP : 0;
+    v = v > g_player_friction ? v - g_player_friction :
+        v < -g_player_friction ? v + g_player_friction : 0;
     if (v > limit)
         v = limit;
     else if (v < -limit)
         v = -limit;
     total = v;
     while (v) {
-        v = v > PLAYER_FRICTION_FP ? v - PLAYER_FRICTION_FP :
-            v < -PLAYER_FRICTION_FP ? v + PLAYER_FRICTION_FP : 0;
+        v = v > g_player_friction ? v - g_player_friction :
+            v < -g_player_friction ? v + g_player_friction : 0;
         total += v;
     }
     return total;
@@ -825,7 +844,17 @@ static void ai_plan_intercept(const Player *player)
     /* FAST BALL takes an extra step every 3rd frame, so N steps take at
      * least N - N/4 - 1 frames: the swing early-out stays safe. A slow ball
      * (ADR-025) only takes longer, so its steps are a safe count. */
-    if ((g_match_config.modifiers & MODIFIER_FAST_BALL) && steps > 1)
+    /* POPCORN (ADR-053) adds up to 1/12 a level (+50% at six): N steps
+     * take at least 3N/4 frames to level 4, 5N/8 beyond, and N/2 with FAST
+     * BALL too. */
+    if (g_popcorn_level && steps > 1) {
+        if (g_match_config.modifiers & MODIFIER_FAST_BALL)
+            steps = (steps >> 1) - 1;
+        else if (g_popcorn_level > 4)
+            steps -= (steps >> 2) + (steps >> 3) + 1;
+        else
+            steps -= (steps >> 2) + 1;
+    } else if ((g_match_config.modifiers & MODIFIER_FAST_BALL) && steps > 1)
         steps -= (steps >> 2) + 1;
     g_ai.predicted_frames = steps;
     g_ai.predicted_land_x = land_x;
@@ -1098,6 +1127,11 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
                 shift = -AI_SHIFT_MAX;
             g_ai.target_y += shift;
         }
+    }
+    if (g_match_config.modifiers & MODIFIER_ICE) {
+        intent->move_x = move_toward_ice(x, g_ai.target_x, player->vx_fp);
+        intent->move_y = move_toward_ice(y, g_ai.target_y, player->vy_fp);
+        return;
     }
     intent->move_x = move_toward(x, g_ai.target_x);
     intent->move_y = move_toward(y, g_ai.target_y);

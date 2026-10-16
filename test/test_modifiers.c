@@ -16,11 +16,12 @@
 #include "serve.h"
 #include "test_support.h"
 
-/* ADR-033 play modifiers: BIG BALL, FAST BALL, WIN BY 2, LAVA. */
+/* ADR-033 play modifiers: BIG BALL, FAST BALL, WIN BY 2, LAVA; ADR-053:
+ * GHOST BALL, POPCORN, ICE. */
 
 static void test_values_and_editor(void)
 {
-    u8 mods = 0xf5;
+    u8 mods = 0x85;
 
     assert(modifiers_valid(0xff) == MODIFIER_ALL);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, 0), "NORMAL") == 0);
@@ -30,6 +31,19 @@ static void test_values_and_editor(void)
         MODIFIER_WIN_BY_2), "WIN BY 2") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_KITCHEN, MODIFIER_LAVA),
         "LAVA") == 0);
+    assert(strcmp(modifiers_row_label(MODIFIERS_ROW_VISION), "VISION") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_VISION,
+        MODIFIER_GHOST_BALL), "GHOST") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_RALLY,
+        MODIFIER_POPCORN), "POPCORN") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, MODIFIER_ICE),
+        "ICE") == 0);
+    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_FOOTING, 0),
+        "NORMAL") == 0);
+    /* Each row is its bit. */
+    assert(MODIFIER_GHOST_BALL == 1 << MODIFIERS_ROW_VISION);
+    assert(MODIFIER_POPCORN == 1 << MODIFIERS_ROW_RALLY);
+    assert(MODIFIER_ICE == 1 << MODIFIERS_ROW_FOOTING);
 
     /* The editor makes the value valid, toggles a row's bit with
      * Left/Right, wraps rows, and Y puts the value back. */
@@ -38,9 +52,9 @@ static void test_values_and_editor(void)
     assert(modifiers_edit_input(&mods, PAD_RIGHT) == MODIFIERS_EDIT_STAY);
     assert(mods == 4 && modifiers_edit_changed(mods));
     modifiers_edit_input(&mods, PAD_UP);
-    assert(g_modifiers_edit.row == MODIFIERS_ROW_KITCHEN);
+    assert(g_modifiers_edit.row == MODIFIERS_ROW_FOOTING);
     modifiers_edit_input(&mods, PAD_LEFT);
-    assert(mods == (MODIFIER_WIN_BY_2 | MODIFIER_LAVA));
+    assert(mods == (MODIFIER_WIN_BY_2 | MODIFIER_ICE));
     modifiers_edit_input(&mods, PAD_DOWN);
     assert(g_modifiers_edit.row == MODIFIERS_ROW_BALL);
     assert(modifiers_edit_input(&mods, PAD_Y) == MODIFIERS_EDIT_CANCEL);
@@ -57,7 +71,7 @@ static void test_select_copies(void)
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     assert(g_save.settings.modifiers == 0);
-    g_save.settings.modifiers = MODIFIER_FAST_BALL | MODIFIER_LAVA | 0x40;
+    g_save.settings.modifiers = MODIFIER_FAST_BALL | MODIFIER_LAVA | 0x80;
     select_begin(MATCH_SINGLES, 1);
     select_apply();
     assert(g_match_config.modifiers == (MODIFIER_FAST_BALL | MODIFIER_LAVA));
@@ -321,6 +335,8 @@ typedef struct {
     int shots;
     int lava[2];
     int close_wins;             /* won by one point */
+    int popcorn_max;            /* the highest POPCORN level reached */
+    int popcorn_stale;          /* serves with pace left from a rally */
 } MatchStats;
 
 /* Bot (slot 0, the same AI) vs a CPU opponent (OPPONENT_NONE: the
@@ -334,6 +350,7 @@ static MatchStats bot_matches(u8 modifiers, u8 matches, u8 mode, u8 opponent)
     u8 counted = 0;
     u8 scored = 0;
     u8 serial = 0;
+    u8 pace[GAME_BALL_PACE_TICKS];
 
     memset(&stats, 0, sizeof(stats));
     if (mode == MATCH_DOUBLES)
@@ -344,6 +361,7 @@ static MatchStats bot_matches(u8 modifiers, u8 matches, u8 mode, u8 opponent)
     g_match_config.modifiers = modifiers;
     g_attract = 0;
     game_new_match();
+    memcpy(pace, g_ball_pace, sizeof(pace));
     while (match < matches && frames < 60UL * 60 * 60) {
         test_bot_skill(5, match);
         memset(intents, 0, sizeof(intents));
@@ -365,6 +383,12 @@ static MatchStats bot_matches(u8 modifiers, u8 matches, u8 mode, u8 opponent)
         } else {
             counted = 0;
         }
+        if (g_popcorn_level > stats.popcorn_max)
+            stats.popcorn_max = g_popcorn_level;
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+                (g_popcorn_level ||
+                 memcmp(pace, g_ball_pace, sizeof(pace)) != 0))
+            ++stats.popcorn_stale;
         if (g_game_state.phase == GAME_PHASE_POINT_RESULT) {
             if (!scored) {
                 scored = 1;
@@ -397,22 +421,25 @@ static MatchStats bot_matches(u8 modifiers, u8 matches, u8 mode, u8 opponent)
 
 static void test_matches(void)
 {
-    static const char *const names[5] = {
-        "none", "BIG BALL", "FAST BALL", "WIN BY 2", "LAVA"
+    static const char *const names[8] = {
+        "none", "BIG BALL", "FAST BALL", "WIN BY 2", "LAVA", "POPCORN",
+        "ICE", "POP+FAST"
     };
-    static const u8 mods[5] = {
+    static const u8 mods[8] = {
         0, MODIFIER_BIG_BALL, MODIFIER_FAST_BALL, MODIFIER_WIN_BY_2,
-        MODIFIER_LAVA
+        MODIFIER_LAVA, MODIFIER_POPCORN, MODIFIER_ICE,
+        MODIFIER_POPCORN | MODIFIER_FAST_BALL
     };
-    MatchStats stats[5];
+    MatchStats stats[8];
     u8 i;
 
-    for (i = 0; i < 5; ++i) {
+    for (i = 0; i < 8; ++i) {
         stats[i] = bot_matches(mods[i], 12, MATCH_SINGLES, OPPONENT_NONE);
         printf("modifiers: %-9s bot wins %2d of 12, %3d points, %.1f shots "
-            "a point, lava faults P1 %d CPU %d\n", names[i], stats[i].wins,
-            stats[i].points, (double)stats[i].shots / stats[i].points,
-            stats[i].lava[0], stats[i].lava[1]);
+            "a point, lava faults P1 %d CPU %d, popcorn level %d\n",
+            names[i], stats[i].wins, stats[i].points,
+            (double)stats[i].shots / stats[i].points, stats[i].lava[0],
+            stats[i].lava[1], stats[i].popcorn_max);
     }
     /* Rallies still happen. AI against AI, a big ball makes them shorter
      * (ADR-033): the larger sweet spot puts more shots where aimed. */
@@ -422,6 +449,93 @@ static void test_matches(void)
     assert(stats[3].close_wins == 0);
     /* CPUs (both of these are the AI) never step into the lava. */
     assert(stats[4].lava[0] == 0 && stats[4].lava[1] == 0);
+    /* POPCORN (ADR-053): rallies reach the cap (with FAST BALL too, nearly),
+     * and every serve is back at the match's pace. Off, the level never
+     * moves. */
+    for (i = 5; i < 8; i += 2) {
+        assert(stats[i].shots > 2 * stats[i].points);
+        assert(stats[i].popcorn_max >= MODIFIER_POPCORN_LEVELS - 2);
+        assert(stats[i].popcorn_stale == 0);
+    }
+    assert(stats[5].popcorn_max == MODIFIER_POPCORN_LEVELS);
+    assert(stats[0].popcorn_max == 0);
+    /* ICE: CPUs still get to the ball and rally. */
+    assert(stats[6].shots > 2 * stats[6].points);
+}
+
+/* POPCORN's steps: five a level in a cycle, on ticks FAST BALL leaves
+ * alone, the lookahead past the cycle the same as its start, and all of it
+ * taken back. */
+static void test_popcorn_pace(void)
+{
+    u8 base[GAME_BALL_PACE_TICKS];
+    u8 pace[GAME_BALL_PACE_TICKS];
+    u8 fast = MODIFIER_FAST_BALL;
+    int sum;
+    u8 level;
+    u8 i;
+
+    modifiers_ball_pace(base, GAME_BALL_PACE_TICKS, DIFFICULTY_MEDIUM, fast,
+        100);
+    memcpy(pace, base, sizeof(pace));
+    for (level = 0; level < MODIFIER_POPCORN_LEVELS; ++level) {
+        modifiers_popcorn_add(pace, level);
+        sum = 0;
+        for (i = 0; i < OPTIONS_BALL_CYCLE; ++i) {
+            sum += pace[i] - base[i];
+            assert(pace[i] - base[i] <= 1);
+            /* Never on top of FAST BALL's extra step. */
+            assert(i % 3 != 2 || pace[i] == base[i]);
+        }
+        assert(sum == 5 * (level + 1));
+        for (i = OPTIONS_BALL_CYCLE; i < GAME_BALL_PACE_TICKS; ++i)
+            assert(pace[i] == pace[i - OPTIONS_BALL_CYCLE]);
+    }
+    while (level)
+        modifiers_popcorn_remove(pace, --level);
+    assert(memcmp(pace, base, sizeof(pace)) == 0);
+}
+
+/* ICE: half the acceleration, and a long slide when the pad lets go;
+ * a new match without it is back to normal footing. */
+static u16 slide_after_run(u8 modifiers, s16 *top_frames)
+{
+    PlayerIntent intents[MAX_PLAYERS];
+    fx start;
+    s16 n;
+
+    match_config_defaults();
+    g_match_config.modifiers = modifiers;
+    game_new_match();
+    g_game_state.phase = GAME_PHASE_LIVE;
+    player_place(&g_players[0], 30, 100);
+    g_players[0].frozen = 0;
+    memset(intents, 0, sizeof(intents));
+    intents[0].move_y = 1;
+    for (n = 1; g_players[0].vy_fp < PLAYER_MAX_SPEED_FP && n < 60; ++n)
+        players_update(intents, 0);
+    *top_frames = n - 1;
+    intents[0].move_y = 0;
+    start = g_players[0].y_fp;
+    for (n = 0; g_players[0].vy_fp && n < 60; ++n)
+        players_update(intents, 0);
+    match_config_defaults();
+    return (u16)(g_players[0].y_fp - start);
+}
+
+static void test_ice(void)
+{
+    s16 frames;
+    u16 slide;
+
+    slide = slide_after_run(0, &frames);
+    assert(frames == 6 && slide < TO_FP(4));
+    slide = slide_after_run(MODIFIER_ICE, &frames);
+    assert(frames == 12 && g_player_friction == PLAYER_ICE_FRICTION_FP);
+    /* 23 + 22 + ... + 1 sixteenths: 17 px. */
+    assert(slide == 276);
+    slide = slide_after_run(0, &frames);
+    assert(frames == 6 && g_player_friction == PLAYER_FRICTION_FP);
 }
 
 /* The CPU's nearest x while chasing a short ball into its kitchen. */
@@ -492,6 +606,8 @@ int main(void)
     test_win_by_2();
     test_lava_rule();
     test_lava_colors();
+    test_popcorn_pace();
+    test_ice();
     test_matches();
     test_lava_cpus();
     printf("modifiers host checks passed\n");

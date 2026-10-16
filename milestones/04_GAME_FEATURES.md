@@ -166,6 +166,9 @@ touching the simulation.
 - [x] `M4-MOD-01` A modifiers menu and the first modifiers (big ball, fast ball, first to 11, kitchen is lava).
   - Accept: each modifier has a rules or physics test; the choice lives in `MatchConfig` and is optionally saved.
   - Verified: [ADR-033](../docs/decisions/ADR-033-modifiers.md), `test/test_modifiers.c`, `test_save.c: test_migrate_v7`, `modifiers.timeline`. First to 11 was already a POINTS choice (ADR-025), so the scoring modifier is WIN BY 2. Doubles with all four drops frames (budgeted; see `M4-UI-04`).
+- [x] `M4-MOD-02` More modifiers: GHOST BALL (the ball blinks out in flight; its shadow stays), POPCORN (every hit speeds the ball up, reset each serve), and ICE (players slide). LAVA unchanged.
+  - Accept: each has a test; the CPUs still rally with each; old saves load with the new rows off; zero overruns in a doubles match with all three and FAST BALL; the golden trace unchanged with them off.
+  - Verified: [ADR-053](../docs/decisions/ADR-053-fun-modifiers.md), `test_modifiers.c: test_popcorn_pace, test_ice, test_matches`, `modifiers_fun.timeline` (in `make perf`, 0 overruns), MesenCE (the ghost ball over the net, POPCORN's level per hit, the ICE slide on the asm `player_step`); `make stats` and the golden trace identical.
 
 ## Multiplayer
 

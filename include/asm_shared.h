@@ -77,9 +77,6 @@
 /* Player movement (include/player.h, include/court.h); clamps in 12.4. */
 #define ASM_WINDUP_FRAMES 4
 #define ASM_ACTIVE_FRAMES 3
-#define ASM_ACCEL 4
-#define ASM_DIAGONAL_ACCEL 3
-#define ASM_FRICTION 6
 #define ASM_IDLE_CEL_FRAMES 20
 #define ASM_RUN_CEL_FRAMES 6
 #define ASM_CLAMP_MIN_X_FP 64

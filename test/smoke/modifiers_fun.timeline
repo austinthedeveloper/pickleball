@@ -1,0 +1,33 @@
+# Modifiers in doubles (ADR-053): FAST BALL, GHOST BALL, POPCORN, and ICE,
+# the heaviest new mix (a paced ball that keeps speeding up, and four
+# players coasting on ice), then a doubles match against DAD and MOM. P1
+# serves and stands back; the CPUs play.
+70 71 up
+80 81 up
+90 91 start
+110 111 down   # SPEED
+120 121 right  # FAST
+130 131 down
+140 141 down
+150 151 down   # VISION
+160 161 right  # GHOST
+170 171 down   # RALLY
+180 181 right  # POPCORN
+190 191 down   # FOOTING
+200 201 right  # ICE
+shot 215
+220 221 b
+240 241 down   # MODIFIERS -> PRACTICE -> SINGLES -> DOUBLES
+246 247 down
+252 253 down
+260 261 start
+300 301 start  # confirm Player Select
+380 381 b      # close the intro card
+410 425 b      # serve: hold for the meter (ADR-044)
+shot 470
+shot 500
+shot 503
+shot 506
+shot 700
+shot 900
+shot 1200

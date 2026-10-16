@@ -73,7 +73,7 @@ The title screen offers eight choices, top to bottom:
 | COURT | Choose the venue, time of day, and court colours. |
 | CAREER | Make up to three players, track their stats, and earn unlocks. |
 | OPTIONS | Points to win, difficulty, ball speed, camera, and sound. |
-| MODIFIERS | Change the rules: big ball, fast ball, win by 2, lava kitchen. |
+| MODIFIERS | Change the rules: big ball, fast ball, win by 2, lava kitchen, ghost ball, popcorn, ice. |
 | PRACTICE | Hit against a ball machine. |
 
 ### Singles and Doubles
@@ -168,6 +168,9 @@ Modifiers change the rules of your matches. Left/Right switches a row, and they 
 | SPEED | NORMAL, FAST | A quicker ball. |
 | SCORING | FIRST TO, WIN BY 2 | WIN BY 2 plays on until someone leads by two. |
 | KITCHEN | NORMAL, LAVA | Step into your own kitchen during a rally and you lose the point: **LAVA!** |
+| VISION | NORMAL, GHOST | High in the air, the ball only flickers into view. Watch its shadow. |
+| RALLY | NORMAL, POPCORN | Every hit speeds the ball up a little. Each serve starts fresh. |
+| FOOTING | NORMAL, ICE | Players slide. Start early and let go before you arrive. |
 
 B or START keeps your choices; Y puts back what you had.
 

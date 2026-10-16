@@ -33,6 +33,38 @@ void modifiers_ball_pace(u8 *pace, u8 ticks, u8 difficulty, u8 modifiers,
     }
 }
 
+/* The tick each popcorn level starts at, in its stride. None is 2 mod 3,
+ * FAST BALL's extra step (tick % 3 == 2): a tick gains one or the other. */
+static const u8 s_popcorn_offset[MODIFIER_POPCORN_LEVELS] = {
+    0, 6, 3, 9, 1, 7
+};
+
+/* GAME_BALL_PACE_TICKS is a multiple of the stride, and so is the cycle:
+ * the lookahead entries past the cycle's end get the same steps. */
+typedef char popcorn_stride_fits[
+    (OPTIONS_BALL_CYCLE % MODIFIER_POPCORN_STRIDE == 0 &&
+     (OPTIONS_BALL_CYCLE + 12) % MODIFIER_POPCORN_STRIDE == 0) ? 1 : -1];
+
+void modifiers_popcorn_add(u8 *pace, u8 level)
+{
+    u8 *p = pace + s_popcorn_offset[level];
+    u8 i;
+
+    for (i = 0; i < (OPTIONS_BALL_CYCLE + 12) / MODIFIER_POPCORN_STRIDE;
+            ++i, p += MODIFIER_POPCORN_STRIDE)
+        ++*p;
+}
+
+void modifiers_popcorn_remove(u8 *pace, u8 level)
+{
+    u8 *p = pace + s_popcorn_offset[level];
+    u8 i;
+
+    for (i = 0; i < (OPTIONS_BALL_CYCLE + 12) / MODIFIER_POPCORN_STRIDE;
+            ++i, p += MODIFIER_POPCORN_STRIDE)
+        --*p;
+}
+
 u8 modifiers_in_kitchen(fx x_fp, fx y_fp, u8 team)
 {
     if (y_fp < TO_FP(COURT_SIDELINE_TOP) || y_fp > TO_FP(COURT_SIDELINE_BOTTOM))
@@ -55,7 +87,7 @@ s16 modifiers_lava_target(s16 x, u8 team)
 const char *modifiers_row_label(u8 row)
 {
     static const char *const labels[MODIFIERS_ROWS] = {
-        "BALL", "SPEED", "SCORING", "KITCHEN"
+        "BALL", "SPEED", "SCORING", "KITCHEN", "VISION", "RALLY", "FOOTING"
     };
     return labels[row < MODIFIERS_ROWS ? row : 0];
 }
@@ -64,7 +96,8 @@ const char *modifiers_value_name(u8 row, u8 modifiers)
 {
     static const char *const names[MODIFIERS_ROWS][2] = {
         { "NORMAL", "BIG" }, { "NORMAL", "FAST" },
-        { "FIRST TO", "WIN BY 2" }, { "NORMAL", "LAVA" }
+        { "FIRST TO", "WIN BY 2" }, { "NORMAL", "LAVA" },
+        { "NORMAL", "GHOST" }, { "NORMAL", "POPCORN" }, { "NORMAL", "ICE" }
     };
     if (row >= MODIFIERS_ROWS)
         row = 0;

@@ -16,8 +16,9 @@
 
 .SECTION ".player_step_text" SUPERFREE
 
-; Velocity on one axis: accelerate toward the move, or slow by friction to
-; a stop; then clamp to +-ps_limit.
+; Velocity on one axis: accelerate toward the move, or slow by friction
+; (g_player_friction: ICE changes it, ADR-053) to a stop; then clamp to
+; +-ps_limit.
 .MACRO PS_VELOCITY ARGS MOVE, VEL
     lda.l MOVE
     beq _psv_friction\@
@@ -34,14 +35,14 @@ _psv_minus\@:
 _psv_friction\@:
     lda.w VEL,x
     bmi _psv_negative\@
-    cmp.w #ASM_FRICTION + 1
-    bcc _psv_zero\@
-    sbc.w #ASM_FRICTION         ; carry set by the compare
+    sec
+    sbc.l g_player_friction
+    bmi _psv_zero\@             ; 0..friction stop (friction itself: 0)
     bra _psv_clamp\@
 _psv_negative\@:
-    cmp.w #$10000 - ASM_FRICTION
-    bcs _psv_zero\@             ; -6..-1 stop
-    adc.w #ASM_FRICTION         ; carry clear by the compare
+    clc
+    adc.l g_player_friction
+    bpl _psv_zero\@             ; -friction..-1 stop
     bra _psv_clamp\@
 _psv_zero\@:
     lda.w #0
@@ -248,13 +249,13 @@ _ps_run_limit:
     lda.w ASM_PLAYER_MAX_SPEED,x
 _ps_limit_set:
     sta.l ps_limit
-    lda.w #ASM_ACCEL
+    lda.l g_player_accel
     sta.l ps_accel
     lda.l ps_mx
     beq _ps_accel_done
     lda.l ps_my
     beq _ps_accel_done
-    lda.w #ASM_DIAGONAL_ACCEL
+    lda.l g_player_diagonal_accel
     sta.l ps_accel
     lda.l ps_limit
     and.w #31

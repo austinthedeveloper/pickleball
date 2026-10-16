@@ -67,18 +67,47 @@ the usual budget breaker, KNOWN_ISSUES #22).
   reads it (check the exact-block maths in `ai_swing_connects`).
 - **BOUNCY:** the ball keeps more height on each bounce (the restitution
   in `ball_update`). Dinks pop up, which is great for put-aways.
-- **GHOST BALL:** in flight, the ball blinks out for a few frames at a
-  time; the shadow stays. Read the shadow to play it. Costs nothing but a
-  skipped OBJ write.
-- **POPCORN:** every hit adds a little pace, so long rallies get frantic.
-  Reset on the serve. Pairs with the close-call replay.
+- **GHOST BALL:** **Done:** [ADR-053](decisions/ADR-053-fun-modifiers.md).
+  In flight, the ball blinks out; the shadow stays.
+- **POPCORN:** **Done:** [ADR-053](decisions/ADR-053-fun-modifiers.md).
+  Every hit adds a little pace; reset on the serve.
 - **DINK OR DIE:** only soft shots (dinks, drops, lobs) are legal; a drive
   loses the point (**DRIVE!**, a new banner). A rules-engine modifier,
   like LAVA.
 - **TINY PADDLE / HUGE PADDLE:** the reach box shrinks or grows (BIG BALL
   already grows it, so this is the same knob on its own).
-- **ICE:** players slide; acceleration and braking cut to a third.
-  `player_step` exists twice (C and asm), so change both.
+- **ICE:** **Done:** [ADR-053](decisions/ADR-053-fun-modifiers.md).
+  Players slide.
 - **SUDDEN DEATH:** one point, winner takes the match. Pure scoring.
 - **WIND** is already in IDEAS.md under Play modifiers; a venue flag (the
   beach, the lake) could pick its direction.
+- **GLOW IN THE DARK:** the lights go out. The court, the crowd, and the
+  backdrop fade to near black; the lines, the ball, and the players glow.
+  - Night courts (ADR-045) already swap the venue palettes, so this could
+    be one more palette set, built by the asset build like the LAVA
+    kitchen's colours (and checked for line and ball contrast).
+  - The OBJ palettes are all in use, so the players can't get new glowing
+    colours; brighten their existing palettes' entries instead, or leave
+    them and let the court go dark around them.
+  - A trail behind the ball would sell it, but needs OBJ slots.
+- **INVERSE:** two readings; pick one (or both, as two choices):
+  - *Colours:* every colour inverted (white is black), like a photo
+    negative. One pass over the palettes when the match loads, nothing per
+    frame. Check the HUD stays readable.
+  - *Controls:* the D-pad is reversed (up is down, toward the net is
+    away). A flag in the input mapping, humans only. Brutal with aiming.
+- **MULTI BALL:** two balls in play at once. Needs real thought, since the
+  rules assume one ball:
+  - *Rules options:* the first fault on either ball ends the point
+    (simplest, and keeps rally scoring), or each ball scores its own point
+    and the rally ends when both are dead (two points a rally; WIN BY 2
+    and match point get odd).
+  - *When:* the second ball enters after the two-bounce rule is done (a
+    second serve from the machine, or a ball dropped from the sky), so the
+    serve and two-bounce rules stay one-ball.
+  - *Cost:* a second `Ball`, its physics step, its OBJ pair (ball and
+    shadow), and every CPU choosing which ball to chase and running the
+    swing lookahead on it. The lookahead is the doubles budget's worst
+    cost (KNOWN_ISSUES #22), so this is probably singles only at first.
+  - The rules engine, the CPU's landing cache, the close-call replay, and
+    the camera all read `g_ball` directly; each needs a "which ball".

@@ -61,7 +61,7 @@
 #define OPTIONS_PAGE_ROWS 7         /* header, gap, points, difficulty, sound,
                                        ball speed, camera */
 #define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
-#define MODIFIERS_PAGE_ROWS 6       /* header, gap, 4 rows */
+#define MODIFIERS_PAGE_ROWS (MODIFIERS_ROWS + 2) /* header, gap, rows */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];

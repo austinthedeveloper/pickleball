@@ -401,6 +401,10 @@ static void render_players(void)
     }
 }
 
+/* This frame's GHOST BALL is hidden: so is the hit spark, which is drawn
+ * at the ball's height. Set by render_ball every frame. */
+static u8 s_ghost_hidden;
+
 static void render_ball(void)
 {
     s16 x;
@@ -408,6 +412,7 @@ static void render_ball(void)
     s16 z;
     s16 sx;
 
+    s_ghost_hidden = 0;
     if (!g_ball.active) {
         render_obj_hide(RENDER_OAM_BALL);
         render_obj_hide(RENDER_OAM_BALL_SHADOW);
@@ -417,18 +422,28 @@ static void render_ball(void)
     y = FROM_FP(g_ball.y_fp);
     z = FROM_FP(g_ball.z_fp);
     sx = projection_x(x, y);
-    if (g_match_config.modifiers & MODIFIER_BIG_BALL) {
+    if (g_match_config.modifiers & MODIFIER_BIG_BALL)
         /* BIG BALL (ADR-033): a 14 px ball centred in a 32x32 object. */
         obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4,
             OBJTILE_BIG_BALL_SHADOW, OBJ_ATTR(g_objpal_shadow, 0), 0);
-        obj_put(RENDER_OAM_BALL, sx - 16, y - z - 16, OBJTILE_BIG_BALL,
-            OBJ_ATTR(g_objpal_objects, 0), 1);
+    else
+        obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4, OBJTILE_BALL_SHADOW,
+            OBJ_ATTR(g_objpal_shadow, 0), 0);
+    /* GHOST BALL (ADR-053): high in a live rally, the ball shows only in a
+     * brief blink; the shadow always. */
+    if ((g_match_config.modifiers & MODIFIER_GHOST_BALL) &&
+            z >= MODIFIER_GHOST_Z && g_ball.rally_state == BALL_RALLY_LIVE &&
+            (g_game_state.frame_count & 15) >= MODIFIER_GHOST_SHOWN) {
+        render_obj_hide(RENDER_OAM_BALL);
+        s_ghost_hidden = 1;
         return;
     }
-    obj_put(RENDER_OAM_BALL_SHADOW, sx - 4, y - 4, OBJTILE_BALL_SHADOW,
-        OBJ_ATTR(g_objpal_shadow, 0), 0);
-    obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
-        OBJ_ATTR(g_objpal_objects, 0), 0);
+    if (g_match_config.modifiers & MODIFIER_BIG_BALL)
+        obj_put(RENDER_OAM_BALL, sx - 16, y - z - 16, OBJTILE_BIG_BALL,
+            OBJ_ATTR(g_objpal_objects, 0), 1);
+    else
+        obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
+            OBJ_ATTR(g_objpal_objects, 0), 0);
 }
 
 /* The practice ball machine (ADR-028): four 8x8 objects, its nozzle (the
@@ -502,7 +517,7 @@ static void render_effects(void)
 {
     s16 sx;
 
-    if (g_fx.spark_timer) {
+    if (g_fx.spark_timer && s_ghost_hidden == 0) {
         sx = projection_x(g_fx.spark_x, g_fx.spark_y);
         obj_put(RENDER_OAM_SPARK, sx - 4,
             g_fx.spark_y - FROM_FP(g_ball.z_fp) - 4,

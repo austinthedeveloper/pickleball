@@ -101,6 +101,9 @@ extern u8 g_ball_tick;
 /* Ball physics steps taken this match: the CPUs' landing cache (ai.c)
  * counts the steps a cached flight has already flown. */
 extern u16 g_ball_steps;
+/* POPCORN (ADR-053): the levels of pace this rally's hits have added to
+ * g_ball_pace (0 to MODIFIER_POPCORN_LEVELS); taken back after the point. */
+extern u8 g_popcorn_level;
 /* This frame's ball steps at the match's pace; BallEvent bits. */
 u8 game_step_ball(void);
 /* Nonzero when the team has won the match (POINTS, and WIN BY 2). */

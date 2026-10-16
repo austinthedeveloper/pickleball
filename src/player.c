@@ -6,6 +6,17 @@
 #include "player.h"
 
 Player g_players[MAX_PLAYERS];
+s16 g_player_accel;
+s16 g_player_diagonal_accel;
+s16 g_player_friction;
+
+void players_set_ice(u8 ice)
+{
+    g_player_accel = ice ? PLAYER_ICE_ACCEL_FP : PLAYER_ACCEL_FP;
+    g_player_diagonal_accel = ice ? PLAYER_ICE_DIAGONAL_ACCEL_FP :
+        PLAYER_DIAGONAL_ACCEL_FP;
+    g_player_friction = ice ? PLAYER_ICE_FRICTION_FP : PLAYER_FRICTION_FP;
+}
 
 /* limit * 181 / 256 for every limit the game uses (12.4 units, <= 31):
  * a table, because 816-tcc's multiply is a library call. Also read by
@@ -47,6 +58,7 @@ void players_initialize(void)
     u8 i;
     Player *player;
 
+    players_set_ice(0);
     for (i = 0; i < MAX_PLAYERS; ++i) {
         player = &g_players[i];
         player->active = 0;
@@ -81,8 +93,8 @@ void players_initialize(void)
 static Player s_p;
 
 #define APPROACH_ZERO(v) \
-    ((v) > PLAYER_FRICTION_FP ? (v) - PLAYER_FRICTION_FP : \
-     (v) < -PLAYER_FRICTION_FP ? (v) + PLAYER_FRICTION_FP : 0)
+    ((v) > g_player_friction ? (v) - g_player_friction : \
+     (v) < -g_player_friction ? (v) + g_player_friction : 0)
 
 static void player_step(const PlayerIntent *intent)
 {
@@ -132,9 +144,9 @@ static void player_step(const PlayerIntent *intent)
 
     limit = s_p.state >= PLAYER_STATE_WINDUP ?
         g_paddle_swing_limit[s_p.paddle] : s_p.max_speed_fp;
-    accel = PLAYER_ACCEL_FP;
+    accel = g_player_accel;
     if (move_x && move_y) {
-        accel = PLAYER_DIAGONAL_ACCEL_FP;
+        accel = g_player_diagonal_accel;
         limit = g_player_diagonal_limit[limit & 31];
     }
 

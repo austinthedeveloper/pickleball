@@ -34,6 +34,7 @@ u8 g_ball_tick;
 u8 g_ball_paced;
 u8 g_ball_pace[GAME_BALL_PACE_TICKS];
 u16 g_ball_steps;
+u8 g_popcorn_level;
 
 #define GAME_SCORE_WINS(score, other) \
     MODIFIERS_SCORE_WINS(score, other, g_match_config.points_to_win, \
@@ -105,7 +106,9 @@ static void game_activate_players(void)
         active[i] = match_slot_active(i);
     g_ball_tick = 0;
     g_ball_steps = 0;
-    g_ball_paced = (g_match_config.modifiers & MODIFIER_FAST_BALL) ||
+    g_popcorn_level = 0;
+    g_ball_paced = (g_match_config.modifiers &
+            (MODIFIER_FAST_BALL | MODIFIER_POPCORN)) ||
         options_ball_per_cycle(g_match_config.difficulty,
             g_match_config.ball_speed) != OPTIONS_BALL_CYCLE;
     if (g_ball_paced)
@@ -114,6 +117,7 @@ static void game_activate_players(void)
             g_match_config.ball_speed);
     /* Only on a change: a new match frame runs near the budget (the demo
      * restarts on one). */
+    players_set_ice((g_match_config.modifiers & MODIFIER_ICE) != 0);
     big = (g_match_config.modifiers & MODIFIER_BIG_BALL) != 0;
     if (big != g_hit_box.big)
         collision_configure(big);
@@ -206,6 +210,11 @@ void game_contact(u8 player_index)
     g_game_state.hit_stop = GAME_HIT_STOP_FRAMES;
     events_emit(EVENT_HIT, FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp),
         player_index | (player->shot_type << 4));
+    /* POPCORN: each hit in the rally adds pace, up to the cap. */
+    if ((g_match_config.modifiers & MODIFIER_POPCORN) &&
+            g_popcorn_level < MODIFIER_POPCORN_LEVELS &&
+            g_match_config.practice == 0)
+        modifiers_popcorn_add(g_ball_pace, g_popcorn_level++);
 }
 
 u8 game_step_ball(void)
@@ -315,6 +324,12 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     u8 winner = g_game_state.point_winner;
 
     game_freeze_players(winner);
+
+    /* POPCORN: back to the match's pace for the next serve. Not on the
+     * result's first frame, which records the rally. */
+    if (g_popcorn_level && g_game_state.phase_timer == 2)
+        while (g_popcorn_level)
+            modifiers_popcorn_remove(g_ball_pace, --g_popcorn_level);
 
     /* First frame of the result (the timer counts from 1 here). */
     if (g_game_state.phase_timer == 1 && !g_attract) {

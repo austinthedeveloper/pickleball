@@ -113,6 +113,14 @@ and they combine:
   next to the net) during a rally and you lose the point: `LAVA!`. The
   kitchen glows on the court behind the page while LAVA is chosen. The CPUs
   know to stay out.
+- **VISION**: NORMAL or **GHOST**. Once the ball is up in the air, it only
+  flickers into view now and then; its shadow on the court never leaves.
+  Read the shadow.
+- **RALLY**: NORMAL or **POPCORN**. Every hit speeds the ball up a little,
+  so long rallies get frantic. Each serve starts at normal speed again.
+- **FOOTING**: NORMAL or **ICE**. Players take longer to get going and
+  slide when they let go. Start moving early, and let go before you get
+  there.
 
 B or Start keeps your choices (they're saved); Y puts back what you had.
 The title demo always plays without modifiers.

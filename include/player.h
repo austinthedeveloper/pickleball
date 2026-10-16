@@ -35,6 +35,11 @@ enum {
     PLAYER_DIAGONAL_ACCEL_FP = 3,
     PLAYER_MAX_SPEED_FP = 24,
     PLAYER_FRICTION_FP = 6,
+    /* ICE (ADR-053): half the acceleration and a sixth of the friction, so
+     * a run takes 12 frames to reach top speed and slides about 18 px. */
+    PLAYER_ICE_ACCEL_FP = 2,
+    PLAYER_ICE_DIAGONAL_ACCEL_FP = 2,
+    PLAYER_ICE_FRICTION_FP = 1,
     /* Diagonal limits use the 181/256 normalization from the spec. */
     PLAYER_SWING_MAX_SPEED_FP = 12,
     /* CPU runs at 80% of human top speed. */
@@ -79,6 +84,12 @@ typedef struct {
 extern Player g_players[MAX_PLAYERS];
 
 void players_initialize(void);
+/* This match's footing (ICE or not): g_player_accel and the rest. Words,
+ * for src/asm/player_step.asm. players_initialize sets the normal ones. */
+extern s16 g_player_accel;
+extern s16 g_player_diagonal_accel;
+extern s16 g_player_friction;
+void players_set_ice(u8 ice);
 void players_update(const PlayerIntent intents[MAX_PLAYERS], u8 paused);
 /* Doubles (ADR-018): nudge crowded teammates 1 px apart in y. */
 void players_separate_teammates(void);

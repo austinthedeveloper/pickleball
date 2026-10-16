@@ -22,6 +22,7 @@
     {"timeline": "open_play.timeline", "frames": 2800},
     {"timeline": "clubhouse.timeline", "frames": 1110},
     {"timeline": "modifiers_doubles.timeline", "frames": 2400},
+    {"timeline": "modifiers_fun.timeline", "frames": 2400},
     {"timeline": "menu.timeline", "frames": 605},
     {"timeline": "demo.timeline", "frames": 9400}
   ],

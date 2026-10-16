@@ -209,8 +209,10 @@ stack.
 ## Play modifiers
 
 **Started:** [ADR-033](decisions/ADR-033-modifiers.md) adds the MODIFIERS
-page with BIG BALL, FAST BALL, WIN BY 2, and a LAVA kitchen. The notes below
-are the original idea.
+page with BIG BALL, FAST BALL, WIN BY 2, and a LAVA kitchen;
+[ADR-053](decisions/ADR-053-fun-modifiers.md) adds GHOST BALL, POPCORN, and
+ICE. More candidates are in GOOFY_IDEAS.md (More modifiers). The notes
+below are the original idea.
 
 Toggles that change the rules or physics for a match, e.g. big ball, fast
 ball, wind, first to 5 or 21, rally scoring, "kitchen is lava", or
