@@ -92,7 +92,9 @@ ADR-024.
 - [x] `M4-SERVE-01` Charged serve: a press serves safely; holding runs a power meter, and the release serves at its level, with the bottom of the meter on the way down a dud into the net. Not on KID.
   - Accept: a tap (also an early one) is the classic serve; the meter rises and falls while held; more charge is a faster serve that still lands in; a release at the bottom on the way down hits the net; CPUs and KID serve as before; zero overruns.
   - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
-- [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
+- [x] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
+  - Accept: `serve_power` and `serve_dud` style knobs; the default CPU and partner unchanged; GYM BROS and CHAMPS serve hard and sometimes dud; every ladder table in order; zero overruns.
+  - Verified: [ADR-058](../docs/decisions/ADR-058-cpu-serve-power.md), `test_ai.c: test_cpu_serve_power`, `make stats` in all three modes (ladder order: yes), MesenCE (BRAD's serves at power 30 and a dud); golden trace identical; `make perf` zero overruns.
 - [x] `M4-SHOT-01` Slice on X: a slow shot that buys time, never deep, steady off a stretch.
   - Accept: slower than a standard shot from mid-court and the net, never above a standard shot's longest flight; neutral or short; less stretch spray; its own sound; CPUs unchanged; zero overruns.
   - Verified: [ADR-056](../docs/decisions/ADR-056-slice-and-short-hold.md), `test_collision.c: test_slice_and_fast_drop`, `test_input.c: test_slice_and_short_hold`, MesenCE (ball machine landings per shot); golden trace identical; `make perf` zero overruns.

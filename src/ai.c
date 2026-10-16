@@ -992,6 +992,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     u8 home;
     s16 shift;
     u16 elapsed;
+    u8 dud;
 
     /* Frames since this slot last thought (every think, whatever returns
      * early below): 1 for a CPU that thinks every frame. */
@@ -1026,6 +1027,15 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_game_state.phase_timer >= AI_SERVE_DELAY_FRAMES) {
             intent->hit_pressed = 1;
+            /* ADR-058: the style's serve power (the meter's level), and
+             * about one serve in serve_dud a dud: when the frame count,
+             * which the rallies before move, is a multiple of it. No RNG,
+             * so a match replays the same. serve_update keeps the power:
+             * a CPU never runs the meter. */
+            dud = s_style->serve_dud;
+            g_serve_charge.power = (dud &&
+                    (g_game_state.frame_count % dud) == 0) ? 0 :
+                s_style->serve_power;
             ++g_ai.shot_counter;
         }
         return;

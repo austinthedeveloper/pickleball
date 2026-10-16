@@ -57,7 +57,7 @@ so `make perf` covers the meter's drawing.
 
 ## Not yet
 
-- CPU serve power from personality (a risky CHAMPS, a safe SNOWBIRDS).
+- CPU serve power from personality (a risky CHAMPS, a safe SNOWBIRDS): done in [ADR-058](ADR-058-cpu-serve-power.md).
   CPUs serve at the classic power, so a strong human serve is an edge.
 - A sound for the meter's top and bottom.
 

@@ -539,6 +539,56 @@ static void test_slice(void)
     assert(raven_slices(0, 3, &presses) == 0);
 }
 
+/* ADR-058: a CPU serves at its style's power (the charged serve's level),
+ * and now and then a dud; the default CPU at the classic power. Plays
+ * singles matches against BRAD (GYM BROS) and reads each of his serves. */
+static void test_cpu_serve_power(void)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f;
+    u8 was_toss = 0;
+    int serves = 0;
+    int duds = 0;
+    int fast = 0;
+    u8 m = 0;
+
+    assert(g_ai_default_style.serve_power == SERVE_CHARGE_CLASSIC &&
+        g_ai_default_style.serve_dud == 0);
+    assert(g_opponent_styles[2][0].serve_power == SERVE_CHARGE_MAX);
+    match_config_defaults();
+    match_config_opponent(2);
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
+    g_attract = 0;
+    game_new_match();
+    for (f = 0; f < 60UL * 60 * 20; ++f) {
+        test_bot_skill(4, m);
+        memset(in, 0, sizeof(in));
+        ai_update(0, &in[0]);
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
+                g_serve_state.server_index == 0 && (f & 31) == 0)
+            in[0].hit_pressed = 1;
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
+            ++m;                        /* a new bot skill each match */
+            game_new_match();
+        }
+        test_step(in);
+        if (was_toss && g_game_state.phase == GAME_PHASE_LIVE &&
+                g_serve_state.server_index == 2) {
+            ++serves;
+            if (g_serve_charge.power < SERVE_CHARGE_DUD)
+                ++duds;
+            else if (g_serve_charge.power == SERVE_CHARGE_MAX)
+                ++fast;
+        }
+        was_toss = g_game_state.phase == GAME_PHASE_SERVE_TOSS;
+    }
+    printf("cpu serve: BRAD served %d: %d at full power, %d duds\n",
+        serves, fast, duds);
+    assert(serves >= 40 && fast + duds == serves);
+    assert(duds >= 1 && duds * 6 < serves);
+    match_config_defaults();
+}
+
 /* ADR-038: footwork plans the swing where the player stops; without it, a
  * CPU still sliding meets a ball at the sweet spot's edge stretched, and
  * those mis-hits spray out. With it, only the deliberate late shots do. */
@@ -736,6 +786,7 @@ int main(int argc, char **argv)
     test_tactics();
     test_footwork();
     test_slice();
+    test_cpu_serve_power();
     test_doubles_aim();
     test_scheduled_reaction();
     test_partner_stays_in();

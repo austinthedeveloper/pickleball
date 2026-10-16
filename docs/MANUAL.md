@@ -294,7 +294,7 @@ Singles and doubles are separate ladders, each remembering where you are. Quit a
 
 ### How They Play
 
-The higher you climb, the more your opponents play the net. From the Gym Bros on, they move up once the serve and return have bounced and volley the ball out of the air. The Pirates through the Twins play right at the kitchen line. Come to the net yourself, and the smarter teams (the Pirates on) answer with soft drops into your kitchen and dink rallies, just like real players. The Goth Club and the Champs mix in slices, slow shots that buy them time.
+The higher you climb, the more your opponents play the net. From the Gym Bros on, they move up once the serve and return have bounced and volley the ball out of the air. The Pirates through the Twins play right at the kitchen line. Come to the net yourself, and the smarter teams (the Pirates on) answer with soft drops into your kitchen and dink rallies, just like real players. The Goth Club and the Champs mix in slices, slow shots that buy them time. The Gym Bros and the Champs serve hard, and every so often straight into the net.
 
 In doubles, the stronger teams cover the middle and shift with the ball as a pair. They hit down the middle, between you and your partner, and if you split up, one at the net and one back, they'll go after the one in back.
 

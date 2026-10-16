@@ -1,16 +1,16 @@
 {
-  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are four lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. ADR-058: 'serve_power' is the charge level a CPU serves at (4, the classic serve, to 30, the fastest; ADR-044), and 'serve_dud' makes about one serve in N a dud into the net (0 never; when the frame count is a multiple of N). CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are four lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
     "depth": "alternate", "recover": 80, "speed": 19, "volley": 0, "net": 0,
-    "team": 0, "tactics": 0, "footwork": 0, "slice": 0
+    "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0
   },
   "partner_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
     "depth": "alternate", "recover": 80, "speed": 19, "volley": 1, "net": 48,
-    "team": 1, "tactics": 1, "footwork": 1, "slice": 0
+    "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0
   },
   "skins": {
     "light": [[22, 13, 9], [30, 21, 15], [31, 26, 20]],
@@ -36,7 +36,7 @@
                     "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40,
                     "aim": "away", "depth": "alternate", "recover": 84,
                     "speed": 16,
-                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0}
+                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "KIDDO", "variant": "female", "paddle": "red", "hat": "cap", "skin": "light",
@@ -47,7 +47,7 @@
                     "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 64,
                     "speed": 22,
-                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0}
+                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
         }
       ]
     },
@@ -68,7 +68,7 @@
                     "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40,
                     "aim": "away", "depth": "deep", "recover": 88,
                     "speed": 15,
-                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0}
+                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "WALT", "variant": "male", "paddle": "wood", "hat": "visor", "skin": "light",
@@ -79,7 +79,7 @@
                     "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40,
                     "aim": "away", "depth": "deep", "recover": 88,
                     "speed": 15,
-                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3}
+                    "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         }
       ]
     },
@@ -100,7 +100,7 @@
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
                     "speed": 13,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
         },
         {
           "name": "CHAD", "variant": "male", "paddle": "red", "hat": "headband", "skin": "light",
@@ -111,7 +111,7 @@
                     "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128,
                     "aim": "body", "depth": "deep", "recover": 76,
                     "speed": 15,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
         }
       ]
     },
@@ -132,7 +132,7 @@
                     "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80,
                     "aim": "body", "depth": "deep", "recover": 80,
                     "speed": 18,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "BILGE", "variant": "male", "paddle": "gold", "hat": "bandana", "skin": "light",
@@ -143,7 +143,7 @@
                     "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80,
                     "aim": "body", "depth": "deep", "recover": 80,
                     "speed": 18,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         }
       ]
     },
@@ -164,7 +164,7 @@
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
                     "speed": 18,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "VLAD", "variant": "male", "paddle": "wood", "hat": "hair", "skin": "pale",
@@ -175,7 +175,7 @@
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
                     "speed": 18,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         }
       ]
     },
@@ -196,7 +196,7 @@
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "mix", "depth": "alternate", "recover": 92,
                     "speed": 20,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "LANI", "variant": "female", "paddle": "blue", "hat": "hair", "skin": "deep",
@@ -207,7 +207,7 @@
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "mix", "depth": "alternate", "recover": 92,
                     "speed": 20,
-                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0}
+                    "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         }
       ]
     },
@@ -228,7 +228,7 @@
                     "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 50,
                     "speed": 21,
-                    "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0}
+                    "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
           "name": "MIA", "variant": "female", "paddle": "gold", "hat": "cap", "skin": "deep",
@@ -239,7 +239,7 @@
                     "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 50,
                     "speed": 21,
-                    "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0}
+                    "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         }
       ]
     },
@@ -260,7 +260,7 @@
                     "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "away", "depth": "alternate", "recover": 80,
                     "speed": 22,
-                    "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4}
+                    "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
         },
         {
           "name": "JADE", "variant": "female", "paddle": "gold", "hat": "visor", "skin": "tan",
@@ -271,7 +271,7 @@
                     "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "away", "depth": "alternate", "recover": 80,
                     "speed": 22,
-                    "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4}
+                    "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
         }
       ]
     }
