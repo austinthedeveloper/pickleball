@@ -1,6 +1,6 @@
 # ADR-047 — Career Players
 
-Status: **Accepted 2026-10-15** (stages 1-2: the data, the page)
+Status: **Accepted 2026-10-15** (stages 1-3: the data, the page, play)
 Milestone: `M4-CAREER-01` to `-04`. From [IDEAS.md](../IDEAS.md), "Career
 mode". Depends on: ADR-021/032 (save and migration), ADR-013/014 (palette
 parts, hats), ADR-020 (Player Select), ADR-023 (the ladder), ADR-040
@@ -33,7 +33,7 @@ stats comes later (stage 4), with its own balance pass.
    body, skin, hair, shirt, hat, paddle; locked items shown locked).
 3. **Into matches** (`M4-CAREER-03`): 1P's look and paddle from the active
    player (Player Select starts on them), the name on the HUD, and
-   "UNLOCKED: VISOR!" on the result screen (`g_career_new_unlocks`).
+   "UNLOCKED!" on the result screen (`g_career_new_unlocks`).
 4. **Gear stats** (`M4-CAREER-04`): small trade-offs like the paddles'.
 
 ## The CAREER page (stage 2)
@@ -77,6 +77,39 @@ player, and `render_apply_p1_look` recomposes slot 0 alone. Leaving EDIT
 starts a fresh demo. *(Amended: at first the demo kept playing with P1
 recoloured, mostly hidden behind the menu.)* Stage 3 uses the same flag in
 matches.
+
+## Playing as the player (stage 3)
+
+- **Who:** the active player is 1P. **NO PLAYER** on the slots view (the
+  row after the slots; the page opens there when nobody is active) makes
+  nobody active: matches are exactly as before and nothing is recorded.
+- **Player Select** starts 1P on the player's body, shirt, and paddle;
+  changes there are for that match. 1P's portrait and thumbnails take the
+  player's skin and hair (`career_compose_with`); the hat is not drawn
+  there (the portrait is fixed art). `select_apply` sets `career_p1`.
+- **In the match**, slot 0 wears the player's skin, hair, and hat with the
+  match's shirt and paddle (`match_compose_palette`, `match_slot_hat`).
+  The score panel's 1P label is the name's first four letters (the panel
+  fits four, as BLUE/RED do).
+- **Open play and the park's ball machine** have no Player Select:
+  `match_config_career_p1` puts slot 0 in the saved body, shirt, and
+  paddle, and a slot that had that shirt colour takes slot 0's old one
+  (ADR-010). The park's walk-around sprite keeps its own look
+  (KNOWN_ISSUES #27).
+- **UNLOCKED!**: after the initials card (if any), the match result shows
+  a story card (`STORY_CARD_UNLOCK`) with the unlocks just earned
+  ("VISOR, PINK HAIR", "+n" past 24 cells) and `@ OK`; B, A, or Start
+  closes it after 30 frames, or it goes after 5 s. Closing clears
+  `g_career_new_unlocks`; a new match clears it too.
+
+### Cost
+
+A match-end save write (212 bytes) on a heavy doubles frame overran when
+the match ended inside `modifiers_doubles.timeline` (2 runs of 6: random
+power-on RAM decides how the rallies go). The SRAM copy is now
+`src/asm/sram_copy.asm` (MVN into bank $70, about 7 cycles a byte, was the
+library's copy); six forced match ends there: zero overruns, worst
+scanline 199.
 
 ## The player record
 

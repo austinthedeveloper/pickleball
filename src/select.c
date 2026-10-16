@@ -3,6 +3,7 @@
 #include "modifiers.h"
 #include "options.h"
 #include "save.h"
+#include "career.h"
 #include "select.h"
 
 SelectState g_select;
@@ -42,6 +43,13 @@ void select_begin(u8 mode, u8 humans)
     g_select.choice[0].palette_id = PAL_BLUE;
     g_select.choice[0].variant = PLAYER_VARIANT_MALE;
     g_select.choice[0].paddle_id = PADDLE_STANDARD;
+    /* ADR-047: 1P starts on the active career player's body, shirt, and
+     * paddle (changes are for this match). */
+    if (career_active()) {
+        g_select.choice[0].palette_id = career_active()->shirt;
+        g_select.choice[0].variant = career_active()->variant;
+        g_select.choice[0].paddle_id = career_active()->paddle;
+    }
     g_select.choice[1].palette_id = PAL_RED;
     g_select.choice[1].variant = PLAYER_VARIANT_MALE;
     g_select.choice[1].paddle_id = PADDLE_STANDARD;
@@ -113,6 +121,8 @@ void select_apply(void)
 {
     match_config_select(g_select.mode, &g_select.choice[0],
         g_select.humans == 2 ? &g_select.choice[1] : 0);
+    /* ADR-047: 1P plays as the active career player (skin, hair, hat). */
+    g_match_config.career_p1 = career_active() != 0;
     /* ADR-023: against the CPU, the next opponent on the ladder. */
     if (g_select.humans == 1)
         match_config_opponent(g_save.settings.ladder);

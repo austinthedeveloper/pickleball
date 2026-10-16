@@ -13,11 +13,15 @@ static u8 press(u16 pressed)
     return career_page_input(pressed, pressed);
 }
 
+/* A blank save, the page open; nobody is active, so it opens on NO
+ * PLAYER: the tests start from slot 1 (row 0). */
 static void fresh(void)
 {
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     career_page_begin();
+    assert(g_career_page.row == CAREER_ROW_NOBODY);
+    g_career_page.row = 0;
 }
 
 /* Types a letter on the keyboard: the D-pad to its key, then B. */
@@ -192,6 +196,21 @@ static void test_delete_and_records(void)
     assert(press(PAD_Y) == CAREER_PAGE_CLOSE);
 }
 
+/* NO PLAYER: nobody active; the page opens there. */
+static void test_no_player(void)
+{
+    fresh();
+    career_create(1, "MAX");
+    career_page_begin();
+    assert(g_career_page.row == 1 && career_active() != 0);
+    press(PAD_DOWN);
+    press(PAD_DOWN);
+    assert(g_career_page.row == CAREER_ROW_NOBODY);
+    assert(press(PAD_B) == CAREER_PAGE_SAVE);
+    assert(career_active() == 0 && g_career_page.view == CAREER_VIEW_SLOTS);
+    assert(g_save.career[1].used);              /* still there */
+}
+
 static void test_card_helpers(void)
 {
     CareerPlayer p;
@@ -213,6 +232,7 @@ int main(void)
     test_cancel_new_player();
     test_edit_look();
     test_delete_and_records();
+    test_no_player();
     test_card_helpers();
     puts("career page host checks passed");
     return 0;

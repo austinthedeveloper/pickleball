@@ -91,7 +91,8 @@ ADR-024.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md), `test/test_career.c`, the save written and reloaded in MesenCE; `make perf` zero overruns (the save sum in assembly).
 - [x] `M4-CAREER-02` The CAREER page (RECORDS becomes CAREER): slot picker, player card with stats and unlocks, and the editor (name, body, skin, hair, shirt, hat, paddle; locked items skipped).
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 2), `test/test_career_page.c`, `career.timeline` and the updated `records.timeline` with zero overruns in `make perf`, MesenCE screenshots of each view and the live preview.
-- [ ] `M4-CAREER-03` Play as the active player: 1P's look and paddle, the name on the HUD, and new unlocks on the result screen.
+- [x] `M4-CAREER-03` Play as the active player: 1P's look and paddle, the name on the HUD, and new unlocks on the result screen.
+  - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 3), `test_career_page.c: test_no_player`, `test_story.c: test_unlock_card`; MesenCE: Player Select on the player's look, ACE on the score panel, UNLOCKED! VISOR after a win; `make perf` zero overruns (the SRAM copy in assembly).
 - [ ] `M4-CAREER-04` Gear that changes stats, always a trade-off (phase 2, with a balance pass).
 
 ## Pause

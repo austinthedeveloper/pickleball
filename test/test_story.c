@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "career.h"
 #include "game.h"
 #include "input.h"
 #include "match.h"
@@ -160,6 +161,38 @@ static void test_initials_need_a_finished_match(void)
     assert(g_save.initials.longest_rally[0] == 0);
 }
 
+/* ADR-047: the unlock card shows what a career player just earned, never
+ * in the attract demo, and clears it when it closes. */
+static void test_unlock_card(void)
+{
+    u16 f;
+
+    story_initialize();
+    g_attract = 1;
+    g_career_new_unlocks = 1;
+    story_begin_unlock();
+    assert(g_story.card == STORY_CARD_NONE);
+    g_attract = 0;
+    g_career_new_unlocks = 0;
+    story_begin_unlock();
+    assert(g_story.card == STORY_CARD_NONE);
+    g_career_new_unlocks = 3;
+    story_begin_unlock();
+    assert(g_story.card == STORY_CARD_UNLOCK);
+    /* B can't skip it at once; after the minimum it closes. */
+    assert(story_update(PAD_B, PAD_B));
+    for (f = 1; f < STORY_UNLOCK_MIN_FRAMES; ++f)
+        story_update(0, 0);
+    assert(!story_update(PAD_B, PAD_B));
+    assert(g_story.card == STORY_CARD_NONE && g_career_new_unlocks == 0);
+    /* Untouched, it goes by itself. */
+    g_career_new_unlocks = 1;
+    story_begin_unlock();
+    for (f = 0; f < STORY_UNLOCK_FRAMES; ++f)
+        story_update(0, 0);
+    assert(g_story.card == STORY_CARD_NONE && g_career_new_unlocks == 0);
+}
+
 int main(void)
 {
     test_intro_card();
@@ -167,6 +200,7 @@ int main(void)
     test_lines();
     test_initials_card();
     test_initials_need_a_finished_match();
+    test_unlock_card();
     printf("story host checks passed\n");
     return 0;
 }

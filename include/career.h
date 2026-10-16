@@ -43,6 +43,10 @@ void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
 /* The player's OBJ palette (ADR-013 roles): skin ramp and hair from the
  * career looks, shirt and shorts from their team colour, their paddle. */
 void career_compose_palette(const CareerPlayer *player, u16 out[16]);
+/* The same with another shirt and paddle (one match's Player Select
+ * choice: the skin and hair are always the player's). */
+void career_compose_with(const CareerPlayer *player, u8 shirt, u8 paddle,
+    u16 out[16]);
 
 /* Unlocks whose rules the player now meets and did not have; marks them.
  * Returns the new ones. */

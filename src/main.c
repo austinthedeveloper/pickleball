@@ -93,6 +93,8 @@ static void start_open_play_match(void)
         options_difficulty(g_save.settings.difficulty));
     g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
     g_match_config.open_play = 1;
+    /* ADR-047: you play as your career player, in their saved look. */
+    match_config_career_p1();
     game_start_match();
     g_match_config_changed = 0;
     render_open_match();
@@ -107,6 +109,7 @@ static void start_park_practice(void)
 {
     match_config_defaults();
     match_config_practice();
+    match_config_career_p1();           /* ADR-047 */
     game_start_match();
     g_match_config_changed = 0;
     g_pause_park = 1;
@@ -631,8 +634,12 @@ int main(void)
                         pause_begin();      /* just paused: on RESUME */
                 }
                 /* A record beaten (ADR-040): initials before the result. */
-                if (g_game_state.phase == GAME_PHASE_MATCH_RESULT)
+                if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
                     story_begin_initials();
+                    /* ADR-047: then what the career player unlocked. */
+                    if (g_story.card == STORY_CARD_NONE)
+                        story_begin_unlock();
+                }
             }
             if (g_next_opponent)
                 start_next_opponent();

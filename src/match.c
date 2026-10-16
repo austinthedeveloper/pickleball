@@ -196,6 +196,23 @@ void match_config_select(u8 mode, const PlayerChoice *p1,
     }
 }
 
+void match_config_career_p1(void)
+{
+    const CareerPlayer *player = career_active();
+    u8 old = g_match_config.palette_id[0];
+    u8 slot;
+
+    if (player == 0)
+        return;
+    g_match_config.career_p1 = 1;
+    g_match_config.variant[0] = player->variant;
+    g_match_config.paddle_id[0] = player->paddle;
+    for (slot = 1; slot < MAX_PLAYERS; ++slot)
+        if (g_match_config.palette_id[slot] == player->shirt)
+            g_match_config.palette_id[slot] = old;
+    g_match_config.palette_id[0] = player->shirt;
+}
+
 u8 match_slot_active(u8 slot)
 {
     return g_match_config.palette_id[slot] != MATCH_NO_PALETTE;
@@ -228,8 +245,11 @@ void match_compose_palette(u8 slot, u16 out[16])
     u8 member = match_slot_member(slot);
     u8 i;
 
+    /* ADR-047: the career player's skin and hair, in this match's shirt
+     * and paddle (Player Select starts on theirs). */
     if (slot == 0 && g_match_config.career_p1 && career_active()) {
-        career_compose_palette(career_active(), out);
+        career_compose_with(career_active(), g_match_config.palette_id[0],
+            g_match_config.paddle_id[0], out);
         return;
     }
     if (match_slot_partner(slot)) {

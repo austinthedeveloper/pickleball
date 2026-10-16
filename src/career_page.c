@@ -83,7 +83,7 @@ void career_page_begin(void)
 {
     g_career_page.view = CAREER_VIEW_SLOTS;
     g_career_page.row = g_save.career_active < CAREER_SLOTS ?
-        g_save.career_active : 0;
+        g_save.career_active : CAREER_ROW_NOBODY;
     g_career_page.slot = 0;
     g_career_page.naming = 0;
     g_career_page.cursor = 0;
@@ -138,6 +138,10 @@ static u8 page_slots(u16 pressed, u16 held)
         if (row == CAREER_ROW_RECORDS) {
             g_career_page.view = CAREER_VIEW_RECORDS;
             return CAREER_PAGE_STAY;
+        }
+        if (row == CAREER_ROW_NOBODY) {
+            career_select(CAREER_NONE);
+            return CAREER_PAGE_SAVE;
         }
         g_career_page.slot = row;
         if (g_save.career[row].used) {

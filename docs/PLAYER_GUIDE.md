@@ -175,8 +175,15 @@ cartridge. Pick a slot and press B:
   one and how to get it (WIN A MATCH for the visor, BEAT THE PIRATES for
   the tricorn, and so on). Locked choices don't show up until earned.
 - To delete a player, open their card, hold L and R, and press X.
+- **NO PLAYER** plays without a career player: nothing is recorded (for a
+  friend borrowing controller 1).
 
-Career stats count matches against the CPU.
+**Playing as your player:** Player Select starts on your player's body,
+shirt, and paddle (change them for one match if you like), and your skin,
+hair, and hat come along. Your name is on the scoreboard. Open play uses
+your player too. When a match earns something, the result shows
+**UNLOCKED!** with what you got. Career stats count matches against the
+CPU.
 
 ## Records
 

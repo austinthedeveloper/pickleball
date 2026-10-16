@@ -45,6 +45,12 @@ typedef struct {
 
 extern MatchConfig g_match_config;
 
+/* ADR-047: slot 0 is the active career player (if any) in their saved
+ * body, shirt, and paddle; a slot that had their shirt colour takes slot
+ * 0's old one, so colours stay unique (ADR-010). For configs without
+ * Player Select (open play). */
+void match_config_career_p1(void);
+
 /* Singles defaults: P1 (slot 0) blue, CPU (slot 2) red, slots 1/3 unused. */
 void match_config_defaults(void);
 /* Doubles defaults from the mockup: blue+gold (0, 1) vs red+green (2, 3). */

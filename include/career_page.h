@@ -9,8 +9,9 @@
  * input logic, like the court and options editors; hud_scene.c draws it
  * and main.c acts on the results.
  *
- *   SLOTS   the three players and RECORDS. B opens a player (making them
- *           active) or creates one in an empty slot; Y leaves.
+ *   SLOTS   the three players, NO PLAYER, and RECORDS. B opens a player
+ *           (making them active), creates one in an empty slot, or on NO
+ *           PLAYER makes nobody active; Y leaves.
  *   CARD    the player's stats and unlocks. B edits; L+R+X deletes; Y back.
  *   EDIT    name and look. Up/Down rows, Left/Right values (locked hair and
  *           hats are skipped); B on NAME types it, B elsewhere keeps, Y
@@ -26,8 +27,13 @@ enum {
     CAREER_VIEW_RECORDS = 3
 };
 
-/* SLOTS rows: a row per slot, then RECORDS. */
-enum { CAREER_ROW_RECORDS = CAREER_SLOTS, CAREER_SLOT_ROWS = CAREER_SLOTS + 1 };
+/* SLOTS rows: a row per slot, NO PLAYER (nobody active: matches as
+ * before, no stats), then RECORDS. */
+enum {
+    CAREER_ROW_NOBODY = CAREER_SLOTS,
+    CAREER_ROW_RECORDS = CAREER_SLOTS + 1,
+    CAREER_SLOT_ROWS = CAREER_SLOTS + 2
+};
 
 /* EDIT rows. */
 enum {

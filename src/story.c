@@ -1,3 +1,4 @@
+#include "career.h"
 #include "game.h"
 #include "input.h"
 #include "match.h"
@@ -94,6 +95,16 @@ static u8 story_update_initials(u16 pressed, u16 held)
     return 1;
 }
 
+void story_begin_unlock(void)
+{
+    if (g_attract)
+        return;
+    if (g_career_new_unlocks == 0)
+        return;
+    g_story.card = STORY_CARD_UNLOCK;
+    g_story.timer = 0;
+}
+
 void story_begin_intro(void)
 {
     g_story.timer = 0;
@@ -108,6 +119,15 @@ u8 story_update(u16 pressed, u16 held)
     if (g_story.card == STORY_CARD_INITIALS)
         return story_update_initials(pressed, held);
     ++g_story.timer;
+    if (g_story.card == STORY_CARD_UNLOCK) {
+        if (g_story.timer >= STORY_UNLOCK_FRAMES ||
+                (g_story.timer >= STORY_UNLOCK_MIN_FRAMES &&
+                 (pressed & (PAD_B | PAD_A | PAD_START)))) {
+            g_story.card = STORY_CARD_NONE;
+            g_career_new_unlocks = 0;
+        }
+        return g_story.card != STORY_CARD_NONE;
+    }
     if (g_story.timer >= STORY_INTRO_FRAMES ||
             (g_story.timer >= STORY_INTRO_MIN_FRAMES &&
              (pressed & (PAD_B | PAD_A | PAD_START))))

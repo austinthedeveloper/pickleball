@@ -1,5 +1,6 @@
 #include <snes.h>
 #include "asset_frames.h"
+#include "career.h"
 #include "hud.h"
 #include "hud_tiles.h"
 #include "match.h"
@@ -141,10 +142,20 @@ static void select_redraw(void)
     const PlayerChoice *choice = select_current();
     u8 i;
 
-    match_compose_parts(choice->palette_id, 0, choice->paddle_id,
-        s_pal_portrait);
-    for (i = 0; i < PAL_COUNT; ++i)
-        match_compose_parts(i, 0, choice->paddle_id, s_pal_thumbs[i]);
+    /* ADR-047: 1P's portrait and thumbnails in the active career player's
+     * skin and hair. */
+    if (g_select.current == 0 && career_active()) {
+        career_compose_with(career_active(), choice->palette_id,
+            choice->paddle_id, s_pal_portrait);
+        for (i = 0; i < PAL_COUNT; ++i)
+            career_compose_with(career_active(), i, choice->paddle_id,
+                s_pal_thumbs[i]);
+    } else {
+        match_compose_parts(choice->palette_id, 0, choice->paddle_id,
+            s_pal_portrait);
+        for (i = 0; i < PAL_COUNT; ++i)
+            match_compose_parts(i, 0, choice->paddle_id, s_pal_thumbs[i]);
+    }
     s_palettes_dirty = 1;
     draw_thumbnails(choice);
     draw_cursors(choice);

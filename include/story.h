@@ -11,13 +11,20 @@
  * arcade style, and the result waits under it. Pure.
  */
 
-enum { STORY_CARD_NONE = 0, STORY_CARD_INTRO = 1, STORY_CARD_INITIALS = 2 };
+enum {
+    STORY_CARD_NONE = 0,
+    STORY_CARD_INTRO = 1,
+    STORY_CARD_INITIALS = 2,
+    STORY_CARD_UNLOCK = 3       /* ADR-047: the career unlocks just earned */
+};
 enum {
     STORY_INTRO_MIN_FRAMES = 30,    /* a held button cannot skip it */
     STORY_INTRO_FRAMES = 300,       /* then it goes by itself (5 s) */
     STORY_INITIALS_MIN_FRAMES = 30, /* mashing B past the result can't
                                        enter AAA */
     STORY_INITIALS_FRAMES = 1800,   /* then the letters shown are kept */
+    STORY_UNLOCK_MIN_FRAMES = 30,   /* the unlock card, like the intro */
+    STORY_UNLOCK_FRAMES = 300,
     STORY_REPEAT_DELAY = 16,        /* a held Up/Down repeats after this, */
     STORY_REPEAT_FRAMES = 4         /* then every this many frames */
 };
@@ -49,6 +56,10 @@ void story_begin_intro(void);
 /* Shows the initials card when a record was beaten (g_save_new_records)
  * outside the attract demo, starting from the last initials entered. */
 void story_begin_initials(void);
+/* Shows the unlock card (ADR-047) when the career player just earned
+ * unlocks (g_career_new_unlocks), outside the attract demo; it clears them
+ * when it closes. After the initials card, on the match result. */
+void story_begin_unlock(void);
 /* One frame of 1P's newly pressed and held buttons. Intro: B, A, or Start
  * ends it after STORY_INTRO_MIN_FRAMES. Initials: Up and Down change the
  * letter (held, they repeat), B, A, or Right moves to the next and past the

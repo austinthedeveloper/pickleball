@@ -46,9 +46,19 @@ static void sram_read(u8 *dest, u16 offset)
     consoleLoadSramWithOffset(dest, SAVE_RAW_BYTES, offset);
 }
 
+/* src/asm/sram_copy.asm: MVN into SRAM, several times faster than
+ * consoleCopySramWithOffset (ADR-047: the save is 212 bytes). */
+u16 sram_copy_src;
+u16 sram_copy_dst;
+u16 sram_copy_len;
+extern void sram_copy(void);
+
 static void sram_write(const SaveData *source, u16 offset)
 {
-    consoleCopySramWithOffset((u8 *)source, sizeof(SaveData), offset);
+    sram_copy_src = (u16)source;
+    sram_copy_dst = offset;
+    sram_copy_len = sizeof(SaveData);
+    sram_copy();
 }
 #endif
 

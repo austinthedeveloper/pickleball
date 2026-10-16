@@ -154,6 +154,21 @@ static u8 hud_practice(void)
     return g_match_config.practice && !g_attract;
 }
 
+/* The active career player's name for the score panel: four cells. */
+static const char *hud_career_short_name(void)
+{
+    static char name[5];
+    const CareerPlayer *player = career_active();
+    u8 i;
+
+    for (i = 0; i < 4; ++i)
+        name[i] = (char)player->name[i];
+    name[4] = 0;
+    while (i && name[i - 1] == ' ')
+        name[--i] = 0;
+    return name;
+}
+
 /* Singles: P1 / CPU (or P2). Doubles: the team's palette name
  * (ADR-010/018), or CPU for a ladder opponent (ADR-023). */
 static const char *team_name(u8 team)
@@ -161,6 +176,9 @@ static const char *team_name(u8 team)
     /* Practice (ADR-028): P1's streak and the best streak. */
     if (hud_practice())
         return team ? "BEST" : "P1";
+    /* ADR-047: the career player's name, its first four letters. */
+    if (team == 0 && g_match_config.career_p1 && career_active())
+        return hud_career_short_name();
     if (hud_doubles() && !hud_opponent_team(team))
         return s_palette_names[match_team_palette(team)];
     if (team)
@@ -304,6 +322,7 @@ static void hud_draw_scores(void)
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 #define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
 #define HUD_KEY_INITIALS 0x800      /* the initials card (ADR-040) */
+#define HUD_KEY_UNLOCK 0x1000       /* the career unlock card (ADR-047) */
 /* The initials card: three big letters on rows 16-17, four columns apart
  * and centred, the chosen one underlined on row 18. */
 #define INITIALS_ROW 16
@@ -402,6 +421,8 @@ static u16 hud_scene_key(void)
         return HUD_KEY_INTRO;
     if (g_story.card == STORY_CARD_INITIALS)
         return HUD_KEY_INITIALS;
+    if (g_story.card == STORY_CARD_UNLOCK)
+        return HUD_KEY_UNLOCK;
     if (g_game_state.paused && !g_attract)
         return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
@@ -647,6 +668,54 @@ static void hud_intro_step(u8 step)
         rung[12] = (char)('0' + OPPONENT_COUNT);
         hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, rung);
     }
+}
+
+/* The unlocks just earned (ADR-047): "VISOR, PINK HAIR", and " +n" for
+ * any that don't fit the panel. */
+static const char *hud_unlock_text(void)
+{
+    static char text[29];
+    u16 bit = 1;
+    u8 length = 0;
+    u8 more = 0;
+    u8 i;
+    const char *name;
+    u8 size;
+
+    for (i = 0; i < CAREER_UNLOCKS; ++i, bit <<= 1) {
+        if ((g_career_new_unlocks & bit) == 0)
+            continue;
+        name = g_career_unlock_names[i];
+        for (size = 0; name[size]; ++size)
+            ;
+        if (length + (length ? 2 : 0) + size > 24) {
+            ++more;
+            continue;
+        }
+        if (length) {
+            text[length++] = ',';
+            text[length++] = ' ';
+        }
+        while (*name)
+            text[length++] = *name++;
+    }
+    if (more) {
+        text[length++] = ' ';
+        text[length++] = '+';
+        text[length++] = (char)('0' + more);
+    }
+    text[length] = 0;
+    return text;
+}
+
+static void hud_unlock_step(u8 step)
+{
+    if (step == HUD_STEP_BIG)
+        hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, "UNLOCKED!");
+    else if (step == HUD_STEP_PROMPT)
+        hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, hud_unlock_text());
+    else if (step == HUD_STEP_EXTRA)
+        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "@ OK");
 }
 
 /* Under the match result (ADR-026): the opponent's line (EXTRA), and
@@ -1103,7 +1172,8 @@ static void hud_court_refresh(void)
 
 /* ---- The CAREER page (ADR-047, M4-CAREER-02) ---- */
 
-#define CAREER_SLOTS_ROWS 7         /* header, gap, 3 slots, gap, RECORDS */
+#define CAREER_SLOTS_ROWS 8         /* header, gap, 3 slots, gap, NO PLAYER,
+                                       RECORDS */
 #define CAREER_EDIT_PAGE_ROWS 9     /* header, gap, 7 rows */
 #define CAREER_NAME_COL 8
 #define CAREER_UNDRAWN 0xff
@@ -1121,16 +1191,19 @@ static u8 hud_career_slot_state(u8 row)
     if (row < CAREER_SLOTS) {
         state |= (u8)((g_save.career_active == row) << 6);
         state |= (u8)(g_save.career[row].used << 5);
+    } else if (row == CAREER_ROW_NOBODY) {
+        state |= (u8)((career_active() == 0) << 6);
     }
     return state;
 }
 
-/* "> 1 ACE          12W", "  2 NEW PLAYER", "  RECORDS". */
+/* "> 1 ACE          12W", "  2 NEW PLAYER", then NO PLAYER (yellow when
+ * nobody is active) and RECORDS after a gap. */
 static void hud_career_slot_row(u8 row)
 {
     static char name[CAREER_NAME + 1];
     const CareerPlayer *player;
-    u8 line = TITLE_MENU_ROW + 2 + row + (row == CAREER_ROW_RECORDS);
+    u8 line = TITLE_MENU_ROW + 2 + row + (row >= CAREER_ROW_NOBODY);
     u8 cursor = g_career_page.row == row;
     u8 i;
 
@@ -1142,6 +1215,9 @@ static void hud_career_slot_row(u8 row)
     if (row == CAREER_ROW_RECORDS) {
         hud_text(CAREER_NAME_COL, line,
             cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE, "RECORDS");
+    } else if (row == CAREER_ROW_NOBODY) {
+        hud_text(CAREER_NAME_COL, line, career_active() == 0 ?
+            HUD_PAL_YELLOW : HUD_PAL_WHITE, "NO PLAYER");
     } else {
         player = &g_save.career[row];
         name[0] = (char)('1' + row);
@@ -1802,6 +1878,10 @@ static void hud_scene_step(u16 key, u8 step)
     }
     if (key == HUD_KEY_INITIALS) {
         hud_initials_step(step);
+        return;
+    }
+    if (key == HUD_KEY_UNLOCK) {
+        hud_unlock_step(step);
         return;
     }
     if (key == HUD_KEY_PRACTICE) {
