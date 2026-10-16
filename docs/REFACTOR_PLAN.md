@@ -1,6 +1,6 @@
 # Refactor Plan
 
-Status: **R0–R11 done; R12–R15 planned** (R11 on `feature/cld-perf`)
+Status: **R0–R11, R15 done; R12–R14 planned; R16–R25 (optimization before the character models) on `feature/cld-optimize`**
 
 The POC grew quickly, much of it while fighting 816-tcc's code generation
 for performance. These refactors make the code easier to change before the
@@ -38,6 +38,16 @@ gameplay.
 | R13 | One settings-page component: rows of (label, value names, count) with Up/Down rows, Left/Right wrapping values, B/Start keep, Y restore, and one HUD row renderer | `court_edit_input`, `options_edit_input`, and `practice_edit_input` repeat the same editor; their HUD pages repeat the row drawing | Medium | Planned |
 | R14 | One frame-budget helper: "defer if past scanline N, at most M frames in a row" | The same wait logic is written three times: `hud_title_wait` (hud_scene.c), `render_update_ground` (render.c), and `audio_update` (audio_events.c) | Low | Planned |
 | R15 | Doubles attract demo budget (`M4-UI-03`): bring its ~197 of 225 scanlines under budget (e.g. stagger the four AIs' decisions across frames) and set its `test/perf.json` budget to 0 | The only timeline allowed overruns (about 1 frame in 30–45) | Optional | Done: 160 → 0 overruns in the doubles demo (see R15 notes) |
+| R16 | `make perf` prints each timeline's worst frame (`g_work_scanline_max`, of 225) | Overruns alone hide headroom: a saving or a cost shows only when it crosses the line | High | Done |
+| R17 | OBJ name table 2 (VRAM word `0x7000`, 256 tiles, free) for player frames past sheet row 3; the renderer's frame tables and the animation loop lengths generated from the manifest | Character models need frames: table 1 is 249 of 256 tiles, and every frame was hand-listed in `render_bodies.asm` | High | Done |
+| R18 | VBlank headroom: the scanline where `render_commit`'s uploads end, its worst in `make perf` | Streaming frames into VRAM (a character-model option) needs the free VBlank measured first | High | Planned |
+| R19 | 1 MiB ROM (32 banks) | 114 KiB free; character frames, body sets, and venues need room. The user allows a bigger cart | Medium | Planned |
+| R20 | `oam_write`: high-table bits from a table, not a shift loop | ~280 cycles an object; better models add objects per player | High | Planned |
+| R21 | No per-frame hides of objects already hidden (debug marker in release, spark, inactive ball) | ~2–3 scanlines a frame for nothing | Medium | Planned |
+| R22 | Small 816-tcc fixes on per-frame and hit-frame paths: multiplies by ±1 and by the player size (`ai_choose_aim`, `ai_plan_intercept`, `ai_opponent_at_net`, `rules`' last hitter team), the collision loop by pointer | Each a `tcc__mul` (16 iterations for a negative factor) | Medium | Planned |
+| R23 | The swing lookahead skips its probe when the ball's x/y range over the window cannot reach the swing box | The lookahead is the largest single AI cost (R15 notes) | Medium | Planned |
+| R24 | Metasprite OAM writer: a per-frame object list per player, written in one pass | Required for multi-object character models; ~4× cheaper per object | High | With the character models |
+| R25 | `ai_think` on a static scratch copy of the player and style | ~4–6 scanlines per think, 36 pointer accesses | Low | Later |
 
 ### R15 notes
 

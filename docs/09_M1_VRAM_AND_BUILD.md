@@ -16,7 +16,8 @@ are uploaded once during forced blank.
 | BG2 close call map (ADR-041) | `0x0c00` | `0x1800–0x1fff` | 2,048 (rows 15-21 written when a point shows it) |
 | BG2 intro card bust and close call tiles | `0x4800` | `0x9000–0x9fff` | 1,824 (57 tiles; budget 128). BG2's tile base is `0x4000` (it steps by `0x1000` words); the map counts from tile 128. |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xbfff` | 4,480 (280 tiles) |
-| OBJ tiles (name base) | `0x6000` | `0xc000–0xffff` | 7,968 (249 tiles: the second objects row holds open play's people, ADR-034, and opponent hats, M4-OPP-04; then the park fonts) |
+| OBJ tiles, name table 1 (name base) | `0x6000` | `0xc000–0xdfff` | 7,968 (249 tiles: player sheet rows 0–2, then the objects rows: open play's people, ADR-034, and opponent hats, M4-OPP-04; then the park fonts) |
+| OBJ tiles, name table 2 | `0x7000` | `0xe000–0xffff` | 0 (player sheet rows 3–6, sixteen 32×32 frames, when the sheet grows; OBSEL's name gap is 0, so table 2 follows table 1, and `oam_write` sets the attribute's N bit for tiles 256–511. The park writes u8 tiles, so its people, objects, and fonts stay in table 1.) |
 
 Player Select (ADR-020) replaces the court while it is open and reuses the
 BG3 and OBJ regions:

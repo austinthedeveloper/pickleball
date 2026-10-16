@@ -83,6 +83,18 @@
       ]
     }
   },
+  "cycles": {
+    "idle": [
+      "idle0",
+      "idle1"
+    ],
+    "run": [
+      "run0",
+      "run1",
+      "run2",
+      "run3"
+    ]
+  },
   "objects": {
     "ball": 0,
     "ball_shadow": 1,
