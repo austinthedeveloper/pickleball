@@ -49,24 +49,34 @@ editors; `hud_scene.c` draws, `main.c` writes the save and previews):
   rally, UNLOCKS n/9, and the next unlock with its hint (`how` in
   career.json, 18 cells), or ALL UNLOCKED!. B edits; L+R+X deletes (the
   records erase's guard); Y back.
-- **EDIT**: NAME, BODY, SKIN, HAIR, SHIRT, HAT, PADDLE. B on NAME types
-  it (Up/Down letters A-Z and space, held to repeat; B/Right next; Y/Left
-  back; Start done; the letter at the cursor is yellow, a space shows as
-  `_`; a name of spaces becomes A). Left/Right change a look; locked hair
-  and hats are skipped. B elsewhere keeps (a save write); Y restores the
-  look, or drops a player just created.
+- **EDIT**: NAME, BODY, SKIN, HAIR, SHIRT, HAT, PADDLE, in a box right of
+  the court's left baseline. Left/Right change a look; locked hair and
+  hats are skipped. B on NAME types it; B elsewhere keeps (a save write; a
+  nameless player goes back to typing); Y restores the look, or drops a
+  player just created.
+- **Typing a name** is an arcade keyboard in the same box: the name with
+  an empty box per place left (the next one yellow; the font has no
+  visible underscore), then A-Z, space (a box), and `-` in rows of ten,
+  and DEL and END. The D-pad picks a key, B types it, DEL or Y erases the
+  last letter, END or Start finishes (not with no letters). Eight letters
+  put the cursor on END. A new player starts here with a blank name and
+  goes on to BODY. *(Amended 2026-10-15: at first Up/Down cycled the
+  letter in place, with no sign of the blank places or of being done.)*
 - **RECORDS**: the old table; L+R+X erases.
 
 Each view has its own prompt: title keys carry a 4-bit prompt id (was the
 3-bit page), ids 8-12 for the CAREER views. The views draw a part (one or
 two rows) per frame and then redraw only changed rows, like the others.
 
-**The preview:** while a player's CARD or EDIT is open, the title demo's
-P1 wears their look: `MatchConfig.career_p1` makes slot 0's palette
-(`career_compose_palette`: the career skin ramp and hair, the shirt's team
-colours, the paddle) and hat come from the active player, and
-`render_apply_p1_look` recomposes slot 0 alone. It is re-applied if the
-demo restarts under the page. Stage 3 uses the same flag in matches.
+**The preview:** while EDIT is open, the title demo stops (`main.c` skips
+its `game_update`), the ball is hidden, and its P1 stands at the left
+baseline in the player's look, beside the editor: `MatchConfig.career_p1`
+makes slot 0's palette (`career_compose_palette`: the career skin ramp and
+hair, the shirt's team colours, the paddle) and hat come from the active
+player, and `render_apply_p1_look` recomposes slot 0 alone. Leaving EDIT
+starts a fresh demo. *(Amended: at first the demo kept playing with P1
+recoloured, mostly hidden behind the menu.)* Stage 3 uses the same flag in
+matches.
 
 ## The player record
 

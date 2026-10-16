@@ -20,64 +20,105 @@ static void fresh(void)
     career_page_begin();
 }
 
+/* Types a letter on the keyboard: the D-pad to its key, then B. */
+static void type_key(u8 key)
+{
+    while (career_page_key() != key) {
+        if (key >= CAREER_KEY_DEL) {
+            if (g_career_page.key_row != CAREER_KEY_ROWS - 1)
+                press(PAD_UP);              /* wraps to DEL/END */
+            else
+                press(PAD_RIGHT);
+        } else if (g_career_page.key_row != key / CAREER_KEY_COLS) {
+            press(PAD_DOWN);
+        } else {
+            press(PAD_RIGHT);
+        }
+    }
+    press(PAD_B);
+}
+
 static void test_create_and_name(void)
 {
     CareerPlayer *p;
-    u8 i;
 
     fresh();
     assert(g_career_page.view == CAREER_VIEW_SLOTS && g_career_page.row == 0);
-    /* Slot 2: a new player, typing the name at once. */
+    /* Slot 2: a new player, on the keyboard at once, the name blank. */
     press(PAD_DOWN);
     press(PAD_DOWN);
     assert(press(PAD_B) == CAREER_PAGE_STAY);
     assert(g_career_page.view == CAREER_VIEW_EDIT && g_career_page.naming);
     assert(g_career_page.creating && g_save.career_active == 2);
     p = &g_save.career[2];
-    /* "ACE": A is there; B to the next, Up twice (B, C), B, Up 4 times. */
+    assert(memcmp(p->name, "        ", CAREER_NAME) == 0);
+    assert(career_page_key() == 0 && g_career_page.cursor == 0);
+    /* END with no letters: still typing. */
+    press(PAD_START);
+    assert(g_career_page.naming);
+    /* "ACE": A is picked (B), then C, E. */
     press(PAD_B);
-    press(PAD_UP);
-    press(PAD_UP);
-    assert(p->name[1] == 'B');
-    press(PAD_UP);
-    assert(p->name[1] == 'C');
-    press(PAD_LEFT);
-    press(PAD_DOWN);
-    assert(p->name[0] == ' ');                  /* A back to a space */
-    press(PAD_UP);
-    press(PAD_RIGHT);
-    press(PAD_RIGHT);
-    for (i = 0; i < 4; ++i)
-        press(PAD_UP);
-    assert(p->name[2] == 'D');
-    press(PAD_DOWN);
-    assert(memcmp(p->name, "ACC     ", CAREER_NAME) == 0);
-    /* A held Up repeats after the delay. */
-    for (i = 0; i < CAREER_REPEAT_DELAY; ++i)
-        career_page_input(0, PAD_UP);
-    assert(p->name[2] == 'D');
-    press(PAD_START);                           /* done typing */
-    assert(!g_career_page.naming);
-    /* B on another row keeps: the card, and a save. */
-    press(PAD_DOWN);
+    type_key(2);
+    type_key(4);
+    assert(memcmp(p->name, "ACE     ", CAREER_NAME) == 0);
+    /* Y (or DEL) erases the last letter. */
+    press(PAD_Y);
+    assert(memcmp(p->name, "AC      ", CAREER_NAME) == 0);
+    type_key(CAREER_KEY_DEL);
+    type_key(4);                                /* "AE" */
+    assert(memcmp(p->name, "AE      ", CAREER_NAME) == 0);
+    /* Space and dash. */
+    type_key(26);
+    type_key(27);
+    assert(memcmp(p->name, "AE -    ", CAREER_NAME) == 0);
+    /* END: done typing, and a new player goes on to their look. */
+    type_key(CAREER_KEY_END);
+    assert(!g_career_page.naming && g_career_page.row == CAREER_EDIT_BODY);
+    /* B keeps: the card, and a save. */
     assert(press(PAD_B) == CAREER_PAGE_SAVE);
     assert(g_career_page.view == CAREER_VIEW_CARD && !g_career_page.creating);
-    assert(memcmp(p->name, "ACD     ", CAREER_NAME) == 0);
+}
+
+static void test_name_full_and_edit(void)
+{
+    CareerPlayer *p;
+    u8 i;
+
+    fresh();
+    press(PAD_B);                               /* slot 0: new */
+    p = &g_save.career[0];
+    for (i = 0; i < CAREER_NAME; ++i)
+        press(PAD_B);                           /* AAAAAAAA */
+    assert(memcmp(p->name, "AAAAAAAA", CAREER_NAME) == 0);
+    assert(career_page_key() == CAREER_KEY_END);    /* full: on END */
+    press(PAD_B);                               /* an extra B: END */
+    assert(!g_career_page.naming);
+    /* Editing the name again picks up after the last letter. */
+    press(PAD_UP);                              /* NAME */
+    press(PAD_B);
+    assert(g_career_page.naming && g_career_page.cursor == CAREER_NAME);
+    press(PAD_Y);
+    press(PAD_Y);
+    assert(memcmp(p->name, "AAAAAA  ", CAREER_NAME) == 0);
+    press(PAD_START);
+    assert(!g_career_page.naming);
 }
 
 static void test_cancel_new_player(void)
 {
     fresh();
     press(PAD_B);                               /* slot 0: new */
-    press(PAD_START);                           /* stop typing */
+    press(PAD_B);                               /* A */
+    press(PAD_START);                           /* done typing */
     press(PAD_Y);                               /* never mind */
     assert(g_career_page.view == CAREER_VIEW_SLOTS);
     assert(g_save.career[0].used == 0 && career_active() == 0);
-    /* A name of spaces is no name. */
+    /* Keeping a nameless player isn't possible: B goes back to typing. */
     press(PAD_B);
-    press(PAD_DOWN);                            /* A to a space */
-    press(PAD_START);
-    assert(g_save.career[0].name[0] == 'A');
+    g_career_page.naming = 0;                   /* (as if left without END) */
+    g_career_page.row = CAREER_EDIT_BODY;
+    assert(press(PAD_B) == CAREER_PAGE_STAY);
+    assert(g_career_page.naming && g_career_page.row == CAREER_EDIT_NAME);
 }
 
 static void test_edit_look(void)
@@ -168,6 +209,7 @@ static void test_card_helpers(void)
 int main(void)
 {
     test_create_and_name();
+    test_name_full_and_edit();
     test_cancel_new_player();
     test_edit_look();
     test_delete_and_records();

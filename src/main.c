@@ -187,28 +187,41 @@ static void start_next_opponent(void)
 }
 
 /* The CAREER page (ADR-047, the RECORDS entry): career_page.c reads the
- * input; here the save is written, and the title demo's P1 wears the
- * player's look while their card or editor is open (also again after the
- * demo restarts under the page). */
+ * input; here the save is written. While a look is edited the title demo
+ * stops and its P1 stands at the left baseline in that look, beside the
+ * editor; leaving the editor starts a fresh demo. */
+#define CAREER_PREVIEW_X (COURT_BASELINE_LEFT + 6)
+#define CAREER_PREVIEW_Y 150
+static u8 s_career_frozen;
+
 static void career_preview(u8 on)
 {
     const CareerPlayer *player = career_active();
 
     if (on && player) {
+        if (!s_career_frozen) {
+            s_career_frozen = 1;
+            player_place(&g_players[0], CAREER_PREVIEW_X, CAREER_PREVIEW_Y);
+            g_players[0].frozen = 1;
+            g_players[0].pose = PLAYER_POSE_NONE;
+            g_ball.active = 0;
+        }
         g_match_config.career_p1 = 1;
         g_players[0].variant = player->variant;
-    } else {
-        g_match_config.career_p1 = 0;
-        g_players[0].variant = g_match_config.variant[0];
+        render_apply_p1_look();
+        return;
     }
-    render_apply_p1_look();
+    if (s_career_frozen) {
+        s_career_frozen = 0;
+        /* A fresh demo: palettes, ponytails, and positions are its own. */
+        game_start_attract();
+    }
 }
 
 static void update_title_career(u16 pressed)
 {
     u8 result = career_page_input(pressed, g_pad_snapshots[0].held);
-    u8 want = (g_career_page.view == CAREER_VIEW_CARD ||
-        g_career_page.view == CAREER_VIEW_EDIT) && career_active() != 0;
+    u8 want = g_career_page.view == CAREER_VIEW_EDIT && career_active() != 0;
 
     if (result == CAREER_PAGE_SAVE)
         save_write();
@@ -220,7 +233,7 @@ static void update_title_career(u16 pressed)
     if (g_career_page.look_changed &&
             g_career_page.view == CAREER_VIEW_RECORDS)
         hud_scene_refresh_title();
-    if (g_career_page.look_changed || want != g_match_config.career_p1) {
+    if (g_career_page.look_changed || want != s_career_frozen) {
         g_career_page.look_changed = 0;
         career_preview(want);
     }
@@ -545,6 +558,7 @@ int main(void)
     g_pause_park = 0;
     s_practice_pending = 0;
     s_switched = 0;
+    s_career_frozen = 0;
     g_match_config_changed = 0;
     g_demo_mode = 0;
     g_next_opponent = 0;
@@ -610,7 +624,8 @@ int main(void)
                     ui_sounds(g_pad_snapshots[0].pressed & ~PAD_START);
                     if (!update_pause_menu(g_pad_snapshots[0].pressed))
                         game_update(g_player_intents);
-                } else {
+                } else if (!s_career_frozen) {
+                    /* The CAREER editor holds the title demo (ADR-047). */
                     game_update(g_player_intents);
                     if (g_game_state.paused)
                         pause_begin();      /* just paused: on RESUME */

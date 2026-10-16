@@ -1049,13 +1049,16 @@ static void hud_options_refresh(void)
 #define HUD_TITLE_VIEW_MODIFIERS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_MODIFIERS)
 /* The CAREER page (ADR-047, the RECORDS entry): a view per sub-view. */
 #define HUD_TITLE_VIEW_CAREER 0x90
+#define HUD_CAREER_NAMING 4         /* EDIT while typing the name */
 
 /* Runs on every idle title frame behind the demo: one test, not one per
  * page. */
 static u8 hud_title_view(void)
 {
     if (g_title_page == TITLE_PAGE_RECORDS)
-        return HUD_TITLE_VIEW_CAREER + g_career_page.view;
+        return HUD_TITLE_VIEW_CAREER + (g_career_page.view ==
+            CAREER_VIEW_EDIT && g_career_page.naming ? HUD_CAREER_NAMING :
+            g_career_page.view);
     if (g_title_page != TITLE_PAGE_MENU)
         return HUD_TITLE_VIEW_PAGE(g_title_page);
     return g_title_mode | (g_title_2p << 3);
@@ -1285,32 +1288,33 @@ static const char *hud_career_look_name(const CareerPlayer *player, u8 row)
     }
 }
 
-/* The name row: "<ACE     >"; typing, the letter at the cursor is yellow
- * (a space shows as _). */
-static void hud_career_name_row(void)
-{
-    static char text[CAREER_NAME + 1];
-    static char letter[2];
-    const CareerPlayer *player = &g_save.career[g_career_page.slot];
-    u8 row = TITLE_MENU_ROW + 2;
-    u8 cursor = g_career_page.cursor;
-    u8 i;
+/* The editor (and the keyboard) sit right of the title demo's P1, who
+ * stands still at the left baseline wearing the look. */
+#define CAREER_EDIT_COL 8
+#define CAREER_EDIT_WIDTH 20
+#define CAREER_EDIT_LABEL_COL (CAREER_EDIT_COL + 2)
+#define CAREER_EDIT_VALUE_COL (CAREER_EDIT_COL + 9)     /* "<NAME    >" */
 
-    for (i = 0; i < CAREER_NAME; ++i)
-        text[i] = (char)player->name[i];
-    text[CAREER_NAME] = 0;
-    hud_setting_row(row, "NAME", text,
-        g_career_page.row == CAREER_EDIT_NAME);
-    if (g_career_page.naming) {
-        letter[0] = player->name[cursor] == ' ' ? '_' :
-            (char)player->name[cursor];
-        letter[1] = 0;
-        hud_text(COURT_VALUE_COL + 1 + cursor, row, HUD_PAL_YELLOW, letter);
-    }
-    memcpy(s_career_name_drawn, player->name, CAREER_NAME);
-    s_career_name_drawn[CAREER_NAME] = (u8)(cursor |
-        ((g_career_page.row == CAREER_EDIT_NAME) << 7));
-    s_career_name_drawn[CAREER_NAME + 1] = g_career_page.naming;
+/* An editor row: cursor, label, and "<VALUE   >". */
+static void hud_career_setting(u8 row, const char *label, const char *name,
+    u8 cursor)
+{
+    char text[11];
+    u8 i = 1;
+
+    hud_tile(CAREER_EDIT_LABEL_COL - 1, row, cursor ?
+        hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
+        hud_entry(' ', HUD_PAL_WHITE));
+    hud_text(CAREER_EDIT_LABEL_COL, row,
+        cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE, label);
+    text[0] = '<';
+    while (*name && i < 9)
+        text[i++] = *name++;
+    while (i < 9)
+        text[i++] = ' ';
+    text[9] = '>';
+    text[10] = 0;
+    hud_text(CAREER_EDIT_VALUE_COL, row, HUD_PAL_WHITE, text);
 }
 
 static void hud_career_edit_row(u8 row)
@@ -1318,27 +1322,23 @@ static void hud_career_edit_row(u8 row)
     static const char *const labels[CAREER_EDIT_ROWS] = {
         "NAME", "BODY", "SKIN", "HAIR", "SHIRT", "HAT", "PADDLE"
     };
+    static char name[CAREER_NAME + 1];
     const CareerPlayer *player = &g_save.career[g_career_page.slot];
     u8 cursor = g_career_page.row == row;
+    u8 i;
 
     if (row == CAREER_EDIT_NAME) {
-        hud_career_name_row();
+        for (i = 0; i < CAREER_NAME; ++i)
+            name[i] = (char)player->name[i];
+        name[CAREER_NAME] = 0;
+        hud_career_setting(TITLE_MENU_ROW + 2, labels[0], name, cursor);
+        s_career_edit_drawn[row] = (u8)(cursor << 7);
         return;
     }
-    hud_setting_row(TITLE_MENU_ROW + 2 + row, labels[row],
+    hud_career_setting(TITLE_MENU_ROW + 2 + row, labels[row],
         hud_career_look_name(player, row), cursor);
     s_career_edit_drawn[row] = (u8)(career_look_value(player, row) |
         (cursor << 7));
-}
-
-static u8 hud_career_name_changed(void)
-{
-    const CareerPlayer *player = &g_save.career[g_career_page.slot];
-
-    return memcmp(s_career_name_drawn, player->name, CAREER_NAME) != 0 ||
-        s_career_name_drawn[CAREER_NAME] != (u8)(g_career_page.cursor |
-            ((g_career_page.row == CAREER_EDIT_NAME) << 7)) ||
-        s_career_name_drawn[CAREER_NAME + 1] != g_career_page.naming;
 }
 
 static void hud_career_edit_refresh(void)
@@ -1346,16 +1346,128 @@ static void hud_career_edit_refresh(void)
     const CareerPlayer *player = &g_save.career[g_career_page.slot];
     u8 row;
 
-    if (hud_career_name_changed()) {
-        hud_career_name_row();
-        return;
-    }
-    for (row = 1; row < CAREER_EDIT_ROWS; ++row)
-        if (s_career_edit_drawn[row] != (u8)(career_look_value(player, row) |
+    for (row = 0; row < CAREER_EDIT_ROWS; ++row)
+        if (s_career_edit_drawn[row] != (u8)((row == CAREER_EDIT_NAME ? 0 :
+                career_look_value(player, row)) |
                 ((g_career_page.row == row) << 7))) {
             hud_career_edit_row(row);
             return;
         }
+}
+
+/* The keyboard (typing the name): the name with a box per empty place,
+ * the letters, then DEL and END; the key picked is yellow. */
+#define CAREER_NAME_LINE_COL 14
+#define CAREER_KEYS_COL (CAREER_EDIT_COL + 1)
+#define CAREER_KEYS_ROW (TITLE_MENU_ROW + 4)
+static u8 s_career_key_drawn = 0xff;
+
+static void hud_career_name_line(void)
+{
+    static char letter[2];
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 cursor = g_career_page.cursor;
+    u8 row = TITLE_MENU_ROW + 2;
+    u8 i;
+
+    /* Typed letters, then an empty box per place left, the next one
+     * yellow (the font has no visible underscore). */
+    letter[1] = 0;
+    for (i = 0; i < CAREER_NAME; ++i) {
+        if (i < cursor) {
+            letter[0] = (char)player->name[i];
+            hud_text(CAREER_NAME_LINE_COL + i, row, HUD_PAL_WHITE, letter);
+        } else {
+            hud_tile(CAREER_NAME_LINE_COL + i, row,
+                hud_entry(HUD_TILE_BAR_OFF,
+                    i == cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE));
+        }
+    }
+    memcpy(s_career_name_drawn, player->name, CAREER_NAME);
+    s_career_name_drawn[CAREER_NAME] = cursor;
+}
+
+/* A keyboard row: letters two cells apart (a space shows as _), or DEL
+ * and END. */
+static void hud_career_key_row(u8 row)
+{
+    static char key[4];
+    u8 picked = career_page_key();
+    u8 first = row * CAREER_KEY_COLS;
+    u8 i;
+
+    if (row == CAREER_KEY_ROWS - 1) {
+        hud_text(CAREER_KEYS_COL + 2, CAREER_KEYS_ROW + row,
+            picked == CAREER_KEY_DEL ? HUD_PAL_YELLOW : HUD_PAL_WHITE, "DEL");
+        hud_text(CAREER_KEYS_COL + 12, CAREER_KEYS_ROW + row,
+            picked == CAREER_KEY_END ? HUD_PAL_YELLOW : HUD_PAL_WHITE, "END");
+        return;
+    }
+    key[1] = 0;
+    for (i = 0; i < CAREER_KEY_COLS && first + i < CAREER_KEY_CHARS; ++i) {
+        /* The space key is an empty box, like an empty place. */
+        if (g_career_key_chars[first + i] == ' ') {
+            hud_tile(CAREER_KEYS_COL + 2 * i, CAREER_KEYS_ROW + row,
+                hud_entry(HUD_TILE_BAR_OFF, first + i == picked ?
+                    HUD_PAL_YELLOW : HUD_PAL_WHITE));
+            continue;
+        }
+        key[0] = g_career_key_chars[first + i];
+        hud_text(CAREER_KEYS_COL + 2 * i, CAREER_KEYS_ROW + row,
+            first + i == picked ? HUD_PAL_YELLOW : HUD_PAL_WHITE, key);
+    }
+}
+
+/* The keyboard row a key is on. */
+static u8 hud_career_key_row_of(u8 key)
+{
+    if (key >= CAREER_KEY_CHARS)
+        return CAREER_KEY_ROWS - 1;
+    return key / CAREER_KEY_COLS;
+}
+
+static void hud_career_naming_refresh(void)
+{
+    const CareerPlayer *player = &g_save.career[g_career_page.slot];
+    u8 picked = career_page_key();
+    u8 old = s_career_key_drawn;
+
+    if (memcmp(s_career_name_drawn, player->name, CAREER_NAME) != 0 ||
+            s_career_name_drawn[CAREER_NAME] != g_career_page.cursor) {
+        hud_career_name_line();
+        return;
+    }
+    if (old == picked)
+        return;
+    /* The old key's row, then (next frame, if another row) the new one's. */
+    if (old != 0xff && hud_career_key_row_of(old) !=
+            hud_career_key_row_of(picked)) {
+        hud_career_key_row(hud_career_key_row_of(old));
+        s_career_key_drawn = 0xfe;      /* the new row still to draw */
+        return;
+    }
+    hud_career_key_row(hud_career_key_row_of(picked));
+    s_career_key_drawn = picked;
+}
+
+static u8 hud_career_naming_part(u8 part)
+{
+    if (part == 0) {
+        hud_fill_box(CAREER_EDIT_COL, TITLE_MENU_ROW, CAREER_EDIT_WIDTH,
+            CAREER_EDIT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
+        return 0;
+    }
+    if (part == 1) {
+        hud_text(16, TITLE_MENU_ROW, HUD_PAL_YELLOW, "NAME");
+        hud_career_name_line();
+        return 0;
+    }
+    hud_career_key_row(part - 2);
+    if (part - 2 == CAREER_KEY_ROWS - 1) {
+        s_career_key_drawn = career_page_key();
+        return 1;
+    }
+    return 0;
 }
 
 /* One part of a CAREER view. */
@@ -1365,16 +1477,18 @@ static u8 hud_career_draw_part(u8 view, u8 part)
 
     if (view == CAREER_VIEW_CARD)
         return hud_career_card_part(part);
+    if (view == HUD_CAREER_NAMING)
+        return hud_career_naming_part(part);
     if (view == CAREER_VIEW_EDIT) {
         if (part == 0) {
-            hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
+            hud_fill_box(CAREER_EDIT_COL, TITLE_MENU_ROW, CAREER_EDIT_WIDTH,
                 CAREER_EDIT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
             for (i = 0; i < CAREER_EDIT_ROWS; ++i)
                 s_career_edit_drawn[i] = CAREER_UNDRAWN;
             return 0;
         }
         if (part == 1) {
-            hud_text(13, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PLAYER");
+            hud_text(15, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PLAYER");
             return 0;
         }
         hud_career_edit_row(part - 2);
@@ -1523,6 +1637,8 @@ static void hud_title_area_update(void)
                 hud_career_slots_refresh();
             else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_EDIT)
                 hud_career_edit_refresh();
+            else if (view == HUD_TITLE_VIEW_CAREER + HUD_CAREER_NAMING)
+                hud_career_naming_refresh();
             return;
         }
         /* Parts back to back while the frame stays under the limit
@@ -1568,7 +1684,7 @@ static const char *hud_title_prompt(u8 page)
     if (page == HUD_PROMPT_CAREER + CAREER_VIEW_EDIT)
         return "@ OK  Y CANCEL";
     if (page == HUD_PROMPT_CAREER_NAMING)
-        return "@ NEXT  START OK";
+        return "@ TYPE  Y ERASE";
     if (page == TITLE_PAGE_COURT || page == TITLE_PAGE_OPTIONS ||
             page == TITLE_PAGE_MODIFIERS)
         return "@ OK  Y CANCEL";

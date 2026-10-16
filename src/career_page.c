@@ -31,6 +31,9 @@ const char *career_paddle_name(u8 paddle)
     return s_paddle_names[paddle % PADDLE_COUNT];
 }
 
+static void key_pick(u8 row, u8 col);
+static void page_start_naming(const CareerPlayer *player);
+
 static CareerPlayer *page_player(void)
 {
     return &g_save.career[g_career_page.slot];
@@ -85,7 +88,7 @@ void career_page_begin(void)
     g_career_page.naming = 0;
     g_career_page.cursor = 0;
     g_career_page.creating = 0;
-    g_career_page.held_frames = 0;
+    key_pick(0, 0);
     g_career_page.look_changed = 0;
 }
 
@@ -117,10 +120,10 @@ static void page_open_edit(u8 creating)
     g_career_page.view = CAREER_VIEW_EDIT;
     g_career_page.row = CAREER_EDIT_NAME;
     g_career_page.creating = creating;
-    g_career_page.naming = creating;
-    g_career_page.cursor = 0;
-    g_career_page.held_frames = 0;
+    g_career_page.naming = 0;
     g_career_page.original = *page_player();
+    if (creating)
+        page_start_naming(page_player());
     g_career_page.look_changed = 1;
 }
 
@@ -142,8 +145,8 @@ static u8 page_slots(u16 pressed, u16 held)
             g_career_page.view = CAREER_VIEW_CARD;
             return CAREER_PAGE_SAVE;
         }
-        /* A new player: named first ("A", then typed). */
-        career_create(row, "A");
+        /* A new player: named first, from a blank name. */
+        career_create(row, "");
         page_open_edit(1);
         return CAREER_PAGE_STAY;
     }
@@ -183,55 +186,105 @@ static u8 page_records(u16 pressed, u16 held)
     return CAREER_PAGE_STAY;
 }
 
-/* The next letter: A-Z, then a space, around. */
-static u8 page_letter(u8 letter, s16 step)
+const char g_career_key_chars[CAREER_KEY_CHARS + 1] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ -";
+
+/* Keys on a keyboard row. */
+static u8 key_row_count(u8 row)
 {
-    if (letter == ' ')
-        return step > 0 ? 'A' : 'Z';
-    if (step > 0)
-        return letter == 'Z' ? ' ' : letter + 1;
-    return letter == 'A' ? ' ' : letter - 1;
+    if (row == CAREER_KEY_ROWS - 1)
+        return 2;
+    if (row == 2)
+        return CAREER_KEY_CHARS - 2 * CAREER_KEY_COLS;
+    return CAREER_KEY_COLS;
 }
 
-/* A name of spaces only is not a name: the first letter becomes A. */
-static void page_name_done(CareerPlayer *player)
+u8 career_page_key(void)
 {
+    if (g_career_page.key_row == CAREER_KEY_ROWS - 1)
+        return CAREER_KEY_DEL + g_career_page.key_col;
+    return (u8)(g_career_page.key_row * CAREER_KEY_COLS +
+        g_career_page.key_col);
+}
+
+static void key_pick(u8 row, u8 col)
+{
+    g_career_page.key_row = row;
+    g_career_page.key_col = col;
+}
+
+/* The D-pad on the keyboard: rows and columns wrap; DEL sits under the
+ * left half, END under the right. */
+static void key_move(u16 pressed)
+{
+    u8 row = g_career_page.key_row;
+    u8 col = g_career_page.key_col;
+    u8 count;
+
+    if (pressed & (PAD_LEFT | PAD_RIGHT)) {
+        g_career_page.key_col = page_step(col, key_row_count(row), pressed);
+        return;
+    }
+    if (!(pressed & (PAD_UP | PAD_DOWN)))
+        return;
+    if (row == CAREER_KEY_ROWS - 1)
+        col = col ? 7 : 2;
+    row = page_row(row, CAREER_KEY_ROWS, pressed);
+    if (row == CAREER_KEY_ROWS - 1) {
+        col = col < CAREER_KEY_COLS / 2 ? 0 : 1;
+    } else {
+        count = key_row_count(row);
+        if (col >= count)
+            col = count - 1;
+    }
+    key_pick(row, col);
+}
+
+static void page_start_naming(const CareerPlayer *player)
+{
+    u8 length = 0;
     u8 i;
 
-    g_career_page.naming = 0;
     for (i = 0; i < CAREER_NAME; ++i)
         if (player->name[i] != ' ')
-            return;
-    player->name[0] = 'A';
+            length = i + 1;
+    g_career_page.naming = 1;
+    g_career_page.cursor = length;
+    if (length == CAREER_NAME)
+        key_pick(CAREER_KEY_ROWS - 1, 1);       /* END */
+    else
+        key_pick(0, 0);
 }
 
-static u8 page_naming(CareerPlayer *player, u16 pressed, u16 held)
+static u8 page_naming(CareerPlayer *player, u16 pressed)
 {
-    u8 *letter = &player->name[g_career_page.cursor];
-    u16 vertical = held & (PAD_UP | PAD_DOWN);
+    u8 key;
 
-    if (pressed & (PAD_UP | PAD_DOWN)) {
-        *letter = page_letter(*letter, (pressed & PAD_UP) ? 1 : -1);
-        g_career_page.held_frames = 0;
-        g_career_page.look_changed = 1;
-    } else if (vertical) {
-        if (++g_career_page.held_frames >= CAREER_REPEAT_DELAY) {
-            g_career_page.held_frames -= CAREER_REPEAT_FRAMES;
-            *letter = page_letter(*letter, (vertical & PAD_UP) ? 1 : -1);
-            g_career_page.look_changed = 1;
-        }
+    if (pressed & PAD_Y) {
+        key = CAREER_KEY_DEL;
+    } else if (pressed & PAD_START) {
+        key = CAREER_KEY_END;
+    } else if (pressed & (PAD_B | PAD_A)) {
+        key = career_page_key();
     } else {
-        g_career_page.held_frames = 0;
+        key_move(pressed);
+        return CAREER_PAGE_STAY;
     }
-    if (pressed & PAD_START) {
-        page_name_done(player);
-    } else if (pressed & (PAD_B | PAD_A | PAD_RIGHT)) {
-        if (g_career_page.cursor + 1 >= CAREER_NAME)
-            page_name_done(player);
-        else
-            ++g_career_page.cursor;
-    } else if ((pressed & (PAD_Y | PAD_LEFT)) && g_career_page.cursor) {
-        --g_career_page.cursor;
+    g_career_page.look_changed = 1;
+    if (key == CAREER_KEY_DEL) {
+        if (g_career_page.cursor)
+            player->name[--g_career_page.cursor] = ' ';
+    } else if (key == CAREER_KEY_END) {
+        /* A name needs a letter. */
+        if (g_career_page.cursor) {
+            g_career_page.naming = 0;
+            if (g_career_page.creating)
+                g_career_page.row = CAREER_EDIT_BODY;
+        }
+    } else if (g_career_page.cursor < CAREER_NAME) {
+        player->name[g_career_page.cursor++] = (u8)g_career_key_chars[key];
+        if (g_career_page.cursor == CAREER_NAME)
+            key_pick(CAREER_KEY_ROWS - 1, 1);   /* full: END */
     }
     return CAREER_PAGE_STAY;
 }
@@ -277,8 +330,9 @@ static u8 page_edit(u16 pressed, u16 held)
     CareerPlayer *player = page_player();
     u8 row = g_career_page.row;
 
+    (void)held;
     if (g_career_page.naming)
-        return page_naming(player, pressed, held);
+        return page_naming(player, pressed);
     if (pressed & PAD_Y) {
         g_career_page.look_changed = 1;
         if (g_career_page.creating) {
@@ -294,9 +348,13 @@ static u8 page_edit(u16 pressed, u16 held)
     }
     if (pressed & (PAD_B | PAD_START)) {
         if (row == CAREER_EDIT_NAME && (pressed & PAD_B)) {
-            g_career_page.naming = 1;
-            g_career_page.cursor = 0;
-            g_career_page.held_frames = 0;
+            page_start_naming(player);
+            return CAREER_PAGE_STAY;
+        }
+        /* No name yet: type one first. */
+        if (player->name[0] == ' ') {
+            g_career_page.row = CAREER_EDIT_NAME;
+            page_start_naming(player);
             return CAREER_PAGE_STAY;
         }
         g_career_page.creating = 0;

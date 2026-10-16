@@ -1,37 +1,35 @@
 # The CAREER page (ADR-047): CAREER on the title (Down four times), a new
-# player in slot 1 named ACE, a new look (FEMALE, TAN, BLACK, RED) that the
-# demo's P1 previews, kept; the card, the slots, back to the title.
+# player in slot 1 named ACE on the keyboard (A, right twice C, right twice
+# E, Start), a new look (FEMALE, TAN, BLACK, RED) on the demo's P1 held at
+# the baseline, kept; the card, the slots, back to the title.
 70 71 down
 75 76 down
 80 81 down
 85 86 down
 100 101 b
+shot 130
 140 141 b
+shot 150
 160 161 b
-170 171 up
-175 176 up
-180 181 up
-190 191 b
-200 201 up
-205 206 up
-210 211 up
-215 216 up
-220 221 up
-240 241 start
-255 256 down
-260 261 right
+170 171 right
+175 176 right
+180 181 b
+190 191 right
+195 196 right
+200 201 b
+shot 215
+220 221 start
+240 241 right
+250 251 down
+255 256 right
 265 266 down
 270 271 right
-275 276 down
-280 281 right
-285 286 down
-290 291 right
+280 281 down
+285 286 right
+shot 300
 320 321 b
-380 381 y
-420 421 y
-shot 130
-shot 230
-shot 310
 shot 360
+380 381 y
 shot 400
+420 421 y
 shot 450

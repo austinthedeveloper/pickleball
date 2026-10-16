@@ -162,11 +162,12 @@ what you had.
 **CAREER** holds up to three players, so a family or friends can share the
 cartridge. Pick a slot and press B:
 
-- **NEW PLAYER** makes one and starts on their name: Up and Down pick the
-  letter, B moves to the next, Y goes back, Start finishes. Then choose
-  their look: BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE (Left/Right; the
-  title's demo player on the court wears it as you go). B keeps it; Y
-  drops the new player.
+- **NEW PLAYER** makes one and starts on their name, on a keyboard: move
+  to a letter with the D-pad and press B to type it. The empty boxes are
+  the places left. DEL (or Y) erases the last letter; END (or Start) is
+  done. Then choose their look: BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE
+  with Left/Right. The demo player on the court stops at the baseline and
+  wears it as you go. B keeps it; Y drops the new player.
 - **A player** opens their card: wins and losses, aces, shutouts, best
   streak, longest rally, and the unlocks. Opening a player makes them the
   one you play as. B edits their name and look; Y puts the look back.

@@ -15,6 +15,8 @@
  *   EDIT    name and look. Up/Down rows, Left/Right values (locked hair and
  *           hats are skipped); B on NAME types it, B elsewhere keeps, Y
  *           puts the look back (and drops a player just created).
+ *           Typing is an arcade keyboard: the D-pad picks a key, B types
+ *           it, DEL or Y erases the last letter, END or Start is done.
  *   RECORDS the old records table. L+R+X erases; B, Y, or Start back.
  */
 enum {
@@ -46,19 +48,27 @@ enum {
     CAREER_PAGE_SAVE = 2        /* stay; write the save */
 };
 
+/* The name keyboard: rows of CAREER_KEY_COLS letters ("A".."Z", space,
+ * "-"), then DEL and END on a row of their own. */
 enum {
-    CAREER_REPEAT_DELAY = 16,   /* a held Up/Down in the name repeats */
-    CAREER_REPEAT_FRAMES = 4
+    CAREER_KEY_CHARS = 28,
+    CAREER_KEY_COLS = 10,
+    CAREER_KEY_ROWS = 4,        /* three of letters, one of DEL and END */
+    CAREER_KEY_DEL = 28,
+    CAREER_KEY_END = 29,
+    CAREER_KEYS = 30
 };
+extern const char g_career_key_chars[CAREER_KEY_CHARS + 1];
 
 typedef struct {
     u8 view;
     u8 row;
     u8 slot;                    /* the player on the CARD and EDIT views */
     u8 naming;                  /* typing the name */
-    u8 cursor;                  /* the letter being typed */
+    u8 cursor;                  /* letters typed (the next goes here) */
     u8 creating;                /* a new player: Y drops them */
-    u8 held_frames;
+    u8 key_row;                 /* the keyboard key picked */
+    u8 key_col;
     u8 look_changed;            /* the look changed: the caller re-previews
                                    it and clears this */
     CareerPlayer original;      /* the player when EDIT opened */
@@ -70,6 +80,10 @@ extern CareerPage g_career_page;
 void career_page_begin(void);
 /* One frame of input: newly pressed and held buttons. */
 u8 career_page_input(u16 pressed, u16 held);
+
+/* The keyboard key picked: 0..CAREER_KEY_CHARS-1 a letter, else DEL or
+ * END. */
+u8 career_page_key(void);
 
 /* Display names. */
 const char *career_body_name(u8 variant);
