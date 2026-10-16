@@ -81,33 +81,53 @@ the usual budget breaker, KNOWN_ISSUES #22).
 - **SUDDEN DEATH:** one point, winner takes the match. Pure scoring.
 - **WIND** is already in IDEAS.md under Play modifiers; a venue flag (the
   beach, the lake) could pick its direction.
-- **GLOW IN THE DARK:** the lights go out. The court, the crowd, and the
-  backdrop fade to near black; the lines, the ball, and the players glow.
-  - Night courts (ADR-045) already swap the venue palettes, so this could
-    be one more palette set, built by the asset build like the LAVA
-    kitchen's colours (and checked for line and ball contrast).
-  - The OBJ palettes are all in use, so the players can't get new glowing
-    colours; brighten their existing palettes' entries instead, or leave
-    them and let the court go dark around them.
-  - A trail behind the ball would sell it, but needs OBJ slots.
-- **INVERSE:** two readings; pick one (or both, as two choices):
-  - *Colours:* every colour inverted (white is black), like a photo
-    negative. One pass over the palettes when the match loads, nothing per
-    frame. Check the HUD stays readable.
-  - *Controls:* the D-pad is reversed (up is down, toward the net is
-    away). A flag in the input mapping, humans only. Brutal with aiming.
-- **MULTI BALL:** two balls in play at once. Needs real thought, since the
-  rules assume one ball:
-  - *Rules options:* the first fault on either ball ends the point
-    (simplest, and keeps rally scoring), or each ball scores its own point
-    and the rally ends when both are dead (two points a rally; WIN BY 2
-    and match point get odd).
-  - *When:* the second ball enters after the two-bounce rule is done (a
-    second serve from the machine, or a ball dropped from the sky), so the
-    serve and two-bounce rules stay one-ball.
-  - *Cost:* a second `Ball`, its physics step, its OBJ pair (ball and
+- **GLOW IN THE DARK:** the lights go out and the outlines glow. The
+  user's picks: the players' black outlines turn green (or another neon),
+  the ball's too, the paddles change, on the night court palette.
+  - *Outlines:* every player palette has the outline in entry 1 (the
+    shared role, ADR-013; contract table in docs/03), so a glow match
+    composes each palette with a neon there instead
+    (`match_compose_palette`, and the career and opponent looks it copies).
+    No new palettes: the OBJ palettes are all in use, but these are the
+    same palettes with different colours.
+  - *Ball:* entry 1 of the objects palette is the ball's dark outline
+    (2 is its yellow, 3 its light). A work-RAM copy of `objects_palette`
+    with entry 1 neon. The sparks and the practice machine share that
+    palette; check they still look right.
+  - *Paddles:* entries 11-13 (face dark, face light, edge). A neon set
+    (pink, cyan, or a per-team pick) in glow matches.
+  - *Court:* NIGHT's palette (ADR-045), or a darker "lights out" time in
+    `court_colors.json` `times`, which the asset build already contrast-
+    checks. Forced on for a glow match whatever the COURT page's TIME.
+  - *Maybe:* darken the skin and shirt ramps a step so the outline pops,
+    like a blacklight.
+- **INVERSE:** the user's pick is colours: every colour inverted (white is
+  black), like a photo negative.
+  - Each colour is `0x7FFF ^ c`. The SNES colour math can't do it (it adds
+    or subtracts, never "white minus"), so it's done to the palettes as
+    they're composed: the court ground and backdrop (with LAVA and TIME),
+    the player and objects palettes, the flash, and the HUD's team colours.
+    All of those upload in VBlank or forced blank already; one more pass
+    each, nothing per frame.
+  - The ball's shadow is black averaged with the court in singles; keep it
+    dark (not inverted) or it becomes a bright spot.
+  - Check the HUD text stays readable, and that the asset build's contrast
+    checks still hold inverted (they should: inversion keeps differences).
+- **MULTI BALL:** the user's pick: a machine spits out several balls, and
+  the scoring stays the same, so the first to the winning score wins.
+  - *Scoring:* each ball scores on its own when it dies (out, net, two
+    bounces, a fault), by the usual rules for whoever hit it last. A match
+    can end mid-rally: when a side reaches the winning score, the match is
+    over, balls still in the air or not.
+  - *Open questions:* how many balls at once (two, three, more?); all at
+    the serve, or the machine (ADR-028's practice machine) feeding a new
+    one every few seconds or each time one dies; does the two-bounce rule
+    apply to every ball, or only the served one; does the server keep
+    serving or does the point winner (with several points a rally).
+  - *Cost:* a `Ball` each, its physics step, its OBJ pair (ball and
     shadow), and every CPU choosing which ball to chase and running the
     swing lookahead on it. The lookahead is the doubles budget's worst
-    cost (KNOWN_ISSUES #22), so this is probably singles only at first.
+    cost (KNOWN_ISSUES #22), so probably singles only at first, and
+    measured ball by ball.
   - The rules engine, the CPU's landing cache, the close-call replay, and
     the camera all read `g_ball` directly; each needs a "which ball".
