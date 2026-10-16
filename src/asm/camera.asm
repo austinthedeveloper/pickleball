@@ -284,14 +284,29 @@ _rc_ramp:
 ; at the frame's start), and the halves swap; otherwise the shown one
 ; stays. HDMA stays off until the
 ; camera has written a table (g_cam_hdma_on; render_camera_reset clears
-; it and channel 6's enable).
+; it and channel 6's enable). With CAMERA OFF and the court at rest it
+; stays off.
 render_camera_commit:
     php
     sep #$20
     lda.l g_cam_hdma_on
     beq _rcc_done
     lda.l g_cam_new
-    beq _rcc_enable
+    bne _rcc_swap
+    ; CAMERA OFF with the court at rest, and its all-zero table already
+    ; shown (BG1's scroll is 0): HDMA off, which takes a share of every
+    ; line it runs.
+    lda.l g_cam_k
+    bne _rcc_enable
+    rep #$20
+    lda.l g_cam_fx
+    ora.l g_cam_fy
+    sep #$20
+    bne _rcc_enable
+    lda.b #0
+    sta.l $420C
+    bra _rcc_done
+_rcc_swap:
     lda.b #$02                  ; mode 2: two writes to one register
     sta.l $4360
     lda.b #$0D                  ; BG1HOFS

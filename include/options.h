@@ -28,9 +28,10 @@ enum {
     OPTIONS_SPEED_CHOICES = 11,
     OPTIONS_SPEED_DEFAULT = 6,
     /* CAMERA (ADR-050): OFF, then 50% to 100% in 5% steps; saved as choice
-     * + 1, so 0 (every older save) is the default, 85%. */
+     * + 1, so 0 (every older save) is the default, OFF (85% was tried as
+     * the default first). */
     OPTIONS_CAMERA_CHOICES = 12,
-    OPTIONS_CAMERA_DEFAULT = 8
+    OPTIONS_CAMERA_DEFAULT = 0
 };
 
 /* 0 (OFF), 50, 55, ... 100 (percent of the camera's full lean). */
@@ -59,7 +60,7 @@ u8 options_ball_speed(u8 saved);
  * 3, EASY 3 in 4, else all) times the ball speed. Over 60 the ball takes
  * two steps on some frames. Arcs and bounces are unchanged. */
 u8 options_ball_per_cycle(u8 difficulty, u8 percent);
-/* CAMERA (ADR-050): a saved choice as its index (0 or invalid: 85%). */
+/* CAMERA (ADR-050): a saved choice as its index (0 or invalid: OFF). */
 u8 options_camera_index(u8 saved);
 
 /* Options page editor (like the court page, ADR-022). */

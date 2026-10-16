@@ -88,12 +88,12 @@ static void test_editor(void)
     u8 difficulty = 7;      /* invalid */
     u8 sound = 9;           /* invalid */
     u8 speed = 0;           /* an older save: the default */
-    u8 camera = 0;          /* an older save: the default, 85% */
+    u8 camera = 0;          /* an older save: the default, OFF */
 
     options_edit_begin(&points, &difficulty, &sound, &speed, &camera);
     assert(speed == OPTIONS_SPEED_DEFAULT + 1);
     assert(camera == OPTIONS_CAMERA_DEFAULT + 1);
-    assert(g_options_cameras[OPTIONS_CAMERA_DEFAULT] == 85);
+    assert(g_options_cameras[OPTIONS_CAMERA_DEFAULT] == 0);     /* OFF */
     assert(sound == AUDIO_ALL);
     assert(points == OPTIONS_POINTS_DEFAULT);
     assert(difficulty == DIFFICULTY_MEDIUM);
@@ -111,14 +111,14 @@ static void test_editor(void)
     assert(options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_Y) ==
         OPTIONS_EDIT_CANCEL);
     assert(points == 5 && difficulty == DIFFICULTY_MEDIUM);
-    /* Up from POINTS wraps to CAMERA (ADR-050), the last row: Left from
-     * OFF wraps to 100%, Right from 85% is 90%, and Y puts it back. */
+    /* Up from POINTS wraps to CAMERA (ADR-050), the last row: Right from
+     * OFF is 50%, Left from OFF wraps to 100%, and Y puts it back. */
     options_edit_begin(&points, &difficulty, &sound, &speed, &camera);
     options_edit_input(&points, &difficulty, &sound, &speed, &camera, PAD_UP);
     assert(g_options_edit.row == OPTIONS_ROW_CAMERA);
     options_edit_input(&points, &difficulty, &sound, &speed, &camera,
         PAD_RIGHT);
-    assert(g_options_cameras[options_camera_index(camera)] == 90);
+    assert(g_options_cameras[options_camera_index(camera)] == 50);
     assert(options_edit_changed(points, difficulty, sound, speed, camera));
     camera = 1;                                 /* OFF */
     options_edit_input(&points, &difficulty, &sound, &speed, &camera,

@@ -50,6 +50,15 @@ match: the golden trace is identical. The rules stay in world space
   was `career_reserved`): choice + 1, so 0, in every older save, is the
   default. No layout change.
 
+## Amendment 2026-10-16: OFF by default
+
+The user wasn't sure they liked the camera yet and kept it as an option:
+CAMERA now defaults to **OFF** (saved 0, so every save, old or new, starts
+OFF until it is changed). With CAMERA OFF and the court at rest, the
+parallax's HDMA (ADR-051) switches off after showing its all-zero table
+once, so the default game doesn't pay its per-line cost; the camera's
+step and `oam_write`'s subtraction (about a scanline) remain.
+
 ## Rejected
 
 - **A 32-wide map with wrap.** A pan left shows the right edge's column on
