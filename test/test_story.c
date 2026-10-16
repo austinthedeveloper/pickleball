@@ -5,6 +5,7 @@
 #include "game.h"
 #include "input.h"
 #include "match.h"
+#include "opponents.h"
 #include "rules.h"
 #include "save.h"
 #include "story.h"
@@ -193,6 +194,48 @@ static void test_unlock_card(void)
     assert(g_story.card == STORY_CARD_NONE && g_career_new_unlocks == 0);
 }
 
+/* Quips: about one point in three, from the side that lost it, never the
+ * same line twice in a row. */
+static void test_quips(void)
+{
+    const char *last = 0;
+    const char *q;
+    u16 roll;
+    u16 said = 0;
+    u8 i;
+    u8 found;
+
+    story_initialize();
+    match_config_defaults();
+    for (roll = 0; roll < 300; ++roll) {
+        q = story_quip(1, roll);
+        if (roll % 3 != 0) {
+            assert(q == 0);
+            continue;
+        }
+        ++said;
+        assert(q != last);
+        found = 0;
+        for (i = 0; i < OPPONENT_QUIPS; ++i)
+            found |= q == g_side_quips[QUIPS_CPU][i];
+        assert(found);                          /* the default CPU's */
+        last = q;
+    }
+    assert(said == 100);
+    /* A ladder team speaks its own; the human side the player's. */
+    match_config_opponent(3);
+    q = story_quip(1, 0);
+    found = 0;
+    for (i = 0; i < OPPONENT_QUIPS; ++i)
+        found |= q == g_opponent_quips[3][i];
+    assert(found);
+    q = story_quip(0, 3);
+    found = 0;
+    for (i = 0; i < OPPONENT_QUIPS; ++i)
+        found |= q == g_side_quips[QUIPS_PLAYER][i];
+    assert(found);
+}
+
 int main(void)
 {
     test_intro_card();
@@ -201,6 +244,7 @@ int main(void)
     test_initials_card();
     test_initials_need_a_finished_match();
     test_unlock_card();
+    test_quips();
     printf("story host checks passed\n");
     return 0;
 }

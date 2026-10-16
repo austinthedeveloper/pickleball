@@ -157,6 +157,12 @@ what you had.
   among the dinosaurs, navy with a purple kitchen and cyan lines in space,
   and aqua with a navy kitchen on sand under the sea.
 
+## Quips
+
+Lose a point and you might hear about it: now and then the side that lost
+it says something under the point banner. Every ladder team has its own
+lines (the pirates say ARRRGH!).
+
 ## Career
 
 **CAREER** holds up to three players, so a family or friends can share the

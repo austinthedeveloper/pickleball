@@ -1,5 +1,5 @@
 {
-  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are four lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
@@ -24,6 +24,7 @@
       "intro": "DAD JOKES INCOMING, SPORT!",
       "taunt": "THAT'S HOW IT'S DONE, SPORT!",
       "concede": "GOOD GAME! WHO WANTS PIZZA?",
+      "quips": ["WELL, THAT'S A PICKLE.", "I'LL BE DILLED!", "THAT ONE'S ON DAD.", "HOLD MY COFFEE."],
       "hud": [[31, 17, 4], [22, 10, 2]],
       "players": [
         {
@@ -55,6 +56,7 @@
       "intro": "WE'VE PLAYED SINCE 1962.",
       "taunt": "AGE BEFORE BEAUTY, DEAR.",
       "concede": "WELL PLAYED, YOUNGSTER!",
+      "quips": ["OH, FIDDLESTICKS.", "MY HIP, MY HIP!", "WHO MOVED THE NET?", "BACK IN MY DAY..."],
       "hud": [[29, 18, 22], [20, 10, 14]],
       "players": [
         {
@@ -86,6 +88,7 @@
       "intro": "DO YOU EVEN DINK, BRO?",
       "taunt": "NEW PERSONAL BEST, BRO!",
       "concede": "BRO... THAT WAS SICK.",
+      "quips": ["BRO. NO.", "NOT ON LEG DAY!", "TOO MUCH POWER, BRO.", "SPOT ME NEXT TIME!"],
       "hud": [[16, 31, 6], [8, 20, 2]],
       "players": [
         {
@@ -117,6 +120,7 @@
       "intro": "ARR! PREPARE TO BE BOARDED!",
       "taunt": "YE WALK THE PLANK, MATEY!",
       "concede": "ARR... KEEP THE TREASURE.",
+      "quips": ["ARRRGH!", "SHIVER ME PADDLES!", "BLOW ME DOWN!", "THAT BALL WALKS THE PLANK!"],
       "hud": [[28, 10, 8], [16, 4, 4]],
       "players": [
         {
@@ -148,6 +152,7 @@
       "intro": "THE KITCHEN IS OUR CRYPT.",
       "taunt": "DARKNESS ALWAYS WINS.",
       "concede": "HOW... DELIGHTFULLY GRIM.",
+      "quips": ["HOW TRAGIC.", "AS EXPECTED.", "THE VOID TOOK IT.", "SIGH. OF COURSE."],
       "hud": [[20, 8, 28], [12, 3, 18]],
       "players": [
         {
@@ -179,6 +184,7 @@
       "intro": "COWABUNGA, DUDE!",
       "taunt": "TOTALLY TUBULAR, BRAH!",
       "concede": "GNARLY GAME, DUDE. RESPECT.",
+      "quips": ["WIPEOUT!", "BOGUS, DUDE.", "TOTAL BAIL, BRAH.", "GNARLY... NOT."],
       "hud": [[6, 26, 28], [2, 16, 18]],
       "players": [
         {
@@ -210,6 +216,7 @@
       "intro": "DOUBLE TROUBLE. READY?",
       "taunt": "TWINS WIN! TWINS WIN!",
       "concede": "WAIT... THAT WASN'T PLANNED.",
+      "quips": ["THAT WAS HIS FAULT.", "THAT WAS HER FAULT.", "JINX!", "TWIN FAIL!"],
       "hud": [[8, 28, 26], [3, 18, 17]],
       "players": [
         {
@@ -241,6 +248,7 @@
       "intro": "THE TITLE STAYS WITH US.",
       "taunt": "THAT'S WHY WE'RE CHAMPS.",
       "concede": "THE CROWN IS YOURS. EARNED.",
+      "quips": ["...THAT NEVER HAPPENS.", "A WARM-UP SHOT.", "NOBODY SAW THAT.", "PRACTICE POINT."],
       "hud": [[31, 25, 6], [22, 15, 2]],
       "players": [
         {

@@ -466,6 +466,11 @@ static u16 s_prev_scene;
 /* The close call's frame is up (rows 14-23, ADR-041): the next clear takes
  * those rows too. */
 static u8 s_replay_drawn;
+/* The point result's quip (story_quip), or 0, and whether its panel is up
+ * (the next clear covers its rows). */
+static const char *s_quip;
+static u8 s_quip_drawn;
+#define QUIP_PANEL_ROW (CENTER_PANEL_ROW + 3)
 
 u8 hud_replay_framed(void)
 {
@@ -1872,8 +1877,10 @@ static void hud_scene_step(u16 key, u8 step)
             from_title ? 6 + TITLE_AREA_ROWS : s_replay_drawn ?
                 REPLAY_ROW + REPLAY_ROWS + 1 - CENTER_BIG_ROW :
             (key == HUD_KEY_INITIALS || s_prev_scene == HUD_KEY_INITIALS) ?
-                INITIALS_LAST_ROW + 1 - CENTER_BIG_ROW : 7);
+                INITIALS_LAST_ROW + 1 - CENTER_BIG_ROW :
+            s_quip_drawn ? QUIP_PANEL_ROW + 3 - CENTER_BIG_ROW : 7);
         s_replay_drawn = 0;
+        s_quip_drawn = 0;
         hud_clear_rows(BANNER_ROW - 1, 4);
         s_initials_drawn[0] = 0;
         s_initials_drawn[1] = 0;
@@ -1923,13 +1930,27 @@ static void hud_scene_step(u16 key, u8 step)
          * score, it was the doubles budget's worst frame (as the match
          * result's was, M4-UI-04). Then the close call's frame and caption
          * (ADR-041). */
-        if (step == HUD_STEP_PROMPT)
+        if (step == HUD_STEP_PROMPT) {
             hud_center_prompt_panel(CENTER_PANEL_ROW, hud_point_text(winner));
-        else if (step <= HUD_STEP_EXTRA2)
+            /* A quip from the side that lost it, now and then; never over
+             * a close call's replay (GOOFY_IDEAS.md). */
+            s_quip = (g_replay.active && !g_attract) ? 0 :
+                story_quip(winner ^ 1, g_game_state.frame_count);
+        } else if (step <= HUD_STEP_EXTRA2) {
             hud_center_prompt_half(CENTER_PANEL_ROW, team_hud_palette(winner),
                 hud_point_text(winner), step == HUD_STEP_EXTRA2);
-        else if (g_replay.active && !g_attract)
+        } else if (g_replay.active && !g_attract) {
             hud_replay_step(step - (HUD_STEP_EXTRA3 - HUD_STEP_EXTRA));
+        } else if (step == HUD_STEP_EXTRA3 && s_quip) {
+            /* The quip's panel under the point's, then its text. */
+            hud_center_prompt_panel(QUIP_PANEL_ROW, s_quip);
+            s_quip_drawn = 1;
+        } else if (step == HUD_STEP_EXTRA4 && s_quip) {
+            hud_center_prompt_half(QUIP_PANEL_ROW, team_hud_palette(winner ^ 1),
+                s_quip, 0);
+            hud_center_prompt_half(QUIP_PANEL_ROW, team_hud_palette(winner ^ 1),
+                s_quip, 1);
+        }
         return;
     }
     if (step >= HUD_STEP_EXTRA)
@@ -2020,7 +2041,7 @@ void hud_scene_update(void)
         else if ((++s_scene_step == HUD_STEP_EXTRA3 &&
                     g_game_state.phase != GAME_PHASE_MATCH_RESULT &&
                     !(g_game_state.phase == GAME_PHASE_POINT_RESULT &&
-                      g_replay.active && !g_attract)) ||
+                      ((g_replay.active && !g_attract) || s_quip))) ||
                 (s_scene_step == HUD_STEP_EXTRA5 &&
                     g_game_state.phase == GAME_PHASE_POINT_RESULT))
             s_scene_step = HUD_STEP_DONE;
@@ -2051,6 +2072,8 @@ void hud_scene_initialize(void)
 {
     s_hud_valid = 0;
     s_replay_drawn = 0;
+    s_quip = 0;
+    s_quip_drawn = 0;
     s_meter_cells = METER_UNDRAWN;
     s_sub_panel = 0;
     s_hud_scene = 0xff;

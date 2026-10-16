@@ -60,6 +60,11 @@ void story_begin_initials(void);
  * unlocks (g_career_new_unlocks), outside the attract demo; it clears them
  * when it closes. After the initials card, on the match result. */
 void story_begin_unlock(void);
+/* Quips (GOOFY_IDEAS.md): the line the side that lost the point says, or
+ * 0 (about two points in three). A ladder team speaks its own lines, a
+ * human side and the default CPU the generic ones. roll varies the pick
+ * (the frame count); the line just said is not said again next. */
+const char *story_quip(u8 loser, u16 roll);
 /* One frame of 1P's newly pressed and held buttons. Intro: B, A, or Start
  * ends it after STORY_INTRO_MIN_FRAMES. Initials: Up and Down change the
  * letter (held, they repeat), B, A, or Right moves to the next and past the

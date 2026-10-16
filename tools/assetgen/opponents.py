@@ -30,6 +30,7 @@ VARIANTS = ("male", "female")
 NAME_CELLS = 9                   # "VS " + name in the 12-cell centre panel
 LINE_CELLS = 28                  # a story card line in one HUD panel
 LINE_KEYS = ("intro", "taunt", "concede")
+QUIPS = 4                        # lines a side may say after losing a point
 # The HUD font draws ASCII 32-95; '@' is the B button glyph in prompts.
 LINE_CHARS = re.compile(r"[A-Z0-9 .,!?'\-:]+")
 
@@ -120,6 +121,17 @@ def style_row(style):
     return "{ " + ", ".join(map(str, values)) + " }"
 
 
+def check_quips(who, quips):
+    """Four PG lines, each a story-card line (GOOFY_IDEAS.md, quips)."""
+    if len(quips) != QUIPS:
+        raise AssetError(f"{who}: {QUIPS} quips")
+    for line in quips:
+        if not 1 <= len(line) <= LINE_CELLS or not LINE_CHARS.fullmatch(line):
+            raise AssetError(f"{who}: quip {line!r} is 1..{LINE_CELLS} "
+                             "capitals, digits, spaces, and .,!?'-:")
+    return quips
+
+
 def opponents_header():
     spec = json.loads((paths.src / "opponents.json").read_text("utf-8"))
     paddles = json.loads((paths.src / "paddles.json").read_text("utf-8"))
@@ -146,6 +158,7 @@ def opponents_header():
     hat_names = ["cap"] + list(manifest["hats"])
     hat_ids = []
     story = []
+    team_quips = []
     for opponent in opponents:
         team = opponent["team"]
         if not 1 <= len(team) <= NAME_CELLS or not re.fullmatch(r"[A-Z0-9 ']+", team):
@@ -166,6 +179,8 @@ def opponents_header():
                 raise AssetError(f"opponent {team}: {key} is 1..{LINE_CELLS} "
                                  "capitals, digits, spaces, and .,!?'-:")
         story.append([opponent[k] for k in LINE_KEYS])
+        team_quips.append(check_quips(f"opponent {team}",
+                                      opponent.get("quips", [])))
         teams.append(team)
         row_styles, row_pals, row_vars, row_paddles, row_hats = \
             [], [], [], [], []
@@ -206,7 +221,9 @@ def opponents_header():
              "enum { AI_DEPTH_ALTERNATE = 0, AI_DEPTH_DEEP = 1 };",
              "/* g_opponent_lines columns. */",
              "enum { OPPONENT_LINE_INTRO = 0, OPPONENT_LINE_TAUNT = 1, "
-             "OPPONENT_LINE_CONCEDE = 2 };", "",
+             "OPPONENT_LINE_CONCEDE = 2 };",
+             f"enum {{ OPPONENT_QUIPS = {QUIPS}, QUIPS_PLAYER = 0, "
+             "QUIPS_CPU = 1 };", "",
              "/* A CPU's play style (ADR-023); the default is the shipped CPU. */",
              "typedef struct {",
              "    u8 late_period;       /* deliberately late every Nth return; 0 never */",
@@ -261,6 +278,20 @@ def opponents_header():
     lines.append("const char *const g_opponent_lines[OPPONENT_COUNT][3] = {")
     lines += ["    { " + ", ".join(f'"{t}"' for t in row) + " }," for row in story]
     lines.append("};")
+    generic = json.loads((paths.src / "quips.json").read_text("utf-8"))
+    side_quips = [check_quips("quips.json player", generic["player"]),
+                  check_quips("quips.json cpu", generic["cpu"])]
+    lines.append("/* Quips (GOOFY_IDEAS.md): a team's lines after losing a "
+                 "point; a human side's and the default CPU's. */")
+    lines.append(f"const char *const g_opponent_quips[OPPONENT_COUNT]"
+                 f"[OPPONENT_QUIPS] = {{")
+    lines += ["    { " + ", ".join(f'"{q}"' for q in row) + " },"
+              for row in team_quips]
+    lines.append("};")
+    lines.append("const char *const g_side_quips[2][OPPONENT_QUIPS] = {")
+    lines += ["    { " + ", ".join(f'"{q}"' for q in row) + " },"
+              for row in side_quips]
+    lines.append("};")
     lines.append("/* Home court (venue index, ADR-024). */")
     lines.append("const u8 g_opponent_venue[OPPONENT_COUNT] = { " +
                  ", ".join(map(str, homes)) + " };")
@@ -272,6 +303,9 @@ def opponents_header():
               "extern const u8 g_opponent_variant[OPPONENT_COUNT][2];",
               "extern const u8 g_opponent_paddle[OPPONENT_COUNT][2];",
               "extern const u8 g_opponent_hat[OPPONENT_COUNT][2];",
+              "extern const char *const g_opponent_quips[OPPONENT_COUNT]"
+              "[OPPONENT_QUIPS];",
+              "extern const char *const g_side_quips[2][OPPONENT_QUIPS];",
               "extern const u16 g_opponent_hud[OPPONENT_COUNT][2];",
               "extern const char *const g_opponent_team[OPPONENT_COUNT];",
               "extern const char *const g_opponent_captain[OPPONENT_COUNT];",

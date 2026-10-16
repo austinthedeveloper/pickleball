@@ -34,6 +34,9 @@ money.
 
 ## Quips
 
+**Done:** [ADR-048](decisions/ADR-048-quips.md). The notes below are the
+original idea.
+
 Players say something when they miss or fault, in the point-result banner
 (where `KITCHEN!` already shows). PG only: no cursing, no put-downs.
 

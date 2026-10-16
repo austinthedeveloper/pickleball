@@ -2,17 +2,21 @@
 #include "game.h"
 #include "input.h"
 #include "match.h"
+#include "opponents.h"
 #include "save.h"
 #include "story.h"
 
 StoryState g_story;
 /* The initials entered last this session: the next card starts there. */
 static u8 s_last[3];
+/* The quip said last (story_quip): not said again next. */
+static const char *s_last_quip;
 
 void story_initialize(void)
 {
     g_story.card = STORY_CARD_NONE;
     g_story.timer = 0;
+    s_last_quip = 0;
     s_last[0] = 'A';
     s_last[1] = 'A';
     s_last[2] = 'A';
@@ -93,6 +97,28 @@ static u8 story_update_initials(u16 pressed, u16 held)
         --g_story.cursor;
     }
     return 1;
+}
+
+const char *story_quip(u8 loser, u16 roll)
+{
+    const char *const *lines;
+    u8 pick;
+
+    if (roll % 3 != 0)
+        return 0;
+    if (loser == 0)
+        lines = g_side_quips[QUIPS_PLAYER];
+    else if (g_match_config.opponent < OPPONENT_COUNT)
+        lines = g_opponent_quips[g_match_config.opponent];
+    else if (g_match_config.human[2])
+        lines = g_side_quips[QUIPS_PLAYER];
+    else
+        lines = g_side_quips[QUIPS_CPU];
+    pick = (u8)((roll >> 2) & (OPPONENT_QUIPS - 1));
+    if (lines[pick] == s_last_quip)
+        pick = (u8)((pick + 1) & (OPPONENT_QUIPS - 1));
+    s_last_quip = lines[pick];
+    return s_last_quip;
 }
 
 void story_begin_unlock(void)

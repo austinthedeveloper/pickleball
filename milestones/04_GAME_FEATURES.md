@@ -85,6 +85,11 @@ ADR-024.
   - Verified: [ADR-044](../docs/decisions/ADR-044-charged-serve.md), `test_serve.c: test_charged_meter, test_charged_serves_land, test_tap_is_classic`, MesenCE (a tap serves in, a full charge lands in, the bar follows the level); ladder tables unchanged; `make perf` zero overruns; golden trace re-recorded (a tap after the ready frame serves a frame later).
 - [ ] `M4-SERVE-02` CPU serve power from personality, with a small chance of a dud.
 
+## Fun
+
+- [x] `M4-FUN-01` Quips: the side that loses a point sometimes says a PG line (from GOOFY_IDEAS.md).
+  - Verified: [ADR-048](../docs/decisions/ADR-048-quips.md), `test_story.c: test_quips`, the asset build's line checks, MesenCE screenshots; `make perf` zero overruns, golden trace identical.
+
 ## Career
 
 - [x] `M4-CAREER-01` Career players, the data: three save slots, each a named player with a look, lifetime stats, and unlocks; stats from points and matches against the CPU; save layout 12.
