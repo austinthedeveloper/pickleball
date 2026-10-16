@@ -1,5 +1,6 @@
 #include <snes.h>
 #include "asset_frames.h"
+#include "career.h"
 #include "hud.h"
 #include "hud_tiles.h"
 #include "match.h"
@@ -790,7 +791,12 @@ void render_park_open(void)
     bgSetScroll(0, (u16)g_park_cam, 0);
     dmaCopyCGram((u8 *)&park_palette, 16,
         (u16)(&park_palette_end - &park_palette));
-    match_compose_parts(PAL_BLUE, 0, PADDLE_STANDARD, s_pal_you);
+    /* ADR-047: you walk the park as your career player (their shirt,
+     * skin, hair, and paddle; the park's people are too small for hats). */
+    if (career_active())
+        career_compose_palette(career_active(), s_pal_you);
+    else
+        match_compose_parts(PAL_BLUE, 0, PADDLE_STANDARD, s_pal_you);
     dmaCopyCGram((u8 *)s_pal_you, CGRAM_OBJ + PARK_OBJPAL_YOU * 16, 32);
     dmaCopyCGram((u8 *)&objects_palette,
         CGRAM_OBJ + PARK_OBJPAL_OBJECTS * 16, 32);

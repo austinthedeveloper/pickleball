@@ -35,10 +35,15 @@ extern char objects_palette;
 #define SEL_OBJPAL_CURSOR_DIM 5
 #define SEL_OBJPAL_TAKEN 6
 
-/* OAM: thumbnails 0-3, their ponytails 4-7, cursor corners 8-19. */
-#define SEL_OAM_THUMBS 0
-#define SEL_OAM_PONYTAILS 4
-#define SEL_OAM_CURSORS 8
+/* OAM: the career player's hats 0-7 (two halves each, in front of the
+ * thumbnails: a lower index is drawn on top), thumbnails 8-11, their
+ * ponytails 12-15 (behind), cursor corners 16-27. */
+#define SEL_OAM_HATS 0
+#define SEL_OAM_THUMBS 8
+#define SEL_OAM_PONYTAILS 12
+#define SEL_OAM_CURSORS 16
+
+static const u16 s_hat_tiles[HAT_COUNT] = HAT_TILES;
 
 /* Priority 3: above BG1 and the BG2 portrait. */
 #define SEL_ATTR(palette, flags) ((3 << 4) | ((palette) << 1) | (flags))
@@ -68,11 +73,26 @@ static void draw_thumbnails(const PlayerChoice *choice)
     u8 palette;
     u16 tile = s_cel ? FRAME_IDLE1 : FRAME_IDLE0;
     s16 acc_y = s_cel ? FRAME_IDLE1_ACC_Y : FRAME_IDLE0_ACC_Y;
+    /* ADR-047: 1P's career hat on every thumbnail (0: the cap they wear). */
+    u16 hat = (g_select.current == 0 && career_active()) ?
+        s_hat_tiles[career_active()->hat % HAT_COUNT] : 0;
 
     for (i = 0; i < PAL_COUNT; ++i) {
         x = SEL_THUMB_X0 + i * SEL_THUMB_PITCH;
         palette = select_colour_taken(i) ? SEL_OBJPAL_TAKEN : i;
         obj_put(SEL_OAM_THUMBS + i, x, y, tile, SEL_ATTR(palette, 0), 1);
+        /* As in a match (render_bodies.asm): the frame's accessory spot,
+         * HAT_DX in and HAT_RAISE up, two small halves. */
+        if (hat) {
+            obj_put(SEL_OAM_HATS + 2 * i, x + FRAME_IDLE0_ACC_X + HAT_DX,
+                y + acc_y - HAT_RAISE, hat, SEL_ATTR(palette, 0), 0);
+            obj_put(SEL_OAM_HATS + 2 * i + 1,
+                x + FRAME_IDLE0_ACC_X + HAT_DX + 8, y + acc_y - HAT_RAISE,
+                hat ^ 1, SEL_ATTR(palette, 0), 0);
+        } else {
+            render_obj_hide(SEL_OAM_HATS + 2 * i);
+            render_obj_hide(SEL_OAM_HATS + 2 * i + 1);
+        }
         if (choice->variant == PLAYER_VARIANT_FEMALE)
             obj_put(SEL_OAM_PONYTAILS + i, x + FRAME_IDLE0_ACC_X,
                 y + acc_y, OBJTILE_PONYTAIL, SEL_ATTR(palette, 0), 0);

@@ -88,6 +88,13 @@ static u8 s_ground_waits;
 #define RENDER_RECOLOR_SCANLINE_LIMIT 96
 #define RENDER_RECOLOR_MAX_WAITS 6
 static u8 s_ground_dirty;
+/* KNOWN_ISSUES #26: the court's surface is so dark (BLACK) that a black
+ * shadow vanishes on it; shadows are then grey (render_shadow_palette). */
+static u8 s_dark_court;
+#define RENDER_DARK_COURT_SUM 12        /* r + g + b of the surface, 5-bit */
+#define RENDER_DARK_SHADOW 0x4210       /* (16, 16, 16): half of it shows */
+static u16 s_shadow_palette[16];
+static const u8 *render_shadow_palette(const u16 *source);
 /* The venue's backdrop, BG1 palettes 3-7, at the saved TIME (ADR-045):
  * composed here and uploaded whole. A TIME change on the COURT page
  * recomposes it on a light frame after the ground's. */
@@ -167,13 +174,15 @@ static void render_upload_palettes(void)
 
     if (s_doubles) {
         dmaCopyCGram((u8 *)s_player_palettes, CGRAM_OBJ, 4 * 32);
-        dmaCopyCGram((u8 *)&objects_palette + 64,
+        dmaCopyCGram((u8 *)render_shadow_palette(
+                (const u16 *)((u8 *)&objects_palette + 64)),
             CGRAM_OBJ + g_objpal_shadow * 16, 32);
         setColorEffect(0x02, 0x00);
     } else {
         dmaCopyCGram((u8 *)s_player_palettes[0], CGRAM_OBJ, 32);
         dmaCopyCGram((u8 *)s_player_palettes[2], CGRAM_OBJ + 16, 32);
-        dmaCopyCGram((u8 *)&objects_palette + 32,
+        dmaCopyCGram((u8 *)render_shadow_palette(
+                (const u16 *)((u8 *)&objects_palette + 32)),
             CGRAM_OBJ + g_objpal_shadow * 16, 32);
         /* Shadows: OBJ palette 4 pixels are black and averaged with BG1 on
          * the subscreen, i.e. half-brightness court under every shadow. */
@@ -266,6 +275,15 @@ void render_reset_bodies(void)
     s_active_bodies = 0xff;
 }
 
+/* Nonzero when the composed surface (palette 2 entry 4) is very dark. */
+static u8 render_dark_surface(void)
+{
+    u16 c = s_ground_palette[4];
+
+    return (c & 31) + ((c >> 5) & 31) + ((c >> 10) & 31) <=
+        RENDER_DARK_COURT_SUM;
+}
+
 static void render_compose_ground(void)
 {
     court_style_compose(s_ground_palette, s_painted_ground,
@@ -275,8 +293,28 @@ static void render_compose_ground(void)
         court_style_lava(s_ground_palette);
     court_style_time_ground(s_ground_palette, g_save.settings.time);
     s_ground_dirty = 1;
+    /* A dark surface changes the shadows' colour (uploaded with the other
+     * OBJ palettes). Entry 4 is the surface. */
+    if (render_dark_surface() != s_dark_court) {
+        s_dark_court = render_dark_surface();
+        s_palette_dirty = 1;
+    }
     s_ground_pending = 0;
     s_ground_waits = 0;
+}
+
+/* Grey shadows on a dark court, else the objects' own. */
+static const u8 *render_shadow_palette(const u16 *source)
+{
+    u8 i;
+
+    if (!s_dark_court)
+        return (const u8 *)source;
+    /* The shadow is black (0): every colour but transparency goes grey. */
+    s_shadow_palette[0] = source[0];
+    for (i = 1; i < 16; ++i)
+        s_shadow_palette[i] = RENDER_DARK_SHADOW;
+    return (const u8 *)s_shadow_palette;
 }
 
 void render_apply_court_colors(void)
@@ -597,7 +635,11 @@ static void render_watcher(void)
             g_game_state.match_winner == 1);
     if (cheer && (g_game_state.frame_count & 8))
         y -= 2;
-    attr = OBJ_ATTR(g_players[2].palette, 1);
+    /* KNOWN_ISSUES #24: at NIGHT the watcher is a silhouette in the dark
+     * stands (the shadow palette: the stands behind at half brightness),
+     * not lit like the players. Singles only, where it is palette 4. */
+    attr = g_save.settings.time == COURT_TIMES - 1 ?
+        OBJ_ATTR(g_objpal_shadow, 1) : OBJ_ATTR(g_players[2].palette, 1);
     if (seat[2]) {
         obj_put(RENDER_OAM_WATCHER, x, y, OBJTILE_PERSON_TOP, attr, 0);
         render_obj_hide(RENDER_OAM_WATCHER + 1);
@@ -674,6 +716,7 @@ void render_initialize(void)
     s_zone_drawn = 0;
     s_practice_drawn = 1;          /* hidden on the first frame */
     s_ground_dirty = 0;
+    s_dark_court = 0;
     s_ground_pending = 0;
     s_ground_waits = 0;
     s_backdrop_pending = 0;

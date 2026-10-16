@@ -88,8 +88,8 @@ matches.
   nobody active: matches are exactly as before and nothing is recorded.
 - **Player Select** starts 1P on the player's body, shirt, and paddle;
   changes there are for that match. 1P's portrait and thumbnails take the
-  player's skin and hair (`career_compose_with`); the hat is not drawn
-  there (the portrait is fixed art). `select_apply` sets `career_p1`.
+  player's skin and hair (`career_compose_with`); the thumbnails wear the
+  hat too (the portrait is fixed art, without one). `select_apply` sets `career_p1`.
 - **In the match**, slot 0 wears the player's skin, hair, and hat with the
   match's shirt and paddle (`match_compose_palette`, `match_slot_hat`).
   The score panel's 1P label is the name's first four letters (the panel
@@ -97,8 +97,8 @@ matches.
 - **Open play and the park's ball machine** have no Player Select:
   `match_config_career_p1` puts slot 0 in the saved body, shirt, and
   paddle, and a slot that had that shirt colour takes slot 0's old one
-  (ADR-010). The park's walk-around sprite keeps its own look
-  (KNOWN_ISSUES #27).
+  (ADR-010). The park's walk-around sprite wears the player's
+  palette too (KNOWN_ISSUES #27).
 - **UNLOCKED!**: after the initials card (if any), the match result shows
   a story card (`STORY_CARD_UNLOCK`) with the unlocks just earned
   ("VISOR, PINK HAIR", "+n" past 24 cells) and `@ OK`; B, A, or Start
