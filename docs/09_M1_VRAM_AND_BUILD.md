@@ -83,8 +83,10 @@ on the way back.
 
 ## ROM
 
-LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), 512 KiB (16 banks,
-header ROM size `$09`; 256 KiB until the sound effects filled it), NTSC, cartridge
+LoROM FastROM (map mode `$30`, needs 120 ns ROM; ADR-017), 1 MiB (32 banks,
+header ROM size `$0A`, since R19 in docs/REFACTOR_PLAN.md; 512 KiB before it,
+and 256 KiB until the sound effects filled that). The soundbank stays at banks
+13–15; banks 16–31 are free for character frames and venues. NTSC, cartridge
 type `$02` with 2 KiB battery SRAM at `$70:0000` (two 48-byte save copies at
 offsets 0 and 1024; ADR-021, layout 9 since ADR-040);
 internal checksum and complement sum to

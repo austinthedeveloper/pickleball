@@ -35,6 +35,10 @@ if header[0x15] != 0x30 or header[0x16] != 0x02:
                      "SRAM (map mode $30, type $02)")
 if header[0x18] != 0x01 or header[0x19] != 0x01:
     raise SystemExit("ROM must have 2 KiB SRAM and use the NTSC region code")
+# The ROM size byte is log2 of the size in KiB (R19: $0A, 1 MiB).
+if (1024 << header[0x17]) != len(data):
+    raise SystemExit(f"header ROM size ${header[0x17]:02X} does not match "
+                     f"the {len(data)}-byte ROM")
 complement, checksum = struct.unpack_from("<HH", header, 0x1C)
 if (complement + checksum) & 0xFFFF != 0xFFFF:
     raise SystemExit("invalid internal checksum/complement pair")

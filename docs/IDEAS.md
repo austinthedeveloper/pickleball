@@ -6,7 +6,9 @@ ideas and their follow-ups are tracked as tasks in
 [M4 — Game Features](../milestones/04_GAME_FEATURES.md). Unbaked, just-for-fun
 ideas live in [GOOFY_IDEAS.md](GOOFY_IDEAS.md).
 
-Budget snapshot (2026-10-15, release build of `20d22ec`): the ROM is 512 KiB
+Budget update (2026-10-16, R19): the ROM is now 1 MiB (32 banks), with about
+624 KiB free; the snapshot below is from before. Budget snapshot (2026-10-15,
+release build of `20d22ec`): the ROM was 512 KiB
 (16 LoROM banks); about 307 KiB is used and 205 KiB free. Banks 0-7 are
 full; the free space is in banks 8-13 and 15 (14-15 hold the soundbank).
 `tools/build_report.py` prints the table. Per-screen limits are in

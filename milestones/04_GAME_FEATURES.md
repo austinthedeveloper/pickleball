@@ -38,7 +38,7 @@ ADR-024.
 - [x] `M4-VENUE-04` Fun venues: DINOSAUR, SPACE, and UNDERSEA, each with its own ambience, default court, and home-court opponent.
   - Verified: [ADR-046](../docs/decisions/ADR-046-fun-venues.md), the asset build's venue checks, `make perf` zero overruns, golden trace identical, MesenCE matches at each.
 - [ ] `M4-VENUE-03` More venues from new mocks (indoor rec center, rooftop at night, beach boardwalk, championship stadium). The soundbank now has banks 13-15 (ADR-046, amended), about 30 KiB free for ambience.
-  - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 512 KiB cart has about 300 KiB free).
+  - Accept: each passes the shared-ground and 896-tile checks; about 14 KiB of ROM each (the 1 MiB cart has about 620 KiB free since R19).
 
 ## Opponents and story
 
