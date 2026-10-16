@@ -513,6 +513,30 @@ static u8 probe_in_sweet_spot(void)
         g_hit_box.sweet_y_span);
 }
 
+/*
+ * R23: every contact the swing window can make is a probe step in reach,
+ * and over the window's seven steps the ball's x (and y) stays between
+ * where it is and where seven steps of its velocity carry it (a bounce
+ * only shrinks |v| and keeps its sign; a resting ball stops). When that
+ * range misses the reach box, no step can be in reach: the probe is
+ * skipped, with the same answer. Steady pace only: a paced window (FAST
+ * BALL, the slow speeds) rarely misses, and summing its steps cost more
+ * than it saved on the worst frame. Additions and statics only (816-tcc).
+ */
+typedef char ai_window_is_7[PLAYER_WINDUP_FRAMES + PLAYER_ACTIVE_FRAMES ==
+    7 ? 1 : -1];
+static fx s_win_a;
+static fx s_win_b;
+static fx s_win_low;
+
+#define AI_WINDOW_MISSES(at, v, box, half, span) \
+    (s_win_b = (v) + (v), s_win_b += s_win_b, s_win_b += s_win_b, \
+     s_win_a = (at), s_win_b = s_win_a + s_win_b - (v), \
+     s_win_low = (box) - (half), \
+     s_win_a > s_win_b ? \
+        (s_win_a < s_win_low || s_win_b > s_win_low + (fx)(span)) : \
+        (s_win_b < s_win_low || s_win_a > s_win_low + (fx)(span)))
+
 /* The swing window's first contact check is after this many probe steps;
  * the steps before it are skipped as one block when they can be. */
 typedef char ai_windup_skip_is_3[PLAYER_WINDUP_FRAMES - 1 == 3 ? 1 : -1];
@@ -548,6 +572,11 @@ static u8 ai_swing_connects(const Player *player)
         s_reach_y += ai_slide(player->vy_fp,
             g_paddle_swing_limit[player->paddle]);
     }
+    if (!g_ball_paced && (AI_WINDOW_MISSES(g_ball.x_fp, g_ball.vx_fp,
+            s_reach_x, g_hit_box.reach_x, g_hit_box.reach_x_span) ||
+            AI_WINDOW_MISSES(g_ball.y_fp, g_ball.vy_fp, s_reach_y,
+            g_hit_box.reach_y, g_hit_box.reach_y_span)))
+        return 0;
     /* Probe step n is the ball at frame n's contact check: it moved on
      * frames 0..n-1 (a slow ball skips some, ADR-025; a fast one takes
      * extra steps, ADR-033). At a steady pace the pace check is skipped:
