@@ -29,10 +29,11 @@ enum {
 /* A saved value with unknown bits cleared. */
 u8 modifiers_valid(u8 saved);
 
-/* Ball steps on this tick (0..OPTIONS_BALL_CYCLE-1, or a little past it
- * for lookahead): the difficulty's slow ball (ADR-025), plus one more every
- * 3rd tick with FAST BALL. 0, 1, or 2. */
-u8 modifiers_ball_steps(u8 difficulty, u8 modifiers, u8 tick);
+/* The ball's steps on each of `ticks` frames from a cycle's start: the
+ * difficulty's slow ball (ADR-025) times BALL SPEED (ADR-049), spread
+ * evenly, plus one more every 3rd frame with FAST BALL. 0 to 3 each. */
+void modifiers_ball_pace(u8 *pace, u8 ticks, u8 difficulty, u8 modifiers,
+    u8 percent);
 
 /* Nonzero when `score` against `other` wins a match to `points`: with WIN
  * BY 2, only by two. A macro: the frames that score and end a point run

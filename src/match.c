@@ -5,6 +5,7 @@
 #include "match.h"
 #include "options.h"
 #include "player.h"
+#include "save.h"
 
 #ifdef HOST_TEST
 /* Host tests start from the singles defaults without calling them; on the
@@ -24,7 +25,8 @@ MatchConfig g_match_config = {
     0,
     0,
     OPPONENT_NONE,
-    0
+    0,
+    100
 };
 #else
 MatchConfig g_match_config;
@@ -55,6 +57,8 @@ void match_config_defaults(void)
     g_match_config.open_play = 0;
     g_match_config.partner = OPPONENT_NONE;
     g_match_config.career_p1 = 0;
+    /* ADR-049: the saved BALL SPEED, for every match and the demo. */
+    g_match_config.ball_speed = options_ball_speed(g_save.settings.ball_speed);
 }
 
 void match_config_practice(void)

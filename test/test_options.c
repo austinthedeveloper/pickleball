@@ -50,19 +50,20 @@ static void test_difficulty_styles(void)
     assert(style[DIFFICULTY_HARD].speed <= PLAYER_MAX_SPEED_FP);
 }
 
+/* ADR-049: steps per 60-frame cycle, by difficulty and BALL SPEED. */
 static void test_ball_pattern(void)
 {
-    u8 counts[DIFFICULTY_COUNT] = { 0 };
-    u8 d;
-    u8 t;
-
-    for (d = 0; d < DIFFICULTY_COUNT; ++d)
-        for (t = 0; t < OPTIONS_BALL_CYCLE; ++t)
-            counts[d] += options_ball_moves(d, t);
-    assert(counts[DIFFICULTY_KID] == 8);        /* 2/3 speed */
-    assert(counts[DIFFICULTY_EASY] == 9);       /* 3/4 speed */
-    assert(counts[DIFFICULTY_MEDIUM] == 12);
-    assert(counts[DIFFICULTY_HARD] == 12);
+    assert(options_ball_per_cycle(DIFFICULTY_KID, 100) == 40);   /* 2/3 */
+    assert(options_ball_per_cycle(DIFFICULTY_EASY, 100) == 45);  /* 3/4 */
+    assert(options_ball_per_cycle(DIFFICULTY_MEDIUM, 100) == 60);
+    assert(options_ball_per_cycle(DIFFICULTY_HARD, 100) == 60);
+    assert(options_ball_per_cycle(DIFFICULTY_MEDIUM, 90) == 54);
+    assert(options_ball_per_cycle(DIFFICULTY_EASY, 90) == 41);   /* 40.5 */
+    assert(options_ball_per_cycle(DIFFICULTY_MEDIUM, 120) == 72);
+    /* Saved choices: 0 and junk are the default, 100%. */
+    assert(options_ball_speed(0) == 100 && options_ball_speed(99) == 100);
+    assert(options_ball_speed(1) == 70);
+    assert(options_ball_speed(OPTIONS_SPEED_CHOICES) == 120);
 }
 
 static void test_editor(void)
@@ -70,36 +71,43 @@ static void test_editor(void)
     u8 points = 4;          /* invalid */
     u8 difficulty = 7;      /* invalid */
     u8 sound = 9;           /* invalid */
+    u8 speed = 0;           /* an older save: the default */
 
-    options_edit_begin(&points, &difficulty, &sound);
+    options_edit_begin(&points, &difficulty, &sound, &speed);
+    assert(speed == OPTIONS_SPEED_DEFAULT + 1);
     assert(sound == AUDIO_ALL);
     assert(points == OPTIONS_POINTS_DEFAULT);
     assert(difficulty == DIFFICULTY_MEDIUM);
-    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
     assert(points == 7);
-    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
-    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
-    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
     assert(points == 21);                       /* wraps */
-    options_edit_input(&points, &difficulty, &sound, PAD_DOWN);
-    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
-    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_DOWN);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
     assert(difficulty == DIFFICULTY_KID);       /* wraps */
-    assert(options_edit_changed(points, difficulty, sound));
-    assert(options_edit_input(&points, &difficulty, &sound, PAD_Y) ==
+    assert(options_edit_changed(points, difficulty, sound, speed));
+    assert(options_edit_input(&points, &difficulty, &sound, &speed, PAD_Y) ==
         OPTIONS_EDIT_CANCEL);
     assert(points == 5 && difficulty == DIFFICULTY_MEDIUM);
-    /* Rows wrap through SOUND: Up from POINTS. */
-    options_edit_input(&points, &difficulty, &sound, PAD_UP);
-    options_edit_input(&points, &difficulty, &sound, PAD_UP);
+    /* Rows wrap through BALL SPEED (ADR-049): Up from POINTS. */
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
+    assert(g_options_edit.row == OPTIONS_ROW_SPEED);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
+    assert(options_ball_speed(speed) == 90);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
     assert(g_options_edit.row == OPTIONS_ROW_SOUND);
-    options_edit_input(&points, &difficulty, &sound, PAD_LEFT);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_LEFT);
     assert(sound == AUDIO_OFF);
-    options_edit_input(&points, &difficulty, &sound, PAD_UP);
-    options_edit_input(&points, &difficulty, &sound, PAD_RIGHT);
-    assert(options_edit_input(&points, &difficulty, &sound, PAD_B) ==
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_UP);
+    options_edit_input(&points, &difficulty, &sound, &speed, PAD_RIGHT);
+    assert(options_edit_input(&points, &difficulty, &sound, &speed, PAD_B) ==
         OPTIONS_EDIT_DONE);
-    assert(options_edit_changed(points, difficulty, sound));
+    assert(options_edit_changed(points, difficulty, sound, speed));
 }
 
 static void test_select_and_styles(void)

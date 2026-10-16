@@ -77,6 +77,8 @@ ADR-024.
   - Verified: [ADR-025](../docs/decisions/ADR-025-options.md), `test/test_options.c`, `options.timeline`.
 - [x] `M4-OPT-02` KID auto-serve: serve automatically after a short wait so a kid never needs a button.
   - Verified: ADR-025 (amended), `test_options.c` (a P1 with no button presses serves, returns, and wins 8 of 8).
+- [x] `M4-OPT-03` BALL SPEED on the OPTIONS page (70-120%), default 100% until the speed is chosen by play.
+  - Verified: [ADR-049](../docs/decisions/ADR-049-ball-speed.md), `test_options.c`, `test_modifiers.c: test_ball_steps`, golden trace identical, `make perf` zero overruns.
 
 ## Serves and shots
 

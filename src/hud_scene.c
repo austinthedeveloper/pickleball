@@ -58,7 +58,8 @@
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
-#define OPTIONS_PAGE_ROWS 5         /* header, gap, points, difficulty, sound */
+#define OPTIONS_PAGE_ROWS 6         /* header, gap, points, difficulty, sound,
+                                       ball speed */
 #define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
 #define MODIFIERS_PAGE_ROWS 6       /* header, gap, 4 rows */
 
@@ -947,6 +948,8 @@ static u8 hud_options_value(u8 index)
         return g_save.settings.points;
     if (index == OPTIONS_ROW_SOUND)
         return g_save.settings.sound;
+    if (index == OPTIONS_ROW_SPEED)
+        return g_save.settings.ball_speed;
     return g_save.settings.difficulty;
 }
 
@@ -956,6 +959,7 @@ static void hud_options_row(u8 index)
     u8 value = hud_options_value(index);
     u8 cursor = g_options_edit.row == index;
     char points[3];
+    char speed[5];
 
     if (index == OPTIONS_ROW_POINTS) {
         points[0] = value >= 20 ? '2' : value >= 10 ? '1' : '0' + value;
@@ -965,6 +969,15 @@ static void hud_options_row(u8 index)
     } else if (index == OPTIONS_ROW_SOUND) {
         hud_setting_row(COURT_FIRST_ROW + 2, "SOUND",
             audio_setting_name(value), cursor);
+    } else if (index == OPTIONS_ROW_SPEED) {
+        /* ADR-049: "90%". */
+        speed[0] = (char)('0' + options_ball_speed(value) / 100);
+        speed[1] = (char)('0' + options_ball_speed(value) / 10 % 10);
+        speed[2] = (char)('0' + options_ball_speed(value) % 10);
+        speed[3] = '%';
+        speed[4] = 0;
+        hud_setting_row(COURT_FIRST_ROW + 3, "BALL SPEED",
+            speed[0] == '0' ? speed + 1 : speed, cursor);
     } else {
         hud_setting_row(COURT_FIRST_ROW + 1, "DIFFICULTY",
             options_difficulty_name(value), cursor);

@@ -3,6 +3,7 @@
 
 #include "game_types.h"
 #include "input.h"
+#include "options.h"
 
 typedef enum {
     GAME_PHASE_SERVE_SETUP = 0,
@@ -83,13 +84,15 @@ void game_start_attract(void);
 void game_start_match(void);
 void game_set_phase(u8 phase);
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
-/* Nonzero when the ball's pace varies by frame: a slow ball (ADR-025) or
- * FAST BALL (ADR-033). Otherwise it steps once every frame. */
+/* Nonzero when the ball's pace varies by frame: a slow ball (ADR-025),
+ * BALL SPEED off 100% (ADR-049), or FAST BALL (ADR-033). Otherwise it
+ * steps once every frame. */
 extern u8 g_ball_paced;
 /* When paced: the ball's steps (0, 1, or 2) on each tick of two cycles,
  * and this frame's tick (0..OPTIONS_BALL_CYCLE-1). A table, not a call:
  * the CPUs' swing lookahead reads it up to ten times a frame each. */
-enum { GAME_BALL_PACE_TICKS = 24 };
+/* A cycle and the CPUs' lookahead past its end (a swing's 8 frames). */
+enum { GAME_BALL_PACE_TICKS = OPTIONS_BALL_CYCLE + 12 };
 extern u8 g_ball_pace[GAME_BALL_PACE_TICKS];
 extern u8 g_ball_tick;
 /* Ball steps `frames` frames from now (0 = during this frame's update;

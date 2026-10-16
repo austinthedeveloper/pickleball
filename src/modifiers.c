@@ -10,13 +10,27 @@ u8 modifiers_valid(u8 saved)
     return saved & MODIFIER_ALL;
 }
 
-u8 modifiers_ball_steps(u8 difficulty, u8 modifiers, u8 tick)
+void modifiers_ball_pace(u8 *pace, u8 ticks, u8 difficulty, u8 modifiers,
+    u8 percent)
 {
-    u8 steps = options_ball_moves(difficulty, tick);
+    u8 per_cycle = options_ball_per_cycle(difficulty, percent);
+    u8 share = 0;
+    u8 tick = 0;
+    u8 i;
 
-    if ((modifiers & MODIFIER_FAST_BALL) && tick % 3 == 2)
-        ++steps;
-    return steps;
+    /* Even spreading: a step each time the running share passes a cycle. */
+    for (i = 0; i < ticks; ++i) {
+        pace[i] = 0;
+        share += per_cycle;
+        while (share >= OPTIONS_BALL_CYCLE) {
+            share -= OPTIONS_BALL_CYCLE;
+            ++pace[i];
+        }
+        if ((modifiers & MODIFIER_FAST_BALL) && tick % 3 == 2)
+            ++pace[i];
+        if (++tick >= OPTIONS_BALL_CYCLE)
+            tick = 0;
+    }
 }
 
 u8 modifiers_in_kitchen(fx x_fp, fx y_fp, u8 team)

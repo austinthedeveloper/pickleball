@@ -105,12 +105,13 @@ static void game_activate_players(void)
         active[i] = match_slot_active(i);
     g_ball_tick = 0;
     g_ball_steps = 0;
-    g_ball_paced = g_match_config.difficulty < DIFFICULTY_MEDIUM ||
-        (g_match_config.modifiers & MODIFIER_FAST_BALL);
+    g_ball_paced = (g_match_config.modifiers & MODIFIER_FAST_BALL) ||
+        options_ball_per_cycle(g_match_config.difficulty,
+            g_match_config.ball_speed) != OPTIONS_BALL_CYCLE;
     if (g_ball_paced)
-        for (i = 0; i < GAME_BALL_PACE_TICKS; ++i)
-            g_ball_pace[i] = modifiers_ball_steps(g_match_config.difficulty,
-                g_match_config.modifiers, i);
+        modifiers_ball_pace(g_ball_pace, GAME_BALL_PACE_TICKS,
+            g_match_config.difficulty, g_match_config.modifiers,
+            g_match_config.ball_speed);
     /* Only on a change: a new match frame runs near the budget (the demo
      * restarts on one). */
     big = (g_match_config.modifiers & MODIFIER_BIG_BALL) != 0;

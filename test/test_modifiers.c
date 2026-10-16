@@ -67,24 +67,41 @@ static void test_select_copies(void)
     g_attract = 0;
 }
 
-/* FAST BALL: the slow-ball pattern plus a step every 3rd tick. */
+/* The pace over a cycle: the difficulty times BALL SPEED, spread evenly
+ * (never two in a row missed below 100%), plus FAST BALL's every 3rd. */
 static void test_ball_steps(void)
 {
-    u8 counts[DIFFICULTY_COUNT];
-    u8 d;
+    u8 pace[GAME_BALL_PACE_TICKS];
+    u16 count;
     u8 t;
 
-    for (d = 0; d < DIFFICULTY_COUNT; ++d) {
-        counts[d] = 0;
-        for (t = 0; t < OPTIONS_BALL_CYCLE; ++t) {
-            assert(modifiers_ball_steps(d, 0, t) == options_ball_moves(d, t));
-            counts[d] += modifiers_ball_steps(d, MODIFIER_FAST_BALL, t);
-        }
+    modifiers_ball_pace(pace, OPTIONS_BALL_CYCLE, DIFFICULTY_MEDIUM, 0, 90);
+    for (count = 0, t = 0; t < OPTIONS_BALL_CYCLE; ++t) {
+        assert(pace[t] <= 1);
+        assert(t == 0 || pace[t] || pace[t - 1]);   /* spread out */
+        count += pace[t];
     }
-    assert(counts[DIFFICULTY_KID] == 12);       /* 8 + 4: normal speed */
-    assert(counts[DIFFICULTY_EASY] == 13);
-    assert(counts[DIFFICULTY_MEDIUM] == 16);    /* 4/3 speed */
-    assert(counts[DIFFICULTY_HARD] == 16);
+    assert(count == 54);
+    modifiers_ball_pace(pace, OPTIONS_BALL_CYCLE, DIFFICULTY_KID, 0, 100);
+    for (count = 0, t = 0; t < OPTIONS_BALL_CYCLE; ++t)
+        count += pace[t];
+    assert(count == 40);
+    /* FAST BALL adds 20 a cycle; 120% takes two steps on some frames. */
+    modifiers_ball_pace(pace, OPTIONS_BALL_CYCLE, DIFFICULTY_MEDIUM,
+        MODIFIER_FAST_BALL, 100);
+    for (count = 0, t = 0; t < OPTIONS_BALL_CYCLE; ++t)
+        count += pace[t];
+    assert(count == 80);
+    modifiers_ball_pace(pace, OPTIONS_BALL_CYCLE, DIFFICULTY_MEDIUM, 0, 120);
+    for (count = 0, t = 0; t < OPTIONS_BALL_CYCLE; ++t) {
+        assert(pace[t] >= 1 && pace[t] <= 2);
+        count += pace[t];
+    }
+    assert(count == 72);
+    /* The lookahead past the cycle repeats its start. */
+    modifiers_ball_pace(pace, GAME_BALL_PACE_TICKS, DIFFICULTY_EASY, 0, 90);
+    for (t = 0; t < GAME_BALL_PACE_TICKS - OPTIONS_BALL_CYCLE; ++t)
+        assert(pace[OPTIONS_BALL_CYCLE + t] == pace[t]);
 }
 
 /* Frames from a launch until the first bounce, and where it lands. */

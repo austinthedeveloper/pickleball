@@ -52,7 +52,8 @@ typedef struct {
     u8 sound;                   /* AUDIO_* (ADR-029); 0 ALL in older saves */
     u8 modifiers;               /* MODIFIER_* bits (ADR-033) */
     u8 time;                    /* COURT_TIME_* (ADR-045); 0 DAY */
-    u8 reserved;                /* keeps the checksum on an even offset */
+    u8 ball_speed;              /* BALL SPEED choice + 1 (ADR-049); 0, in
+                                   saves before it, is the default (100%) */
 } SaveSettings;
 
 /* Who holds a record (ADR-040): three capitals, or zeros for nobody yet

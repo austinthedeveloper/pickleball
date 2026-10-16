@@ -34,6 +34,7 @@ typedef struct {
                                      default CPU) */
     u8 career_p1;                 /* ADR-047: slot 0 wears the active career
                                      player's look (hat, hair, skin) */
+    u8 ball_speed;                /* ADR-049: BALL SPEED, percent */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */

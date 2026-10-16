@@ -81,6 +81,10 @@ and B chooses. Start or Y also resumes.
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.
 
+**BALL SPEED** sets how fast the ball moves, from 70% to 120%; 100% is
+the standard game. It works with every difficulty (KID and EASY are slower
+again) and with the FAST BALL modifier.
+
 **SOUND** is ALL, NO CROWD (effects without the applause or the
 background crowd), or OFF. With ALL, each venue has a quiet background:
 birds at the park, gulls and water by the lake, crickets at sunset (and

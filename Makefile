@@ -123,17 +123,19 @@ tcc-check:
 # Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE (0: three
 # bot skills), MATCHES, OPPONENT (-1 the default CPU, -2 the whole ladder,
 # else a ladder opponent, ADR-023), DIFFICULTY (0 KID .. 3 HARD, ADR-025),
-# MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02).
+# MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02), SPEED (BALL SPEED
+# percent, ADR-049; 0 the default, 100).
 LATE ?= 4
 MATCHES ?= 20
 OPPONENT ?= -1
 DIFFICULTY ?= 2
 MODE ?= 0
+SPEED ?= 0
 stats: assets
 	@mkdir -p build/host
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
-	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY) $(MODE)
+	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY) $(MODE) $(SPEED)
 
 # The sound effects as WAV files in build/sfx/, to listen to (ADR-029).
 sfx-preview:

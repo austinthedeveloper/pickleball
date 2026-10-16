@@ -19,6 +19,7 @@
  *   build/host/match_stats 0 20 -2 2 3 # the doubles ladder, net bot, at
  *                                      # three bot skills (LATE 0)
  *
+ * SPEED (6th): BALL SPEED percent (70..120 by 5; ADR-049), default 100.
  * MODE (5th): 0 singles, 1 doubles, +2 the net bot. OPPONENT -2 runs every
  * ladder opponent in order and prints a table; LATE 0 adds up three bot
  * skills (late every 3rd, 4th, and 5th shot) like the ADR tables.
@@ -30,6 +31,7 @@
 #include "game.h"
 #include "match.h"
 #include "options.h"
+#include "save.h"
 #include "serve.h"
 #include "test_support.h"
 
@@ -146,6 +148,13 @@ int main(int argc, char **argv)
     int opponent = argc > 3 ? atoi(argv[3]) : -1;
     int difficulty = argc > 4 ? atoi(argv[4]) : DIFFICULTY_MEDIUM;
     int mode = argc > 5 ? atoi(argv[5]) : 0;
+    int speed = argc > 6 ? atoi(argv[6]) : 0;
+    u8 choice;
+
+    /* SPEED (6th, ADR-049): a BALL SPEED percent; 0 keeps the default. */
+    for (choice = 0; speed && choice < OPTIONS_SPEED_CHOICES; ++choice)
+        if (g_options_speeds[choice] == speed)
+            g_save.settings.ball_speed = choice + 1;
     Stats stats;
     int team;
     int i;

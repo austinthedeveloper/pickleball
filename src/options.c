@@ -70,16 +70,34 @@ void options_apply_difficulty(AiStyle *style, u8 difficulty)
     }
 }
 
-u8 options_ball_moves(u8 difficulty, u8 tick)
+const u8 g_options_speeds[OPTIONS_SPEED_CHOICES] = {
+    70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120
+};
+
+/* A saved BALL SPEED as its choice (0 and invalid: the default). */
+static u8 speed_index(u8 saved)
 {
-    if (difficulty == DIFFICULTY_KID)
-        return tick % 3 != 2;
-    if (difficulty == DIFFICULTY_EASY)
-        return (tick & 3) != 3;
-    return 1;
+    if (saved == 0 || saved > OPTIONS_SPEED_CHOICES)
+        return OPTIONS_SPEED_DEFAULT;
+    return saved - 1;
 }
 
-void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound)
+u8 options_ball_speed(u8 saved)
+{
+    return g_options_speeds[speed_index(saved)];
+}
+
+u8 options_ball_per_cycle(u8 difficulty, u8 percent)
+{
+    u16 base = difficulty == DIFFICULTY_KID ? OPTIONS_BALL_CYCLE * 2 / 3 :
+        difficulty == DIFFICULTY_EASY ? OPTIONS_BALL_CYCLE * 3 / 4 :
+        OPTIONS_BALL_CYCLE;
+
+    /* Once per match: a multiply and a divide are fine here. */
+    return (u8)((base * percent + 50) / 100);
+}
+
+void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound, u8 *speed)
 {
     *points = options_points(*points);
     *difficulty = options_difficulty(*difficulty);
@@ -89,16 +107,20 @@ void options_edit_begin(u8 *points, u8 *difficulty, u8 *sound)
     g_options_edit.original_points = *points;
     g_options_edit.original_difficulty = *difficulty;
     g_options_edit.original_sound = *sound;
+    *speed = speed_index(*speed) + 1;
+    g_options_edit.original_speed = *speed;
 }
 
-u8 options_edit_changed(u8 points, u8 difficulty, u8 sound)
+u8 options_edit_changed(u8 points, u8 difficulty, u8 sound, u8 speed)
 {
     return points != g_options_edit.original_points ||
         difficulty != g_options_edit.original_difficulty ||
-        sound != g_options_edit.original_sound;
+        sound != g_options_edit.original_sound ||
+        speed != g_options_edit.original_speed;
 }
 
-u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u16 pressed)
+u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *speed,
+    u16 pressed)
 {
     u8 index;
     u8 row = g_options_edit.row;
@@ -108,6 +130,7 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u16 pressed)
         *points = g_options_edit.original_points;
         *difficulty = g_options_edit.original_difficulty;
         *sound = g_options_edit.original_sound;
+        *speed = g_options_edit.original_speed;
         return OPTIONS_EDIT_CANCEL;
     }
     if (pressed & (PAD_B | PAD_START))
@@ -117,7 +140,14 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u16 pressed)
     else if (pressed & PAD_DOWN)
         g_options_edit.row = row == OPTIONS_ROWS - 1 ? 0 : row + 1;
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row == OPTIONS_ROW_SOUND) {
+        if (row == OPTIONS_ROW_SPEED) {
+            index = speed_index(*speed);
+            if (left)
+                index = index ? index - 1 : OPTIONS_SPEED_CHOICES - 1;
+            else
+                index = index + 1 >= OPTIONS_SPEED_CHOICES ? 0 : index + 1;
+            *speed = index + 1;
+        } else if (row == OPTIONS_ROW_SOUND) {
             if (left)
                 *sound = *sound ? *sound - 1 : AUDIO_SETTINGS - 1;
             else
