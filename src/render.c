@@ -18,6 +18,7 @@
 #include "profile.h"
 #include "projection.h"
 #include "render.h"
+#include "asm_shared.h"
 #include "options.h"
 #include "render_internal.h"
 #include "hud_scene.h"
@@ -236,8 +237,10 @@ u8 oam_tmp_bits;
 u8 oam_tmp_mask;
 /* The camera's offset (ADR-050), taken off every object oam_write places;
  * 0 outside the court. */
+#define REG_HDMAEN (*(vuint8 *)0x420C)
 s16 oam_cam_x;
 s16 oam_cam_y;
+extern s16 g_cam_far_x;                /* the backdrop's pan (ADR-051) */
 s16 oam_tmp_x;
 s16 oam_tmp_y;
 
@@ -637,7 +640,9 @@ static void render_watcher(void)
         }
         return;
     }
-    x = seat[0] - 4;
+    /* In the stands, the backdrop: it pans at half the camera (ADR-051),
+     * and oam_write takes the whole camera off. */
+    x = seat[0] - 4 + oam_cam_x - g_cam_far_x;
     y = seat[1] - 8;
     cheer = (g_game_state.phase == GAME_PHASE_POINT_RESULT &&
             g_game_state.point_winner == 1) ||
@@ -682,6 +687,19 @@ s16 g_cam_sign;                         /* camera.asm's scratch */
 s16 g_cam_mag;
 u8 g_cam_k;                             /* CAMERA in 1/128ths */
 u8 g_cam_dirty;
+/* Parallax (ADR-051): camera.asm's HDMA table halves for BG1's horizontal
+ * scroll, the half it writes next, the backdrop's offset (half the
+ * camera), and its scratch. */
+u8 g_cam_hdma[2 * ASM_CAM_TABLE_BYTES];
+u8 g_cam_back;
+u8 g_cam_hdma_on;
+u8 g_cam_new;                           /* a table to swap in */
+s16 g_cam_built_fx;                     /* the camera the last table is for */
+s16 g_cam_built_fy;
+s16 g_cam_far_x;
+s16 g_cam_acc;
+s16 g_cam_step;
+extern void render_camera_commit(void);
 static u8 s_cam_saved;                  /* the g_save.camera g_cam_k is for */
 extern void render_camera(void);
 
@@ -694,6 +712,13 @@ void render_camera_reset(void)
     oam_cam_x = 0;
     oam_cam_y = 0;
     g_cam_dirty = 1;                    /* render_commit scrolls BG1 home */
+    g_cam_far_x = 0;
+    g_cam_back = 0;
+    g_cam_hdma_on = 0;
+    g_cam_new = 0;
+    g_cam_built_fx = 0x7fff;            /* no table yet: build one */
+    g_cam_built_fy = 0x7fff;
+    REG_HDMAEN = 0;                     /* no parallax off the court */
     s_cam_saved = 0xff;                 /* g_cam_k on the next frame */
 }
 
@@ -753,6 +778,7 @@ void render_commit(void)
         bgSetScroll(0, (u16)oam_cam_x, (u16)oam_cam_y);
         g_cam_dirty = 0;
     }
+    render_camera_commit();             /* the parallax (ADR-051) */
     /* The card closed: the bust goes with the HUD's clear. */
     if (s_bust_shown && g_story.card == STORY_CARD_NONE) {
         bgSetDisable(1);

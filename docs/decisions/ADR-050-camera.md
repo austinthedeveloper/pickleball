@@ -55,8 +55,7 @@ match: the golden trace is identical. The rules stay in world space
 - **A 32-wide map with wrap.** A pan left shows the right edge's column on
   the left; the seam shows.
 - **Masking the screen edges with windows.** Black bars at the sides.
-- **Parallax (the backdrop panning less than the court).** Possible with
-  HDMA on BG1's scroll at the backdrop's last row; left for later.
+- *(Parallax was left for later here; it is [ADR-051](ADR-051-parallax.md).)*
 
 ## Verification
 

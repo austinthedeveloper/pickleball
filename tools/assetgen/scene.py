@@ -110,6 +110,7 @@ def court_assets():
         if (width, height) != (256, 224):
             raise AssetError(f"{venue['scene']} must be 256x224")
         check_court_lines(rows)
+        check_parallax_rows(venue["scene"], rows)
         scenes.append((venue, rows, palette, scene_tiles(venue["scene"], rows)))
 
     # The ground palette is shared: every venue paints it identically.
@@ -176,18 +177,44 @@ def court_assets():
     return files, most, len(ground.tiles)
 
 
+# Parallax (ADR-051): the backdrop pans at half the camera above row 74,
+# the court with it from there (include/asm_shared.h ASM_CAM_FAR_LINES),
+# and the near fence leans from row 186. The net's post (from row 75) and
+# its cap (row 74) must be in the court's band, or its top would shear
+# from the rest of it.
+PARALLAX_COURT_ROW = 74
+NET_POST_X = 125
+
+
+def check_parallax_rows(name, rows):
+    color = rows[79][NET_POST_X]
+    top = 79
+    while top > 0 and rows[top - 1][NET_POST_X] == color:
+        top -= 1
+    if top != PARALLAX_COURT_ROW + 1:
+        raise AssetError(f"{name}: the net post starts at row {top}, not "
+                         f"{PARALLAX_COURT_ROW + 1} (its cap on row "
+                         f"{PARALLAX_COURT_ROW}, where the parallax's court "
+                         "band begins, ADR-051)")
+
+
 H_FLIP = 0x4000
 V_FLIP = 0x8000
+
+
+CAMERA_MARGIN_COLS = 2     # the near fence pans 1.5x the camera's 8 px
+CAMERA_MARGIN_ROWS = 1
 
 
 def camera_map(tilemap):
     """A 64x32 BG1 map (two 32x32 screens) for the camera (ADR-050).
 
-    The 32x28 scene is screen 0. The camera pans up to a tile past each
-    edge, so the scene's edge column or row is mirrored once beyond it by
-    the map's flip bits (no new tiles): column 32 (screen 1, column 0) and
-    column -1 (column 63, where a negative scroll wraps), row 28 below and
-    row -1 (row 31) above."""
+    The 32x28 scene is screen 0. The camera pans past each edge (the
+    parallax's near fence 1.5 times as far, up to 12 px), so the scene's
+    edge columns are mirrored beyond it by the map's flip bits, no new
+    tiles: columns 32-33 (screen 1) and -1, -2 (63, 62, where a negative
+    scroll wraps) mirror columns 31, 30 and 0, 1; row 28 below and row -1
+    (31) above mirror rows 27 and 0."""
     rows, cols = 28, 32
     out = [0] * 2048
 
@@ -197,16 +224,21 @@ def camera_map(tilemap):
         base = 1024 if col >= 32 else 0
         out[base + row * 32 + col % 32] = entry
 
-    def at(col, row):
-        return tilemap[row * cols + col]
+    def mirror(i, n):
+        # Index i (maybe outside 0..n-1) reflected into 0..n-1, flipped?
+        if i < 0:
+            return -1 - i, True
+        if i >= n:
+            return 2 * n - 1 - i, True
+        return i, False
 
-    for row in range(-1, rows + 1):
-        src_row = min(max(row, 0), rows - 1)
-        vflip = V_FLIP if row != src_row else 0
-        for col in range(-1, cols + 1):
-            src_col = min(max(col, 0), cols - 1)
-            hflip = H_FLIP if col != src_col else 0
-            put(col, row, at(src_col, src_row) ^ hflip ^ vflip)
+    for row in range(-CAMERA_MARGIN_ROWS, rows + CAMERA_MARGIN_ROWS):
+        src_row, vf = mirror(row, rows)
+        for col in range(-CAMERA_MARGIN_COLS, cols + CAMERA_MARGIN_COLS):
+            src_col, hf = mirror(col, cols)
+            entry = tilemap[src_row * cols + src_col]
+            put(col, row, entry ^ (H_FLIP if hf else 0) ^
+                (V_FLIP if vf else 0))
     return out
 
 

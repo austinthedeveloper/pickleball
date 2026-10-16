@@ -86,7 +86,9 @@ the standard game. It works with every difficulty (KID and EASY are slower
 again) and with the FAST BALL modifier.
 
 **CAMERA** sets how much the court leans toward the ball as it moves, from
-50% to 100%, or OFF for a still court. The default is 85%. Change it with
+50% to 100%, or OFF for a still court. The default is 85%. The scenery
+moves with it in layers: the trees and stands behind the court less, the
+fence in front more. Change it with
 the title demo running behind the page to see it live.
 
 **SOUND** is ALL, NO CROWD (effects without the applause or the

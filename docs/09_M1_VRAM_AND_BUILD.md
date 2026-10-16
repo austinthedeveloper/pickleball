@@ -59,6 +59,11 @@ colour math.
 players need all four, so doubles turns colour math off and draws opaque
 dark shadows (ADR-018). Singles keeps translucent shadows.
 
+## HDMA
+
+Channel 6 (ADR-051): BG1's horizontal scroll per band for the parallax, on
+the court only (the NMI's OAM DMA is channel 7, other DMA channel 0).
+
 ## OAM
 
 Matches `03_SPRITE_ASSET_PIPELINE.md`: 0 ball (a 32×32 large object for BIG

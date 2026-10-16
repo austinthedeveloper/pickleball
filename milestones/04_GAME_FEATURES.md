@@ -80,6 +80,8 @@ ADR-024.
 - [x] `M4-OPT-03` BALL SPEED on the OPTIONS page (70-120%), default 100% until the speed is chosen by play.
 - [x] `M4-CAM-01` Camera: the court leans a little toward the ball (up to 8 px across, 4 along), with a CAMERA row on the OPTIONS page (OFF, 50-100%; default 85%).
   - Verified: [ADR-050](../docs/decisions/ADR-050-camera.md), `test_options.c: test_camera`, `test_layout.c`, golden trace identical, `make perf` zero overruns, MesenCE frames at both extremes of a rally.
+- [x] `M4-CAM-02` Parallax: with the camera, the backdrop pans at half its speed and the near fence leans out to 1.5 times it (HDMA).
+  - Verified: [ADR-051](../docs/decisions/ADR-051-parallax.md), the asset build's net post check, golden trace identical, `make perf` zero overruns, MesenCE frames of the net, the near fence, and the watcher at both extremes.
   - Verified: [ADR-049](../docs/decisions/ADR-049-ball-speed.md), `test_options.c`, `test_modifiers.c: test_ball_steps`, golden trace identical, `make perf` zero overruns.
 
 ## Serves and shots

@@ -36,6 +36,13 @@
 #define ASM_CAM_CENTER_Y_FP 2080
 #define ASM_CAM_REACH_X_FP 2048
 #define ASM_CAM_REACH_Y_FP 512
+/* Parallax (ADR-051): the backdrop is scene rows 0-73 (lines 0-73 at no
+ * vertical scroll, checked in MesenCE), the court from row 74, the net
+ * post's cap (tools/assetgen/scene.py checks it), to 185, then the near
+ * fence. A table half: 3 + 3 + 4 x 3 + 1 bytes, padded. */
+#define ASM_CAM_FAR_LINES 74
+#define ASM_CAM_COURT_LINES 112
+#define ASM_CAM_TABLE_BYTES 20
 
 /* Player struct layout (include/player.h). */
 #define ASM_PLAYER_SIZE 28
