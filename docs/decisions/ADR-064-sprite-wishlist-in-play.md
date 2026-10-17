@@ -61,6 +61,16 @@ game's heaviest, set the shape:
 
 `make perf`: every timeline 0 overruns.
 
+**Amended 2026-10-17** (KNOWN_ISSUES #34): merged with the ladder
+rebalance and the quips, the rally's contact and bounce frames ran a few
+scanlines over. Flair now draws nothing on an event's own frame (`fresh`:
+the effect starts a frame later, unseen); the dust and net shiver are
+projected once when they start; the ball keeps its single plain write and
+`render_bodies` one test (`rb_react_on`) while flair is idle; one test
+gates the event objects, the critter, and the trophy. A quip's emote is
+set only on its own result, so a late pick by the staged HUD can't hold
+it through the next serve.
+
 ## Tests
 
 - `test_flair.c`: point reactions over 20 minutes of bot play (146 points,

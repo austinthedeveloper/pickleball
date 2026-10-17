@@ -556,7 +556,13 @@ static void render_ball(void)
         return;
     }
     /* ADR-064: a drive squashes on the paddle, then stretches in flight
-     * (drawn going right; flipped going left). */
+     * (drawn going right; flipped going left). Idle flair: the plain ball,
+     * nothing more (the doubles budget). */
+    if (!g_flair.active || g_flair.fresh) {
+        obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
+            OBJ_ATTR(g_objpal_objects, 0), 0);
+        return;
+    }
     s_ball_left = g_ball.vx_fp < 0;
     if (g_flair.squash_timer)
         obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_SQUASH,
@@ -692,11 +698,16 @@ static s16 s_emote_cam_x;
 static s16 s_emote_cam_y;
 static u8 s_dust_shown;
 static u8 s_cord_shown;
+static s16 s_dust_sx;                   /* projected when they start */
+static s16 s_cord_sx;
 static u8 s_streak_shown;
 static u8 s_critter_shown;
 static u8 s_trophy_shown;
 static u8 s_pickle_shown;
-static u8 s_flair_drawn;                /* any of the above up */
+static u8 s_flair_busy;                 /* any of the above up */
+static u8 s_flair_phase;                /* the phase render_flair saw */
+/* render_bodies: nonzero while any slot has a reaction frame. */
+u16 rb_react_on;
 /* The venue's visitor (0: none) and its second frame; the satellite
  * drifts at half the speed. */
 static u16 s_critter_a;
@@ -724,7 +735,9 @@ static void render_flair_reset(void)
     s_critter_shown = 0;
     s_trophy_shown = 0;
     s_pickle_shown = 0;
-    s_flair_drawn = 0;
+    s_flair_busy = 0;
+    s_flair_phase = 0xff;
+    rb_react_on = 0;
     s_ball_shown = 0;
     s_critter_slow = 0;
     s_critter_a = 0;
@@ -773,6 +786,7 @@ static void render_reactions(void)
     u8 frame;
 
     s_react_serial = g_flair.react_serial;
+    rb_react_on = g_flair.reacting;
     if (!g_flair.reacting) {
         rb_react[0] = 0xffff;
         rb_react[1] = 0xffff;
@@ -829,8 +843,11 @@ static void render_emotes(void)
 static void render_ground_fx(void)
 {
     if (g_flair.dust_timer) {
-        obj_put(RENDER_OAM_DUST,
-            projection_x(g_flair.dust_x, g_flair.dust_y) - 4,
+        /* Up already, or a new bounce (its first drawn frame: one tick
+         * in, as the event's own frame is skipped). */
+        if (!s_dust_shown || g_flair.dust_timer >= FLAIR_DUST_FRAMES - 1)
+            s_dust_sx = projection_x(g_flair.dust_x, g_flair.dust_y) - 4;
+        obj_put(RENDER_OAM_DUST, s_dust_sx,
             g_flair.dust_y - 6, g_flair.dust_timer > FLAIR_DUST_FRAMES / 2 ?
                 OBJTILE_DUST0 : OBJTILE_DUST1,
             OBJ_ATTR(g_objpal_objects, 0), 0);
@@ -840,8 +857,9 @@ static void render_ground_fx(void)
         s_dust_shown = 0;
     }
     if (g_flair.cord_timer) {
-        obj_put(RENDER_OAM_CORD,
-            projection_x(COURT_NET_X, g_flair.cord_y) - 4,
+        if (!s_cord_shown || g_flair.cord_timer >= FLAIR_CORD_FRAMES - 1)
+            s_cord_sx = projection_x(COURT_NET_X, g_flair.cord_y) - 4;
+        obj_put(RENDER_OAM_CORD, s_cord_sx,
             g_flair.cord_y - COURT_NET_HEIGHT - 4,
             (g_flair.cord_timer & 4) ? OBJTILE_CORD0 : OBJTILE_CORD1,
             /* Priority 3: over the net's high-priority BG1 tiles, which
@@ -897,16 +915,6 @@ static void render_critter(void)
     s_critter_shown = 1;
 }
 
-/* The event-driven objects; what they leave up keeps s_flair_drawn set,
- * so they are hidden once flair goes quiet. */
-static void render_flair(void)
-{
-    render_streak();
-    render_ground_fx();
-    render_emotes();
-    s_flair_drawn = s_emote_mask | s_dust_shown | s_cord_shown |
-        s_streak_shown;
-}
 
 /* The trophy over CHAMPION! (ADR-026), beating the last rung. */
 static void render_trophy(void)
@@ -940,6 +948,23 @@ static void render_pickle(void)
         render_obj_hide(RENDER_OAM_PICKLE);
         s_pickle_shown = 0;
     }
+}
+
+/* The event-driven objects, the critter, and the trophy: what they leave
+ * up keeps s_flair_busy set, so they are hidden once flair goes quiet; a
+ * phase change runs it once too (the trophy's match result). */
+static void render_flair(void)
+{
+    s_flair_phase = g_game_state.phase;
+    render_streak();
+    render_ground_fx();
+    render_emotes();
+    if (s_critter_a)
+        render_critter();
+    if (s_flair_phase == GAME_PHASE_MATCH_RESULT || s_trophy_shown)
+        render_trophy();
+    s_flair_busy = s_emote_mask | s_dust_shown | s_cord_shown |
+        s_streak_shown | s_trophy_shown | (s_critter_a != 0);
 }
 
 /* The close call (ADR-041) shows during its point result only. */
@@ -1160,12 +1185,14 @@ void render_prepare(void)
     render_replay_ball();
     render_watcher();
     render_effects();
-    if (g_flair.active | s_flair_drawn)
+    /* ADR-064: one test on most frames (the doubles budget); an event's
+     * own frame (a contact, a bounce) is skipped: it is the rally's
+     * heaviest, and the effect starts a frame later unseen. */
+    if (g_flair.fresh)
+        g_flair.fresh = 0;
+    else if (g_flair.active | s_flair_busy |
+            (g_game_state.phase != s_flair_phase))
         render_flair();
-    if (s_critter_a)
-        render_critter();
-    if (g_game_state.phase == GAME_PHASE_MATCH_RESULT || s_trophy_shown)
-        render_trophy();
     /* The practice objects only in practice, and once more to hide them:
      * outside it their per-frame hides cost the doubles budget. */
     if ((g_match_config.practice && !g_attract) || s_practice_drawn) {
