@@ -550,6 +550,7 @@ static void test_cpu_serve_power(void)
     int serves = 0;
     int duds = 0;
     int fast = 0;
+    int soft = 0;
     u8 m = 0;
 
     assert(g_ai_default_style.serve_power == SERVE_CHARGE_CLASSIC &&
@@ -579,12 +580,15 @@ static void test_cpu_serve_power(void)
                 ++duds;
             else if (g_serve_charge.power == SERVE_CHARGE_MAX)
                 ++fast;
+            else if (g_serve_charge.power == SERVE_CHARGE_CLASSIC)
+                ++soft;                 /* a short serve (ADR-062) */
         }
         was_toss = g_game_state.phase == GAME_PHASE_SERVE_TOSS;
     }
-    printf("cpu serve: BRAD served %d: %d at full power, %d duds\n",
-        serves, fast, duds);
-    assert(serves >= 40 && fast + duds == serves);
+    printf("cpu serve: BRAD served %d: %d at full power, %d short, %d duds\n",
+        serves, fast, soft, duds);
+    assert(serves >= 40 && fast + soft + duds == serves);
+    assert(soft >= 1 && fast > soft);
     assert(duds >= 1 && duds * 6 < serves);
     match_config_defaults();
 }

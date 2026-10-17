@@ -66,6 +66,9 @@ ADR-024.
 - [x] `M4-OPP-04` Opponent accessories (hats, bandanas, a pirate tricorn) using the accessory object (ADR-014).
   - Accept: they fit the OBJ tile budget (208 of 256 used) and the per-row sprite limits.
   - Verified: [ADR-014 hats amendment](../docs/10_MOCKUP_DECISIONS.md) — five hats (visor, headband, tricorn, bandana, bare hair) on 13 of the 16 opponents, drawn in front of their own bodies (OAM groups 2–13); no new OBJ tiles (249 of 256); worst row 32 of 34, the stress scene dropout-free; `test_opponents.c` (hats by slot), `test_asset_validation.py` (unknown hat); zero overruns in `make perf`, golden trace identical.
+- [x] `M4-OPP-06` Rebalance the ladder: rungs past 3 beatable on MEDIUM, and CPU short serves that can be returned.
+  - Accept: a CPU short serve is soft and to the middle of the box; on MEDIUM the bot wins at least 8 of 60 against every rung in every mode, no fewer than before on any rung; every ladder table in order; zero overruns.
+  - Verified: [ADR-062](../docs/decisions/ADR-062-ladder-rebalance.md), `test_ai.c: test_cpu_serve_power`, `make stats` in all three modes (ladder order: yes); `make perf` zero overruns; golden trace differs (DAD's short serves), re-record after merging.
 - [x] `M4-STORY-01` Story cards: an intro card per opponent (name, one line of trash talk, rung) and the opponent's line on the match result.
   - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md), `test/test_story.c`, `story.timeline`. Uses the HUD over the live court; portraits are `M4-STORY-03`.
 - [x] `M4-STORY-02` A ladder ending after beating CHAMPS (CHAMPION!, plus a "ladder clears" record).

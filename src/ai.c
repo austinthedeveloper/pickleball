@@ -1015,15 +1015,24 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
             return;
         /* Serves keep the original depth pattern: a short serve every 4th,
          * otherwise alternating deep and neutral. Never a block volley's
-         * centred aim (ADR-035). */
+         * centred aim (ADR-035). The depth is picked before the press and
+         * kept through the toss (ADR-062), so the serve lands where its
+         * power was chosen for. */
         s_block_volley[player_index] = 0;
         s_open_aim[player_index] = AI_AIM_PATTERN;
         g_ai.planned_shot = SHOT_STANDARD;
-        if ((g_ai.shot_counter & 3) == 3)
-            g_ai.planned_depth = -1;
-        else
-            g_ai.planned_depth = (g_ai.shot_counter & 1) ? 1 : 0;
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP) {
+            if ((g_ai.shot_counter & 3) == 3)
+                g_ai.planned_depth = -1;
+            else
+                g_ai.planned_depth = (g_ai.shot_counter & 1) ? 1 : 0;
+        }
         ai_choose_aim(player, intent);
+        /* ADR-062: a short serve goes to the middle of the box: aimed wide
+         * too, it angled off the court before a receiver at the baseline
+         * could reach it. */
+        if (g_ai.planned_depth < 0)
+            intent->aim_y = 0;
         if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
             g_game_state.phase_timer >= AI_SERVE_DELAY_FRAMES) {
             intent->hit_pressed = 1;
@@ -1036,6 +1045,9 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
             g_serve_charge.power = (dud &&
                     (g_game_state.frame_count % dud) == 0) ? 0 :
                 s_style->serve_power;
+            /* ADR-062: and soft, whatever the style's power. */
+            if (g_ai.planned_depth < 0 && g_serve_charge.power)
+                g_serve_charge.power = SERVE_CHARGE_CLASSIC;
             ++g_ai.shot_counter;
         }
         return;
