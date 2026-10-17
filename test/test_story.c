@@ -234,33 +234,52 @@ static void test_unlock_card(void)
 }
 
 /* Quips: about one point in three, from the side that lost it, never the
- * same line twice in a row. */
+ * same line twice in a row; a side says all sixteen of a pass before any
+ * again (ADR-063), in a different order on the next pass. */
 static void test_quips(void)
 {
     const char *last = 0;
     const char *q;
+    const char *first_pass[OPPONENT_QUIPS];
     u16 roll;
     u16 said = 0;
+    u16 seen;
     u8 i;
     u8 found;
+    u8 reordered = 0;
 
     story_initialize();
     match_config_defaults();
+    seen = 0;
     for (roll = 0; roll < 300; ++roll) {
-        q = story_quip(1, roll);
-        if (roll % 3 != 0) {
+        q = story_quip(1, roll * 7);
+        if ((roll * 7) % 3 != 0) {
             assert(q == 0);
             continue;
         }
-        ++said;
         assert(q != last);
         found = 0;
         for (i = 0; i < OPPONENT_QUIPS; ++i)
-            found |= q == g_side_quips[QUIPS_CPU][i];
+            if (q == g_side_quips[QUIPS_CPU][i]) {
+                found = 1;
+                /* Each line once in a pass of sixteen. */
+                assert((seen & (1u << i)) == 0);
+                seen |= (u16)(1u << i);
+            }
         assert(found);                          /* the default CPU's */
+        if (said < OPPONENT_QUIPS)
+            first_pass[said] = q;
+        else if (said < 2 * OPPONENT_QUIPS)
+            reordered |= q != first_pass[said - OPPONENT_QUIPS];
+        ++said;
+        if ((said & (OPPONENT_QUIPS - 1)) == 0) {
+            assert(seen == 0xffff);
+            seen = 0;
+        }
         last = q;
     }
     assert(said == 100);
+    assert(reordered);
     /* A ladder team speaks its own; the human side the player's. */
     match_config_opponent(3);
     q = story_quip(1, 0);

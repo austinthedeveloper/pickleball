@@ -118,6 +118,9 @@ ADR-024.
 
 - [x] `M4-FUN-01` Quips: the side that loses a point sometimes says a PG line (from GOOFY_IDEAS.md).
   - Verified: [ADR-048](../docs/decisions/ADR-048-quips.md), `test_story.c: test_quips`, the asset build's line checks, MesenCE screenshots; `make perf` zero overruns, golden trace identical.
+- [x] `M4-FUN-02` More quips: sixteen a side, in a shuffled order.
+  - Accept: sixteen PG lines for every ladder team, the human side, and the default CPU; a side says all of them before any again, in a new order each pass; display only; zero overruns.
+  - Verified: [ADR-063](../docs/decisions/ADR-063-more-quips.md), `test_story.c: test_quips`, the asset build's line checks, MesenCE screenshots of the golden run's point results; `make perf` zero overruns; golden trace identical from Player Select on (the title starts a frame later).
 
 ## Career
 

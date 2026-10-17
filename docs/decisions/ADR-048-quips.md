@@ -1,6 +1,7 @@
 # ADR-048 — Quips
 
-Status: **Accepted 2026-10-15**
+Status: **Accepted 2026-10-15**; amended by ADR-063 (sixteen lines a
+side, shuffled)
 Milestone: `M4-FUN-01`. From [GOOFY_IDEAS.md](../GOOFY_IDEAS.md), "Quips".
 Depends on: ADR-023 (opponents), ADR-026 (story lines), ADR-041 (the close
 call's replay).

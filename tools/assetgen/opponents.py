@@ -33,7 +33,7 @@ VARIANTS = ("male", "female")
 NAME_CELLS = 9                   # "VS " + name in the 12-cell centre panel
 LINE_CELLS = 28                  # a story card line in one HUD panel
 LINE_KEYS = ("intro", "taunt", "concede")
-QUIPS = 4                        # lines a side may say after losing a point
+QUIPS = 16                       # lines a side may say after losing a point
 # The HUD font draws ASCII 32-95; '@' is the B button glyph in prompts.
 LINE_CHARS = re.compile(r"[A-Z0-9 .,!?'\-:]+")
 
@@ -128,7 +128,7 @@ def style_row(style):
 
 
 def check_quips(who, quips):
-    """Four PG lines, each a story-card line (GOOFY_IDEAS.md, quips)."""
+    """Sixteen PG lines, each a story-card line (GOOFY_IDEAS.md, quips)."""
     if len(quips) != QUIPS:
         raise AssetError(f"{who}: {QUIPS} quips")
     for line in quips:
