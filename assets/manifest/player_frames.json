@@ -164,11 +164,33 @@
     "headband": 14,
     "tricorn": 22,
     "bandana": 24,
-    "hair": null
+    "hair": null,
+    "beanie": {
+      "sheet": 0
+    },
+    "backcap": {
+      "sheet": 1
+    },
+    "bucket": {
+      "sheet": 2
+    },
+    "crown": {
+      "sheet": 3
+    },
+    "whirly": {
+      "sheet": 4
+    },
+    "chef": {
+      "sheet": 5
+    },
+    "viking": {
+      "sheet": 6
+    }
   },
   "hat_offset": [
     4,
     -4
   ],
-  "hat_doc": "M4-OPP-04, ADR-059: hats are 16x8 (two objects: the cell given and the next), in front of the body at the frame's accessory offset plus hat_offset (facing right); mirrored as 16 - x when flipped. Hat ids follow this order from 0: the cap first; null draws no hat (the bare head's own hair)."
+  "hat_doc": "M4-OPP-04, ADR-059: hats are 16x8 (two objects: the cell given and the next), in front of the body at the frame's accessory offset plus hat_offset (facing right); mirrored as 16 - x when flipped. Hat ids follow this order from 0: the cap first; null draws no hat (the bare head's own hair). A number is an objects.png cell; {\"sheet\": k} is the k-th 16x8 place (rows of two) in player sheet slot hat_slot, in OBJ name table 2 (ADR-060).",
+  "hat_slot": 16
 }

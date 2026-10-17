@@ -195,19 +195,44 @@ def obj_assets(manifest):
     taken = set(manifest["objects"].values())
     if next(iter(manifest["hats"]), None) != "cap":
         raise AssetError("hats: the cap comes first (id 0, the default)")
+    # ADR-060: more hats in a free player sheet slot (name table 2), eight
+    # 16x8 places in rows of two: place k is the slot's tiles at row k // 2,
+    # columns (k % 2) * 2 and the next.
+    hat_slot = manifest.get("hat_slot")
+    taken_places = set()
+    used_slots = {info["slot"] for info in frames.values()}
     for name, cell in manifest["hats"].items():
         if cell is None:
             hat_tiles.append("0")
             continue
-        # Even: render_bodies swaps the halves of a flipped hat as tile ^ 1.
-        if cell % 2 or not 0 <= cell < (oh // 8) * 16 or \
-                {cell, cell + 1} & taken:
-            raise AssetError(f"hat {name}: cell {cell} is odd, off the "
-                             "objects row, or taken")
-        taken |= {cell, cell + 1}
-        header.append(f"#define OBJTILE_HAT_{name.upper()} "
-                      f"{object_base + cell}")
-        hat_tiles.append(str(object_base + cell))
+        if isinstance(cell, dict):
+            place = cell.get("sheet")
+            if hat_slot is None or hat_slot in used_slots or \
+                    hat_slot in manifest.get("large_objects", {}).values() \
+                    or not OBJ_TABLE1_SLOTS <= hat_slot < slots:
+                raise AssetError("hat_slot must be a free sheet slot in "
+                                 "name table 2 when a hat is on the sheet")
+            if not isinstance(place, int) or not 0 <= place < 8 or \
+                    place in taken_places:
+                raise AssetError(f"hat {name}: sheet place {place} is "
+                                 "outside 0..7 or taken")
+            taken_places.add(place)
+            x0 = (hat_slot % 4) * 32 + (place % 2) * 16
+            y0 = (hat_slot // 4) * 32 + (place // 2) * 8
+            if not any(v for row in block(rows, x0, y0, 16, 8) for v in row):
+                raise AssetError(f"hat {name} is empty on the sheet")
+            tile = slot_tile(hat_slot) + (place // 2) * 16 + (place % 2) * 2
+        else:
+            # Even: render_bodies swaps the halves of a flipped hat as
+            # tile ^ 1.
+            if cell % 2 or not 0 <= cell < (oh // 8) * 16 or \
+                    {cell, cell + 1} & taken:
+                raise AssetError(f"hat {name}: cell {cell} is odd, off the "
+                                 "objects row, or taken")
+            taken |= {cell, cell + 1}
+            tile = object_base + cell
+        header.append(f"#define OBJTILE_HAT_{name.upper()} {tile}")
+        hat_tiles.append(str(tile))
     dx, dy = manifest["hat_offset"]
     if not 0 <= dx <= 16 or not -8 <= dy <= 0:
         raise AssetError("hat_offset must be x 0..16, y -8..0 (a hat sits "
@@ -217,7 +242,6 @@ def obj_assets(manifest):
     header.append(f"#define HAT_DX {dx}")
     header.append(f"#define HAT_RAISE {-dy}")
     # 32x32 objects in sheet slots no frame uses (the BIG BALL, ADR-033).
-    used_slots = {info["slot"] for info in frames.values()}
     for name, slot in manifest.get("large_objects", {}).items():
         if slot in used_slots or not 0 <= slot < slots:
             raise AssetError(f"large object {name}: slot {slot} is taken "

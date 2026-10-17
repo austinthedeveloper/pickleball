@@ -198,6 +198,10 @@ touching the simulation.
   - Accept: same frame size, palette contract, and slot order; HAIR shows real hair; zero overruns on `make perf`; golden trace identical.
   - Verified: ADR-059. The hitting poses wait on the reach and overhead mechanics (IDEAS.md).
 
+- [x] `M4-ART-02` More hats: beanie, bucket, backwards cap, propeller beanie, viking helmet, chef's toque, and a crown, as career unlocks (ADR-060).
+  - Accept: every hat reads on all four teams, both facings, with a ponytail; old saves keep their hats; looks only (paddle stats unchanged).
+  - Verified: ADR-060.
+
 - [x] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
   - Progress: 4-12 overruns over the demo (was 160), by power-on state and build: the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 16, `menu.timeline` 10.
   - Accept: zero overruns over a full doubles demo (about frames 4,300-9,300 from boot), without changing human matches or the golden trace.

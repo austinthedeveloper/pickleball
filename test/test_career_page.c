@@ -152,7 +152,7 @@ static void test_edit_look(void)
     assert(p->shirt == PAL_RED);
     press(PAD_DOWN);                            /* HAT: nothing won yet */
     press(PAD_RIGHT);
-    assert(p->hat == CAREER_HATS - 1);          /* past the locked: NONE */
+    assert(p->hat == CAREER_HAT_NONE);          /* past the locked: NONE */
     press(PAD_RIGHT);
     assert(p->hat == 0);
     /* Y puts it all back. */

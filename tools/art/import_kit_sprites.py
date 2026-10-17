@@ -10,7 +10,8 @@ and writes into the committed sources:
       the hitting poses (name table 2, R17); slot 11 (the BIG BALL) and any
       other slot are kept.
   assets/source/objects.png         the ponytail cell, and the 16x8 hats at
-      their manifest cells (the cap is a hat now, ADR-059).
+      their manifest cells (the cap is a hat now, ADR-059). Hats given as
+      {"sheet": k} go in player_sprites.png's hat_slot instead (ADR-060).
 
 The kit lives beside this repository (pickleball-port-kit,
 art/sprites/bare/README.md); pass another path as the only argument.
@@ -33,7 +34,8 @@ KIT_FRAMES = ["idle0", "idle1", "run0", "run1", "run2", "run3", "windup",
               "overhead_contact", "reach", "scoop"]
 KIT_PONYTAIL_CELL = 15
 # hats_<team>.png order, 16x8 each.
-KIT_HATS = ["cap", "visor", "headband", "tricorn", "bandana"]
+KIT_HATS = ["cap", "visor", "headband", "tricorn", "bandana", "beanie",
+            "backcap", "bucket", "crown", "whirly", "chef", "viking"]
 
 
 def write_png(path, rows, palette):
@@ -81,6 +83,19 @@ def main():
         x0, y0 = (slot % 4) * 32, (slot // 4) * 32
         for y in range(32):
             sheet[y0 + y][x0:x0 + 32] = strip[y][i * 32:i * 32 + 32]
+    # Hats on the sheet (ADR-060): place k of slot hat_slot.
+    slot = manifest.get("hat_slot")
+    for i, name in enumerate(KIT_HATS):
+        place = manifest["hats"][name]
+        if not isinstance(place, dict):
+            continue
+        k = place["sheet"]
+        x0 = (slot % 4) * 32 + (k % 2) * 16
+        y0 = (slot // 4) * 32 + (k // 2) * 8
+        while len(sheet) < (slot // 4 + 1) * 32:
+            sheet.append([0] * 128)
+        for y in range(8):
+            sheet[y0 + y][x0:x0 + 16] = hats[y][i * 16:i * 16 + 16]
     write_png(sheet_path, sheet, palette)
 
     objects_path = ROOT / "assets" / "source" / "objects.png"
@@ -98,8 +113,9 @@ def main():
     stamp(manifest["objects"]["ponytail"], 8,
           [row[px:px + 8] for row in strip[:8]])
     for i, name in enumerate(KIT_HATS):
-        stamp(manifest["hats"][name], 16,
-              [row[i * 16:i * 16 + 16] for row in hats])
+        if isinstance(manifest["hats"][name], int):
+            stamp(manifest["hats"][name], 16,
+                  [row[i * 16:i * 16 + 16] for row in hats])
     write_png(objects_path, objects, opal)
     print(f"wrote {sheet_path.relative_to(ROOT)} and "
           f"{objects_path.relative_to(ROOT)}")

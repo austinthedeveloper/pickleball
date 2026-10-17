@@ -90,13 +90,17 @@ static void test_unlocks(void)
     u16 tricorn = 1 << unlock_bit("TRICORN");
     u16 pink = 1 << unlock_bit("PINK HAIR");
     u16 gold = 1 << unlock_bit("GOLD HAIR");
+    u16 beanie = 1 << unlock_bit("BEANIE");
+    u16 viking = 1 << unlock_bit("VIKING");
+    u16 crown = 1 << unlock_bit("CROWN");
     u8 i;
 
     fresh();
     career_create(2, "MAX");
     p = career_active();
     /* Free from the start: the cap, bare hair, the first hair colours. */
-    assert(career_hat_unlocked(p, 0) && career_hat_unlocked(p, CAREER_HATS - 1));
+    assert(career_hat_unlocked(p, 0) &&
+        career_hat_unlocked(p, CAREER_HAT_NONE));
     assert(career_hair_unlocked(p, 0));
     for (i = 0; i < CAREER_HATS; ++i)
         assert(career_hat_unlocked(p, i) ==
@@ -109,9 +113,10 @@ static void test_unlocks(void)
     /* Earned once: the next win earns nothing new. */
     career_record_match(MATCH_SINGLES, 1, 3, OPPONENT_NONE, 0);
     assert(g_career_new_unlocks == 0);
-    /* A shutout of the PIRATES: their hat and the pink hair together. */
+    /* A shutout of the PIRATES, the third win: their hat, the pink hair,
+     * and the beanie together (ADR-060). */
     career_record_match(MATCH_SINGLES, 1, 0, 3, 0);
-    assert(g_career_new_unlocks == (tricorn | pink));
+    assert(g_career_new_unlocks == (tricorn | pink | beanie));
     /* A ladder clear: the gold hair; a loss earns nothing. */
     career_record_match(MATCH_SINGLES, 0, 5, 1, 0);
     assert(g_career_new_unlocks == 0);
@@ -119,6 +124,15 @@ static void test_unlocks(void)
     assert(g_career_new_unlocks & gold);
     assert(career_hair_unlocked(p, CAREER_HAIRS - 1));      /* GOLD */
     assert(!career_hair_unlocked(p, CAREER_HAIRS));
+    /* ADR-060: beating the GYM BROS earns the viking helmet; the crown
+     * takes three ladder clears. */
+    assert(!(p->unlocked & viking) && !(p->unlocked & crown));
+    career_record_match(MATCH_SINGLES, 1, 2, 2, 0);
+    assert(g_career_new_unlocks & viking);
+    career_record_match(MATCH_SINGLES, 1, 4, OPPONENT_COUNT - 1, 0);
+    assert(!(p->unlocked & crown));
+    career_record_match(MATCH_SINGLES, 1, 4, OPPONENT_COUNT - 1, 0);
+    assert(g_career_new_unlocks & crown);
 }
 
 /* A v0.15.0 save (layout 11) carries over with no career players. */
@@ -169,7 +183,7 @@ static void test_gear(void)
         assert(memcmp(g_paddle_stats[PADDLE_PROFILE(paddle, 0)],
             g_paddle_stats[paddle], 3) == 0);
         assert(memcmp(g_paddle_stats[PADDLE_PROFILE(paddle,
-            CAREER_HATS - 1)], g_paddle_stats[paddle], 3) == 0);
+            CAREER_HAT_NONE)], g_paddle_stats[paddle], 3) == 0);
     }
     /* VISOR on BLUE: control up, power down; on WOOD (control 5): none. */
     hat = 1;
