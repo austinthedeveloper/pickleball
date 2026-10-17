@@ -1295,7 +1295,7 @@ static void hud_career_mode_line(u8 row, const char *label, u16 wins,
     hud_count(RECORDS_COUNT_COL, row, losses);
 }
 
-/* "UNLOCKS             n/9" */
+/* "UNLOCKS           n/16" */
 static void hud_career_unlocks_line(u8 row, const CareerPlayer *player)
 {
     static char text[6];
@@ -1306,6 +1306,9 @@ static void hud_career_unlocks_line(u8 row, const CareerPlayer *player)
         text[i++] = '1';
     text[i++] = (char)('0' + count % 10);
     text[i++] = '/';
+#if CAREER_UNLOCKS >= 10
+    text[i++] = '1';
+#endif
     text[i++] = (char)('0' + CAREER_UNLOCKS % 10);
     text[i] = 0;
     hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "UNLOCKS");
