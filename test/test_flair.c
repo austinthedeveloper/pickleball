@@ -140,6 +140,9 @@ static void test_quip_emotes(void)
         game_set_phase(GAME_PHASE_SERVE_SETUP);
         flair_tick();
         assert(g_flair.emote[2] == FLAIR_EMOTE_NONE);   /* the next serve */
+        /* A quip picked late, in the next serve's setup: no emote. */
+        flair_quip(1);
+        assert(g_flair.emote[2] == FLAIR_EMOTE_NONE);
     }
 }
 

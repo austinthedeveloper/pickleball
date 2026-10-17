@@ -24,6 +24,7 @@ static u8 s_celebrate_next;
 void flair_initialize(void)
 {
     g_flair.active = 0;
+    g_flair.fresh = 0;
     g_flair.wake = 1;
     ++g_flair.react_serial;
     g_flair.reacting = 0;
@@ -125,6 +126,7 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
     u8 slot;
 
     g_flair.active = 1;                 /* flair_tick settles it */
+    g_flair.fresh = 1;
     switch (kind) {
     case EVENT_SERVE:
         g_flair.rally_shots = 1;
@@ -169,8 +171,13 @@ void flair_quip(u8 losing_team)
 {
     const Player *player = g_players;
     u8 emote = flair_fault_emote(g_game_state.last_fault);
+    u8 phase = g_game_state.phase;
     u8 slot;
 
+    /* Only on the result it belongs to: a quip the staged HUD picks after
+     * the next serve has begun would hold its emote through that serve. */
+    if (phase != GAME_PHASE_POINT_RESULT && phase != GAME_PHASE_MATCH_RESULT)
+        return;
     for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player)
         if (player->active && player->team == losing_team)
             flair_emote(slot, emote, FLAIR_RESULT_EMOTE_FRAMES);

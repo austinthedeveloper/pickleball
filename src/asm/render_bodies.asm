@@ -210,7 +210,9 @@ _rb_body:
     plx
 
     ; --- frame tile: a point's reaction first (ADR-064), else the pose
-    ; and state's ---
+    ; and state's; one test while no slot has one ---
+    lda.l rb_react_on
+    beq _rb_no_react
     phx
     lda.l rb_slot
     asl a
@@ -219,6 +221,7 @@ _rb_body:
     plx
     cmp.w #$FFFF
     bne _rb_have_tile
+_rb_no_react:
     lda.l g_players + ASM_PLAYER_POSE,x
     and.w #$00FF
     cmp.w #ASM_POSE_CHEER

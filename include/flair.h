@@ -56,6 +56,9 @@ typedef struct {
     u8 reacting;                /* react[] holds a point's reactions */
     u8 wake;                    /* flair_tick wanted though not active: a
                                    phase change, serve setup, lookups */
+    u8 fresh;                   /* an event this frame: render waits a
+                                   frame, off the contact's or bounce's
+                                   frame, the rally's heaviest */
     u8 react[MAX_PLAYERS];
     u8 celebrate[MAX_PLAYERS];  /* frame index, from the match: a slot a
                                    tick from the match's start */
