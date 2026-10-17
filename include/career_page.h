@@ -5,11 +5,12 @@
 #include "career.h"
 
 /*
- * The CAREER page (ADR-047, M4-CAREER-02): the title's RECORDS entry. Pure
+ * The CAREER page (ADR-047, M4-CAREER-02): the title's CAREER entry, and
+ * its RECORDS entry too (ADR-065), which opens on the RECORDS view. Pure
  * input logic, like the court and options editors; hud_scene.c draws it
  * and main.c acts on the results.
  *
- *   SLOTS   the three players, NO PLAYER, and RECORDS. B opens a player
+ *   SLOTS   the three players and NO PLAYER. B opens a player
  *           (making them active), creates one in an empty slot, or on NO
  *           PLAYER makes nobody active; Y leaves.
  *   CARD    the player's stats and unlocks. B edits; X opens the HAT
@@ -21,7 +22,8 @@
  *           it, DEL or Y erases the last letter, END or Start is done; Y
  *           with nothing to erase backs out (a new player is dropped, an
  *           old one keeps their name).
- *   RECORDS the old records table. L+R+X erases; B, Y, or Start back.
+ *   RECORDS the records table, opened from the title. L+R+X erases; B,
+ *           Y, or Start back to the title.
  */
 enum {
     CAREER_VIEW_SLOTS = 0,
@@ -30,12 +32,11 @@ enum {
     CAREER_VIEW_RECORDS = 3
 };
 
-/* SLOTS rows: a row per slot, NO PLAYER (nobody active: matches as
- * before, no stats), then RECORDS. */
+/* SLOTS rows: a row per slot, then NO PLAYER (nobody active: matches as
+ * before, no stats). */
 enum {
     CAREER_ROW_NOBODY = CAREER_SLOTS,
-    CAREER_ROW_RECORDS = CAREER_SLOTS + 1,
-    CAREER_SLOT_ROWS = CAREER_SLOTS + 2
+    CAREER_SLOT_ROWS = CAREER_SLOTS + 1
 };
 
 /* EDIT rows. */
@@ -86,8 +87,10 @@ typedef struct {
 
 extern CareerPage g_career_page;
 
-/* Opens on SLOTS, the cursor on the active player (else the first slot). */
+/* Opens on SLOTS, the cursor on the active player (else NO PLAYER). */
 void career_page_begin(void);
+/* Opens on RECORDS (the title's RECORDS entry). */
+void career_page_begin_records(void);
 /* One frame of input: newly pressed and held buttons. */
 u8 career_page_input(u16 pressed, u16 held);
 
@@ -103,7 +106,9 @@ const char *career_paddle_name(u8 paddle);
 u8 career_look_value(const CareerPlayer *player, u8 row);
 /* The next unlock the player has not earned, or CAREER_UNLOCKS. */
 u8 career_next_unlock(const CareerPlayer *player);
-/* How many unlocks the player holds. */
-u8 career_unlock_count(const CareerPlayer *player);
+/* Hats the player may wear, of MUSEUM_HATS (the cap included, as the HAT
+ * MUSEUM counts them), and hair colours, of CAREER_HAIRS (ADR-065). */
+u8 career_hats_held(const CareerPlayer *player);
+u8 career_hair_held(const CareerPlayer *player);
 
 #endif

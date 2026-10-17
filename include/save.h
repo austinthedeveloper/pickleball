@@ -55,8 +55,8 @@ typedef struct {
     u8 sound;                   /* AUDIO_* (ADR-029); 0 ALL in older saves */
     u8 modifiers;               /* MODIFIER_* bits (ADR-033) */
     u8 time;                    /* COURT_TIME_* (ADR-045); 0 DAY */
-    u8 ball_speed;              /* BALL SPEED choice + 1 (ADR-049); 0, in
-                                   saves before it, is the default (100%) */
+    u8 ball_speed;              /* unused since ADR-065 (was BALL SPEED,
+                                   ADR-049) */
 } SaveSettings;
 
 /* Who holds a record (ADR-040): three capitals, or zeros for nobody yet
@@ -111,8 +111,9 @@ typedef struct {
     SaveInitials initials;
     CareerPlayer career[CAREER_SLOTS];
     u8 career_active;           /* slot, or CAREER_NONE */
-    u8 camera;                  /* CAMERA choice + 1 (ADR-050); 0, in
-                                   saves before it, is the default (OFF) */
+    u8 camera;                  /* CAMERA and its AMOUNT (ADR-050,
+                                   ADR-065: options_camera_*); 0, in saves
+                                   before it, is OFF */
     u8 modifiers2;              /* MODIFIER2_* bits (ADR-054): the
                                    modifiers past settings.modifiers' 8 */
     u8 ladder_doubles;          /* next doubles opponent (ADR-055) */

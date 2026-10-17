@@ -1,17 +1,17 @@
 # Venues (ADR-024): COURT page, VENUE AUTO -> SUNSET (Left wraps), keep
 # with B (the court reloads with a fade), then a singles match at SUNSET.
-70 71 down
-75 76 down     # past OPEN PLAY (ADR-034)
-80 81 down
+70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
+75 76 up
+80 81 up
 100 101 start
 120 121 left
 shot 130
 140 141 b
 shot 170
 shot 200
-220 221 up
-230 231 up
-240 241 up
+220 221 down   # COURT -> OPTIONS -> MODIFIERS -> SINGLES
+230 231 down
+240 241 down
 250 251 start
 290 291 start  # confirm Player Select
 shot 360

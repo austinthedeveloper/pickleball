@@ -1,6 +1,7 @@
 #include <string.h>
 #include "career_page.h"
 #include "input.h"
+#include "museum.h"
 #include "paddle_stats.h"
 #include "palette_parts.h"
 #include "player.h"
@@ -69,13 +70,23 @@ u8 career_next_unlock(const CareerPlayer *player)
     return CAREER_UNLOCKS;
 }
 
-u8 career_unlock_count(const CareerPlayer *player)
+u8 career_hats_held(const CareerPlayer *player)
 {
     u8 count = 0;
     u8 i;
 
-    for (i = 0; i < CAREER_UNLOCKS; ++i)
-        count += (player->unlocked >> i) & 1;
+    for (i = 0; i < MUSEUM_HATS; ++i)
+        count += career_hat_unlocked(player, museum_hat(i));
+    return count;
+}
+
+u8 career_hair_held(const CareerPlayer *player)
+{
+    u8 count = 0;
+    u8 i;
+
+    for (i = 0; i < CAREER_HAIRS; ++i)
+        count += career_hair_unlocked(player, i);
     return count;
 }
 
@@ -90,6 +101,12 @@ void career_page_begin(void)
     g_career_page.creating = 0;
     key_pick(0, 0);
     g_career_page.look_changed = 0;
+}
+
+void career_page_begin_records(void)
+{
+    career_page_begin();
+    g_career_page.view = CAREER_VIEW_RECORDS;
 }
 
 /* Up/Down through count rows, wrapping. */
@@ -135,10 +152,6 @@ static u8 page_slots(u16 pressed, u16 held)
     if (pressed & PAD_Y)
         return CAREER_PAGE_CLOSE;
     if (pressed & (PAD_B | PAD_START)) {
-        if (row == CAREER_ROW_RECORDS) {
-            g_career_page.view = CAREER_VIEW_RECORDS;
-            return CAREER_PAGE_STAY;
-        }
         if (row == CAREER_ROW_NOBODY) {
             career_select(CAREER_NONE);
             return CAREER_PAGE_SAVE;
@@ -185,10 +198,8 @@ static u8 page_records(u16 pressed, u16 held)
         g_career_page.look_changed = 1;     /* the table redraws */
         return CAREER_PAGE_STAY;
     }
-    if (pressed & (PAD_B | PAD_Y | PAD_START)) {
-        g_career_page.view = CAREER_VIEW_SLOTS;
-        g_career_page.row = CAREER_ROW_RECORDS;
-    }
+    if (pressed & (PAD_B | PAD_Y | PAD_START))
+        return CAREER_PAGE_CLOSE;
     return CAREER_PAGE_STAY;
 }
 

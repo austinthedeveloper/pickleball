@@ -4,6 +4,8 @@ Status: **Accepted 2026-10-13**
 Depends on: ADR-019 (shots), ADR-021/032 (save), ADR-025 (options, slow
 ball), ADR-027 (two-tone kitchen).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): WIN BY 2 is OPTIONS' SCORING row; the bit is unchanged.
+
 ## Title page
 
 **MODIFIERS** is a title entry between OPTIONS and PRACTICE (SINGLES,

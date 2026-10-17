@@ -56,7 +56,8 @@ void story_begin_intro(void);
 /* Shows the initials card at a game over (a loss to the CPU, the ladder
  * cleared, or a 2P match's end) when records were beaten
  * (g_save_new_records) outside the attract demo, starting from the last
- * initials entered. */
+ * initials entered. With a career player active there is no card: the
+ * records take the first three letters of their name (ADR-065). */
 void story_begin_initials(void);
 /* Shows the unlock card (ADR-047) when the career player just earned
  * unlocks (g_career_new_unlocks), outside the attract demo; it clears them

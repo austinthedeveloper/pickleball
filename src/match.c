@@ -59,8 +59,8 @@ void match_config_defaults(void)
     g_match_config.open_play = 0;
     g_match_config.partner = OPPONENT_NONE;
     g_match_config.career_p1 = 0;
-    /* ADR-049: the saved BALL SPEED, for every match and the demo. */
-    g_match_config.ball_speed = options_ball_speed(g_save.settings.ball_speed);
+    /* ADR-049: the ball's speed (ADR-065: no longer a setting). */
+    g_match_config.ball_speed = OPTIONS_BALL_SPEED;
 }
 
 void match_config_practice(void)

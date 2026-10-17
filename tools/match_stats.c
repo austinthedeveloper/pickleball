@@ -57,6 +57,8 @@ static void net_bot(void)
     g_ai_styles[0].footwork = 0;
 }
 
+static u8 s_speed;
+
 static void play(int late, int matches, int opponent, int difficulty,
     int mode, Stats *stats)
 {
@@ -73,6 +75,7 @@ static void play(int late, int matches, int opponent, int difficulty,
     if (opponent >= 0)
         match_config_opponent((u8)opponent);
     g_match_config.difficulty = (u8)difficulty;
+    g_match_config.ball_speed = s_speed;
     g_attract = 0;
     game_new_match();
     if (mode & MODE_NET_BOT)
@@ -149,12 +152,8 @@ int main(int argc, char **argv)
     int difficulty = argc > 4 ? atoi(argv[4]) : DIFFICULTY_MEDIUM;
     int mode = argc > 5 ? atoi(argv[5]) : 0;
     int speed = argc > 6 ? atoi(argv[6]) : 0;
-    u8 choice;
-
-    /* SPEED (6th, ADR-049): a BALL SPEED percent; 0 keeps the default. */
-    for (choice = 0; speed && choice < OPTIONS_SPEED_CHOICES; ++choice)
-        if (g_options_speeds[choice] == speed)
-            g_save.settings.ball_speed = choice + 1;
+    /* SPEED (6th, ADR-049): a ball speed percent; 0 keeps the game's. */
+    s_speed = speed ? (u8)speed : OPTIONS_BALL_SPEED;
     Stats stats;
     int team;
     int i;

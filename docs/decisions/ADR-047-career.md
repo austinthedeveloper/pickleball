@@ -7,6 +7,8 @@ mode". Depends on: ADR-021/032 (save and migration), ADR-013/014 (palette
 parts, hats), ADR-020 (Player Select), ADR-023 (the ladder), ADR-040
 (initials entry).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): RECORDS is a title entry; the card counts hats and hair.
+
 ## The idea
 
 Create a player, name them, and play as them: they keep lifetime stats,

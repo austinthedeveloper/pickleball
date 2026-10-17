@@ -33,6 +33,14 @@ static u8 step_colour(u8 from, s16 step)
     return from;
 }
 
+/* The top row the current human may choose: a career player's body and
+ * shirt come from the CAREER page (ADR-065), so 1P starts on the paddle. */
+static u8 first_row(void)
+{
+    return (g_select.current == 0 && career_active()) ? SELECT_ROW_PADDLE :
+        SELECT_ROW_VARIANT;
+}
+
 void select_begin(u8 mode, u8 humans)
 {
     g_select.mode = mode;
@@ -44,7 +52,7 @@ void select_begin(u8 mode, u8 humans)
     g_select.choice[0].variant = PLAYER_VARIANT_MALE;
     g_select.choice[0].paddle_id = PADDLE_STANDARD;
     /* ADR-047: 1P starts on the active career player's body, shirt, and
-     * paddle (changes are for this match). */
+     * paddle; only the paddle changes, for this match (ADR-065). */
     if (career_active()) {
         g_select.choice[0].palette_id = career_active()->shirt;
         g_select.choice[0].variant = career_active()->variant;
@@ -53,6 +61,7 @@ void select_begin(u8 mode, u8 humans)
     g_select.choice[1].palette_id = PAL_RED;
     g_select.choice[1].variant = PLAYER_VARIANT_MALE;
     g_select.choice[1].paddle_id = PADDLE_STANDARD;
+    g_select.row = first_row();
     g_select.changed = 1;
 }
 
@@ -95,7 +104,7 @@ u8 select_input(u16 pressed)
     }
     /* Y steps back up the rows, then to 1P, then out to the title. */
     if (pressed & PAD_Y) {
-        if (g_select.row > 0) {
+        if (g_select.row > first_row()) {
             --g_select.row;
             return SELECT_STAY;
         }
@@ -106,7 +115,7 @@ u8 select_input(u16 pressed)
         }
         return SELECT_BACK;
     }
-    if ((pressed & PAD_UP) && g_select.row > 0)
+    if ((pressed & PAD_UP) && g_select.row > first_row())
         --g_select.row;
     else if ((pressed & PAD_DOWN) && g_select.row < SELECT_ROWS - 1)
         ++g_select.row;

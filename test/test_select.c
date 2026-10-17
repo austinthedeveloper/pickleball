@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
+#include "career.h"
 #include "input.h"
 #include "player.h"
 #include "select.h"
@@ -101,6 +103,30 @@ int main(void)
     assert(g_match_config.palette_id[1] == PAL_GREEN);
     assert(g_match_config.palette_id[3] == PAL_GOLD);
     assert(match_config_palettes_unique());
+
+    /* ADR-065: a career player is 1P; only the paddle is chosen. */
+    memset(&g_save, 0, sizeof(g_save));
+    g_save.career_active = CAREER_NONE;
+    career_create(0, "ACE");
+    g_save.career[0].shirt = PAL_GOLD;
+    g_save.career[0].variant = PLAYER_VARIANT_FEMALE;
+    select_begin(MATCH_SINGLES, 1);
+    assert(g_select.row == SELECT_ROW_PADDLE);
+    select_input(PAD_UP);
+    assert(g_select.row == SELECT_ROW_PADDLE);
+    select_input(PAD_RIGHT);
+    assert(select_input(PAD_Y) == SELECT_BACK);
+    select_begin(MATCH_DOUBLES, 2);
+    assert(select_input(PAD_B) == SELECT_STAY && g_select.current == 1);
+    assert(g_select.row == SELECT_ROW_VARIANT);  /* 2P chooses it all */
+    assert(select_input(PAD_Y) == SELECT_STAY && g_select.current == 0);
+    assert(select_input(PAD_Y) == SELECT_BACK);
+    select_begin(MATCH_SINGLES, 1);
+    assert(select_input(PAD_B) == SELECT_DONE);
+    select_apply();
+    assert(g_match_config.palette_id[0] == PAL_GOLD);
+    assert(g_match_config.variant[0] == PLAYER_VARIANT_FEMALE);
+    career_select(CAREER_NONE);
     puts("select host checks passed");
     return 0;
 }

@@ -81,13 +81,13 @@ u8 modifiers_in_kitchen(fx x_fp, fx y_fp, u8 team);
 /* A CPU's target x moved behind its kitchen line (LAVA). */
 s16 modifiers_lava_target(s16 x, u8 team);
 
-/* Modifiers page editor (like the options page, ADR-025). */
+/* Modifiers page editor (like the options page, ADR-025). WIN BY 2 is
+ * the OPTIONS page's SCORING row (ADR-065), so it has no row here. */
 enum { MODIFIERS_ROW_BALL = 0, MODIFIERS_ROW_SPEED = 1,
-       MODIFIERS_ROW_SCORING = 2, MODIFIERS_ROW_KITCHEN = 3,
-       MODIFIERS_ROW_VISION = 4, MODIFIERS_ROW_RALLY = 5,
-       MODIFIERS_ROW_FOOTING = 6, MODIFIERS_ROW_LIGHTS = 7,
-       MODIFIERS_ROW_COLORS = 8,
-       MODIFIERS_ROWS = MODIFIER_COUNT + MODIFIER2_COUNT };
+       MODIFIERS_ROW_KITCHEN = 2, MODIFIERS_ROW_VISION = 3,
+       MODIFIERS_ROW_RALLY = 4, MODIFIERS_ROW_FOOTING = 5,
+       MODIFIERS_ROW_LIGHTS = 6, MODIFIERS_ROW_COLORS = 7,
+       MODIFIERS_ROWS = 8 };
 enum { MODIFIERS_EDIT_STAY = 0, MODIFIERS_EDIT_DONE = 1,
        MODIFIERS_EDIT_CANCEL = 2 };
 
@@ -99,9 +99,11 @@ typedef struct {
 
 extern ModifiersEdit g_modifiers_edit;
 
-/* Row labels and the value names (off, on) of each row. Rows 0-7 are
- * modifiers' bits, rows 8 on modifiers2's. */
+/* Row labels and the value names (off, on) of each row. COLORS is
+ * modifiers2's bit; the rest are modifiers' (modifiers_row_bit). */
 const char *modifiers_row_label(u8 row);
+/* The row's MODIFIER_* bit, or 0 for COLORS (MODIFIER2_INVERSE). */
+u8 modifiers_row_bit(u8 row);
 u8 modifiers_row_on(u8 row, u8 modifiers, u8 modifiers2);
 const char *modifiers_value_name(u8 row, u8 modifiers, u8 modifiers2);
 

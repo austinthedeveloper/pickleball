@@ -4,10 +4,12 @@ One player against the CPU (singles), or with a CPU partner against two CPUs
 (doubles), on a single outdoor court. A second player can join on
 controller 2. First to 5 points wins (or another score you set in OPTIONS).
 
-On the title screen, Up/Down chooses **SINGLES**, **DOUBLES**, **OPEN PLAY**,
-**COURT**, **CAREER**, **OPTIONS**, **MODIFIERS**, or **PRACTICE**. Pressing Start on controller 2 adds a second player
-(`2P JOINED!`); press it again to leave. Start or B on controller 1 opens
-Player Select (or the park, or the court, records, options, or modifiers page).
+On the title screen, Up/Down chooses a way to play (**SINGLES**, **DOUBLES**,
+**OPEN PLAY**, **PRACTICE**), your players and records (**CAREER**,
+**RECORDS**), or a setting (**COURT**, **OPTIONS**, **MODIFIERS**). Pressing
+Start on controller 2 adds a second player (`2P JOINED!`); press it again to
+leave. Start or B on controller 1 opens Player Select (or the park, or that
+page).
 
 ## Open play
 
@@ -72,7 +74,8 @@ and B chooses. Start or Y also resumes.
 ## Options
 
 **POINTS** sets how many points win a match: 3, 5 (the default), 7, 9, 11,
-15, or 21. **DIFFICULTY** sets how hard the CPU opponents are:
+15, or 21. **SCORING** is FIRST TO your POINTS, or **WIN BY 2**: at 5-5 in
+a game to 5, play on until someone leads by two. **DIFFICULTY** sets how hard the CPU opponents are:
 
 - **KID**: the slowest ball, and you swing automatically when the ball
   reaches you; just run into its path. Your serve goes by itself after a
@@ -82,12 +85,9 @@ and B chooses. Start or Y also resumes.
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.
 
-**BALL SPEED** sets how fast the ball moves, from 70% to 120%; 100% is
-the standard game. It works with every difficulty (KID and EASY are slower
-again) and with the FAST BALL modifier.
-
-**CAMERA** sets how much the court leans toward the ball as it moves, from
-50% to 100%, or OFF for a still court. The default is OFF. The scenery
+**CAMERA** turns on the court leaning toward the ball as it moves (OFF,
+the default, keeps it still), and **AMOUNT** sets how much, from 50% to
+100% (85% to start). The scenery
 moves with it in layers: the trees and stands behind the court less, the
 fence in front more. Change it with
 the title demo running behind the page to see it live.
@@ -108,8 +108,6 @@ and they combine:
 - **BALL**: NORMAL or **BIG**, a bigger ball that is easier to reach.
 - **SPEED**: NORMAL or **FAST**, a quicker ball. (On KID, FAST is the
   normal speed.)
-- **SCORING**: FIRST TO your POINTS, or **WIN BY 2**: at 5-5 in a game to
-  5, play on until someone leads by two.
 - **KITCHEN**: NORMAL or **LAVA**. Step into your own kitchen (the zone
   next to the net) during a rally and you lose the point: `LAVA!`. The
   kitchen glows on the court behind the page while LAVA is chosen. The CPUs
@@ -209,7 +207,8 @@ cartridge. Pick a slot and press B:
   with Left/Right. The demo player on the court stops at the baseline and
   wears it as you go. B keeps it; Y drops the new player.
 - **A player** opens their card: wins and losses, aces, shutouts, best
-  streak, longest rally, and the unlocks. Opening a player makes them the
+  streak, longest rally, and the hats and hair colours they have
+  (`HATS 1/12`, `HAIR 5/10`, counted as the HAT MUSEUM counts them). Opening a player makes them the
   one you play as. B edits their name and look; Y puts the look back.
 - **Gear**: hats aren't just for looks. Each one trades a little of one
   paddle stat for another: VISOR more CONTROL, less POWER; HEADBAND more
@@ -224,8 +223,8 @@ cartridge. Pick a slot and press B:
 - **NO PLAYER** plays without a career player: nothing is recorded (for a
   friend borrowing controller 1).
 
-**Playing as your player:** Player Select starts on your player's body,
-shirt, and paddle (change them for one match if you like), and your skin,
+**Playing as your player:** Player Select uses your player's body and
+shirt and asks only for the paddle (it starts on theirs), and your skin,
 hair, and hat come along. Your name is on the scoreboard. Open play uses
 your player too. When a match earns something, the result shows
 **UNLOCKED!** with what you got. Career stats count matches against the
@@ -233,27 +232,29 @@ CPU.
 
 ## Records
 
-**RECORDS** is the last row of the CAREER page. The cartridge saves your
+**RECORDS** on the title shows them. The cartridge saves your
 records against the CPU: wins and losses for
 singles and doubles, your current and best win streak, shutouts (wins where
 the CPU scored nothing), and the longest rally (shots in one point, the serve
 included; 2P matches count for this one too). They update at the end of each
 match.
 
-Beat your best win streak or the longest rally and the match ends with
-**NEW RECORD!**: enter three initials, arcade style. Up and Down pick the
-letter (hold to scroll), B moves to the next, Y goes back, and Start keeps
-what's shown. The records page shows them next to BEST STREAK and LONGEST
-RALLY (`---` until someone claims them). Once your run holds the best
-streak, each win after it raises the record under your initials without
-asking again.
+Beat your best win streak or the longest rally and the record waits for
+the end of your run: a match lost to the CPU, the ladder cleared, or the
+end of a 2P match. Then **NEW RECORD!** asks for three initials, arcade
+style. Up and Down pick the letter (hold to scroll), B moves to the next, Y
+goes back, and Start keeps what's shown. A career player isn't asked: the
+record takes the first three letters of their name. The records page shows
+them next to BEST STREAK and LONGEST RALLY (`---` until someone claims
+them).
 
-On the records table, Start, B, or Y goes back. To erase every record, hold
+On the records table, Start, B, or Y goes back to the title. To erase every record, hold
 L and R and press X. There is no confirmation. Court colours are kept.
 
 ## Player Select
 
-Up/Down moves between the three rows (MALE/FEMALE, colour, paddle);
+Up/Down moves between the three rows (MALE/FEMALE, colour, paddle; a
+career player has only the paddle);
 Left/Right changes the choice. B moves to the next row and, on the paddle
 row, starts the match. Start confirms everything at once. Y steps back a
 row, and from the top row returns to the title.

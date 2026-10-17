@@ -65,22 +65,23 @@ A quick press always serves safely. For a faster serve, hold the button and watc
 
 ## Game Modes
 
-The title screen offers eight choices, top to bottom:
+The title screen offers nine choices, top to bottom: the ways to play, then your players and records, then the settings.
 
 | Mode | What it does |
 | --- | --- |
 | SINGLES | You against one CPU opponent, climbing the ladder. |
 | DOUBLES | You and a CPU partner against a CPU team. |
 | OPEN PLAY | Walk around a park with three courts and wait your turn for a game. |
-| COURT | Choose the venue, time of day, and court colours. |
-| CAREER | Make up to three players, track their stats, and earn unlocks. |
-| OPTIONS | Points to win, difficulty, ball speed, camera, and sound. |
-| MODIFIERS | Change the rules: big ball, fast ball, win by 2, lava kitchen, ghost ball, popcorn, ice, glow, inverse. |
 | PRACTICE | Hit against a ball machine. |
+| CAREER | Make up to three players, track their stats, and earn unlocks. |
+| RECORDS | The best streaks, rallies, and ladder clears on this Game Pak. |
+| COURT | Choose the venue, time of day, and court colours. |
+| OPTIONS | Points to win, scoring, difficulty, sound, and camera. |
+| MODIFIERS | Change the rules: big ball, fast ball, lava kitchen, ghost ball, popcorn, ice, glow, inverse. |
 
 ### Singles and Doubles
 
-After you choose SINGLES or DOUBLES, Player Select appears. Up/Down moves between three rows; Left/Right changes the choice. B moves to the next row and, on the paddle row, starts the match. START confirms everything at once. Y steps back a row.
+After you choose SINGLES or DOUBLES, Player Select appears. Up/Down moves between three rows; Left/Right changes the choice. B moves to the next row and, on the paddle row, starts the match. START confirms everything at once. Y steps back a row. Playing as a Career player, you already have a look and shirt colour, so you choose only your paddle.
 
 - **MALE / FEMALE**: the female player wears a ponytail.
 - **Colour**: BLUE, RED, GREEN, or GOLD. With two players, 1P chooses first, and 2P cannot take 1P's colour.
@@ -145,7 +146,7 @@ Court picks where you play and how it looks. Colour changes show on the court be
 Career holds up to three players, so a family or friends can share the cartridge. Pick a slot and press B.
 
 - **NEW PLAYER**: type a name on the on-screen keyboard (DEL or Y erases, END or START finishes), then choose BODY, SKIN, HAIR, SHIRT, HAT, and PADDLE.
-- **A player's card** shows wins and losses, aces, shutouts, best streak, longest rally, and unlocks. Opening a card makes that player the one you play as.
+- **A player's card** shows wins and losses, aces, shutouts, best streak, longest rally, and how many hats and hair colours they have (**HATS 1/12**, **HAIR 5/10**). Opening a card makes that player the one you play as.
 - **NO PLAYER** plays without recording anything, handy for a friend borrowing controller 1.
 - To delete a player, open their card, hold L and R, and press X.
 
@@ -168,7 +169,6 @@ Modifiers change the rules of your matches. Left/Right switches a row, and they 
 | --- | --- | --- |
 | BALL | NORMAL, BIG | A bigger ball is easier to reach. |
 | SPEED | NORMAL, FAST | A quicker ball. |
-| SCORING | FIRST TO, WIN BY 2 | WIN BY 2 plays on until someone leads by two. |
 | KITCHEN | NORMAL, LAVA | Step into your own kitchen during a rally and you lose the point: **LAVA!** |
 | VISION | NORMAL, GHOST | High in the air, the ball only flickers into view. Watch its shadow. |
 | RALLY | NORMAL, POPCORN | Every hit speeds the ball up a little. Each serve starts fresh. |
@@ -238,7 +238,7 @@ The scoreboard runs across the top of the screen. Rally results appear in large 
 
 The result screen shows **YOU WIN!**, **CPU WINS**, or, with two players, **P1 WINS** or **P2 WINS**. Beat the Champs and you're crowned **CHAMPION!** Other messages you may see here:
 
-- **NEW RECORD!**: you beat your best win streak or longest rally. Enter your initials (see Saving Your Progress).
+- **NEW RECORD!**: you beat your best win streak or longest rally, and your run is over. Enter your initials (see Saving Your Progress).
 - **UNLOCKED!**: your Career player earned a new hat or hair colour.
 - **LADDER CLEARED!**: you beat all eight teams.
 
@@ -253,10 +253,13 @@ Options sets up every match. Up/Down picks a row and Left/Right changes it. B or
 | Option | Choices | Default |
 | --- | --- | --- |
 | POINTS | 3, 5, 7, 9, 11, 15, 21 | 5 |
+| SCORING | FIRST TO, WIN BY 2 | FIRST TO |
 | DIFFICULTY | KID, EASY, MEDIUM, HARD | MEDIUM |
 | SOUND | ALL, NO CROWD, OFF | ALL |
-| BALL SPEED | 70% to 120% | 100% |
-| CAMERA | OFF, 50% to 100% | OFF |
+| CAMERA | OFF, ON | OFF |
+| AMOUNT | 50% to 100% | 85% |
+
+**WIN BY 2** plays on past POINTS until someone leads by two.
 
 ### Difficulty
 
@@ -265,13 +268,11 @@ Options sets up every match. Up/Down picks a row and Left/Right changes it. B or
 - **MEDIUM**: the normal game.
 - **HARD**: tougher opponents who make fewer mistakes and react faster.
 
-### Sound, Ball Speed, and Camera
+### Sound and Camera
 
 **NO CROWD** keeps the sound effects but drops the applause and background crowd. With **ALL**, each venue has its own background: birds at the park, gulls by the lake, crickets at sunset, jungle calls with the dinosaurs, blips in space, and bubbles under the sea.
 
-**BALL SPEED** works with every difficulty and with the FAST modifier.
-
-**CAMERA** makes the court lean toward the ball as it moves, with the scenery sliding in layers. Change it while the title demo plays behind the page to see it live.
+**CAMERA** makes the court lean toward the ball as it moves, with the scenery sliding in layers; **AMOUNT** sets how far. Change them while the title demo plays behind the page to see it live.
 
 ## Meet Your Opponents
 
@@ -313,11 +314,11 @@ Do not turn the power off while a match is ending or while you are leaving a men
 
 ### Records
 
-RECORDS is the last row of the CAREER page. It shows wins and losses in singles and doubles, your current and best win streak, shutouts (wins where the CPU scored nothing), the longest rally (shots in one point, counting the serve), your place on the singles (S) and doubles (D) ladders, and ladder clears.
+RECORDS is on the title screen. It shows wins and losses in singles and doubles, your current and best win streak, shutouts (wins where the CPU scored nothing), the longest rally (shots in one point, counting the serve), your place on the singles (S) and doubles (D) ladders, and ladder clears.
 
-Beat your best win streak or your longest rally, and the match ends with **NEW RECORD!** Enter three initials, arcade style: Up and Down pick a letter (hold to scroll), B moves to the next letter, Y goes back, and START keeps what's shown. Your initials appear beside the record until someone beats it.
+Beat your best win streak or your longest rally, and the record waits for the end of your run: losing a match to the CPU, beating the Champs, or the end of a two-player match. Then **NEW RECORD!** asks for three initials, arcade style: Up and Down pick a letter (hold to scroll), B moves to the next letter, Y goes back, and START keeps what's shown. Playing as a Career player, there's nothing to enter: the record takes the first three letters of your name. The initials appear beside the record until someone beats it.
 
-To erase every record, hold L and R on the records page and press X. **There is no confirmation**, so be sure! Court colours and settings are kept.
+To erase every record, hold L and R on the RECORDS page and press X. **There is no confirmation**, so be sure! Court colours and settings are kept.
 
 ## Tips from the Pros
 

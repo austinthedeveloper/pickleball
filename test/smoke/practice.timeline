@@ -1,8 +1,10 @@
-# Practice (ADR-028): Up wraps to PRACTICE; SHOT DRIVE (Right from MIX),
+# Practice (ADR-028): Down three times to PRACTICE; SHOT DRIVE (Right from MIX),
 # TARGET FOREHAND; B to Player Select, Start to play; the machine feeds.
 # P1 holds Down toward the forehand lane and swings; Start pauses and
 # MAIN MENU (Down twice, B) leaves (ADR-030).
-70 71 up
+70 71 down     # past DOUBLES and OPEN PLAY to PRACTICE (ADR-065)
+75 76 down
+80 81 down
 90 91 start
 110 111 right
 120 121 down

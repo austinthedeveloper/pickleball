@@ -229,6 +229,10 @@ touching the simulation.
   - Accept: zero overruns on that timeline, without changing the golden trace. Pairs with `M4-UI-03` (the same four-player AI cost).
   - Verified: the `M4-UI-03` changes; `modifiers_doubles.timeline` budget 0 (worst frame 208), `doubles_ladder.timeline` 0 (186).
 
+- [x] `M4-UI-05` Menu cleanup: the title grouped (play, players and records, settings), RECORDS on the title, no demo scoreboard behind it, one speed setting, SCORING with POINTS, CAMERA ON/OFF with an AMOUNT, matching unlock counts, and a career player who picks only a paddle and is never asked for initials.
+  - Accept: no save layout change; old saves keep their camera and WIN BY 2; zero overruns on `make perf`; golden trace identical.
+  - Verified: [ADR-065](../docs/decisions/ADR-065-menu-cleanup.md).
+
 - [x] `M4-UI-01` Draw the title pages faster.
   - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.
   - Verified: the records page fills in 4-8 frames after the button (0.07-0.13 s; it was 15-18). `hud_text`'s loop is assembly (`src/asm/hud_text.asm`, a page row about 60 → a few scanlines), the area draws parts back to back while the frame is under its limit, and on the no-op logo steps between title views. The BG3 map is identical at every shot of nine HUD timelines. A new title prompt draws in three steps (panel, two halves): in one step (about 106 scanlines) it dropped a frame on `court.timeline` once the demo got faster.

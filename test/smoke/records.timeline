@@ -1,8 +1,9 @@
-# Title menu and records (ADR-021), now a section of the CAREER page
-# (ADR-047): Down four times to CAREER (past OPEN PLAY and COURT), open it,
-# Down to RECORDS (past NO PLAYER, where the cursor starts), open the table, back with B, reopen, erase with
-# L+R+X, back with Start, and Y to the menu.
+# Title menu and records (ADR-021): RECORDS is the title's own entry
+# (ADR-065): Down five times past PRACTICE and CAREER, open the table, back
+# to the menu with B, reopen, erase with L+R+X, back with Start, and Up to
+# CAREER.
 70 71 down
+75 76 down
 shot 80
 85 86 down
 90 91 down
@@ -10,17 +11,14 @@ shot 80
 shot 100
 110 111 start
 shot 120
-125 126 down
 135 136 b
 shot 150
 165 166 b
 shot 175
-185 186 b
 200 240 l,r
 215 216 x
 shot 250
 270 271 start
-280 281 y
 shot 290
 300 301 up
 shot 310

@@ -4,6 +4,8 @@ Status: **Accepted 2026-10-15**
 Milestone: `M4-OPT-03`. Depends on: ADR-025 (options, the slow ball),
 ADR-033 (FAST BALL).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): the BALL SPEED row is cut; matches play at 100%.
+
 ## What
 
 A **BALL SPEED** row on the OPTIONS page: 70% to 120% in 5% steps, saved,

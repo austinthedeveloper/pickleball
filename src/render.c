@@ -1173,7 +1173,7 @@ void render_prepare(void)
 #endif
     if (g_save.camera != s_cam_saved) {
         s_cam_saved = g_save.camera;
-        g_cam_k = g_options_camera_k[options_camera_index(s_cam_saved)];
+        g_cam_k = options_camera_k(s_cam_saved);
     }
     render_camera();
     /* ADR-064: only while flair has something up, or drew it last frame. */

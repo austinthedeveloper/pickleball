@@ -23,6 +23,7 @@ static void test_values_and_editor(void)
 {
     u8 mods = 0x05;
     u8 mods2 = 0xfe;
+    u8 row;
 
     assert(modifiers_valid(0xff) == MODIFIER_ALL);
     assert(modifiers2_valid(0xff) == MODIFIER2_ALL);
@@ -30,8 +31,6 @@ static void test_values_and_editor(void)
         "NORMAL") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_BALL, MODIFIER_BIG_BALL,
         0), "BIG") == 0);
-    assert(strcmp(modifiers_value_name(MODIFIERS_ROW_SCORING,
-        MODIFIER_WIN_BY_2, 0), "WIN BY 2") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_KITCHEN, MODIFIER_LAVA,
         0), "LAVA") == 0);
     assert(strcmp(modifiers_row_label(MODIFIERS_ROW_VISION), "VISION") == 0);
@@ -53,13 +52,16 @@ static void test_values_and_editor(void)
         0), "NORMAL") == 0);
     assert(strcmp(modifiers_value_name(MODIFIERS_ROW_COLORS, 0,
         MODIFIER2_INVERSE), "INVERSE") == 0);
-    /* Each row is its bit. */
-    assert(MODIFIER_GHOST_BALL == 1 << MODIFIERS_ROW_VISION);
-    assert(MODIFIER_POPCORN == 1 << MODIFIERS_ROW_RALLY);
-    assert(MODIFIER_ICE == 1 << MODIFIERS_ROW_FOOTING);
-    assert(MODIFIER_GLOW == 1 << MODIFIERS_ROW_LIGHTS);
-    assert(MODIFIER2_INVERSE == 1 << (MODIFIERS_ROW_COLORS - MODIFIER_COUNT));
+    /* Each row has its bit; WIN BY 2 has none (OPTIONS' SCORING,
+     * ADR-065), and no row reads it. */
+    assert(modifiers_row_bit(MODIFIERS_ROW_KITCHEN) == MODIFIER_LAVA);
+    assert(modifiers_row_bit(MODIFIERS_ROW_VISION) == MODIFIER_GHOST_BALL);
+    assert(modifiers_row_bit(MODIFIERS_ROW_RALLY) == MODIFIER_POPCORN);
+    assert(modifiers_row_bit(MODIFIERS_ROW_FOOTING) == MODIFIER_ICE);
+    assert(modifiers_row_bit(MODIFIERS_ROW_LIGHTS) == MODIFIER_GLOW);
     assert(MODIFIERS_ROWS == MODIFIERS_ROW_COLORS + 1);
+    for (row = 0; row < MODIFIERS_ROWS; ++row)
+        assert(!modifiers_row_on(row, MODIFIER_WIN_BY_2, 0));
 
     /* The editor makes the values valid, toggles a row's bit with
      * Left/Right, wraps rows, and Y puts both values back. */
