@@ -541,36 +541,40 @@ there is no overhead.
 
 ## Sprite wish list
 
-Art that would make the game read better, in rough order of payoff. Four
-have drafts in [assets/source/wishlist/](../assets/source/wishlist/), drawn
-in the house palettes with `tools/art/wishlist.lua` (Aseprite in batch
-mode: a text grid to an indexed `.aseprite` and `.png`, plus 8x previews in
-`build/wishlist/`). They are not wired in: each still needs a manifest
-entry, a slot, and its selection rule (an ADR when picked up). Player art
-normally comes from the port kit (ADR-059), so a body frame that is kept
-should go there too.
+Art that would make the game read better, in rough order of payoff. Every
+sprite on the list has a draft in
+[assets/source/wishlist/](../assets/source/wishlist/), drawn in the house
+palettes: the body frames from the kit's own head, paddle, and frames
+(`idle0`, `scoop`), so they share its outline, ramps, and foot anchor (feet
+on rows 26-29). `tools/art/wishlist_all.sh` rebuilds them all in Aseprite's
+batch mode (`tools/art/wishlist.lua`: a text grid to an indexed `.aseprite`
+and `.png`, with 8x previews in `build/wishlist/`) and lays them out on one
+contact sheet, `build/wishlist/sheet.png`. Once a draft is edited in
+Aseprite, its `.aseprite` is the source. None is wired in: each still needs
+a manifest entry, a slot, and its selection rule (an ADR when picked up).
+Player art normally comes from the port kit (ADR-059), so a body frame that
+is kept should go there too.
 
 Budget (2026-10-17): OBJ name table 1 is full (`objects.png`'s 32 cells are
 all taken); the player sheet has slots 17-27 free in name table 2, eleven
 32x32 slots. A slot holds sixteen 8x8 tiles, so small objects can share
 one, as the newer hats share `hat_slot` (ADR-060). OBJ palettes are all in
-use: new objects use a player's palette or the objects palette.
+use: new objects use a player's palette or the objects palette. All of it
+fits the eleven slots exactly: the six body frames take six; the 8x8
+effects and the trophy (19 tiles) two; the critters (six 16x16 frames, 24
+tiles) two; the pickle one.
 
 | # | Asset | Size, palette | Use | Draft |
 |---|---|---|---|---|
-| 1 | **Slump**: head bowed, shoulders down, paddle hanging | 32x32 body frame, player roles | The side that lost a point, through the point result; pairs with the quips (ADR-048, ADR-063). The manifest's "point reaction" frame (docs/03), never drawn. | `slump` |
+| 1 | **Slump**: head bowed, eyes down, paddle hanging | 32x32 body frame, player roles | The side that lost a point, through the point result; pairs with the quips (ADR-048, ADR-063). The manifest's "point reaction" frame (docs/03), never drawn. | `slump` |
 | 2 | **Emotes**: `!`, `?`, sweat drop, note, star, Z, anger | 8x8 each, objects palette | Over the head of the player who quips, a big swing (`!`), a mis-hit (sweat), a dink rally (note), a winner (star), SNOWBIRDS waiting to serve (Z). The anger mark wants a red the objects palette doesn't have. | `emotes`, cells 0-6 |
 | 3 | **Bounce dust**: a puff, then its fade | 8x8, two frames, objects palette | Where the ball lands; makes deep balls and the bounce rule easier to read. | `emotes`, cells 7-8 |
 | 4 | **Trophy** | 16x16 (four 8x8), objects palette | The ladder clear (CHAMPION!, ADR-026) and the career card's ladder clears. | `trophy` |
 | 5 | **Pickle mascot** with a paddle | 32x32, player roles (the shirt ramp is the pickle: a green team part) | Title screen and attract demo, the ball machine's buddy in practice, a crowd cameo. | `pickle` |
-| 6 | Dive: a full-length lunge, then a scramble up | two 32x32 body frames | A last-chance reach past `reach`'s range (see "Hitting: reach, height, and overheads" above; the pose came with ADR-059) | — |
-| 7 | Point celebration per personality: DAD's thumbs-up, the BROS' flex, the PIRATES' sword-paddle | 32x32 body frames | After a CPU's point; cheaper as an accessory over `cheer` | — |
-| 8 | Net cord shiver | 8x8, two frames | A ball that clips the net and dribbles over | — |
-| 9 | Seagull (LAKESIDE), satellite (SPACE), fish (UNDERSEA) | 16x16, two frames | A venue's ambient critter crossing the sky; in the objects palette, so no new palette | — |
-| 10 | Ball spin streak | 8x8, two frames | Behind a drive or a slice (ADR-057), so the shot type reads | — |
-| 11 | Paddle shards / ball squash on a hard drive | 8x8 | Juice on put-aways (`hit_stop`) | — |
+| 6 | **Dive**: a flat-out lunge, then up on one knee | two 32x32 body frames, player roles | A last-chance reach past `reach`'s range (see "Hitting: reach, height, and overheads" above), then the recovery. | `dive`, `scramble` |
+| 7 | **Point celebrations**: DAD's thumbs-up, the GYM BROS' double biceps (paddle dropped), the PIRATES' en garde | 32x32 body frames, player roles | After a CPU team's point, in place of `cheer`; a style knob picks one. | `thumbs_up`, `flex`, `en_garde` |
+| 8 | **Net cord shiver** | 8x8, two frames, objects palette | A ball that clips the net tape and dribbles over. | `ball_fx`, cells 0-1 |
+| 9 | **Venue critters**: seagull (LAKESIDE), satellite (SPACE), fish (UNDERSEA) | 16x16, two frames each, objects palette | A venue's ambient visitor crossing the sky (or the water) now and then. | `critters` |
+| 10 | **Spin streak** | 8x8, two frames, objects palette | Behind a drive or a slice (ADR-057), so the shot type reads; flipped for a ball going left. | `ball_fx`, cells 2-3 |
+| 11 | **Ball squash and stretch** | 8x8, objects palette | Squash on a put-away's contact (with `hit_stop`), stretch on the fastest balls. Paddle shards were the other idea: they want the paddle's colours, which the objects palette doesn't have. | `ball_fx`, cells 4-5 |
 | 12 | Kitchen line flash | BG3, not a sprite | KITCHEN! faults (ADR-052): flash the line the player stood on | — |
-
-Drafts in the house style: the slump frame is built from `idle0`'s
-outline, ramps, and foot anchor (feet on the same rows), so it would
-animate in place.
