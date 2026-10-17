@@ -9,7 +9,7 @@
 --     --script-param preview=build/wishlist/slump \
 --     --script-param pal=kit --script tools/art/wishlist.lua
 --
--- pal: kit (the player roles, ADR-013, blue team), green (the same with a
+-- pal (or "pal=<name>" in the grid's header): kit (the player roles, ADR-013, blue team), green (the same with a
 -- green team part), objects (objects.png's palette).
 local src = app.params["src"]
 local out = app.params["out"]
@@ -22,9 +22,16 @@ local objects = {
   {255,0,255},{40,40,16},{224,232,48},{255,255,200},{0,0,0},{255,220,64},
   {255,255,255},{80,88,104},{136,144,160},{192,200,212},{0,0,0},{0,0,0},
   {0,0,0},{0,0,0},{0,0,0},{96,56,32}}
+-- The palette: the pal param, else "pal=<name>" in the grid's header.
+local which = app.params["pal"]
+if not which then
+  for line in io.lines(src) do
+    which = which or line:match("^#.*pal=(%w+)")
+  end
+end
 local pal = kit
-if app.params["pal"] == "objects" then pal = objects end
-if app.params["pal"] == "green" then
+if which == "objects" then pal = objects end
+if which == "green" then
   pal = {}
   for i, c in ipairs(kit) do pal[i] = c end
   pal[6] = {16,88,24}; pal[7] = {48,152,48}; pal[8] = {128,208,96}
