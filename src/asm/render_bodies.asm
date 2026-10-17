@@ -207,6 +207,13 @@ _rb_body:
     clc
     adc.w #128
     sta.l rb_sx
+    ; ADR-064: each slot's screen x, for its emote (no second projection)
+    pha
+    lda.l rb_slot
+    asl a
+    tax
+    pla
+    sta.l rb_body_sx,x
     plx
 
     ; --- frame tile: a point's reaction first (ADR-064), else the pose

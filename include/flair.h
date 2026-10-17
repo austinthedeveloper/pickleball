@@ -56,6 +56,8 @@ typedef struct {
     u8 reacting;                /* react[] holds a point's reactions */
     u8 quip_team;               /* FLAIR_QUIP's team for the next tick, or
                                    0xff */
+    u8 repaint;                 /* a tick changed something: render draws
+                                   once (an emote or timer just ended) */
     u8 wake;                    /* flair_tick wanted though not active: a
                                    phase change, serve setup, lookups */
     u8 fresh;                   /* an event this frame: render waits a

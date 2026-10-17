@@ -35,6 +35,7 @@ void flair_initialize(void)
     g_flair.wake = 1;
     ++g_flair.react_serial;
     g_flair.reacting = 0;
+    g_flair.repaint = 1;
     g_flair.quip_team = 0xff;
     g_flair.react[0] = FLAIR_REACT_NONE;
     g_flair.react[1] = FLAIR_REACT_NONE;
@@ -250,6 +251,7 @@ static void flair_tick_active(u8 phase)
         changed = 0;
 
     s_phase = phase;
+    g_flair.repaint = 1;
     if (g_flair.quip_team != 0xff) {
         flair_quip(g_flair.quip_team);
         g_flair.quip_team = 0xff;
