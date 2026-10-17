@@ -42,7 +42,8 @@ its own level. On KID, every court is KID.
 
 ## Practice
 
-**PRACTICE** sets up a ball machine on the far side of the court:
+**PRACTICE** sets up a ball machine on the far side of the court, with
+the pickle mascot cheering behind it:
 
 - **SHOT**: DRIVE, LOB, DINK, or MIX.
 - **TARGET**: the KITCHEN, DEEP, your FOREHAND (the lower side), your
@@ -156,8 +157,13 @@ back.
 
 Before a ladder match, the opponent introduces themselves (press B to
 play). After the match they have something to say, and when you win the
-next opponent is named. Beat the Champs to clear the ladder: the records page
-counts your ladder clears.
+next opponent is named. Beat the Champs to clear the ladder (there's a
+trophy in it): the records page counts your ladder clears.
+
+After each point the winners celebrate (the Hendersons with a thumbs-up,
+the Gym Bros with a flex, the Pirates with their paddles drawn like
+swords) and the losers slump. Run for a ball that bounces twice past you
+and you dive for it.
 
 ## Court colours
 
@@ -183,8 +189,13 @@ what you had.
 ## Quips
 
 Lose a point and you might hear about it: now and then the side that lost
-it says something under the point banner. Every ladder team has its own
-lines (the pirates say ARRRGH!).
+it says something under the point banner, with a face to match: `!` for
+a ball into the net, `?` for an out, a sweat drop for one they couldn't
+reach. Every ladder team has sixteen lines of its own (the pirates say
+ARRRGH!), shuffled, so you hear them all before any comes back.
+
+Win a long rally and you get a star; trade three dinks in a row and a
+note shows up. Take your time to serve and the other side nods off.
 
 ## Career
 
