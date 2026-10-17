@@ -77,7 +77,7 @@ u8 match_slot_member(u8 slot);
 /* Play style of a CPU slot: its opponent member's, or the default. */
 const AiStyle *match_slot_style(u8 slot);
 /* The slot's hat (M4-OPP-04): a CPU opponent's or open play partner's,
- * else 0 (the cap). An index into asset_frames.h HAT_TILES. */
+ * else 0 (the cap). An index into asset_frames.h HAT_TILES (ADR-059). */
 u8 match_slot_hat(u8 slot);
 /* BG3 label colours 1-2 for a team. */
 const u16 *match_team_hud_colors(u8 team);

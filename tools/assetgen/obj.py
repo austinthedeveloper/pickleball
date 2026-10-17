@@ -188,10 +188,17 @@ def obj_assets(manifest):
     for name, index in manifest["objects"].items():
         header.append(f"#define OBJTILE_{name.upper()} {object_base + index}")
     # M4-OPP-04 hats: two objects each (the cell and the next), on blank
-    # objects.png cells; HAT_TILES[id] (id 0: no hat, the body's cap).
-    hat_tiles = ["0"]
+    # objects.png cells; HAT_TILES[id] in the manifest's order, the cap
+    # first (ADR-059: bodies are bareheaded). A null cell is no hat: the
+    # bare head's hair, tile 0, which render_bodies parks.
+    hat_tiles = []
     taken = set(manifest["objects"].values())
+    if next(iter(manifest["hats"]), None) != "cap":
+        raise AssetError("hats: the cap comes first (id 0, the default)")
     for name, cell in manifest["hats"].items():
+        if cell is None:
+            hat_tiles.append("0")
+            continue
         # Even: render_bodies swaps the halves of a flipped hat as tile ^ 1.
         if cell % 2 or not 0 <= cell < (oh // 8) * 16 or \
                 {cell, cell + 1} & taken:

@@ -179,6 +179,9 @@ bandana, or bare hair (`opponents.json` `hat`, `assets/manifest/player_frames.js
   are on court. The worst row is now at head height: bodies 16, hats 6,
   ponytails 4, effects 4, ball and shadow 2: **32 / 34**. Shadows sit at the
   feet, 26 px below. The stress scene draws that row and stays dropout-free.
+- *Superseded in part by ADR-059 (character models):* bodies are
+  bareheaded and the cap is hat 0, so up to four hats are on court (34 /
+  34), a hat no longer covers a cap, and HAIR draws no hat.
 
 ---
 

@@ -58,7 +58,8 @@ static u8 s_replay_ball;
 static u8 s_watcher_shown;
 
 u16 g_obj_overflow_frames;
-/* Each slot's hat tile pair, 0 for the cap (M4-OPP-04); set with the match
+/* Each slot's hat tile pair, 0 for none, the bare head (M4-OPP-04,
+ * ADR-059: the cap is a hat too); set with the match
  * config, read by render_bodies (src/asm/render_bodies.asm). */
 u16 rb_hat[MAX_PLAYERS];
 static const u16 s_hat_tiles[HAT_COUNT] = HAT_TILES;
@@ -154,7 +155,7 @@ static void render_invert(u16 *colors, u8 count)
 /* A player's composed palette (or the objects', player = 0) in the look.
  * GLOW's shirts, caps, and shorts (entries 5-9, the team part, ADR-013) go
  * neon; the shoe colour (10), which is also the visors' and headbands'
- * (tools/art/author_hats.py), takes the neon shirt's, so a white visor
+ * (the kit's hats, ADR-059), takes the neon shirt's, so a white visor
  * glows too. */
 static void render_apply_look(u16 *colors, u8 look, u8 player)
 {

@@ -12,7 +12,7 @@
 ;   * screen x = 128 + d + ((d * (s(y) - 256) + 128) >> 8), d = x - 128,
 ;     using the hardware 8x8 multiplier (ADR-011, src/projection.c);
 ;   * frame from pose/state/animation, palette from flash or the player;
-;   * a hat (rb_hat[slot], 0 for the cap) sits at the frame's accessory
+;   * a hat (rb_hat[slot], 0 for none) sits at the frame's accessory
 ;     offset plus HAT_DX, HAT_RAISE above it, in front of its body; flipped,
 ;     it mirrors as 16 - x with its halves swapped (tile ^ 1); without one
 ;     its entries are parked every frame (groups follow the depth order);
@@ -329,7 +329,7 @@ _rb_have_tile:
     tax
     lda.l rb_hat,x
     bne _rb_hat
-    ; The cap: park both halves at y = 240. Hat entries are always small
+    ; No hat (the bare head, ADR-059): park both halves at y = 240. Hat entries are always small
     ; objects, so the Y byte alone hides them (oam_write is the costly way).
     lda.l rb_oam
     asl a

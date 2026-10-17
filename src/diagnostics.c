@@ -67,12 +67,11 @@ void diag_draw_overlay(u8 paused)
  * at head height (ADR-014, M4-OPP-04): every object below overlaps screen
  * row 124 but the shadows, which sit at the feet (row 148):
  *   4 bodies x 4 slivers                    16
- *   3 hats x 2 (only CPU opponents and an
- *     open play partner wear one)            6
+ *   4 hats x 2 (the cap is a hat, ADR-059)   8
  *   4 accessory placeholders (OAM 22-25)     4
  *   ball + ball shadow (OAM 0-1)             2
  *   4 impact effects (OAM 18-21)             4
- *                                    total  32 of 34
+ *                                    total  34 of 34
  * Bodies use OBJ palettes 0-3 loaded with all four composed team palettes
  * (one shared tile set), rotate palettes every 64 frames, flip every 32,
  * and step through every frame slot. The PPU's range/time-over flags are
@@ -125,14 +124,12 @@ void diag_stress_render(void)
         x = s_stress_x[i];
         pal = (u8)((i + (s_stress_timer >> 6)) & 3);
         frame = (u8)(((s_stress_timer >> 3) + i * 3) % 11);
-        if (i) {
-            obj_put(RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * i,
-                x - 8, STRESS_HEAD_ROW - 4, OBJTILE_HAT_TRICORN,
-                OBJ_ATTR(pal, 0), 0);
-            obj_put(RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * i + 1,
-                x, STRESS_HEAD_ROW - 4, OBJTILE_HAT_TRICORN + 1,
-                OBJ_ATTR(pal, 0), 0);
-        }
+        obj_put(RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * i,
+            x - 8, STRESS_HEAD_ROW - 4, OBJTILE_HAT_TRICORN,
+            OBJ_ATTR(pal, 0), 0);
+        obj_put(RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * i + 1,
+            x, STRESS_HEAD_ROW - 4, OBJTILE_HAT_TRICORN + 1,
+            OBJ_ATTR(pal, 0), 0);
         obj_put(RENDER_OAM_BODIES + RENDER_OAM_GROUP_SIZE * i +
                 RENDER_OAM_GROUP_BODY, x - PLAYER_SPRITE_HALF_WIDTH,
             STRESS_ROW - PLAYER_SPRITE_FOOT_Y, s_stress_frames[frame],
@@ -153,7 +150,7 @@ void diag_stress_render(void)
     if (!s_stress_hud_drawn) {
         s_stress_hud_drawn = 1;
         hud_clear_rows(4, 24);
-        hud_center_prompt(5, HUD_PAL_YELLOW, "OBJ STRESS 32/34");
+        hud_center_prompt(5, HUD_PAL_YELLOW, "OBJ STRESS 34/34");
         hud_text(2, 22, HUD_PAL_WHITE, "4 PALETTES, 1 TILE SET");
         hud_text(2, 24, HUD_PAL_WHITE, "SELECT: BACK TO GAME");
     }

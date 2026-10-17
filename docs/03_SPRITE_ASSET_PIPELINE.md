@@ -135,7 +135,8 @@ For later characters, prefer this order:
 - [x] Frame anchors do not jitter.
 - [x] Worst-row object count remains at or below 30 planned slivers.
 - [ ] Each accessory is one 8×8 object in its owner's palette (hair index 15) at OAM 22–25, with a per-frame offset that mirrors around the body anchor under horizontal flip.
-- [ ] Each hat is 16×8 (two objects) in its owner's palette, covers every cap pixel (`tools/art/author_hats.py` checks), and sits at the accessory offset plus `hat_offset`, mirrored as 16 − x with its halves swapped.
+- [ ] Each hat is 16×8 (two objects) in its owner's palette, sits on the bareheaded body (ADR-059; the cap is hat 0) at the accessory offset plus `hat_offset`, mirrored as 16 − x with its halves swapped.
+- [ ] Player frames and hats come from the port kit (`tools/art/import_kit_sprites.py`, ADR-059): change the art there and import it, not in `player_sprites.png`.
 - [x] Asset conversion can be repeated from a clean checkout.
 - [x] Manifest report records tile, palette, and byte totals.
 

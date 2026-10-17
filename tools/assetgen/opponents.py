@@ -158,10 +158,9 @@ def opponents_header():
                          "shows the rung as one digit)")
     styles, palettes, variants, paddle_ids, huds, teams, captains, homes = \
         [], [], [], [], [], [], [], []
-    # M4-OPP-04: "cap" is the cap every body wears; hats are ids from 1 in
-    # the manifest's order.
+    # M4-OPP-04: hats are ids from 0 in the manifest's order, the cap first.
     manifest = json.loads(paths.manifest.read_text("utf-8"))
-    hat_names = ["cap"] + list(manifest["hats"])
+    hat_names = list(manifest["hats"])
     hat_ids = []
     story = []
     team_quips = []
@@ -272,8 +271,8 @@ def opponents_header():
     lines.append("const u8 g_opponent_paddle[OPPONENT_COUNT][2] = { " +
                  ", ".join("{ %d, %d }" % tuple(p) for p in paddle_ids) + " };")
     lines.append("/* BG3 label colours 1-2 for the opponents' team. */")
-    lines.append("/* Hats (M4-OPP-04): 0 the cap, else an id into "
-                 "asset_frames.h HAT_TILES. */")
+    lines.append("/* Hats (M4-OPP-04): an id into asset_frames.h "
+                 "HAT_TILES, 0 the cap. */")
     lines.append("const u8 g_opponent_hat[OPPONENT_COUNT][2] = { " +
                  ", ".join("{ %d, %d }" % tuple(h) for h in hat_ids) + " };")
     lines.append("const u16 g_opponent_hud[OPPONENT_COUNT][2] = { " +

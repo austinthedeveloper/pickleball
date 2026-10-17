@@ -35,7 +35,7 @@ extern char objects_palette;
 #define SEL_OBJPAL_CURSOR_DIM 5
 #define SEL_OBJPAL_TAKEN 6
 
-/* OAM: the career player's hats 0-7 (two halves each, in front of the
+/* OAM: the thumbnails' hats 0-7 (two halves each, in front of the
  * thumbnails: a lower index is drawn on top), thumbnails 8-11, their
  * ponytails 12-15 (behind), cursor corners 16-27. */
 #define SEL_OAM_HATS 0
@@ -73,9 +73,10 @@ static void draw_thumbnails(const PlayerChoice *choice)
     u8 palette;
     u16 tile = s_cel ? FRAME_IDLE1 : FRAME_IDLE0;
     s16 acc_y = s_cel ? FRAME_IDLE1_ACC_Y : FRAME_IDLE0_ACC_Y;
-    /* ADR-047: 1P's career hat on every thumbnail (0: the cap they wear). */
-    u16 hat = (g_select.current == 0 && career_active()) ?
-        s_hat_tiles[career_active()->hat % HAT_COUNT] : 0;
+    /* ADR-047: 1P's career hat on every thumbnail, else the cap (ADR-059:
+     * bodies are bareheaded). Tile 0 is no hat. */
+    u16 hat = s_hat_tiles[(g_select.current == 0 && career_active()) ?
+        career_active()->hat % HAT_COUNT : 0];
 
     for (i = 0; i < PAL_COUNT; ++i) {
         x = SEL_THUMB_X0 + i * SEL_THUMB_PITCH;

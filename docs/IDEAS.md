@@ -465,6 +465,10 @@ side to side while dropping.
 
 ## Character models
 
+*Done in part (ADR-059):* bareheaded bodies with the cap as a hat, and the
+four hitting poses in name table 2 (not drawn yet). Handedness is still a
+mirror. The notes below are kept for the hitting work.
+
 The next big art job: better player models. What it must cover, collected
 from the work so far:
 

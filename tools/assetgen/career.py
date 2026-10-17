@@ -68,7 +68,7 @@ def load_career():
     if hair[0][2] != LOCKED_NONE:
         raise AssetError("career: the first hair colour is always available")
     hats = []
-    hat_order = ["CAP"] + [h.upper() for h in frames["hats"]]
+    hat_order = [h.upper() for h in frames["hats"]]
     shown = [h[0] for h in spec["hats"]]
     if len(shown) != len(hat_order) or shown[:-1] != hat_order[:-1]:
         raise AssetError("career: hats follow player_frames.json (CAP, then "

@@ -42,7 +42,7 @@ enum {
     RENDER_OAM_BALL_SHADOW = 1,
     /* 2-13: a group per player, nearest-first (ADR-012): the hat's two
      * halves (M4-OPP-04), then the body. A lower entry draws in front, so
-     * a hat covers its own body's cap and stays behind nearer players. */
+     * a hat sits on its own body's head and stays behind nearer players. */
     RENDER_OAM_BODIES = 2,
     RENDER_OAM_GROUP_SIZE = 3,
     RENDER_OAM_GROUP_BODY = 2,    /* the body's entry in its group */

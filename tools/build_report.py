@@ -123,7 +123,7 @@ lines += ["", "## OAM plan", "",
           "| First index | Use |", "|---:|---|"]
 for name, index in sorted(oam.items(), key=lambda kv: kv[1]):
     lines.append(f"| {index} | {name.lower()} |")
-lines += ["", "Worst planned row: 32 of 34 slivers (ADR-014, hats), verified "
+lines += ["", "Worst planned row: 34 of 34 slivers (ADR-014, hats, ADR-059), verified "
           "dropout-free by the OBJ stress scene's PPU range/time-over latch.",
           "", "## Static RAM", "",
           f"- Game variables: {span(game_ram)}",
