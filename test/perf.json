@@ -9,6 +9,7 @@
     {"timeline": "records.timeline", "frames": 320},
     {"timeline": "court.timeline", "frames": 320},
     {"timeline": "career.timeline", "frames": 460},
+    {"timeline": "museum.timeline", "frames": 640},
     {"timeline": "venue.timeline", "frames": 380},
     {"timeline": "venue_preview.timeline", "frames": 440},
     {"timeline": "lake.timeline", "frames": 210},

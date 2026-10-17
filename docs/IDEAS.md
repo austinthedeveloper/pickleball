@@ -383,6 +383,11 @@ are kept per character, and playing unlocks cosmetics.
 - **Open questions:** how many slots; whether 2P can load a second
   character.
 
+**The museum's other rooms** (after ADR-061's HAT MUSEUM): hair colours
+in a second room, L/R to switch; each case the player with that hair, a
+silhouette while locked. Later unlockables (paddle skins, celebrations)
+would each get a room.
+
 ## Night courts
 
 **Done:** [ADR-045](decisions/ADR-045-night-courts.md). Still open: light

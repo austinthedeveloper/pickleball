@@ -1832,7 +1832,7 @@ static const char *hud_title_prompt(u8 page)
     if (page == HUD_PROMPT_CAREER + CAREER_VIEW_SLOTS)
         return "@ OPEN  Y BACK";
     if (page == HUD_PROMPT_CAREER + CAREER_VIEW_CARD)
-        return "@ EDIT  Y BACK";
+        return "@ EDIT  X HATS  Y BACK";
     if (page == HUD_PROMPT_CAREER + CAREER_VIEW_EDIT)
         return "@ OK  Y CANCEL";
     if (page == HUD_PROMPT_CAREER_NAMING)

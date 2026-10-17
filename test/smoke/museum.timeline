@@ -1,0 +1,41 @@
+# The HAT MUSEUM (ADR-061): CAREER on the title, a new player ACE (as
+# career.timeline), kept; X on the card opens the museum. The cursor
+# walks right and down (locked hats: ??? and how to earn them), back to
+# the cap, and Y returns to the card over a fresh demo.
+70 71 down
+75 76 down
+80 81 down
+85 86 down
+100 101 b
+120 121 up     # the page opens on NO PLAYER: up to slot 1
+125 126 up
+130 131 up
+140 141 b
+160 161 b
+170 171 right
+175 176 right
+180 181 b
+190 191 right
+195 196 right
+200 201 b
+220 221 start
+240 241 right
+250 251 down
+255 256 right
+265 266 down
+270 271 right
+280 281 down
+285 286 right
+320 321 b
+370 371 x
+shot 420
+430 431 right
+shot 450
+460 461 down
+shot 480
+490 491 up
+500 501 left
+510 511 b
+shot 530
+560 561 y
+shot 620

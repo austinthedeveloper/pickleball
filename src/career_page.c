@@ -173,6 +173,8 @@ static u8 page_card(u16 pressed, u16 held)
     }
     if (pressed & (PAD_B | PAD_START))
         page_open_edit(0);
+    else if (pressed & PAD_X)
+        return CAREER_PAGE_MUSEUM;
     return CAREER_PAGE_STAY;
 }
 

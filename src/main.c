@@ -3,6 +3,7 @@
 #include "audio_events.h"
 #include "collision.h"
 #include "career_page.h"
+#include "museum.h"
 #include "court_style.h"
 #include "game.h"
 #include "hud_scene.h"
@@ -22,11 +23,12 @@
 #include "select.h"
 #include "story.h"
 
-/* The court (title, attract, match), Player Select (ADR-020), or the open
- * play park (ADR-034). */
-enum { SCENE_MATCH = 0, SCENE_SELECT = 1, SCENE_PARK = 2 };
+/* The court (title, attract, match), Player Select (ADR-020), the open
+ * play park (ADR-034), or the HAT MUSEUM (ADR-061). */
+enum { SCENE_MATCH = 0, SCENE_SELECT = 1, SCENE_PARK = 2, SCENE_MUSEUM = 3 };
 static u8 s_scene;
 static u8 s_open_select;
+static u8 s_open_museum;
 static u8 s_open_park;
 /* s_open_park leaving practice: the title demo is set up first. */
 #define S_OPEN_PARK_FROM_PRACTICE 2
@@ -236,6 +238,11 @@ static void update_title_career(u16 pressed)
 
     if (result == CAREER_PAGE_SAVE)
         save_write();
+    if (result == CAREER_PAGE_MUSEUM) {
+        museum_begin(g_career_page.slot);
+        s_open_museum = 1;
+        return;
+    }
     if (result == CAREER_PAGE_CLOSE) {
         g_title_page = TITLE_PAGE_MENU;
         want = 0;
@@ -446,7 +453,7 @@ static void update_title(void)
             }
         }
     }
-    if (s_open_select || s_open_park)
+    if (s_open_select || s_open_park || s_open_museum)
         return;
     /* The demo P1: in singles every other frame (KNOWN_ISSUES #9). In
      * doubles, every frame while the ball is in its lane, else on the one
@@ -514,6 +521,33 @@ static void update_controllers(void)
     PROFILE_MARK(0);
 }
 
+/* One HAT MUSEUM frame (ADR-061): Y goes back to the CAREER page's CARD
+ * over a fresh title demo, writing the save if a hat was put on. */
+static void update_museum(void)
+{
+    u16 pressed = g_pad_snapshots[0].pressed;
+    u8 result = museum_input(pressed);
+
+    ui_sounds(pressed);
+    if (result == MUSEUM_STAY) {
+        render_museum_prepare();
+        audio_update();
+        WaitForVBlank();
+        render_museum_commit();
+        profile_vblank_done();
+        return;
+    }
+    if (result == MUSEUM_CLOSE_SAVE)
+        save_write();
+    render_museum_close();
+    game_start_attract();
+    /* render_open_match applies the new config itself. */
+    g_match_config_changed = 0;
+    render_open_match();
+    s_scene = SCENE_MATCH;
+    profile_resync();
+}
+
 /* One Player Select frame: 1P reads port 1, 2P port 2. */
 static void update_select(void)
 {
@@ -569,6 +603,7 @@ int main(void)
     g_title_2p = 0;
     s_scene = SCENE_MATCH;
     s_open_select = 0;
+    s_open_museum = 0;
     s_open_park = 0;
     g_pause_park = 0;
     s_practice_pending = 0;
@@ -596,6 +631,18 @@ int main(void)
         if (s_scene == SCENE_PARK) {
             update_park();
             profile_frame_end();
+            continue;
+        }
+        if (s_scene == SCENE_MUSEUM) {
+            update_museum();
+            profile_frame_end();
+            continue;
+        }
+        if (s_open_museum) {
+            s_open_museum = 0;
+            render_museum_open();
+            s_scene = SCENE_MUSEUM;
+            profile_resync();
             continue;
         }
         if (s_open_park) {

@@ -176,9 +176,10 @@ static void test_delete_and_records(void)
     career_create(0, "ACE");
     career_page_begin();
     press(PAD_B);                               /* the card */
-    /* X alone does nothing; L+R+X deletes. */
-    press(PAD_X);
-    assert(g_save.career[0].used);
+    /* X alone opens the HAT MUSEUM (ADR-061), the card stays; L+R+X
+     * deletes. */
+    assert(press(PAD_X) == CAREER_PAGE_MUSEUM);
+    assert(g_save.career[0].used && g_career_page.view == CAREER_VIEW_CARD);
     assert(career_page_input(PAD_X, PAD_L | PAD_R | PAD_X) ==
         CAREER_PAGE_SAVE);
     assert(g_save.career[0].used == 0 && career_active() == 0);

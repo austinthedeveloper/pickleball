@@ -94,6 +94,13 @@ void render_select_commit(void);
 void render_park_open(void);
 void render_park_prepare(void);
 void render_park_commit(void);
+/* The HAT MUSEUM (ADR-061): opens with a fade; a frame's buffers before
+ * VBlank, uploads inside it; closing puts back what the court needs
+ * before render_open_match. */
+void render_museum_open(void);
+void render_museum_prepare(void);
+void render_museum_commit(void);
+void render_museum_close(void);
 /* Brightness fade out (1) or in (0) over a few frames. */
 void render_fade(u8 out);
 /* Builds OAM and HUD buffers; call before WaitForVBlank. */

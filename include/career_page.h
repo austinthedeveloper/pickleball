@@ -12,7 +12,8 @@
  *   SLOTS   the three players, NO PLAYER, and RECORDS. B opens a player
  *           (making them active), creates one in an empty slot, or on NO
  *           PLAYER makes nobody active; Y leaves.
- *   CARD    the player's stats and unlocks. B edits; L+R+X deletes; Y back.
+ *   CARD    the player's stats and unlocks. B edits; X opens the HAT
+ *           MUSEUM (ADR-061); L+R+X deletes; Y back.
  *   EDIT    name and look. Up/Down rows, Left/Right values (locked hair and
  *           hats are skipped); B on NAME types it, B elsewhere keeps, Y
  *           puts the look back (and drops a player just created).
@@ -53,7 +54,8 @@ enum {
 enum {
     CAREER_PAGE_STAY = 0,
     CAREER_PAGE_CLOSE = 1,      /* back to the title menu */
-    CAREER_PAGE_SAVE = 2        /* stay; write the save */
+    CAREER_PAGE_SAVE = 2,       /* stay; write the save */
+    CAREER_PAGE_MUSEUM = 3      /* open the CARD player's HAT MUSEUM */
 };
 
 /* The name keyboard: rows of CAREER_KEY_COLS letters ("A".."Z", space,

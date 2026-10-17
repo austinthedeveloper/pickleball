@@ -126,6 +126,9 @@ ADR-024.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 3), `test_career_page.c: test_no_player`, `test_story.c: test_unlock_card`; MesenCE: Player Select on the player's look, ACE on the score panel, UNLOCKED! VISOR after a win; `make perf` zero overruns (the SRAM copy in assembly).
 - [x] `M4-CAREER-04` Gear that changes stats, always a trade-off: a career player's hat moves a paddle stat point.
   - Verified: [ADR-047](../docs/decisions/ADR-047-career.md) (stage 4), `test_career.c: test_gear`, the asset build's budget and 15% checks for every pairing, MesenCE (the editor's stat line, Player Select's bars); golden trace identical, `make perf` zero overruns.
+- [x] `M4-CAREER-05` The HAT MUSEUM: every hat in a display case on the career player, locked ones a black silhouette with how to earn them; X on the player's card.
+  - Accept: unlocked hats in the player's colours and wearable with B; locked ones dark, named ???, with the unlock's hint; zero overruns; the save written only on leaving.
+  - Verified: [ADR-061](../docs/decisions/ADR-061-hat-museum.md), `test/test_museum.c`, `test_career_page.c` (X opens it), `museum.timeline` in `make perf`; screenshots with no hats and with eight unlocked.
 
 ## Pause
 
