@@ -692,11 +692,12 @@ u16 rb_react[MAX_PLAYERS];
 static u8 s_react_serial;                /* g_flair.react_serial drawn */
 static u8 s_emote_mask;                 /* emote objects up, by slot bit */
 /* What each emote object shows (emote | bob << 4) and the camera it was
- * placed under: a frozen player's emote is rewritten only on a change. */
+ * placed under, by slot: a frozen player's emote is rewritten only on a
+ * change. */
 static u8 s_emote_key[MAX_PLAYERS];
 static s16 s_emote_sx[MAX_PLAYERS];     /* each emote's projected x */
-static s16 s_emote_cam_x;
-static s16 s_emote_cam_y;
+static s16 s_emote_cam_x[MAX_PLAYERS];
+static s16 s_emote_cam_y[MAX_PLAYERS];
 static u8 s_dust_shown;
 static u8 s_cord_shown;
 static s16 s_dust_sx;                   /* projected when they start */
@@ -810,27 +811,42 @@ static void render_emotes(void)
     u8 emote;
     u8 key;
     u8 still;
+    u8 parity;
+    u8 projected;
     s16 x;
     s16 y;
 
     if (!(g_flair.emote[0] | g_flair.emote[1] | g_flair.emote[2] |
             g_flair.emote[3]) && !s_emote_mask)
         return;
-    still = oam_cam_x == s_emote_cam_x && oam_cam_y == s_emote_cam_y;
-    s_emote_cam_x = oam_cam_x;
-    s_emote_cam_y = oam_cam_y;
+    /* At most two emotes written a frame (a slot every other frame, by
+     * parity) and one projected: a doubles result can raise four at once,
+     * on the frame the HUD draws the quip (make perf). Hides are at once. */
+    parity = g_game_state.frame_count & 1;
+    projected = 0;
     for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player, bit <<= 1) {
         emote = g_flair.emote[slot];
         if (emote != FLAIR_EMOTE_NONE && player->active) {
+            if ((slot & 1) != parity)
+                continue;
             key = emote | (((g_game_state.frame_count >> 3) & 1) << 4);
+            /* Unchanged since this slot was written (its emote, bob, and
+             * the camera then): leave it. */
+            still = oam_cam_x == s_emote_cam_x[slot] &&
+                oam_cam_y == s_emote_cam_y[slot];
             if (still && player->frozen && (s_emote_mask & bit) &&
                     s_emote_key[slot] == key)
                 continue;
             s_emote_key[slot] = key;
+            s_emote_cam_x[slot] = oam_cam_x;
+            s_emote_cam_y[slot] = oam_cam_y;
             y = FROM_FP(player->y_fp);
             /* A frozen player's spot is projected once (a moving camera
              * only moves the object: oam_write takes it off). */
             if (player->frozen == 0 || (s_emote_mask & bit) == 0) {
+                if (projected)
+                    continue;           /* the next one waits a turn */
+                projected = 1;
                 x = FROM_FP(player->x_fp);
                 s_emote_sx[slot] = projection_x(x, y) - 4;
             }

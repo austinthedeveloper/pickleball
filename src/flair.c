@@ -18,6 +18,13 @@ static u8 s_emotes_counting;            /* one counts down (not held) */
 /* The next slot whose celebration flair_tick looks up: one a frame, after
  * the match's first frames, which have no time to spare (make perf). */
 static u8 s_celebrate_next;
+#define FLAIR_RESULT(phase) \
+    ((phase) == GAME_PHASE_POINT_RESULT || (phase) == GAME_PHASE_MATCH_RESULT)
+/* The point's losing player nearest the ball (a quip's face), and each
+ * team's last hitter this rally (a star's winner): 0xff for none. */
+static u8 s_quip_slot;
+static u8 s_quip_team;
+static u8 s_last_hit[2];
 
 /* Constant stores, no memset or loops: it runs on a new match's frame,
  * the game's heaviest (make perf). */
@@ -28,6 +35,7 @@ void flair_initialize(void)
     g_flair.wake = 1;
     ++g_flair.react_serial;
     g_flair.reacting = 0;
+    g_flair.quip_team = 0xff;
     g_flair.react[0] = FLAIR_REACT_NONE;
     g_flair.react[1] = FLAIR_REACT_NONE;
     g_flair.react[2] = FLAIR_REACT_NONE;
@@ -51,6 +59,9 @@ void flair_initialize(void)
     s_emotes_on = 0;
     s_emotes_counting = 0;
     s_celebrate_next = 0;
+    s_quip_slot = 0xff;
+    s_last_hit[0] = 0xff;
+    s_last_hit[1] = 0xff;
 }
 
 static void flair_emote(u8 slot, u8 emote, u8 frames)
@@ -88,8 +99,10 @@ static void flair_point(u8 winner, s16 ball_x, s16 ball_y)
     u8 slot;
     u8 diver = 0xff;
     s16 nearest = 0x7fff;
+    s16 nearest_runner = 0x7fff;
     s16 d;
 
+    s_quip_slot = 0xff;
     for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player) {
         if (!player->active) {
             g_flair.react[slot] = FLAIR_REACT_NONE;
@@ -97,28 +110,41 @@ static void flair_point(u8 winner, s16 ball_x, s16 ball_y)
         }
         if (player->team == winner) {
             g_flair.react[slot] = FLAIR_REACT_CELEBRATE;
-            if (g_flair.rally_shots >= FLAIR_STAR_RALLY)
-                flair_emote(slot, FLAIR_EMOTE_STAR,
-                    FLAIR_RESULT_EMOTE_FRAMES);
             continue;
         }
         g_flair.react[slot] = FLAIR_REACT_SLUMP;
-        if (g_game_state.last_fault != GAME_FAULT_SECOND_BOUNCE ||
-                player->state != PLAYER_STATE_MOVE)
-            continue;
+        /* The loser nearest the ball: the one who missed it, the face of
+         * a quip; running for a second bounce, they dive. */
         d = flair_abs(FROM_FP(player->x_fp) - ball_x) +
             flair_abs(FROM_FP(player->y_fp) - ball_y);
         if (d < nearest) {
             nearest = d;
+            s_quip_slot = slot;
+            s_quip_team = player->team;
+        }
+        if (g_game_state.last_fault != GAME_FAULT_SECOND_BOUNCE ||
+                player->state != PLAYER_STATE_MOVE)
+            continue;
+        if (d < nearest_runner) {
+            nearest_runner = d;
             diver = slot;
         }
     }
     if (diver != 0xff)
         g_flair.react[diver] = FLAIR_REACT_DIVE;
+    /* A long rally's star for the winner who hit last (one emote, not a
+     * team's: a doubles result has no time for four, make perf). */
+    if (g_flair.rally_shots >= FLAIR_STAR_RALLY &&
+            s_last_hit[winner] != 0xff)
+        flair_emote(s_last_hit[winner], FLAIR_EMOTE_STAR,
+            FLAIR_RESULT_EMOTE_FRAMES);
     g_flair.result_frames = 0;
     g_flair.reacting = 1;
     ++g_flair.react_serial;
     g_flair.active = 1;
+    /* The point result begins (rules_resolve_point sets it next): the
+     * emotes just set belong to it, so that change must not clear them. */
+    s_phase = GAME_PHASE_POINT_RESULT;
 }
 
 void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
@@ -129,6 +155,9 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
     g_flair.fresh = 1;
     switch (kind) {
     case EVENT_SERVE:
+        s_last_hit[0] = 0xff;
+        s_last_hit[1] = 0xff;
+        s_last_hit[detail >= 2] = detail;
         g_flair.rally_shots = 1;
         g_flair.soft_run = 0;
         g_flair.shot = 0xff;
@@ -138,6 +167,7 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
             ++g_flair.rally_shots;
         g_flair.shot = detail >> 4;
         slot = detail & 3;
+        s_last_hit[slot >= 2] = slot;
         if (g_flair.shot == SHOT_DRIVE)
             g_flair.squash_timer = FLAIR_SQUASH_FRAMES;
         if (g_flair.shot != SHOT_SOFT) {
@@ -178,9 +208,17 @@ void flair_quip(u8 losing_team)
      * the next serve has begun would hold its emote through that serve. */
     if (phase != GAME_PHASE_POINT_RESULT && phase != GAME_PHASE_MATCH_RESULT)
         return;
+    /* The loser nearest the ball at the point (flair_point), else the
+     * team's first. */
+    if (s_quip_slot != 0xff && s_quip_team == losing_team) {
+        flair_emote(s_quip_slot, emote, FLAIR_RESULT_EMOTE_FRAMES);
+        return;
+    }
     for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player)
-        if (player->active && player->team == losing_team)
+        if (player->active && player->team == losing_team) {
             flair_emote(slot, emote, FLAIR_RESULT_EMOTE_FRAMES);
+            return;
+        }
 }
 
 /* Z's over the receivers while a human server takes their time. */
@@ -207,7 +245,15 @@ static void flair_tick_active(u8 phase)
     u8 slot;
     u8 on;
 
+    /* A point's result going on to the match's keeps its emotes. */
+    if (changed && FLAIR_RESULT(phase) && FLAIR_RESULT(s_phase))
+        changed = 0;
+
     s_phase = phase;
+    if (g_flair.quip_team != 0xff) {
+        flair_quip(g_flair.quip_team);
+        g_flair.quip_team = 0xff;
+    }
     if (g_flair.dust_timer)
         --g_flair.dust_timer;
     if (g_flair.cord_timer)

@@ -54,6 +54,8 @@ typedef struct {
                                    a streak; 0 lets ticks and draws skip */
     u8 react_serial;            /* moves when a body frame may change */
     u8 reacting;                /* react[] holds a point's reactions */
+    u8 quip_team;               /* FLAIR_QUIP's team for the next tick, or
+                                   0xff */
     u8 wake;                    /* flair_tick wanted though not active: a
                                    phase change, serve setup, lookups */
     u8 fresh;                   /* an event this frame: render waits a
@@ -92,8 +94,14 @@ void flair_tick(void);
             flair_tick(); \
     } while (0)
 /* The side that lost the point says a quip (story_quip): its players emote
- * how they lost it. */
+ * how they lost it. FLAIR_QUIP() only notes the team, a store on the HUD's
+ * busy frame; the next tick applies it (flair_quip). */
 void flair_quip(u8 losing_team);
+#define FLAIR_QUIP(losing_team) \
+    do { \
+        g_flair.quip_team = (losing_team); \
+        g_flair.active = 1; \
+    } while (0)
 /* A slot's body frame index for its point reaction, or FLAIR_NONE. */
 u8 flair_body_frame(u8 slot);
 
