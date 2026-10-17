@@ -31,6 +31,15 @@ void story_begin_initials(void)
         return;
     if (g_save_new_records == 0)
         return;
+    /* Only at a game over (amended 2026-10-16): a loss to the CPU ends the
+     * run, the last ladder opponent beaten ends the ladder, and a 2P match
+     * has no run. A ladder or open play win keeps its records waiting. */
+    if (g_match_config.human[2] == 0 && g_game_state.match_winner == 0) {
+        if (g_match_config.open_play)
+            return;
+        if (g_match_config.opponent != OPPONENT_COUNT - 1)
+            return;
+    }
     g_story.card = STORY_CARD_INITIALS;
     g_story.timer = 0;
     g_story.cursor = 0;

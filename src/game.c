@@ -160,9 +160,8 @@ void game_new_match(void)
 {
     g_next_opponent = 0;
     g_back_to_park = 0;
-    /* A record beaten in a match left early keeps no initials (ADR-040):
-     * only a finished match asks for them. */
-    g_save_new_records = 0;
+    /* A record beaten in a match left early waits for the next game over
+     * (ADR-040), which asks for its initials. */
     g_career_new_unlocks = 0;
     players_initialize();
     ball_initialize();

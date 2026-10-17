@@ -18,6 +18,13 @@ says who set them, and asking for initials makes a new record an event.
   (`BEST STREAK 5`, `LONGEST RALLY 12`, or `STREAK 5  RALLY 12`), three big
   letters with the chosen one underlined, and `UP DOWN  @ NEXT  START OK`.
   One entry names every record beaten.
+- **Only at a game over** (amended 2026-10-16; it asked after every
+  finished match that beat a record, which on a winning run was nearly
+  every match): the card opens when 1P loses to the CPU (the run is over),
+  beats the last ladder opponent (the ladder is cleared), or a 2P match
+  ends (it has no run). A ladder or open play win keeps its beaten records
+  waiting (`g_save_new_records`), and the next game over names them all
+  in one entry. Until then they show `---`; a power cycle loses the wait.
 - **Who:** 1P's pad, like the rest of the result screen. Records count as
   ADR-021 says (the rally in 2P versus too), so 1P names those as well.
 - **Controls:** Up and Down change the letter (A-Z, wrapping; held, they
@@ -34,7 +41,8 @@ says who set them, and asking for initials makes a new record an event.
   menu follow as before.
 - **A beaten record's initials clear** at once and show `---` until they
   are entered. A match left early (RESTART, MAIN MENU) keeps the new
-  number, but asks for no initials: only a finished match does.
+  number, and its initials wait for the next game over (amended
+  2026-10-16; they used to be dropped).
 - **A run extends its own record** (amended 2026-10-14): once a win
   streak takes the best streak and its initials are entered, the next wins
   of that unbroken run raise the record under the same initials without
@@ -68,9 +76,13 @@ through the card.
 - `test_save.c: test_migrate_v8`, `test_initials`: migration, a beaten
   record clears its initials, entry sets every beaten one and saves, a
   shorter rally or a loss beats nothing, erase clears them.
-- `test_story.c: test_initials_card`, `test_initials_need_a_finished_match`:
+- `test_story.c: test_initials_card`, `test_initials_wait_for_game_over`:
   never in attract or without a record, letters wrap and repeat, the
   minimum, back and next, the timeout keeps the letters, Start saves; a
-  RESTART drops the request.
+  record survives a RESTART, a ladder or open play win does not ask, and
+  a ladder clear, a loss, or a 2P match does.
 - MesenCE: the golden run's first match ends on the card (frame 1308) and
-  its B presses enter initials; the trace was re-recorded there.
+  its B presses enter initials; the trace was re-recorded there. It is a
+  loss, so the game over amendment leaves the trace identical; the same
+  run poked into a 1P win goes on to the next opponent's intro card with
+  both records waiting.

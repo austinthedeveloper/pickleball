@@ -15,8 +15,8 @@ ADR-024.
 - [x] `M4-SAVE-02` RECORDS page on the title, with an erase combo.
   - Verified: ADR-021; zero frame overruns on the records timeline.
 - [x] `M4-SAVE-03` Initials entry for new records, arcade style.
-  - Accept: a new best streak or longest rally asks for three letters, which the records page shows; the save layout change bumps `SAVE_VERSION`.
-  - Verified: [ADR-040](../docs/decisions/ADR-040-record-initials.md), save layout 9 (48 bytes; 4, 7, 8 migrate), `test_save.c: test_migrate_v8, test_initials`, `test_story.c: test_initials_card`; the golden run ends its first match on the card; zero overruns in `make perf`.
+  - Accept: a new best streak or longest rally asks for three letters at the next game over (a loss to the CPU, the ladder cleared, or a 2P match's end), which the records page shows; the save layout change bumps `SAVE_VERSION`.
+  - Verified: [ADR-040](../docs/decisions/ADR-040-record-initials.md), save layout 9 (48 bytes; 4, 7, 8 migrate), `test_save.c: test_migrate_v8, test_initials`, `test_story.c: test_initials_card, test_initials_wait_for_game_over`; the golden run ends its first match on the card; zero overruns in `make perf`.
 - [ ] `M4-SAVE-04` Verify the save on a physical cart with SRAM and a battery.
   - Accept: records survive a power cycle on real hardware; logged in `test/hardware-log.md`.
 

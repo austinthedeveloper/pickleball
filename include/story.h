@@ -53,8 +53,10 @@ extern StoryState g_story;
 void story_initialize(void);
 /* Shows the intro card when the match has a ladder opponent. */
 void story_begin_intro(void);
-/* Shows the initials card when a record was beaten (g_save_new_records)
- * outside the attract demo, starting from the last initials entered. */
+/* Shows the initials card at a game over (a loss to the CPU, the ladder
+ * cleared, or a 2P match's end) when records were beaten
+ * (g_save_new_records) outside the attract demo, starting from the last
+ * initials entered. */
 void story_begin_initials(void);
 /* Shows the unlock card (ADR-047) when the career player just earned
  * unlocks (g_career_new_unlocks), outside the attract demo; it clears them

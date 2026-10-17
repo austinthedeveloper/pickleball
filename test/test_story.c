@@ -88,6 +88,9 @@ static void test_initials_card(void)
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     story_initialize();
+    match_config_defaults();
+    match_config_opponent(1);
+    g_game_state.match_winner = 1;              /* a loss: game over */
     g_attract = 0;
     story_begin_initials();
     assert(g_story.card == STORY_CARD_NONE);    /* nothing beaten */
@@ -149,21 +152,53 @@ static void test_initials_card(void)
     assert(!story_update(PAD_START, 0));
 }
 
-/* ADR-040: a record beaten in a match left early asks for nothing. */
-static void test_initials_need_a_finished_match(void)
+/* ADR-040: a record beaten in a match left early waits for the next
+ * game over, which asks for it. */
+static void test_initials_wait_for_game_over(void)
 {
     memset(g_host_sram, 0, sizeof(g_host_sram));
     save_initialize();
     story_initialize();
     match_config_defaults();
+    match_config_opponent(1);
     g_attract = 0;
     game_new_match();
     save_record_rally(5);
     game_new_match();                           /* RESTART */
-    story_begin_initials();
-    assert(g_story.card == STORY_CARD_NONE);
     assert(g_save.records.longest_rally == 5);
     assert(g_save.initials.longest_rally[0] == 0);
+    assert(g_save_new_records == SAVE_NEW_RALLY);
+
+    /* A ladder win, not the last opponent's: no card. */
+    g_game_state.match_winner = 0;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);
+    /* Nor an open play win. */
+    g_match_config.open_play = 1;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE);
+    g_match_config.open_play = 0;
+    /* The ladder cleared asks. */
+    match_config_opponent(OPPONENT_COUNT - 1);
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_INITIALS);
+    g_story.card = STORY_CARD_NONE;
+    /* So does a loss, open play's too. */
+    match_config_opponent(1);
+    g_game_state.match_winner = 1;
+    g_match_config.open_play = 1;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_INITIALS);
+    g_story.card = STORY_CARD_NONE;
+    g_match_config.open_play = 0;
+    /* And a 2P match, won or lost. */
+    match_config_defaults();
+    g_match_config.human[2] = 1;
+    g_game_state.match_winner = 0;
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_INITIALS);
+    g_story.card = STORY_CARD_NONE;
+    g_save_new_records = 0;
 }
 
 /* ADR-047: the unlock card shows what a career player just earned, never
@@ -246,7 +281,7 @@ int main(void)
     test_ladder_clear_record();
     test_lines();
     test_initials_card();
-    test_initials_need_a_finished_match();
+    test_initials_wait_for_game_over();
     test_unlock_card();
     test_quips();
     printf("story host checks passed\n");
