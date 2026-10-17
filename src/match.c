@@ -130,6 +130,21 @@ u8 match_slot_hat(u8 slot)
     return g_opponent_hat[g_match_config.opponent][member];
 }
 
+/* ADR-064: a slot's point celebration (an id in CELEBRATION_FRAMES): the
+ * cheer for humans, else the ladder player's (or open play partner's). */
+u8 match_slot_celebrate(u8 slot)
+{
+    u8 member = match_slot_member(slot);
+
+    if (g_match_config.human[slot])
+        return 0;
+    if (match_slot_partner(slot))
+        return g_opponent_celebrate[g_match_config.partner][0];
+    if (member == 0xff)
+        return 0;
+    return g_opponent_celebrate[g_match_config.opponent][member];
+}
+
 const AiStyle *match_slot_style(u8 slot)
 {
     u8 member = match_slot_member(slot);

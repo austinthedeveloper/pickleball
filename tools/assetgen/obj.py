@@ -71,8 +71,10 @@ V2_ROLES = set(range(1, 16))
 OBJECT_PALETTE = [0, bgr15(6, 6, 2), bgr15(28, 29, 6), bgr15(31, 31, 24),
                   bgr15(0, 0, 0), bgr15(31, 27, 8), bgr15(31, 31, 31),
                   # 7-9: the practice ball machine's greys (ADR-028).
-                  bgr15(10, 11, 13), bgr15(17, 18, 20), bgr15(24, 25, 26)] + \
-    [0] * 6
+                  bgr15(10, 11, 13), bgr15(17, 18, 20), bgr15(24, 25, 26),
+                  # 10 red (the anger emote), 15 brown (the trophy's base):
+                  # the sprite wish list (ADR-064).
+                  bgr15(28, 6, 6), 0, 0, 0, 0, bgr15(12, 7, 4)]
 # Shadows draw with OBJ palette 4 so color math halves the court behind them.
 SHADOW_PALETTE = [0, 0, 0, 0, bgr15(0, 0, 0)] + [0] * 11
 # Doubles (ADR-018): shadows are opaque because colour math is off.
@@ -250,6 +252,32 @@ def obj_assets(manifest):
         if not any(v for row in block(rows, x0, y0, 32, 32) for v in row):
             raise AssetError(f"large object {name} is empty")
         header.append(f"#define OBJTILE_{name.upper()} {slot_tile(slot)}")
+    # ADR-064: small objects in free sheet slots, [slot, cell, size]: a
+    # slot's 4x4 grid of 8x8 cells; a 16x16 object takes the cell, the next,
+    # and the two under them (tiles t, t + 1, t + 16, t + 17).
+    large_slots = set(manifest.get("large_objects", {}).values())
+    for name, (slot, cell, size) in manifest.get("sheet_objects", {}).items():
+        if slot in used_slots or slot in large_slots or slot == hat_slot or \
+                not OBJ_TABLE1_SLOTS <= slot < slots:
+            raise AssetError(f"sheet object {name}: slot {slot} is taken or "
+                             "not a sheet slot in name table 2")
+        if size not in (8, 16) or not 0 <= cell < 16 or \
+                (size == 16 and (cell % 4 == 3 or cell >= 12)):
+            raise AssetError(f"sheet object {name}: cell {cell} size {size} "
+                             "is outside its slot")
+        x0 = (slot % 4) * 32 + (cell % 4) * 8
+        y0 = (slot // 4) * 32 + (cell // 4) * 8
+        if not any(v for row in block(rows, x0, y0, size, size) for v in row):
+            raise AssetError(f"sheet object {name} is empty")
+        tile = slot_tile(slot) + (cell // 4) * 16 + cell % 4
+        header.append(f"#define OBJTILE_{name.upper()} {tile}")
+    # ADR-064: celebration ids (opponents.json 'celebrate') to frame indices.
+    celebrations = manifest.get("celebrations", ["cheer"])
+    if celebrations[0] != "cheer" or any(c not in frames for c in celebrations):
+        raise AssetError("celebrations: manifest frames, the cheer first")
+    header.append(f"#define CELEBRATION_COUNT {len(celebrations)}")
+    header.append("#define CELEBRATION_FRAMES { " + ", ".join(
+        str(names.index(c)) for c in celebrations) + " }")
     for name, chars, _ in PARK_FONTS:
         header.append(f"#define OBJTILE_FONT_{name} {font_base[name]}")
         header.append(f'#define OBJFONT_{name} "{chars}"')

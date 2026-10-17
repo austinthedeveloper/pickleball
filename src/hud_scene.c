@@ -4,6 +4,7 @@
 #include "input.h"
 #include "serve.h"
 #include "hud.h"
+#include "flair.h"
 #include "hud_scene.h"
 #include "match.h"
 #include "profile.h"
@@ -2004,6 +2005,9 @@ static void hud_scene_step(u16 key, u8 step)
              * a close call's replay (GOOFY_IDEAS.md). */
             s_quip = (g_replay.active && !g_attract) ? 0 :
                 story_quip(winner ^ 1, g_game_state.frame_count);
+            /* ADR-064: and its players' faces say how it went. */
+            if (s_quip)
+                flair_quip(winner ^ 1);
         } else if (step <= HUD_STEP_EXTRA2) {
             hud_center_prompt_half(CENTER_PANEL_ROW, team_hud_palette(winner),
                 hud_point_text(winner), step == HUD_STEP_EXTRA2);

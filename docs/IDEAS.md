@@ -541,6 +541,10 @@ there is no overhead.
 
 ## Sprite wish list
 
+**Done:** [ADR-064](decisions/ADR-064-sprite-wishlist-in-play.md) puts
+every sprite below in the game (`M4-ART-03`); the notes below are the
+original list.
+
 Art that would make the game read better, in rough order of payoff. Every
 sprite on the list has a draft in
 [assets/source/wishlist/](../assets/source/wishlist/), drawn in the house

@@ -49,6 +49,8 @@ enum {
     RENDER_OAM_SHADOWS = 14,      /* 14-17: by slot */
     RENDER_OAM_SPARK = 18,        /* 18-21: impact effects reserve */
     RENDER_OAM_DEBUG_MARKER = 19,
+    RENDER_OAM_DUST = 20,         /* a bounce's dust (ADR-064) */
+    RENDER_OAM_CORD = 21,         /* the net shivering (ADR-064) */
     RENDER_OAM_ACCESSORIES = 22,  /* 22-25: ponytails by slot (ADR-014) */
     RENDER_OAM_MACHINE = 26,      /* 26-29: practice ball machine (ADR-028) */
     RENDER_OAM_REPLAY = 30,       /* 30-31: the close call's ball and shadow
@@ -56,7 +58,13 @@ enum {
     RENDER_OAM_WATCHER = 32,      /* 32-33: the opponent's partner watching
                                      a singles match (ADR-042) */
     RENDER_OAM_ZONE = 34,         /* 34-37: practice return zone corners */
-    RENDER_OAM_FIRST_HIDDEN = 38
+    /* ADR-064, the sprite wish list: */
+    RENDER_OAM_EMOTES = 38,       /* 38-41: over the heads, by slot */
+    RENDER_OAM_STREAK = 42,       /* behind a drive or a slice */
+    RENDER_OAM_CRITTER = 43,      /* 43-46: a venue's visitor, 2x2 */
+    RENDER_OAM_TROPHY = 47,       /* 47-50: CHAMPION!, 2x2 */
+    RENDER_OAM_PICKLE = 51,       /* practice's mascot, 32x32 */
+    RENDER_OAM_FIRST_HIDDEN = 52
 };
 
 void render_initialize(void);

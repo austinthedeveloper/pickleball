@@ -11,7 +11,8 @@
 ;     ASM_OAM_SHADOWS + slot;
 ;   * screen x = 128 + d + ((d * (s(y) - 256) + 128) >> 8), d = x - 128,
 ;     using the hardware 8x8 multiplier (ADR-011, src/projection.c);
-;   * frame from pose/state/animation, palette from flash or the player;
+;   * frame from rb_react[slot] (a point's reaction, ADR-064; $FFFF none),
+;     else pose/state/animation; palette from flash or the player;
 ;   * a hat (rb_hat[slot], 0 for none) sits at the frame's accessory
 ;     offset plus HAT_DX, HAT_RAISE above it, in front of its body; flipped,
 ;     it mirrors as 16 - x with its halves swapped (tile ^ 1), written by
@@ -208,7 +209,16 @@ _rb_body:
     sta.l rb_sx
     plx
 
-    ; --- frame tile ---
+    ; --- frame tile: a point's reaction first (ADR-064), else the pose
+    ; and state's ---
+    phx
+    lda.l rb_slot
+    asl a
+    tax
+    lda.l rb_react,x
+    plx
+    cmp.w #$FFFF
+    bne _rb_have_tile
     lda.l g_players + ASM_PLAYER_POSE,x
     and.w #$00FF
     cmp.w #ASM_POSE_CHEER
