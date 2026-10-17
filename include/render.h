@@ -64,7 +64,9 @@ enum {
     RENDER_OAM_CRITTER = 43,      /* 43-46: a venue's visitor, 2x2 */
     RENDER_OAM_TROPHY = 47,       /* 47-50: CHAMPION!, 2x2 */
     RENDER_OAM_PICKLE = 51,       /* practice's mascot, 32x32 */
-    RENDER_OAM_FIRST_HIDDEN = 52
+    RENDER_OAM_RINGS = 52,        /* 52-59: a ring's two halves by slot,
+                                     behind everything (ADR-066) */
+    RENDER_OAM_FIRST_HIDDEN = 60
 };
 
 void render_initialize(void);

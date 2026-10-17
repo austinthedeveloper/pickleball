@@ -86,6 +86,10 @@ u8 match_slot_celebrate(u8 slot);
 const u16 *match_team_hud_colors(u8 team);
 /* Nonzero when the slot plays in the configured mode. */
 u8 match_slot_active(u8 slot);
+/* Who plays the slot (ADR-066): 0 for 1P, 1 for 2P (3P and 4P with
+ * M4-MP-01), or MATCH_CPU for a CPU. Its ring has that player's colour. */
+#define MATCH_CPU 0xff
+u8 match_slot_controller(u8 slot);
 /* Nonzero when every assigned palette is unique; asserted in debug builds. */
 u8 match_config_palettes_unique(void);
 /* Builds a slot's 16-colour OBJ palette from shared/team/skin/paddle parts. */

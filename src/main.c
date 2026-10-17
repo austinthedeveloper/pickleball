@@ -38,6 +38,29 @@ static u8 s_practice_pending;
 static u8 s_switched;
 
 /* Menu sounds (ADR-029): Y goes back, a choice confirms, a move blips. */
+/* Buttons newly pressed on controllers 2-4 (3 and 4 on a Multitap). */
+static u16 title_join_presses(void)
+{
+    if (g_multitap_present)
+        return g_pad_snapshots[1].pressed | g_pad_snapshots[2].pressed |
+            g_pad_snapshots[3].pressed;
+    return g_pad_snapshots[1].pressed;
+}
+
+/* Start on another controller joins or leaves (ADR-066): 2P on port 2,
+ * 3P and 4P on a Multitap's next pads (pad positions 2 and 3). */
+static void title_joins(void)
+{
+    if (g_pad_snapshots[1].pressed & PAD_START)
+        g_title_joined ^= TITLE_JOIN_2P;
+    if (g_multitap_present == 0)
+        return;
+    if (g_pad_snapshots[2].pressed & PAD_START)
+        g_title_joined ^= TITLE_JOIN_3P;
+    if (g_pad_snapshots[3].pressed & PAD_START)
+        g_title_joined ^= TITLE_JOIN_4P;
+}
+
 static void ui_sounds(u16 pressed)
 {
     if (pressed & PAD_Y)
@@ -144,7 +167,7 @@ static void update_park(void)
     if ((g_pad_snapshots[1].pressed & PAD_START) &&
             g_open_play.called == OPEN_NONE) {
         g_open_play.two_players ^= 1;
-        g_title_2p = g_open_play.two_players;
+        g_title_joined ^= TITLE_JOIN_2P;
         audio_ui(g_open_play.two_players ? SFX_CONFIRM : SFX_BACK);
     }
     if ((pressed & PAD_START) && g_open_play.called == OPEN_NONE) {
@@ -396,7 +419,7 @@ static void update_title(void)
 {
     u16 pressed = g_pad_snapshots[0].pressed;
 
-    ui_sounds(pressed | (g_pad_snapshots[1].pressed & PAD_START));
+    ui_sounds(pressed | (title_join_presses() & PAD_START));
 
     if (g_title_page == TITLE_PAGE_CAREER)
         update_title_career(pressed);
@@ -415,8 +438,7 @@ static void update_title(void)
         if (pressed & PAD_DOWN)
             g_title_mode = g_title_mode == TITLE_ENTRIES - 1 ? 0 :
                 g_title_mode + 1;
-        if (g_pad_snapshots[1].pressed & PAD_START)
-            g_title_2p ^= 1;
+        title_joins();
         if (pressed & (PAD_START | PAD_B)) {
             if (g_title_mode == TITLE_CAREER) {
                 career_page_begin();
@@ -428,7 +450,8 @@ static void update_title(void)
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
             } else if (g_title_mode == TITLE_OPEN_PLAY) {
-                open_play_begin(g_game_state.frame_count, g_title_2p);
+                open_play_begin(g_game_state.frame_count,
+                    (g_title_joined & TITLE_JOIN_2P) != 0);
                 s_open_park = 1;
                 return;
             } else if (g_title_mode == TITLE_MODIFIERS) {
@@ -450,7 +473,7 @@ static void update_title(void)
                 g_title_page = TITLE_PAGE_COURT;
             } else {
                 select_begin(g_title_mode == TITLE_DOUBLES ? MATCH_DOUBLES :
-                    MATCH_SINGLES, g_title_2p ? 2 : 1);
+                    MATCH_SINGLES, (g_title_joined & TITLE_JOIN_2P) ? 2 : 1);
                 s_open_select = 1;
                 return;
             }
@@ -603,7 +626,7 @@ int main(void)
     g_attract = 0;
     g_title_mode = TITLE_SINGLES;
     g_title_page = TITLE_PAGE_MENU;
-    g_title_2p = 0;
+    g_title_joined = TITLE_JOIN_1P;
     s_scene = SCENE_MATCH;
     s_open_select = 0;
     s_open_museum = 0;

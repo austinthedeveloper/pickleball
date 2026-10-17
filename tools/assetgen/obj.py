@@ -71,10 +71,41 @@ V2_ROLES = set(range(1, 16))
 OBJECT_PALETTE = [0, bgr15(6, 6, 2), bgr15(28, 29, 6), bgr15(31, 31, 24),
                   bgr15(0, 0, 0), bgr15(31, 27, 8), bgr15(31, 31, 31),
                   # 7-9: the practice ball machine's greys (ADR-028).
-                  bgr15(10, 11, 13), bgr15(17, 18, 20), bgr15(24, 25, 26),
-                  # 10 red (the anger emote), 15 brown (the trophy's base):
-                  # the sprite wish list (ADR-064).
-                  bgr15(28, 6, 6), 0, 0, 0, 0, bgr15(12, 7, 4)]
+                  bgr15(10, 11, 13), bgr15(17, 18, 20), bgr15(24, 25, 26)] + \
+    [0] * 6
+# 15: brown, the trophy's base (ADR-064). 10-14 are the rings' (below);
+# the anger emote uses the ring red.
+OBJECT_PALETTE[15] = bgr15(12, 7, 4)
+
+# ADR-066: player rings, a 16x8 ellipse round each player's shadow in the
+# objects palette (opaque in both layouts): 1P red, 2P blue, 3P yellow, 4P
+# green, then CPU grey, at indices 10-14. The title's join counter uses
+# the same colours (src/render.c, s_join_hud_colors).
+RING_COLORS = [bgr15(31, 9, 8), bgr15(12, 19, 31), bgr15(31, 27, 4),
+               bgr15(6, 24, 8), bgr15(21, 22, 26)]
+RING_FIRST_INDEX = 10
+OBJECT_PALETTE[RING_FIRST_INDEX:RING_FIRST_INDEX + len(RING_COLORS)] = \
+    RING_COLORS
+RING_ROWS = ["...##########...",
+             ".###........###.",
+             "##............##",
+             "#..............#",
+             "#..............#",
+             "##............##",
+             ".###........###.",
+             "...##########..."]
+
+
+def ring_tiles():
+    """Each colour's ring as two tiles, left then right (an even tile
+    first: the halves are tile and tile ^ 1)."""
+    tiles = []
+    for n in range(len(RING_COLORS)):
+        px = [[RING_FIRST_INDEX + n if ch == "#" else 0 for ch in row]
+              for row in RING_ROWS]
+        tiles.append(encode_tile([row[0:8] for row in px], 4))
+        tiles.append(encode_tile([row[8:16] for row in px], 4))
+    return tiles
 # Shadows draw with OBJ palette 4 so color math halves the court behind them.
 SHADOW_PALETTE = [0, 0, 0, 0, bgr15(0, 0, 0)] + [0] * 11
 # Doubles (ADR-018): shadows are opaque because colour math is off.
@@ -155,6 +186,22 @@ def obj_assets(manifest):
     for name, chars, fill in PARK_FONTS:
         font_base[name] = len(tiles)
         tiles += font_tiles(chars, fill)
+    # Rings (ADR-066) in a free sheet slot (ring_slot): both name tables
+    # are full. Pair n takes cells 2n and 2n + 1 of the slot's 4x4 grid, an
+    # even tile first.
+    ring_slot = manifest.get("ring_slot")
+    if ring_slot is None or not OBJ_TABLE1_SLOTS <= ring_slot < slots:
+        raise AssetError("ring_slot must be a sheet slot in name table 2")
+    x0, y0 = (ring_slot % 4) * 32, (ring_slot // 4) * 32
+    if any(v for row in block(rows, x0, y0, 32, 32) for v in row):
+        raise AssetError(f"ring_slot {ring_slot} is not empty on the sheet")
+    ring_tile_numbers = []
+    for n, tile in enumerate(ring_tiles()):
+        cell = n
+        number = slot_tile(ring_slot) + (cell // 4) * 16 + cell % 4
+        table2[number - OBJ_TILE_BUDGET] = tile
+        if n % 2 == 0:
+            ring_tile_numbers.append(number)
     if len(tiles) > OBJ_TILE_BUDGET:
         raise AssetError(f"OBJ uses {len(tiles)} tiles > {OBJ_TILE_BUDGET} "
                          "in name table 1")
@@ -278,6 +325,9 @@ def obj_assets(manifest):
     header.append(f"#define CELEBRATION_COUNT {len(celebrations)}")
     header.append("#define CELEBRATION_FRAMES { " + ", ".join(
         str(names.index(c)) for c in celebrations) + " }")
+    header.append(f"#define OBJ_RING_COLORS {len(RING_COLORS)}")
+    header.append("#define OBJ_RING_TILES { " +
+                  ", ".join(str(t) for t in ring_tile_numbers) + " }")
     for name, chars, _ in PARK_FONTS:
         header.append(f"#define OBJTILE_FONT_{name} {font_base[name]}")
         header.append(f'#define OBJFONT_{name} "{chars}"')

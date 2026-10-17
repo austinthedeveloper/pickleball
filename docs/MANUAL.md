@@ -21,7 +21,7 @@ Never insert or remove the Game Pak while the power is on.
 
 ### The Title Screen
 
-Press Up or Down on the Control Pad to choose a mode, then press START or B to begin. To bring friends along, each presses START on their own controller: the screen shows **2P JOINED!** (and 3P JOINED! or 4P JOINED!). Press START again to drop out.
+Press Up or Down on the Control Pad to choose a mode, then press START or B to begin. To bring friends along (**FRIENDS: PRESS START**), each presses START on their own controller. The counter at the top of the screen shows who's in: a dot in that player's colour (1P red, 2P blue, 3P yellow, 4P green) or a grey x. Press START again to drop out. Controllers 3 and 4 need a Super Multitap.
 
 ## Controls
 
@@ -224,7 +224,7 @@ When the match ends, press B. If you won, you face the next opponent on the ladd
 
 ## The Game Screen
 
-The scoreboard runs across the top of the screen. Rally results appear in large letters over the court, and prompts in the panel at the bottom. You play on the left side of the court, facing the net.
+The scoreboard runs across the top of the screen. Rally results appear in large letters over the court, and prompts in the panel at the bottom. You play on the left side of the court, facing the net. A ring at each player's feet shows who's who: 1P red, 2P blue, 3P yellow, 4P green, and grey for the computer.
 
 | Where | What it shows |
 | --- | --- |

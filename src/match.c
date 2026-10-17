@@ -239,6 +239,15 @@ u8 match_slot_active(u8 slot)
     return g_match_config.palette_id[slot] != MATCH_NO_PALETTE;
 }
 
+u8 match_slot_controller(u8 slot)
+{
+    if (slot == 0)
+        return 0;
+    /* 2P is the only other human until M4-MP-01: slot 2 in versus, or
+     * slot 1 partnering 1P (open play, ADR-034). */
+    return g_match_config.human[slot] ? 1 : MATCH_CPU;
+}
+
 u8 match_slot_lane_top(u8 slot)
 {
     return slot == 1 || slot == 2;

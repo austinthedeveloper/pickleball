@@ -102,6 +102,7 @@
 #define ASM_OAM_GROUP_BODY 2
 #define ASM_OAM_SHADOWS 14
 #define ASM_OAM_ACCESSORIES 22
+#define ASM_OAM_RINGS 52
 #define ASM_OBJ_PRIORITY_ATTR 0x20
 
 /* Projection table rows (assets/generated/court_projection.h). */

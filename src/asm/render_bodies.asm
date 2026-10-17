@@ -18,6 +18,9 @@
 ;     it mirrors as 16 - x with its halves swapped (tile ^ 1), written by
 ;     oam_write_pair; without one
 ;     its entries are parked every frame (groups follow the depth order);
+;   * a ring (rb_ring[slot], 0 for none) round the shadow at
+;     ASM_OAM_RINGS + 2 * slot, in the objects palette, copied from the
+;     shadow's entry (ADR-066);
 ;   * female players add a ponytail at ASM_OAM_ACCESSORIES + slot (ADR-014),
 ;     offset per frame and mirrored with the body.
 ; Outputs rb_count = number of active bodies drawn. Working variables are
@@ -343,6 +346,67 @@ _rb_have_tile:
     lda.w #OBJTILE_PLAYER_SHADOW
     sta.l oam_in_tile
     jsl oam_write
+
+    ; --- ring (ADR-066): copied from the shadow just written, its screen
+    ; x and y, with no second oam_write (the doubles budget). rb_ring[slot]
+    ; is the left half's tile (low byte) and attribute (high byte), 0 for
+    ; none; the right half is the next tile. Off an edge, or with its
+    ; shadow parked, the ring parks. Its entries' high-table bits stay as
+    ; the match's first hide left them: small, x < 256. ---
+    lda.l rb_slot
+    asl a
+    tax
+    lda.l rb_ring,x
+    bne +
+    brl _rb_no_ring
++   sta.l rb_tmp
+    txa
+    asl a                           ; slot * 4: the shadow's entry
+    tax
+    sep #$20
+    lda.l oamMemory + ASM_OAM_SHADOWS * 4 + 1,x
+    sta.l rb_ring_y
+    lda.l oamMemory + ASM_OAM_SHADOWS * 4,x
+    cmp.b #4
+    bcc _rb_ring_park
+    cmp.b #244
+    bcs _rb_ring_park
+    sec
+    sbc.b #4                        ; the ring is 4 px left of the shadow
+    sta.l rb_ring_x
+    rep #$20
+    txa
+    asl a                           ; slot * 8: the ring's two entries
+    tax
+    sep #$20
+    lda.l rb_ring_x
+    sta.l oamMemory + ASM_OAM_RINGS * 4,x
+    clc
+    adc.b #8
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 4,x
+    lda.l rb_ring_y
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 1,x
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 5,x
+    lda.l rb_tmp
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 2,x
+    inc a
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 6,x
+    lda.l rb_tmp + 1
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 3,x
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 7,x
+    rep #$20
+    bra _rb_no_ring
+_rb_ring_park:
+    rep #$20
+    txa
+    asl a
+    tax
+    sep #$20
+    lda.b #$F0
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 1,x
+    sta.l oamMemory + ASM_OAM_RINGS * 4 + 5,x
+    rep #$20
+_rb_no_ring:
 
     ; --- hat (M4-OPP-04), same palette and flip as the body ---
     lda.l rb_slot

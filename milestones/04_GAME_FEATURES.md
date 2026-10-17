@@ -198,8 +198,12 @@ touching the simulation.
 
 ## Multiplayer
 
-- [ ] `M4-MP-01` Four humans in doubles with a Super Multitap in port 2 (the M3 seams; [Input and Multitap Plan](../docs/04_INPUT_MULTITAP_PLAN.md)). Players 3 and 4 join with Start on the title (`3P JOINED!`, `4P JOINED!`), as 2P does. Teams by controller: 1P and 3P on the left, 2P and 4P on the right; a slot with no human is a CPU. Each human picks a colour on Player Select (no two the same), and Career players can sit in any slot. Open play takes up to four humans too. The instruction manual (`docs/MANUAL.md`) already describes this.
+- [ ] `M4-MP-01` Four humans in doubles with a Super Multitap in port 2 (the M3 seams; [Input and Multitap Plan](../docs/04_INPUT_MULTITAP_PLAN.md)). Players 3 and 4 join with Start on the title (the join counter, `M4-MP-02`), as 2P does. Teams by controller: 1P and 3P on the left, 2P and 4P on the right; a slot with no human is a CPU. Each human picks a colour on Player Select (no two the same), and Career players can sit in any slot. Open play takes up to four humans too. The instruction manual (`docs/MANUAL.md`) already describes this.
   - Accept: host tests for the pad-to-slot mapping with 1-4 humans (with and without a Multitap, KNOWN_ISSUES #13); a doubles match with four humans holds the frame budget; the activation checklist in the Multitap plan, on real hardware with a Multitap (`M3-IN-03`).
+
+- [x] `M4-MP-02` Ready for more players: a join counter on the title (`1P` to `4P`, a dot in each player's colour or a grey x), `FRIENDS: PRESS START`, 3P and 4P joining with a Multitap, and a ring at each player's feet in their colour (1P red, 2P blue, 3P yellow, 4P green, CPU grey).
+  - Accept: zero overruns on `make perf`; golden trace identical; 3P and 4P sit out until `M4-MP-01`.
+  - Verified: [ADR-066](../docs/decisions/ADR-066-join-counter-and-rings.md).
 
 ## Polish
 
