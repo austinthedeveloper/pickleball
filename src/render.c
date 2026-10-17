@@ -952,10 +952,10 @@ static void render_pickle(void)
 
 /* The event-driven objects, the critter, and the trophy: what they leave
  * up keeps s_flair_busy set, so they are hidden once flair goes quiet; a
- * phase change runs it once too (the trophy's match result). */
+ * phase change runs it once too, a frame later (the trophy's match
+ * result). */
 static void render_flair(void)
 {
-    s_flair_phase = g_game_state.phase;
     render_streak();
     render_ground_fx();
     render_emotes();
@@ -1188,11 +1188,16 @@ void render_prepare(void)
     /* ADR-064: one test on most frames (the doubles budget); an event's
      * own frame (a contact, a bounce) is skipped: it is the rally's
      * heaviest, and the effect starts a frame later unseen. */
-    if (g_flair.fresh)
+    if (g_flair.fresh) {
         g_flair.fresh = 0;
-    else if (g_flair.active | s_flair_busy |
-            (g_game_state.phase != s_flair_phase))
+    } else if (g_game_state.phase != s_flair_phase) {
+        /* A phase change (a match's result: the trophy) is drawn on the
+         * next frame: the change's own frame is a heavy one too. */
+        s_flair_phase = g_game_state.phase;
+        s_flair_busy = 1;
+    } else if (g_flair.active | s_flair_busy) {
         render_flair();
+    }
     /* The practice objects only in practice, and once more to hide them:
      * outside it their per-frame hides cost the doubles budget. */
     if ((g_match_config.practice && !g_attract) || s_practice_drawn) {
