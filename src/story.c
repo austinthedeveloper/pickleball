@@ -11,12 +11,19 @@ StoryState g_story;
 static u8 s_last[3];
 /* The quip said last (story_quip): not said again next. */
 static const char *s_last_quip;
+/* Each side's shuffled deck of quips (ADR-063): the next line, the stride
+ * (odd, so it visits all sixteen), and how many are left in this pass. */
+static u8 s_quip_next[2];
+static u8 s_quip_stride[2];
+static u8 s_quip_left[2];
 
 void story_initialize(void)
 {
     g_story.card = STORY_CARD_NONE;
     g_story.timer = 0;
     s_last_quip = 0;
+    s_quip_left[0] = 0;
+    s_quip_left[1] = 0;
     s_last[0] = 'A';
     s_last[1] = 'A';
     s_last[2] = 'A';
@@ -123,9 +130,24 @@ const char *story_quip(u8 loser, u16 roll)
         lines = g_side_quips[QUIPS_PLAYER];
     else
         lines = g_side_quips[QUIPS_CPU];
-    pick = (u8)((roll >> 2) & (OPPONENT_QUIPS - 1));
-    if (lines[pick] == s_last_quip)
-        pick = (u8)((pick + 1) & (OPPONENT_QUIPS - 1));
+    /* ADR-063: a shuffled deck per side. Each pass starts somewhere and
+     * steps by an odd stride, both from the frame count, so it says all
+     * sixteen lines before any again, in a new order each pass. No RNG:
+     * the frame count stands in, as for the CPU's duds (ADR-058). */
+    loser = loser ? 1 : 0;
+    if (s_quip_left[loser] == 0) {
+        s_quip_next[loser] = (u8)((roll >> 2) & (OPPONENT_QUIPS - 1));
+        s_quip_stride[loser] = (u8)(((roll >> 6) & (OPPONENT_QUIPS - 1)) | 1);
+        s_quip_left[loser] = OPPONENT_QUIPS;
+        /* Not on the line the last pass ended on: that one comes last. */
+        if (lines[s_quip_next[loser]] == s_last_quip)
+            s_quip_next[loser] = (u8)((s_quip_next[loser] +
+                s_quip_stride[loser]) & (OPPONENT_QUIPS - 1));
+    }
+    pick = s_quip_next[loser];
+    s_quip_next[loser] = (u8)((pick + s_quip_stride[loser]) &
+        (OPPONENT_QUIPS - 1));
+    --s_quip_left[loser];
     s_last_quip = lines[pick];
     return s_last_quip;
 }

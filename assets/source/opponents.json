@@ -1,5 +1,5 @@
 {
-  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. ADR-058: 'serve_power' is the charge level a CPU serves at (4, the classic serve, to 30, the fastest; ADR-044), and 'serve_dud' makes about one serve in N a dud into the net (0 never; when the frame count is a multiple of N). CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are four lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. ADR-058: 'serve_power' is the charge level a CPU serves at (4, the classic serve, to 30, the fastest; ADR-044), and 'serve_dud' makes about one serve in N a dud into the net (0 never; when the frame count is a multiple of N). CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are sixteen lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
@@ -24,7 +24,10 @@
       "intro": "DAD JOKES INCOMING, SPORT!",
       "taunt": "THAT'S HOW IT'S DONE, SPORT!",
       "concede": "GOOD GAME! WHO WANTS PIZZA?",
-      "quips": ["WELL, THAT'S A PICKLE.", "I'LL BE DILLED!", "THAT ONE'S ON DAD.", "HOLD MY COFFEE."],
+      "quips": ["WELL, THAT'S A PICKLE.", "I'LL BE DILLED!", "THAT ONE'S ON DAD.", "HOLD MY COFFEE.",
+                "SUN WAS IN MY EYES, SPORT.", "I MEANT TO DO THAT.", "DAD BOD, DAD SHOT.", "TIME FOR A JUICE BOX.",
+                "KIDDO, DON'T TELL MOM.", "NOT VERY DILL-LIGHTFUL.", "I'M IN A REAL PICKLE NOW.", "BACK IN MY COLLEGE DAYS...",
+                "WHERE'S MY LUCKY VISOR?", "THAT BALL WAS DILL-USIONAL.", "PADDLE NEEDS BATTERIES.", "GOOD THING WE'RE HAVING FUN!"],
       "hud": [[31, 17, 4], [22, 10, 2]],
       "players": [
         {
@@ -56,7 +59,10 @@
       "intro": "WE'VE PLAYED SINCE 1962.",
       "taunt": "AGE BEFORE BEAUTY, DEAR.",
       "concede": "WELL PLAYED, YOUNGSTER!",
-      "quips": ["OH, FIDDLESTICKS.", "MY HIP, MY HIP!", "WHO MOVED THE NET?", "BACK IN MY DAY..."],
+      "quips": ["OH, FIDDLESTICKS.", "MY HIP, MY HIP!", "WHO MOVED THE NET?", "BACK IN MY DAY...",
+                "WHERE ARE MY GLASSES?", "I NEED A NAP.", "TIME FOR EARLY BIRD DINNER.", "MY KNEES SAID NO.",
+                "WALT, YOU HAD THAT ONE!", "BLAST THESE BIFOCALS.", "IN 1962 THAT WAS IN.", "SOMEBODY CALL MY GRANDSON.",
+                "OH, MY STARS!", "I'LL FEEL THAT TOMORROW.", "HEAVENS TO BETSY!", "THE BALLS WERE SLOWER THEN."],
       "hud": [[29, 18, 22], [20, 10, 14]],
       "players": [
         {
@@ -88,7 +94,10 @@
       "intro": "DO YOU EVEN DINK, BRO?",
       "taunt": "NEW PERSONAL BEST, BRO!",
       "concede": "BRO... THAT WAS SICK.",
-      "quips": ["BRO. NO.", "NOT ON LEG DAY!", "TOO MUCH POWER, BRO.", "SPOT ME NEXT TIME!"],
+      "quips": ["BRO. NO.", "NOT ON LEG DAY!", "TOO MUCH POWER, BRO.", "SPOT ME NEXT TIME!",
+                "I SKIPPED CARDIO FOR THIS.", "NEED MORE PROTEIN.", "MY GAINS! MY GAINS!", "BRO, I WAS MID-FLEX.",
+                "THAT'S JUST A REST SET.", "NO PAIN, NO... OW.", "WHO PUT THE NET THERE, BRO?", "TOTALLY MEANT TO BENCH THAT.",
+                "PRE-WORKOUT WORE OFF.", "BRO, CHECK MY FORM.", "ONE MORE REP. ONE MORE.", "TOO SWOLE TO BEND."],
       "hud": [[16, 31, 6], [8, 20, 2]],
       "players": [
         {
@@ -120,7 +129,10 @@
       "intro": "ARR! PREPARE TO BE BOARDED!",
       "taunt": "YE WALK THE PLANK, MATEY!",
       "concede": "ARR... KEEP THE TREASURE.",
-      "quips": ["ARRRGH!", "SHIVER ME PADDLES!", "BLOW ME DOWN!", "THAT BALL WALKS THE PLANK!"],
+      "quips": ["ARRRGH!", "SHIVER ME PADDLES!", "BLOW ME DOWN!", "THAT BALL WALKS THE PLANK!",
+                "SCURVY LUCK!", "ME PARROT DISTRACTED ME.", "DAVY JONES TOOK THAT ONE.", "YO HO... NO.",
+                "THAR SHE GOES. OVERBOARD.", "ME PEG LEG SLIPPED!", "SHE'S TAKIN' ON WATER!", "ALL HANDS ON DECK!",
+                "CURSED DOUBLOONS!", "THE SEA GIVETH, AND TAKETH.", "FETCH ME SPYGLASS!", "BARNACLES!"],
       "hud": [[28, 10, 8], [16, 4, 4]],
       "players": [
         {
@@ -152,7 +164,10 @@
       "intro": "THE KITCHEN IS OUR CRYPT.",
       "taunt": "DARKNESS ALWAYS WINS.",
       "concede": "HOW... DELIGHTFULLY GRIM.",
-      "quips": ["HOW TRAGIC.", "AS EXPECTED.", "THE VOID TOOK IT.", "SIGH. OF COURSE."],
+      "quips": ["HOW TRAGIC.", "AS EXPECTED.", "THE VOID TOOK IT.", "SIGH. OF COURSE.",
+                "THE DARKNESS IS PATIENT.", "LIKE MY HOPES, IT FELL.", "A FITTING END.", "EVEN THE BALL FLEES ME.",
+                "IT'S TOO SUNNY OUT HERE.", "I'LL WRITE A POEM ABOUT IT.", "WHATEVER.", "NEVERMORE.",
+                "MY EYELINER RAN.", "POINTS ARE FLEETING.", "THE CANDLE FLICKERS.", "ALL IS DUST. EVEN DINKS."],
       "hud": [[20, 8, 28], [12, 3, 18]],
       "players": [
         {
@@ -184,7 +199,10 @@
       "intro": "COWABUNGA, DUDE!",
       "taunt": "TOTALLY TUBULAR, BRAH!",
       "concede": "GNARLY GAME, DUDE. RESPECT.",
-      "quips": ["WIPEOUT!", "BOGUS, DUDE.", "TOTAL BAIL, BRAH.", "GNARLY... NOT."],
+      "quips": ["WIPEOUT!", "BOGUS, DUDE.", "TOTAL BAIL, BRAH.", "GNARLY... NOT.",
+                "THE TIDE WAS WRONG, BRAH.", "CAUGHT INSIDE, BRAH.", "HANG LOOSE. IT'S COOL.", "NO WAVE, NO PROBLEM.",
+                "SHARK! JUST KIDDING.", "MY WAX WAS OFF.", "DUDE... HEAVY.", "THAT'S SO NOT RADICAL.",
+                "BRAIN FREEZE, BRAH.", "BUMMER, BUT CHILL.", "SAND IN MY SHOES, DUDE.", "PADDLE OUT, PADDLE IN."],
       "hud": [[6, 26, 28], [2, 16, 18]],
       "players": [
         {
@@ -216,7 +234,10 @@
       "intro": "DOUBLE TROUBLE. READY?",
       "taunt": "TWINS WIN! TWINS WIN!",
       "concede": "WAIT... THAT WASN'T PLANNED.",
-      "quips": ["THAT WAS HIS FAULT.", "THAT WAS HER FAULT.", "JINX!", "TWIN FAIL!"],
+      "quips": ["THAT WAS HIS FAULT.", "THAT WAS HER FAULT.", "JINX!", "TWIN FAIL!",
+                "WE BOTH MISSED IT. AGAIN.", "SAME BRAIN, SAME MISS.", "MOM SAYS IT'S A TIE.", "I CALLED IT FIRST!",
+                "YOU MOVE, I MOVE.", "STEREO OOPS!", "TWIN TELEPATHY: OFFLINE.", "WAIT, WHICH ONE ARE YOU?",
+                "THAT WAS THE OTHER ONE.", "DOUBLE OOPS!", "NOT IN THE PLAN.", "WE NEED A NEW SIGNAL."],
       "hud": [[8, 28, 26], [3, 18, 17]],
       "players": [
         {
@@ -248,7 +269,10 @@
       "intro": "THE TITLE STAYS WITH US.",
       "taunt": "THAT'S WHY WE'RE CHAMPS.",
       "concede": "THE CROWN IS YOURS. EARNED.",
-      "quips": ["...THAT NEVER HAPPENS.", "A WARM-UP SHOT.", "NOBODY SAW THAT.", "PRACTICE POINT."],
+      "quips": ["...THAT NEVER HAPPENS.", "A WARM-UP SHOT.", "NOBODY SAW THAT.", "PRACTICE POINT.",
+                "ON PURPOSE, OBVIOUSLY.", "LET'S NOT REVIEW THAT.", "CHARITY POINT.", "THE TROPHY IS UNIMPRESSED.",
+                "STATISTICALLY RARE.", "I ALLOWED THAT.", "STRATEGIC CONCESSION.", "CALL MY AGENT.",
+                "DON'T PUT THAT ON TV.", "SPONSORS, LOOK AWAY.", "EVEN LEGENDS BLINK.", "WE'LL EDIT THAT OUT."],
       "hud": [[31, 25, 6], [22, 15, 2]],
       "players": [
         {
