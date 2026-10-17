@@ -694,6 +694,7 @@ static u8 s_emote_mask;                 /* emote objects up, by slot bit */
 /* What each emote object shows (emote | bob << 4) and the camera it was
  * placed under: a frozen player's emote is rewritten only on a change. */
 static u8 s_emote_key[MAX_PLAYERS];
+static s16 s_emote_sx[MAX_PLAYERS];     /* each emote's projected x */
 static s16 s_emote_cam_x;
 static s16 s_emote_cam_y;
 static u8 s_dust_shown;
@@ -826,9 +827,14 @@ static void render_emotes(void)
                     s_emote_key[slot] == key)
                 continue;
             s_emote_key[slot] = key;
-            x = FROM_FP(player->x_fp);
             y = FROM_FP(player->y_fp);
-            obj_put(RENDER_OAM_EMOTES + slot, projection_x(x, y) - 4,
+            /* A frozen player's spot is projected once (a moving camera
+             * only moves the object: oam_write takes it off). */
+            if (player->frozen == 0 || (s_emote_mask & bit) == 0) {
+                x = FROM_FP(player->x_fp);
+                s_emote_sx[slot] = projection_x(x, y) - 4;
+            }
+            obj_put(RENDER_OAM_EMOTES + slot, s_emote_sx[slot],
                 y - RENDER_EMOTE_RAISE - (key >> 4),
                 s_emote_tiles[emote], OBJ_ATTR(g_objpal_objects, 0), 0);
             s_emote_mask |= bit;
