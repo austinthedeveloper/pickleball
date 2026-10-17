@@ -48,6 +48,7 @@ gameplay.
 | R23 | The swing lookahead skips its probe when the ball's x/y range over the window cannot reach the swing box | The lookahead is the largest single AI cost (R15 notes) | Medium | Done (steady pace only; see the notes) |
 | R24 | Metasprite OAM writer: a per-frame object list per player, written in one pass | Required for multi-object character models; ~4× cheaper per object | High | With the character models |
 | R25 | `ai_think` on a static scratch copy of the player and style | ~4–6 scanlines per think, 36 pointer accesses | Low | Later |
+| R26 | `oam_write_pair`: a hat's two halves in one call (one camera and bounds test, the second entry copied from the first) | Since ADR-059 every player wears a hat object, two `oam_write` calls each | Medium | Done (see the notes) |
 
 ### R16–R22 notes
 
@@ -229,3 +230,22 @@ and `frame_count` are excluded. Everything else is byte-identical across
 runs, which also confirms that no game state depends on uninitialized RAM.
 The scripted P1 never wins a point, so the P1-scoring paths are covered by
 the host tests rather than the trace.
+
+### R26 notes
+
+Every player draws a hat since ADR-059 (the cap is hat 0), which raised the
+worst frames by up to 13 scanlines (the doubles demo to 222 of 225). The
+pair writer (`src/asm/oam_write.asm`) places both halves exactly as two
+`oam_write` calls did, parking the second at x 256 and up as `oam_write`
+does (an object at x 256 counts toward the PPU's per-line range). Checked
+on the debug ROM by probing OAM over a doubles match with the camera
+pushed past both screen edges: 230 hats on screen, every one at its
+frame's accessory offset, its second half 8 px right with tile ^ 1.
+
+Profiler build, `doubles_ladder.timeline` to frame 460 (four hats):
+`render_bodies` 11,690 → 11,095 scanlines (−5%, about 1.3 a frame).
+`make perf` worst frames: demo 222 → 220, doubles ladder 192 → 189,
+modifiers doubles 206 → 204. Smaller than hoped: each half still updates
+the high table on its own. Merging the two (the pair shares a high-table
+byte for three of the four players' OAM groups) is the next saving, with
+R24's metasprite writer.

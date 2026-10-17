@@ -14,7 +14,8 @@
 ;   * frame from pose/state/animation, palette from flash or the player;
 ;   * a hat (rb_hat[slot], 0 for none) sits at the frame's accessory
 ;     offset plus HAT_DX, HAT_RAISE above it, in front of its body; flipped,
-;     it mirrors as 16 - x with its halves swapped (tile ^ 1); without one
+;     it mirrors as 16 - x with its halves swapped (tile ^ 1), written by
+;     oam_write_pair; without one
 ;     its entries are parked every frame (groups follow the depth order);
 ;   * female players add a ponytail at ASM_OAM_ACCESSORIES + slot (ADR-014),
 ;     offset per frame and mirrored with the body.
@@ -329,8 +330,9 @@ _rb_have_tile:
     tax
     lda.l rb_hat,x
     bne _rb_hat
-    ; No hat (the bare head, ADR-059): park both halves at y = 240. Hat entries are always small
-    ; objects, so the Y byte alone hides them (oam_write is the costly way).
+    ; No hat (the bare head, ADR-059): park both halves at y = 240. Hat
+    ; entries are always small objects, so the Y byte alone hides them
+    ; (oam_write is the costly way).
     lda.l rb_oam
     asl a
     asl a
@@ -377,23 +379,8 @@ _rb_hat:
     sta.l oam_in_id
     lda.l rb_attr
     sta.l oam_in_attr
-    lda.b #0
-    sta.l oam_in_large
     rep #$20
-    jsl oam_write
-    lda.l oam_in_x
-    clc
-    adc.w #8
-    sta.l oam_in_x
-    lda.l oam_in_tile
-    eor.w #1
-    sta.l oam_in_tile
-    sep #$20
-    lda.l rb_oam
-    inc a
-    sta.l oam_in_id
-    rep #$20
-    jsl oam_write
+    jsl oam_write_pair          ; both halves, the second tile ^ 1
 
 _rb_pony:
     ; --- ponytail (female variant), same palette and flip as the body ---
