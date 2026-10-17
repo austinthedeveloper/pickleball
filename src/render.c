@@ -7,6 +7,7 @@
 #include "court.h"
 #include "audio_events.h"
 #include "court_style.h"
+#include "flair.h"
 #include "fx.h"
 #include "game.h"
 #include "hud.h"
@@ -26,6 +27,8 @@
 #include "practice.h"
 #include "serve.h"
 #include "opponents.h"
+#include "palette_parts.h"
+#include "venues.h"
 #include "story.h"
 #include "replay.h"
 
@@ -217,6 +220,14 @@ void render_apply_match_config(void)
             if (look)
                 render_apply_look(s_player_palettes[slot], look, 1);
         }
+    /* ADR-064: practice has no slot 2; its palette (OBJ 1 in singles) is
+     * the pickle's: slot 0's, with a green team part. */
+    if (g_match_config.practice && !s_doubles) {
+        memcpy(s_player_palettes[2], s_player_palettes[0],
+            sizeof(s_player_palettes[2]));
+        memcpy(&s_player_palettes[2][5], g_pal_team[PAL_GREEN],
+            sizeof(g_pal_team[PAL_GREEN]));
+    }
     if (s_objects_look != look) {
         s_objects_look = look;
         memcpy(s_objects_palette, &objects_palette, sizeof(s_objects_palette));
@@ -498,6 +509,13 @@ static void render_players(void)
  * at the ball's height. Set by render_ball every frame. */
 static u8 s_ghost_hidden;
 
+/* ADR-064: where render_ball drew a small ball this frame, for the
+ * streak behind it; s_ball_shown is cleared when it drew none. */
+static s16 s_ball_sx;
+static s16 s_ball_top;
+static u8 s_ball_left;
+static u8 s_ball_shown;
+
 static void render_ball(void)
 {
     s16 x;
@@ -506,6 +524,7 @@ static void render_ball(void)
     s16 sx;
 
     s_ghost_hidden = 0;
+    s_ball_shown = 0;
     if (!g_ball.active) {
         render_obj_hide(RENDER_OAM_BALL);
         render_obj_hide(RENDER_OAM_BALL_SHADOW);
@@ -531,12 +550,27 @@ static void render_ball(void)
         s_ghost_hidden = 1;
         return;
     }
-    if (g_match_config.modifiers & MODIFIER_BIG_BALL)
+    if (g_match_config.modifiers & MODIFIER_BIG_BALL) {
         obj_put(RENDER_OAM_BALL, sx - 16, y - z - 16, OBJTILE_BIG_BALL,
             OBJ_ATTR(g_objpal_objects, 0), 1);
+        return;
+    }
+    /* ADR-064: a drive squashes on the paddle, then stretches in flight
+     * (drawn going right; flipped going left). */
+    s_ball_left = g_ball.vx_fp < 0;
+    if (g_flair.squash_timer)
+        obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_SQUASH,
+            OBJ_ATTR(g_objpal_objects, 0), 0);
+    else if (g_flair.shot == SHOT_DRIVE &&
+            g_ball.rally_state == BALL_RALLY_LIVE)
+        obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_STRETCH,
+            OBJ_ATTR(g_objpal_objects, s_ball_left), 0);
     else
         obj_put(RENDER_OAM_BALL, sx - 4, y - z - 4, OBJTILE_BALL,
             OBJ_ATTR(g_objpal_objects, 0), 0);
+    s_ball_sx = sx;
+    s_ball_top = y - z;
+    s_ball_shown = 1;
 }
 
 /* The practice ball machine (ADR-028): four 8x8 objects, its nozzle (the
@@ -633,6 +667,279 @@ static void render_effects(void)
 #else
     render_obj_hide(RENDER_OAM_DEBUG_MARKER);
 #endif
+}
+
+/*
+ * ADR-064, the sprite wish list in play: what src/flair.c decides, drawn.
+ * Each object is written while it shows and hidden once when it stops, so
+ * none costs a frame it isn't on screen (the doubles budget).
+ */
+#define RENDER_EMOTE_RAISE 42           /* above the head and any hat */
+#define RENDER_CRITTER_PERIOD 2048      /* frames between a visitor's trips */
+#define RENDER_CRITTER_Y 30             /* screen y: under the scoreboard */
+#define RENDER_TROPHY_Y 34              /* screen y: over the result text */
+#define RENDER_PICKLE_X 244             /* court spot: behind the machine */
+#define RENDER_PICKLE_Y 112
+
+/* render_bodies: a point's reaction frame by slot, or 0xffff. */
+u16 rb_react[MAX_PLAYERS];
+static u8 s_react_serial;                /* g_flair.react_serial drawn */
+static u8 s_emote_mask;                 /* emote objects up, by slot bit */
+/* What each emote object shows (emote | bob << 4) and the camera it was
+ * placed under: a frozen player's emote is rewritten only on a change. */
+static u8 s_emote_key[MAX_PLAYERS];
+static s16 s_emote_cam_x;
+static s16 s_emote_cam_y;
+static u8 s_dust_shown;
+static u8 s_cord_shown;
+static u8 s_streak_shown;
+static u8 s_critter_shown;
+static u8 s_trophy_shown;
+static u8 s_pickle_shown;
+static u8 s_flair_drawn;                /* any of the above up */
+/* The venue's visitor (0: none) and its second frame; the satellite
+ * drifts at half the speed. */
+static u16 s_critter_a;
+static u16 s_critter_b;
+static u8 s_critter_slow;
+
+static const u16 s_emote_tiles[FLAIR_EMOTES] = {
+    0, OBJTILE_EMOTE_EXCLAIM, OBJTILE_EMOTE_QUESTION, OBJTILE_EMOTE_SWEAT,
+    OBJTILE_EMOTE_NOTE, OBJTILE_EMOTE_STAR, OBJTILE_EMOTE_ZZZ,
+    OBJTILE_EMOTE_ANGER
+};
+
+/* A scene load hid every object: forget what was up. */
+static void render_flair_reset(void)
+{
+    u8 slot;
+
+    for (slot = 0; slot < MAX_PLAYERS; ++slot)
+        rb_react[slot] = 0xffff;
+    s_react_serial = g_flair.react_serial - 1;  /* rebuild on the next frame */
+    s_emote_mask = 0;
+    s_dust_shown = 0;
+    s_cord_shown = 0;
+    s_streak_shown = 0;
+    s_critter_shown = 0;
+    s_trophy_shown = 0;
+    s_pickle_shown = 0;
+    s_flair_drawn = 0;
+    s_ball_shown = 0;
+    s_critter_slow = 0;
+    s_critter_a = 0;
+    s_critter_b = 0;
+    if (s_venue == VENUE_LAKESIDE) {
+        s_critter_a = OBJTILE_GULL0;
+        s_critter_b = OBJTILE_GULL1;
+    } else if (s_venue == VENUE_SPACE) {
+        s_critter_a = OBJTILE_SAT0;
+        s_critter_b = OBJTILE_SAT1;
+        s_critter_slow = 1;
+    } else if (s_venue == VENUE_UNDERSEA) {
+        s_critter_a = OBJTILE_FISH0;
+        s_critter_b = OBJTILE_FISH1;
+    }
+}
+
+/* A small object's Y to 240, below every line: the cheap hide, as
+ * render_bodies parks hats (a full oam_write cost the new match's frame
+ * its last scanlines). */
+#define obj_park(id) (oamMemory[((u16)(id) << 2) + 1] = 240)
+
+/* A 16x16 object from its top-left tile (the next, and the two under). */
+static void render_put_16(u8 id, s16 x, s16 y, u16 tile, u8 attr)
+{
+    obj_put(id, x, y, tile, attr, 0);
+    obj_put(id + 1, x + 8, y, tile + 1, attr, 0);
+    obj_put(id + 2, x, y + 8, tile + 16, attr, 0);
+    obj_put(id + 3, x + 8, y + 8, tile + 17, attr, 0);
+}
+
+static void render_hide_16(u8 id)
+{
+    obj_park(id);
+    obj_park(id + 1);
+    obj_park(id + 2);
+    obj_park(id + 3);
+}
+
+/* The bodies' point reactions, for render_bodies: rebuilt only when flair
+ * says a frame may have changed (a point's start, a dive's steps, the
+ * next serve). */
+static void render_reactions(void)
+{
+    u8 slot;
+    u8 frame;
+
+    s_react_serial = g_flair.react_serial;
+    if (!g_flair.reacting) {
+        rb_react[0] = 0xffff;
+        rb_react[1] = 0xffff;
+        rb_react[2] = 0xffff;
+        rb_react[3] = 0xffff;
+        return;
+    }
+    for (slot = 0; slot < MAX_PLAYERS; ++slot) {
+        frame = flair_body_frame(slot);
+        rb_react[slot] = frame == FLAIR_NONE ? 0xffff : frame;
+    }
+}
+
+/* Emotes over the heads, bobbing a pixel. */
+static void render_emotes(void)
+{
+    const Player *player = g_players;
+    u8 slot;
+    u8 bit = 1;
+    u8 emote;
+    u8 key;
+    u8 still;
+    s16 x;
+    s16 y;
+
+    if (!(g_flair.emote[0] | g_flair.emote[1] | g_flair.emote[2] |
+            g_flair.emote[3]) && !s_emote_mask)
+        return;
+    still = oam_cam_x == s_emote_cam_x && oam_cam_y == s_emote_cam_y;
+    s_emote_cam_x = oam_cam_x;
+    s_emote_cam_y = oam_cam_y;
+    for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player, bit <<= 1) {
+        emote = g_flair.emote[slot];
+        if (emote != FLAIR_EMOTE_NONE && player->active) {
+            key = emote | (((g_game_state.frame_count >> 3) & 1) << 4);
+            if (still && player->frozen && (s_emote_mask & bit) &&
+                    s_emote_key[slot] == key)
+                continue;
+            s_emote_key[slot] = key;
+            x = FROM_FP(player->x_fp);
+            y = FROM_FP(player->y_fp);
+            obj_put(RENDER_OAM_EMOTES + slot, projection_x(x, y) - 4,
+                y - RENDER_EMOTE_RAISE - (key >> 4),
+                s_emote_tiles[emote], OBJ_ATTR(g_objpal_objects, 0), 0);
+            s_emote_mask |= bit;
+        } else if (s_emote_mask & bit) {
+            obj_park(RENDER_OAM_EMOTES + slot);
+            s_emote_mask &= (u8)~bit;
+        }
+    }
+}
+
+/* A bounce's dust, and the net shivering where a ball hit it. */
+static void render_ground_fx(void)
+{
+    if (g_flair.dust_timer) {
+        obj_put(RENDER_OAM_DUST,
+            projection_x(g_flair.dust_x, g_flair.dust_y) - 4,
+            g_flair.dust_y - 6, g_flair.dust_timer > FLAIR_DUST_FRAMES / 2 ?
+                OBJTILE_DUST0 : OBJTILE_DUST1,
+            OBJ_ATTR(g_objpal_objects, 0), 0);
+        s_dust_shown = 1;
+    } else if (s_dust_shown) {
+        obj_park(RENDER_OAM_DUST);
+        s_dust_shown = 0;
+    }
+    if (g_flair.cord_timer) {
+        obj_put(RENDER_OAM_CORD,
+            projection_x(COURT_NET_X, g_flair.cord_y) - 4,
+            g_flair.cord_y - COURT_NET_HEIGHT - 4,
+            (g_flair.cord_timer & 4) ? OBJTILE_CORD0 : OBJTILE_CORD1,
+            /* Priority 3: over the net's high-priority BG1 tiles, which
+             * the players pass behind. */
+            (3 << 4) | (g_objpal_objects << 1), 0);
+        s_cord_shown = 1;
+    } else if (s_cord_shown) {
+        obj_park(RENDER_OAM_CORD);
+        s_cord_shown = 0;
+    }
+}
+
+/* Spin lines behind a drive or a slice in flight. */
+static void render_streak(void)
+{
+    if (s_ball_shown && g_ball.rally_state == BALL_RALLY_LIVE &&
+            (g_flair.shot == SHOT_DRIVE || g_flair.shot == SHOT_SLICE)) {
+        obj_put(RENDER_OAM_STREAK,
+            s_ball_sx - 4 + (s_ball_left ? 8 : -8), s_ball_top - 4,
+            (g_game_state.frame_count & 4) ? OBJTILE_SPIN0 : OBJTILE_SPIN1,
+            OBJ_ATTR(g_objpal_objects, s_ball_left), 0);
+        s_streak_shown = 1;
+    } else if (s_streak_shown) {
+        obj_park(RENDER_OAM_STREAK);
+        s_streak_shown = 0;
+    }
+}
+
+/* LAKESIDE's gull, SPACE's satellite, UNDERSEA's fish: now and then one
+ * crosses under the scoreboard, in screen space (the camera's offset is
+ * added back). It moves on even frames only: OAM keeps it between. */
+static void render_critter(void)
+{
+    u16 t = g_game_state.frame_count & (RENDER_CRITTER_PERIOD - 1);
+    s16 x;
+
+    if (!s_critter_a)
+        return;
+    x = (s16)(s_critter_slow ? t >> 2 : t >> 1) - 16;
+    if (x >= 256) {
+        if (s_critter_shown) {
+            render_hide_16(RENDER_OAM_CRITTER);
+            s_critter_shown = 0;
+        }
+        return;
+    }
+    if ((t & 1) && s_critter_shown)
+        return;
+    render_put_16(RENDER_OAM_CRITTER, x + oam_cam_x,
+        RENDER_CRITTER_Y + oam_cam_y,
+        ((t >> (s_critter_slow ? 4 : 3)) & 1) ? s_critter_b : s_critter_a,
+        OBJ_ATTR(g_objpal_objects, 0));
+    s_critter_shown = 1;
+}
+
+/* The event-driven objects; what they leave up keeps s_flair_drawn set,
+ * so they are hidden once flair goes quiet. */
+static void render_flair(void)
+{
+    render_streak();
+    render_ground_fx();
+    render_emotes();
+    s_flair_drawn = s_emote_mask | s_dust_shown | s_cord_shown |
+        s_streak_shown;
+}
+
+/* The trophy over CHAMPION! (ADR-026), beating the last rung. */
+static void render_trophy(void)
+{
+    if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
+            g_game_state.match_winner == 0 && !g_attract &&
+            !g_match_config.open_play &&
+            g_match_config.opponent == OPPONENT_COUNT - 1) {
+        render_put_16(RENDER_OAM_TROPHY, 120 + oam_cam_x,
+            RENDER_TROPHY_Y + oam_cam_y, OBJTILE_TROPHY,
+            OBJ_ATTR(g_objpal_objects, 0));
+        s_trophy_shown = 1;
+    } else if (s_trophy_shown) {
+        render_hide_16(RENDER_OAM_TROPHY);
+        s_trophy_shown = 0;
+    }
+}
+
+/* Practice's mascot behind the ball machine, facing the court, in OBJ
+ * palette 1 (slot 2's, free in practice; render_apply_match_config makes
+ * it green). */
+static void render_pickle(void)
+{
+    if (g_match_config.practice && !g_attract) {
+        obj_put(RENDER_OAM_PICKLE,
+            projection_x(RENDER_PICKLE_X, RENDER_PICKLE_Y) - 16,
+            RENDER_PICKLE_Y - PLAYER_SPRITE_FOOT_Y, OBJTILE_PICKLE,
+            OBJ_ATTR(1, 1), 1);
+        s_pickle_shown = 1;
+    } else if (s_pickle_shown) {
+        render_obj_hide(RENDER_OAM_PICKLE);
+        s_pickle_shown = 0;
+    }
 }
 
 /* The close call (ADR-041) shows during its point result only. */
@@ -844,17 +1151,27 @@ void render_prepare(void)
         g_cam_k = g_options_camera_k[options_camera_index(s_cam_saved)];
     }
     render_camera();
+    /* ADR-064: only while flair has something up, or drew it last frame. */
+    if (g_flair.react_serial != s_react_serial)
+        render_reactions();
     render_players();
     PROFILE_MARK(2);
     render_ball();
     render_replay_ball();
     render_watcher();
     render_effects();
+    if (g_flair.active | s_flair_drawn)
+        render_flair();
+    if (s_critter_a)
+        render_critter();
+    if (g_game_state.phase == GAME_PHASE_MATCH_RESULT || s_trophy_shown)
+        render_trophy();
     /* The practice objects only in practice, and once more to hide them:
      * outside it their per-frame hides cost the doubles budget. */
     if ((g_match_config.practice && !g_attract) || s_practice_drawn) {
         render_machine();
         render_zone();
+        render_pickle();
         s_practice_drawn = g_match_config.practice && !g_attract;
     }
     render_update_ground();
@@ -918,6 +1235,7 @@ void render_initialize(void)
     s_active_bodies = 0xff;
     g_obj_overflow_frames = 0;
     hud_scene_initialize();
+    flair_initialize();             /* WRAM is not cleared at power-on */
 #ifdef RENDER_DIAGNOSTICS
     diag_initialize();
 #endif
@@ -1010,6 +1328,7 @@ static void render_load_court(void)
         audio_ambience(court_style_ambience(s_venue,
             RENDER_TIME(RENDER_LOOK())));
     venue = &g_venue_data[s_venue];
+    render_flair_reset();
     dmaCopyVram((u8 *)&court_tiles, RENDER_BG1_TILES_ADDR, ground);
     dmaCopyVram((u8 *)venue->tiles, RENDER_BG1_TILES_ADDR + ground / 2,
         venue->tiles_size);

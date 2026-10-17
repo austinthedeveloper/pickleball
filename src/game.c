@@ -4,6 +4,7 @@
 #include "career.h"
 #include "collision.h"
 #include "events.h"
+#include "flair.h"
 #include "fx.h"
 #include "input.h"
 #include "match.h"
@@ -56,6 +57,7 @@ void game_set_phase(u8 phase)
 {
     g_game_state.phase = phase;
     g_game_state.phase_timer = 0;
+    g_flair.wake = 1;                   /* presentation only (ADR-064) */
 }
 
 void game_initialize(void)
@@ -168,6 +170,7 @@ void game_new_match(void)
     serve_initialize();
     ai_initialize();
     fx_initialize();
+    flair_initialize();
     replay_initialize();
     game_initialize();
     game_activate_players();
@@ -412,6 +415,7 @@ void game_update(const PlayerIntent intents[MAX_PLAYERS])
         return;
 
     fx_tick();
+    FLAIR_TICK();
     if (g_game_state.hit_stop) {
         --g_game_state.hit_stop;
         return;

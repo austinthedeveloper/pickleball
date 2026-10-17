@@ -66,7 +66,8 @@ def main():
     kit_acc = {f["frame"]: f["accessory"] for f in offsets["frames"]}
     if offsets["hat_offset"] != manifest["hat_offset"]:
         raise SystemExit("kit hat_offset differs from the manifest's")
-    for name, info in manifest["frames"].items():
+    for name in KIT_FRAMES:
+        info = manifest["frames"][name]
         if kit_acc.get(name) != info["accessory"]:
             raise SystemExit(f"{name}: kit accessory {kit_acc.get(name)} != "
                              f"manifest {info['accessory']}")

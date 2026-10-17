@@ -79,6 +79,9 @@ const AiStyle *match_slot_style(u8 slot);
 /* The slot's hat (M4-OPP-04): a CPU opponent's or open play partner's,
  * else 0 (the cap). An index into asset_frames.h HAT_TILES (ADR-059). */
 u8 match_slot_hat(u8 slot);
+/* ADR-064: the slot's point celebration id (CELEBRATION_FRAMES; 0 the
+ * cheer). */
+u8 match_slot_celebrate(u8 slot);
 /* BG3 label colours 1-2 for a team. */
 const u16 *match_team_hud_colors(u8 team);
 /* Nonzero when the slot plays in the configured mode. */

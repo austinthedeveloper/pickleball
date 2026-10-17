@@ -109,6 +109,48 @@
         4,
         8
       ]
+    },
+    "slump": {
+      "slot": 17,
+      "accessory": [
+        5,
+        5
+      ]
+    },
+    "dive": {
+      "slot": 18,
+      "accessory": [
+        11,
+        16
+      ]
+    },
+    "scramble": {
+      "slot": 19,
+      "accessory": [
+        4,
+        8
+      ]
+    },
+    "thumbs_up": {
+      "slot": 20,
+      "accessory": [
+        5,
+        5
+      ]
+    },
+    "flex": {
+      "slot": 21,
+      "accessory": [
+        5,
+        5
+      ]
+    },
+    "en_garde": {
+      "slot": 22,
+      "accessory": [
+        1,
+        5
+      ]
     }
   },
   "cycles": {
@@ -148,7 +190,8 @@
     "machine_down_bl": 31
   },
   "large_objects": {
-    "big_ball": 11
+    "big_ball": 11,
+    "pickle": 27
   },
   "palettes": [
     "blue",
@@ -192,5 +235,125 @@
     -4
   ],
   "hat_doc": "M4-OPP-04, ADR-059: hats are 16x8 (two objects: the cell given and the next), in front of the body at the frame's accessory offset plus hat_offset (facing right); mirrored as 16 - x when flipped. Hat ids follow this order from 0: the cap first; null draws no hat (the bare head's own hair). A number is an objects.png cell; {\"sheet\": k} is the k-th 16x8 place (rows of two) in player sheet slot hat_slot, in OBJ name table 2 (ADR-060).",
-  "hat_slot": 16
+  "hat_slot": 16,
+  "sheet_objects": {
+    "emote_exclaim": [
+      23,
+      0,
+      8
+    ],
+    "emote_question": [
+      23,
+      1,
+      8
+    ],
+    "emote_sweat": [
+      23,
+      2,
+      8
+    ],
+    "emote_note": [
+      23,
+      3,
+      8
+    ],
+    "emote_star": [
+      23,
+      4,
+      8
+    ],
+    "emote_zzz": [
+      23,
+      5,
+      8
+    ],
+    "emote_anger": [
+      23,
+      6,
+      8
+    ],
+    "dust0": [
+      23,
+      7,
+      8
+    ],
+    "dust1": [
+      23,
+      8,
+      8
+    ],
+    "cord0": [
+      23,
+      9,
+      8
+    ],
+    "cord1": [
+      23,
+      10,
+      8
+    ],
+    "spin0": [
+      23,
+      11,
+      8
+    ],
+    "spin1": [
+      23,
+      12,
+      8
+    ],
+    "squash": [
+      23,
+      13,
+      8
+    ],
+    "stretch": [
+      23,
+      14,
+      8
+    ],
+    "trophy": [
+      24,
+      0,
+      16
+    ],
+    "gull0": [
+      24,
+      2,
+      16
+    ],
+    "gull1": [
+      24,
+      8,
+      16
+    ],
+    "sat0": [
+      24,
+      10,
+      16
+    ],
+    "sat1": [
+      25,
+      0,
+      16
+    ],
+    "fish0": [
+      25,
+      2,
+      16
+    ],
+    "fish1": [
+      25,
+      8,
+      16
+    ]
+  },
+  "sheet_objects_doc": "ADR-064: small objects in free player sheet slots (name table 2): [slot, cell, size]. A slot is a 4x4 grid of 8x8 cells, numbered across from 0; a 16x16 object is the cell and the next, and the two under them (cell + 1, + 4, + 5). OBJTILE_<NAME> is the top-left tile.",
+  "celebrations": [
+    "cheer",
+    "thumbs_up",
+    "flex",
+    "en_garde"
+  ],
+  "celebrations_doc": "ADR-064: the frames a player may celebrate a point with (opponents.json 'celebrate', the cheer when absent), in id order."
 }

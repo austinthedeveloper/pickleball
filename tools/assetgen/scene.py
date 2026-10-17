@@ -247,7 +247,9 @@ def venues_header(rows):
              "assets/source/venues.json; do not edit. */",
              "#ifndef VENUES_H", "#define VENUES_H", "",
              "#include \"game_types.h\"", "#include \"court_colors.h\"", "",
-             f"#define VENUE_COUNT {len(rows)}", "",
+             f"#define VENUE_COUNT {len(rows)}", ""] + \
+            [f"#define VENUE_{r[0].replace(' ', '_')} {i}"
+             for i, r in enumerate(rows)] + ["",
              "/* One venue's BG1 data in ROM (venues.inc). */",
              "typedef struct {",
              "    const u8 *tiles;          /* after the shared ground tiles */",

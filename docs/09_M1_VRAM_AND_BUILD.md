@@ -17,7 +17,7 @@ are uploaded once during forced blank.
 | BG2 intro card bust and close call tiles | `0x4800` | `0x9000–0x9fff` | 1,824 (57 tiles; budget 128). BG2's tile base is `0x4000` (it steps by `0x1000` words); the map counts from tile 128. |
 | BG3 HUD font, panels, big glyphs | `0x5000` | `0xa000–0xb7ff` | 4,480 (280 tiles) |
 | OBJ tiles, name table 1 (name base) | `0x6000` | `0xc000–0xdfff` | 7,968 (249 tiles: player sheet rows 0–2, then the objects rows: open play's people, ADR-034, and opponent hats, M4-OPP-04; then the park fonts) |
-| OBJ tiles, name table 2 | `0x7000` | `0xe000–0xffff` | 4,096 (128 tiles: player sheet row 3, the hitting poses, ADR-059; row 4, more hats in slot 16, ADR-060; rows 3–6 hold sixteen 32×32 slots; OBSEL's name gap is 0, so table 2 follows table 1, and `oam_write` sets the attribute's N bit for tiles 256–511. The park writes u8 tiles, so its people, objects, and fonts stay in table 1.) |
+| OBJ tiles, name table 2 | `0x7000` | `0xe000–0xffff` | 8,192 (256 tiles, full: player sheet row 3, the hitting poses, ADR-059; row 4, more hats in slot 16, ADR-060; slots 17–27 the sprite wish list, ADR-064; rows 3–6 hold sixteen 32×32 slots; OBSEL's name gap is 0, so table 2 follows table 1, and `oam_write` sets the attribute's N bit for tiles 256–511. The park writes u8 tiles, so its people, objects, and fonts stay in table 1.) |
 
 Player Select (ADR-020) replaces the court while it is open and reuses the
 BG3 and OBJ regions:

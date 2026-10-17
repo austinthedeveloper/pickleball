@@ -1,5 +1,5 @@
 {
-  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. ADR-058: 'serve_power' is the charge level a CPU serves at (4, the classic serve, to 30, the fastest; ADR-044), and 'serve_dud' makes about one serve in N a dud into the net (0 never; when the frame count is a multiple of N). CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are sixteen lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
+  "comment": "ADR-035: 'volley' (0/1) lets a CPU hit before the bounce once the two-bounce rule is done; 'net' is how close it comes in (home distance from the net, at least 44, behind the LAVA line) once the rally allows, 0 to stay back; 'partner_style' is a human's CPU partner. ADR-036: 'team' (0/1) is doubles teamwork: taking middle balls by who is nearer, poaching at the net, coming in only with a human partner, shifting with the ball. ADR-037: 'tactics' (0/1) picks shots by position: drops against players at the net, dink rallies at the net. ADR-038: 'footwork' (0/1) plans a swing from where the player stops after pressing it, not where it pressed: fewer mis-hits. ADR-057: 'slice' is a slice every Nth rally shot (after the dink pattern), 0 never: slow, never deep. ADR-058: 'serve_power' is the charge level a CPU serves at (4, the classic serve, to 30, the fastest; ADR-044), and 'serve_dud' makes about one serve in N a dud into the net (0 never; when the frame count is a multiple of N). CPU personalities (ADR-023), in ladder order. Singles plays the captain (players[0]); doubles plays both. 'venue' is the team's home court (venues.json), used when the COURT page's VENUE is AUTO. 'intro', 'taunt' (they won), and 'concede' (you won) are the captain's lines on the story cards (ADR-026), up to 28 HUD font characters. 'quips' are sixteen lines the team may say after losing a point (quips.json has the player's and the default CPU's), up to 28. Colours are 5-bit RGB in the palette-part roles of ADR-013 (2-4 skin, 5-7 shirt/cap, 8-9 shorts, 10 shoe, 15 hair); the paddle part comes from palettes/paddle_<paddle>.json. 'celebrate' (ADR-064) is the player's point celebration, a frame from player_frames.json's 'celebrations' (the cheer when absent). 'hat' (M4-OPP-04) is 'cap' (the cap every body wears) or a hat from assets/manifest/player_frames.json, drawn in the player's colours (visor and headband in the shoe colour). Style knobs replace the default CPU constants in src/ai.c; 'default_style' is those constants and must stay equal to them.",
   "default_style": {
     "late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 44,
     "putaway_z": 14, "putaway_distance": 48, "aim": "away",
@@ -31,7 +31,7 @@
       "hud": [[31, 17, 4], [22, 10, 2]],
       "players": [
         {
-          "name": "DAD", "variant": "male", "paddle": "wood", "hat": "visor", "skin": "light",
+          "name": "DAD", "variant": "male", "paddle": "wood", "hat": "visor", "celebrate": "thumbs_up", "skin": "light",
           "hair": [12, 7, 4],
           "shirt": [[20, 8, 1], [28, 14, 3], [31, 22, 10]],
           "shorts": [[19, 16, 10], [26, 23, 16]], "shoe": [31, 31, 31],
@@ -42,7 +42,7 @@
                     "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
-          "name": "KIDDO", "variant": "female", "paddle": "red", "hat": "cap", "skin": "light",
+          "name": "KIDDO", "variant": "female", "paddle": "red", "hat": "cap", "celebrate": "thumbs_up", "skin": "light",
           "hair": [26, 18, 6],
           "shirt": [[20, 8, 1], [28, 14, 3], [31, 22, 10]],
           "shorts": [[6, 9, 18], [10, 14, 24]], "shoe": [31, 31, 31],
@@ -101,7 +101,7 @@
       "hud": [[16, 31, 6], [8, 20, 2]],
       "players": [
         {
-          "name": "BRAD", "variant": "male", "paddle": "red", "hat": "headband", "skin": "tan",
+          "name": "BRAD", "variant": "male", "paddle": "red", "hat": "headband", "celebrate": "flex", "skin": "tan",
           "hair": [6, 4, 2],
           "shirt": [[10, 10, 12], [16, 16, 18], [24, 24, 26]],
           "shorts": [[4, 4, 6], [8, 8, 10]], "shoe": [28, 6, 6],
@@ -112,7 +112,7 @@
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8}
         },
         {
-          "name": "CHAD", "variant": "male", "paddle": "red", "hat": "headband", "skin": "light",
+          "name": "CHAD", "variant": "male", "paddle": "red", "hat": "headband", "celebrate": "flex", "skin": "light",
           "hair": [28, 22, 10],
           "shirt": [[6, 18, 2], [12, 26, 4], [22, 31, 10]],
           "shorts": [[4, 4, 6], [8, 8, 10]], "shoe": [28, 6, 6],
@@ -136,7 +136,7 @@
       "hud": [[28, 10, 8], [16, 4, 4]],
       "players": [
         {
-          "name": "PETE", "variant": "male", "paddle": "gold", "hat": "tricorn", "skin": "tan",
+          "name": "PETE", "variant": "male", "paddle": "gold", "hat": "tricorn", "celebrate": "en_garde", "skin": "tan",
           "hair": [3, 3, 4],
           "shirt": [[12, 2, 2], [20, 4, 4], [28, 10, 8]],
           "shorts": [[3, 3, 5], [7, 7, 9]], "shoe": [12, 7, 3],
@@ -147,7 +147,7 @@
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {
-          "name": "BILGE", "variant": "male", "paddle": "gold", "hat": "bandana", "skin": "light",
+          "name": "BILGE", "variant": "male", "paddle": "gold", "hat": "bandana", "celebrate": "en_garde", "skin": "light",
           "hair": [24, 10, 3],
           "shirt": [[3, 4, 12], [6, 8, 20], [28, 28, 30]],
           "shorts": [[10, 6, 3], [16, 10, 5]], "shoe": [12, 7, 3],
