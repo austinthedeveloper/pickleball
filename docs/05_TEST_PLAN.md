@@ -1,5 +1,7 @@
 # Test and Hardware Plan
 
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
 Status: **Required for every milestone**
 
 ## Test levels

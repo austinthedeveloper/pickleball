@@ -1,6 +1,8 @@
 # Gameplay Spec
 
-Status: **POC rules locked**
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
+Status: **Historical** (the POC rules)
 
 ## World coordinates (rules space)
 
@@ -90,7 +92,7 @@ Per frame:
 5. When the ground position leaves the court, call out at the first ground contact, not while airborne.
 6. Project `(x, y)` to screen space; draw the shadow at the projected `(screen_x, screen_y)` and the ball at `(screen_x, screen_y - z)`.
 
-Suggested starting tunables:
+Suggested starting tunables (the POC's; the values now live in the headers, such as `include/ball.h`; see docs/TUNING.md):
 
 | Parameter | Value |
 |---|---:|
@@ -125,7 +127,7 @@ The POC favors a complete match loop over tournament fidelity.
 1. Match is first to 5 points; win by 1.
 2. Rally scoring: every rally awards a point.
 3. Server begins in a simplified baseline service stance and serves diagonally into the opposite service box. Exact foot-position faults are deferred with the kitchen foot-fault rule.
-4. Serve contact is automatic from a short toss after B; the player still controls aim lane.
+4. Serve contact is automatic from a short toss after B; the player still controls aim lane. *(Since ADR-044 a human can hold to charge the serve; a tap is the classic serve.)*
 5. Serve faults: net, outside the diagonal box, or kitchen contact.
 6. The two-bounce rule is enforced: the serve and return must each bounce once before volleys are legal.
 7. After those two required bounces, one bounce is allowed on each side.
@@ -140,11 +142,11 @@ UI must label this mode “ARCADE RULES” so the simplifications are explicit.
 The CPU is intentionally legible, not optimal.
 
 1. Predict the next ground intersection using the same ball constants, capped at 60 simulated steps. Balls predicted to land out are left alone.
-2. Aim to meet the ball near the top of its first bounce, standing 10 px behind the contact point. The CPU always lets the ball bounce once.
+2. Aim to meet the ball near the top of its first bounce, standing 10 px behind the contact point. The CPU always lets the ball bounce once. *(Since ADR-035 CPUs volley once the two bounces are done.)*
 3. Move toward the target with 80% of player maximum speed.
 4. Swing when a swing pressed now would make its first contact inside the sweet box during the active frames, or as a last chance before the ball leaves reach. Once committed, plant the feet.
 5. Difficulty is a fixed offset, not random jitter. On every 7th incoming shot (`AI_LATE_SHOT_PERIOD`) the CPU is deliberately late and takes a stretched last-chance contact.
-6. Aim away from the opponent's half of the court. Shot choice follows ADR-019: a put-away drive on a high ball near the net, a lob over a net player, a dink every 4th shot, otherwise standard shots alternating deep and neutral.
+6. Aim away from the opponent's half of the court. Shot choice follows ADR-019: a put-away drive on a high ball near the net, a lob over a net player, a dink every 4th shot (since ADR-023 `dink_period` per style; ADR-037 picks shots by position, ADR-039 aims), otherwise standard shots alternating deep and neutral.
 7. After a hit, recover toward `(208, 130)`.
 
 Measured with host simulations (`test/test_match_flow.c`): a stand-in player that mistimes every 2nd shot wins 1 of 20 matches, and one that mistimes every 10th shot wins 19 of 20. Simulated matches last 45–85 s. Human novice matches still decide the final tuning.
@@ -166,6 +168,6 @@ In debug builds, show predicted landing as one background marker. The CPU must n
 2. Swing anticipation and contact pose.
 3. Two-frame hit stop for a clean non-serve contact; the UI and pause detector continue safely.
 4. One-frame palette flash on hitter or ball.
-5. Text banner: `NET`, `OUT`, `TWO BOUNCES`, `POINT`.
+5. Text banner: `NET`, `OUT`, `TWO BOUNCES`, `POINT`. *(Shipped as `NET!`, `OUT!`, `2 BOUNCES`, `POINT!`, plus `FAULT!`, `VOLLEY!`, `KITCHEN!`, and `LAVA!`; `src/hud_scene.c`.)*
 
 Audio is not required by M3, but event hooks must exist for future serve, hit, bounce, fault, and point sounds.

@@ -1,5 +1,7 @@
 # Input and Multitap Plan
 
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
 Status: **POC API required; four-human activation planned as `M4-MP-01`**
 
 ## Physical topology

@@ -1,8 +1,10 @@
 # Product Brief
 
-Status: **Approved baseline**  
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
+Status: **Historical** (was the approved POC baseline)  
 Scope owner: project lead  
-Change rule: update this page before accepting work that expands the POC.
+Change rule: none; this page is a record of the POC brief.
 
 ## Experience goals
 

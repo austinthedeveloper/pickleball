@@ -1,5 +1,7 @@
 # Mockup Conflict Decisions
 
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
 Status: **Accepted 2026-10-12**
 Supersedes: parts of `01_GAMEPLAY_SPEC.md`, `02_TECHNICAL_PLAN.md`, `03_SPRITE_ASSET_PIPELINE.md`, `06_REPO_BOOTSTRAP.md`, `07_DECISIONS_AND_RISKS.md` as listed under each decision.
 

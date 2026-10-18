@@ -1,6 +1,8 @@
 # Technical Plan
 
-Status: **Implementation baseline**
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
+Status: **Historical** (the POC implementation baseline)
 
 ## Platform profile
 
@@ -39,6 +41,8 @@ No gameplay mutation occurs from rendering functions.
 
 ## Proposed source modules
 
+The POC-era layout; many modules have been added since (`src/`, `include/`).
+
 | Path | Responsibility |
 |---|---|
 | `src/main.c` | Boot and fixed frame loop |
@@ -59,7 +63,7 @@ No gameplay mutation occurs from rendering functions.
 | `src/events.c/.h` | Simulation → presentation event seam (serve, hit, bounce, fault, point) |
 | `src/fx.c/.h` | Event-driven presentation effects (contact spark) |
 | `src/audio_events.c/.h` | Sound effects from events (SNESMOD, ADR-029); counts events and the last effect for tests |
-| `src/debug.c/.h` | Assertions, counters, visualization flags |
+| `src/debug.c/.h` | Assertions, counters, visualization flags (built as `src/diagnostics.c`: the debug overlay and OBJ stress scene) |
 
 Keep module globals private. Pass compact structures or IDs; do not allocate dynamically.
 

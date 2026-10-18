@@ -1,6 +1,8 @@
 # Repository Bootstrap
 
-Status: **Ready to execute**
+**Historical:** the POC plan. Current behaviour is in the ADRs ([docs/decisions/](decisions/)) and [docs/MANUAL.md](MANUAL.md); where this doc disagrees, they win.
+
+Status: **Historical** (executed for M1)
 
 ## Repository tree
 
