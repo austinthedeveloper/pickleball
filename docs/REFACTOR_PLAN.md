@@ -50,6 +50,7 @@ gameplay.
 | R25 | `ai_think` on a static scratch copy of the player and style | ~4–6 scanlines per think, 36 pointer accesses | Low | Later |
 | R26 | `oam_write_pair`: a hat's two halves in one call (one camera and bounds test, the second entry copied from the first) | Since ADR-059 every player wears a hat object, two `oam_write` calls each | Medium | Done (see the notes) |
 | R27 | One wrap-step helper (`menu_prev`/`menu_next`/`menu_step`/`menu_row`, `src/menu.c`) for every menu and settings cursor | `step_value` (court) and `page_step` (career) were identical, and ~20 inline `v ? v - 1 : n - 1` copies were spread over seven files | Low | Done |
+| R28 | One text module (`src/text.c`, `test_text.c`): `text_append`, `text_count` (no leading zeros), `text_count4` (four cells, right-aligned), all without division; `hud_center_text` shared from `hud.c` | Three copies of the no-division decimal formatter (`hud_count_text`, `hud_count`, `park_count`), two string appends, and two-digit `/ 10` `% 10` formatting in the career card, the museum, the park, and OPTIONS (each a `tcc__udiv` call); the museum had its own `center_text` | Low | Done. The score digits (`hud_draw_score_digits`) keep their inline loop: they run on match frames |
 
 ### R16–R22 notes
 

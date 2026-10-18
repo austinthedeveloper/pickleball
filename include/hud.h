@@ -34,6 +34,8 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text);
 /* Single digit or two digits when value >= 10. */
 void hud_number(u8 col, u8 row, u8 palette, u8 value);
 void hud_tile(u8 col, u8 row, u16 entry);
+/* A line of text centred on the 32-column map, without a panel. */
+void hud_center_text(u8 row, u8 palette, const char *text);
 /* Fills a width x rows block with one map entry (assembly fill per row). */
 void hud_fill_box(u8 col, u8 row, u8 width, u8 rows, u16 entry);
 /* Three-row panel: border rows at row and row+2, interior on row+1. */

@@ -21,6 +21,7 @@
 #include "practice.h"
 #include "save.h"
 #include "story.h"
+#include "text.h"
 #include "replay.h"
 
 /*
@@ -513,49 +514,6 @@ static const char *hud_opponent_name(void)
         g_opponent_captain[g_match_config.opponent];
 }
 
-/* A line of text centred on a row, without a panel. */
-static void hud_center_text(u8 row, u8 palette, const char *text)
-{
-    u8 length = 0;
-
-    while (text[length])
-        ++length;
-    hud_text((u8)(16 - length / 2), row, palette, text);
-}
-
-/* A count as text without leading zeros (no 816-tcc division); returns
- * the end of the text. */
-static char *hud_count_text(char *out, u16 value)
-{
-    static const u16 powers[4] = { 10000, 1000, 100, 10 };
-    u8 i;
-    u8 leading = 1;
-    char digit;
-
-    for (i = 0; i < 4; ++i) {
-        digit = '0';
-        while (value >= powers[i]) {
-            value -= powers[i];
-            ++digit;
-        }
-        if (!leading || digit != '0') {
-            *out++ = digit;
-            leading = 0;
-        }
-    }
-    *out++ = (char)('0' + value);
-    *out = 0;
-    return out;
-}
-
-static char *hud_copy_text(char *out, const char *text)
-{
-    while (*text)
-        *out++ = *text++;
-    *out = 0;
-    return out;
-}
-
 /* The records just beaten: "BEST STREAK 5", "LONGEST RALLY 12", or both
  * as "STREAK 5  RALLY 12". */
 static const char *hud_new_records_text(void)
@@ -565,14 +523,14 @@ static const char *hud_new_records_text(void)
     u8 both = g_save_new_records == (SAVE_NEW_STREAK | SAVE_NEW_RALLY);
 
     if (g_save_new_records & SAVE_NEW_STREAK) {
-        end = hud_copy_text(end, both ? "STREAK " : "BEST STREAK ");
-        end = hud_count_text(end, g_save.records.best_streak);
+        end = text_append(end, both ? "STREAK " : "BEST STREAK ");
+        end = text_count(end, g_save.records.best_streak);
         if (both)
-            end = hud_copy_text(end, "  ");
+            end = text_append(end, "  ");
     }
     if (g_save_new_records & SAVE_NEW_RALLY) {
-        end = hud_copy_text(end, both ? "RALLY " : "LONGEST RALLY ");
-        hud_count_text(end, g_save.records.longest_rally);
+        end = text_append(end, both ? "RALLY " : "LONGEST RALLY ");
+        text_count(end, g_save.records.longest_rally);
     }
     return text;
 }
@@ -675,11 +633,11 @@ static void hud_replay_step(u8 step)
         s_replay_drawn = 1;
     } else if (step == HUD_STEP_EXTRA2) {
         if (!g_replay.inches) {
-            hud_copy_text(caption, "OUT BY A HAIR!");
+            text_append(caption, "OUT BY A HAIR!");
         } else {
-            end = hud_copy_text(caption, "OUT BY ");
-            end = hud_count_text(end, g_replay.inches);
-            hud_copy_text(end, g_replay.inches == 1 ? " INCH!" : " INCHES!");
+            end = text_append(caption, "OUT BY ");
+            end = text_count(end, g_replay.inches);
+            text_append(end, g_replay.inches == 1 ? " INCH!" : " INCHES!");
         }
         hud_center_text(REPLAY_ROW + REPLAY_ROWS + 1, HUD_PAL_YELLOW, caption);
     }
@@ -806,28 +764,12 @@ static void hud_result_story(u8 step)
 }
 
 /* Four digits, right-aligned; leading zeros are spaces, which the font
- * draws as dark cells like the box. Records saturate at SAVE_COUNTER_MAX.
- * No 816-tcc division. */
+ * draws as dark cells like the box. Records saturate at SAVE_COUNTER_MAX. */
 static void hud_count(u8 col, u8 row, u16 value)
 {
-    static const u16 powers[3] = { 1000, 100, 10 };
     char text[5];
-    u8 i;
-    u8 leading = 1;
 
-    for (i = 0; i < 3; ++i) {
-        text[i] = '0';
-        while (value >= powers[i]) {
-            value -= powers[i];
-            ++text[i];
-        }
-        if (leading && text[i] == '0')
-            text[i] = ' ';
-        else
-            leading = 0;
-    }
-    text[3] = (char)('0' + value);
-    text[4] = 0;
+    text_count4(text, value);
     hud_text(col, row, HUD_PAL_WHITE, text);
 }
 
@@ -1039,12 +981,9 @@ static u8 hud_settings_value(u8 page, u8 index)
 static const char *hud_options_name(u8 index, u8 value)
 {
     static char text[5];
-    u8 percent;
 
     if (index == OPTIONS_ROW_POINTS) {
-        text[0] = value >= 20 ? '2' : value >= 10 ? '1' : '0' + value;
-        text[1] = value >= 10 ? (char)('0' + value % 10) : 0;
-        text[2] = 0;
+        text_count(text, value);
         return text;
     }
     if (index == OPTIONS_ROW_SCORING)
@@ -1055,13 +994,8 @@ static const char *hud_options_name(u8 index, u8 value)
         return value ? "ON" : "OFF";
     if (index == OPTIONS_ROW_AMOUNT) {
         /* ADR-050: "85%", "100%". */
-        percent = g_options_cameras[value];
-        text[0] = (char)('0' + percent / 100);
-        text[1] = (char)('0' + percent / 10 % 10);
-        text[2] = (char)('0' + percent % 10);
-        text[3] = '%';
-        text[4] = 0;
-        return text[0] == '0' ? text + 1 : text;
+        text_append(text_count(text, g_options_cameras[value]), "%");
+        return text;
     }
     return options_difficulty_name(value);
 }
@@ -1295,17 +1229,10 @@ static void hud_career_mode_line(u8 row, const char *label, u16 wins,
 /* "n/m" with one or two digit numbers, written from text; its length. */
 static u8 hud_fraction(char *text, u8 count, u8 total)
 {
-    u8 i = 0;
+    char *end = text_count(text, count);
 
-    if (count >= 10)
-        text[i++] = (char)('0' + count / 10);
-    text[i++] = (char)('0' + count % 10);
-    text[i++] = '/';
-    if (total >= 10)
-        text[i++] = (char)('0' + total / 10);
-    text[i++] = (char)('0' + total % 10);
-    text[i] = 0;
-    return i;
+    *end++ = '/';
+    return (u8)(text_count(end, total) - text);
 }
 
 /* "HATS 1/12      HAIR 5/10": what the player may wear, counted as the

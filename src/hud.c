@@ -135,6 +135,15 @@ void hud_number(u8 col, u8 row, u8 palette, u8 value)
     hud_mark(row);
 }
 
+void hud_center_text(u8 row, u8 palette, const char *text)
+{
+    u8 length = 0;
+
+    while (text[length])
+        ++length;
+    hud_text((u8)(16 - length / 2), row, palette, text);
+}
+
 /* Edges as one assembly fill per row (hud_fill_box): a C loop over a wide
  * panel cost 816-tcc about 60 scanlines (ADR-026). */
 void hud_panel(u8 col, u8 row, u8 inner_cols)

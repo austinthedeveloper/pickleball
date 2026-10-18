@@ -7,6 +7,7 @@
 #include "player.h"
 #include "render.h"
 #include "render_internal.h"
+#include "text.h"
 
 extern char objects_palette;
 
@@ -133,47 +134,24 @@ static void draw_cursor(void)
         attr | MUS_HFLIP | MUS_VFLIP, 0);
 }
 
-/* Text centred on the 32-column map. */
-static void center_text(u8 row, u8 palette, const char *text)
-{
-    u8 length = 0;
-
-    while (text[length])
-        ++length;
-    hud_text((u8)(16 - length / 2), row, palette, text);
-}
-
 /* "ACE  5 OF 12 HATS" under the title (ADR-065: the CARD counts the same). */
 static void draw_count(void)
 {
     static char text[CAREER_NAME + 17];
     const CareerPlayer *player = museum_player();
     u8 count = museum_unlocked_count();
-    u8 i = 0;
+    char *end = text;
     u8 k;
 
     for (k = 0; k < CAREER_NAME && player->name[k] != ' '; ++k)
-        text[i++] = (char)player->name[k];
-    text[i++] = ' ';
-    text[i++] = ' ';
-    if (count >= 10)
-        text[i++] = (char)('0' + count / 10);
-    text[i++] = (char)('0' + count % 10);
-    text[i++] = ' ';
-    text[i++] = 'O';
-    text[i++] = 'F';
-    text[i++] = ' ';
-    if (MUSEUM_HATS >= 10)
-        text[i++] = (char)('0' + MUSEUM_HATS / 10);
-    text[i++] = (char)('0' + MUSEUM_HATS % 10);
-    text[i++] = ' ';
-    text[i++] = 'H';
-    text[i++] = 'A';
-    text[i++] = 'T';
-    text[i++] = 'S';
-    text[i] = 0;
+        *end++ = (char)player->name[k];
+    end = text_append(end, "  ");
+    end = text_count(end, count);
+    end = text_append(end, " OF ");
+    end = text_count(end, MUSEUM_HATS);
+    text_append(end, " HATS");
     hud_fill_box(0, MUS_COUNT_ROW, 32, 1, HUD_TILE_CLEAR);
-    center_text(MUS_COUNT_ROW, HUD_PAL_WHITE, text);
+    hud_center_text(MUS_COUNT_ROW, HUD_PAL_WHITE, text);
 }
 
 /* The picked hat under the cases: its name (yellow), and WEARING when it

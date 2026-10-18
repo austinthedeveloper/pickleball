@@ -9,6 +9,7 @@
 #include "paddle_stats.h"
 #include "render.h"
 #include "render_internal.h"
+#include "text.h"
 #include "save.h"
 
 /*
@@ -119,75 +120,34 @@ static const char *park_team_name(u8 entry)
     return g_opponent_team[entry];
 }
 
-/* "TEXT n" into a buffer, n a digit or a two-digit score. */
-static char *park_append(char *at, const char *text)
-{
-    while (*text)
-        *at++ = *text++;
-    return at;
-}
-
-static char *park_number(char *at, u8 value)
-{
-    if (value >= 10) {
-        *at++ = (char)('0' + value / 10);
-        value %= 10;
-    }
-    *at++ = (char)('0' + value);
-    return at;
-}
-
-/* Up to 9999 (the records saturate there), no division. */
-static char *park_count(char *at, u16 value)
-{
-    static const u16 powers[3] = { 1000, 100, 10 };
-    u8 i;
-    u8 digit;
-    u8 shown = 0;
-
-    for (i = 0; i < 3; ++i) {
-        digit = 0;
-        while (value >= powers[i]) {
-            value -= powers[i];
-            ++digit;
-        }
-        if (digit || shown) {
-            *at++ = (char)('0' + digit);
-            shown = 1;
-        }
-    }
-    *at++ = (char)('0' + value);
-    return at;
-}
-
 /* A records board page (M4-OPEN-05): the title's RECORDS, a line each. */
 static char *park_board_page(char *at, u8 page)
 {
     const SaveRecords *r = &g_save.records;
 
     if (page == 0) {
-        at = park_append(at, "DOUBLES  WON ");
-        at = park_count(at, r->wins[MATCH_DOUBLES]);
-        at = park_append(at, "  LOST ");
-        return park_count(at, r->losses[MATCH_DOUBLES]);
+        at = text_append(at, "DOUBLES  WON ");
+        at = text_count(at, r->wins[MATCH_DOUBLES]);
+        at = text_append(at, "  LOST ");
+        return text_count(at, r->losses[MATCH_DOUBLES]);
     }
     if (page == 1) {
-        at = park_append(at, "SINGLES  WON ");
-        at = park_count(at, r->wins[MATCH_SINGLES]);
-        at = park_append(at, "  LOST ");
-        return park_count(at, r->losses[MATCH_SINGLES]);
+        at = text_append(at, "SINGLES  WON ");
+        at = text_count(at, r->wins[MATCH_SINGLES]);
+        at = text_append(at, "  LOST ");
+        return text_count(at, r->losses[MATCH_SINGLES]);
     }
     if (page == 2) {
-        at = park_append(at, "BEST STREAK ");
-        at = park_count(at, r->best_streak);
-        at = park_append(at, "  RALLY ");
-        return park_count(at, r->longest_rally);
+        at = text_append(at, "BEST STREAK ");
+        at = text_count(at, r->best_streak);
+        at = text_append(at, "  RALLY ");
+        return text_count(at, r->longest_rally);
     }
     /* 28 characters at most, as every line: "CLEARS 9999  DRILL BEST 9999". */
-    at = park_append(at, "CLEARS ");
-    at = park_count(at, r->ladder_clears);
-    at = park_append(at, "  DRILL BEST ");
-    return park_count(at, r->practice_best);
+    at = text_append(at, "CLEARS ");
+    at = text_count(at, r->ladder_clears);
+    at = text_append(at, "  DRILL BEST ");
+    return text_count(at, r->practice_best);
 }
 
 static u8 park_message(u8 *arg)
@@ -272,78 +232,78 @@ static void park_draw_message(u8 message, u8 arg)
     }
     switch (message) {
     case PARK_MSG_STACK:
-        at = park_append(at, "@ STACK YOUR PADDLE");
+        at = text_append(at, "@ STACK YOUR PADDLE");
         break;
     case PARK_MSG_TAKE:
-        at = park_append(at, "@ TAKE YOUR PADDLE");
+        at = text_append(at, "@ TAKE YOUR PADDLE");
         break;
     case PARK_MSG_FULL:
-        at = park_append(at, "THIS STACK IS FULL");
+        at = text_append(at, "THIS STACK IS FULL");
         break;
     case PARK_MSG_NEXT:
-        at = park_append(at, "YOU'RE NEXT ON COURT ");
-        at = park_number(at, arg + 1);
+        at = text_append(at, "YOU'RE NEXT ON COURT ");
+        at = text_count(at, arg + 1);
         break;
     case PARK_MSG_WAIT:
-        at = park_append(at, "WAITING ON COURT ");
-        at = park_number(at, arg + 1);
+        at = text_append(at, "WAITING ON COURT ");
+        at = text_count(at, arg + 1);
         break;
     case PARK_MSG_PEEK:
-        at = park_append(at, park_team_name(court->playing[0]));
-        at = park_append(at, " VS ");
-        at = park_append(at, park_team_name(court->playing[1]));
+        at = text_append(at, park_team_name(court->playing[0]));
+        at = text_append(at, " VS ");
+        at = text_append(at, park_team_name(court->playing[1]));
         break;
     case PARK_MSG_CALLED:
         /* "WITH ACE VS TWINS": the captain next in line partners you,
          * or 2P does. */
         if (g_open_play.two_players) {
-            at = park_append(at, "WITH 2P");
+            at = text_append(at, "WITH 2P");
         } else if (g_open_play.partner < OPPONENT_COUNT) {
-            at = park_append(at, "WITH ");
-            at = park_append(at, g_opponent_captain[g_open_play.partner]);
+            at = text_append(at, "WITH ");
+            at = text_append(at, g_opponent_captain[g_open_play.partner]);
         } else {
-            at = park_append(at, "COURT ");
-            at = park_number(at, arg + 1);
+            at = text_append(at, "COURT ");
+            at = text_count(at, arg + 1);
         }
-        at = park_append(at, " VS ");
-        at = park_append(at, park_team_name(g_open_play.opponent));
+        at = text_append(at, " VS ");
+        at = text_append(at, park_team_name(g_open_play.opponent));
         break;
     case PARK_MSG_WON:
     case PARK_MSG_LOST:
-        at = park_append(at, message == PARK_MSG_WON ? "YOU WON " :
+        at = text_append(at, message == PARK_MSG_WON ? "YOU WON " :
             "YOU LOST ");
-        at = park_number(at, g_open_play.last_score[0]);
+        at = text_count(at, g_open_play.last_score[0]);
         *at++ = '-';
-        at = park_number(at, g_open_play.last_score[1]);
+        at = text_count(at, g_open_play.last_score[1]);
         break;
     case PARK_MSG_2P_JOINED:
-        at = park_append(at, "2P JOINED: YOUR PARTNER!");
+        at = text_append(at, "2P JOINED: YOUR PARTNER!");
         break;
     case PARK_MSG_2P_LEFT:
-        at = park_append(at, "2P LEFT");
+        at = text_append(at, "2P LEFT");
         break;
     case PARK_MSG_BOARD:
         if (arg)
             at = park_board_page(at, arg - 1);
         else
-            at = park_append(at, "@ READ THE RECORDS");
+            at = text_append(at, "@ READ THE RECORDS");
         break;
     case PARK_MSG_MACHINE:
-        at = park_append(at, "@ PRACTICE: BALL MACHINE");
+        at = text_append(at, "@ PRACTICE: BALL MACHINE");
         break;
     case PARK_MSG_BENCH:
-        at = park_append(at, park_team_name(open_waiting_team(0)));
+        at = text_append(at, park_team_name(open_waiting_team(0)));
         if (open_waiting_team(1) != OPEN_NONE) {
-            at = park_append(at, " AND ");
-            at = park_append(at, park_team_name(open_waiting_team(1)));
+            at = text_append(at, " AND ");
+            at = text_append(at, park_team_name(open_waiting_team(1)));
         }
-        at = park_append(at, " WAIT");
+        at = text_append(at, " WAIT");
         break;
     case PARK_MSG_HOUSE:
-        at = park_append(at, "THE CLUBHOUSE  START EXIT");
+        at = text_append(at, "THE CLUBHOUSE  START EXIT");
         break;
     default:
-        at = park_append(at, g_open_play.two_players ?
+        at = text_append(at, g_open_play.two_players ?
             "YOU AND 2P  START EXIT" : "OPEN PLAY  START EXIT");
         break;
     }
@@ -436,11 +396,11 @@ static void park_draw_score(u8 c)
     s16 x;
 
     if (court->state == OPEN_COURT_PLAYING) {
-        at = park_number(at, court->score[0]);
+        at = text_count(at, court->score[0]);
         *at++ = '-';
-        at = park_number(at, court->score[1]);
+        at = text_count(at, court->score[1]);
     } else {
-        at = park_append(at, court->state == OPEN_COURT_YOURS ? "YOU" :
+        at = text_append(at, court->state == OPEN_COURT_YOURS ? "YOU" :
             "NEXT");
     }
     n = (u8)(at - text);
