@@ -150,20 +150,18 @@ tcc-check:
 # bot skills), MATCHES, OPPONENT (-1 the default CPU, -2 the whole ladder,
 # else a ladder opponent, ADR-023), DIFFICULTY (0 KID .. 3 HARD, ADR-025),
 # MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02), SPEED (ball speed
-# percent, ADR-049; 0 the game's, 100; not a setting since ADR-065),
-# PHASES (doubles: CPU schedule phases added up, 1-4; KNOWN_ISSUES #38).
+# percent, ADR-049; 0 the game's, 100; not a setting since ADR-065).
 LATE ?= 4
 MATCHES ?= 20
 OPPONENT ?= -1
 DIFFICULTY ?= 2
 MODE ?= 0
 SPEED ?= 0
-PHASES ?= 1
 stats: assets
 	@mkdir -p build/host
 	@$(CC_HOST) -std=c99 -O2 -DHOST_TEST -Iinclude -Iassets/generated -Itest \
 		tools/match_stats.c $(HOST_CORE) -o build/host/match_stats
-	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY) $(MODE) $(SPEED) $(PHASES)
+	@build/host/match_stats $(LATE) $(MATCHES) $(OPPONENT) $(DIFFICULTY) $(MODE) $(SPEED)
 
 # The sound effects as WAV files in build/sfx/, to listen to (ADR-029).
 sfx-preview:

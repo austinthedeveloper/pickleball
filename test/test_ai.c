@@ -686,7 +686,7 @@ static void scheduled_doubles(u8 opponent, u8 matches, int *serves,
         if (test_bot_buttons(&in[0], f, &counted))
             ++m;
         serial = g_game_state.shot_serial;
-        test_step_scheduled(in, (u16)f);
+        test_step_scheduled(in);
         if (g_next_opponent)
             game_new_match();
         if (previous == GAME_PHASE_SERVE_TOSS &&

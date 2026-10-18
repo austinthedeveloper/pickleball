@@ -31,8 +31,8 @@ ROM headless for smoke, perf, and golden checks.
 4. When AI, rules, positions, or opponent styles change: `make stats` before
    and after, for the ladder in singles and both doubles bots:
    `make stats LATE=0 MATCHES=160 OPPONENT=-2 DIFFICULTY=2 MODE=0` (480 a
-   rung), then `MATCHES=80 PHASES=4` with `MODE=1` and `MODE=3` (960 a
-   rung: the CPU schedule's four phases added up). It is deterministic and
+   rung), then `MATCHES=320` with `MODE=1` and `MODE=3` (960 a rung).
+   It is deterministic and
    takes seconds. Each table should say `ladder order: yes`. At 60 matches
    a rung (`MATCHES=20`) one standard error is about 3.5 wins, so the
    verdict there is noise either way (KNOWN_ISSUES #38, #40). Retune with `assets/source/opponents.json`; singles

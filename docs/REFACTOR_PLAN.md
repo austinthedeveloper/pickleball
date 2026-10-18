@@ -163,8 +163,9 @@ worst frame (work scanline, of 225) and overruns:
   the host tests run the C (`#ifdef HOST_TEST` in `player.c`), so a change
   goes in both. The golden trace and a doubles trace (every player, ball,
   and AI byte, every frame of `doubles.timeline`) are identical. The
-  attract demo's trace is not: its CPU schedule follows `g_loop_count`,
-  and a faster scene switch loses one frame fewer.
+  attract demo's trace is not: its CPU schedule followed `g_loop_count`
+  (the match's frame count since KNOWN_ISSUES #37), and a faster scene
+  switch loses one frame fewer.
 - **`hud_text`** (`src/asm/hud_text.asm`) reads the string through the
   compiler's `tcc__r9` (`[dp],y`, any bank). The BG3 map is identical at
   every shot of nine HUD timelines.

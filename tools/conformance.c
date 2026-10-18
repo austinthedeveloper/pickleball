@@ -120,7 +120,6 @@ static void run(const Scenario *s, FILE *out)
         if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
                 (frame & 63) == 0)
             s_intents[0].hit_pressed = 1;
-        g_loop_count = frame;           /* the schedule's clock */
         for (slot = 1; slot < MAX_PLAYERS; ++slot) {
             if (!g_players[slot].active ||
                     g_input_owners[slot] != INPUT_OWNER_CPU)

@@ -62,7 +62,6 @@ LOCKSTEP_STATE = [
     ("owners", "g_input_owners", 4),
     ("intents", "g_player_intents", 48),
     ("charge", "g_serve_charge", 5),
-    ("loops", "g_loop_count", 2),
 ] + GOLDEN_STATE
 # Frames before initialization hold MesenCE's randomized power-on RAM. Boot
 # (the sound CPU, the two-bank soundbank, the first court load) ends near

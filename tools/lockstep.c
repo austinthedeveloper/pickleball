@@ -87,14 +87,11 @@ static const Field s_intent_fields[] = {
     F(PlayerIntent, hit_held), END
 };
 
-enum { PROBES = 11, MAX_BYTES = 128 };
+enum { PROBES = 10, MAX_BYTES = 128 };
 static const char *const s_probe_names[PROBES] = {
     "cfg", "attract", "owners", "intents", "charge",
-    "game", "players", "ball", "serve", "ai", "loops"
+    "game", "players", "ball", "serve", "ai"
 };
-
-/* main.c's loop count, which CPU_THINKS reads: here, the ROM's. */
-u16 g_loop_count;
 
 typedef struct {
     unsigned frame;
@@ -154,7 +151,7 @@ static void load(const char *path)
 }
 
 enum { P_CFG, P_ATTRACT, P_OWNERS, P_INTENTS, P_CHARGE, P_GAME, P_PLAYERS,
-       P_BALL, P_SERVE, P_AI, P_LOOPS };
+       P_BALL, P_SERVE, P_AI };
 
 static unsigned u16_at(const unsigned char *b, unsigned offset)
 {
@@ -265,9 +262,6 @@ int main(int argc, char **argv)
         }
         rom_intents = (const PlayerIntent *)row->bytes[P_INTENTS];
         memcpy(intents, rom_intents, sizeof(intents));
-        /* The ROM's loop count this frame (profile_frame_begin counts it
-         * before the CPUs think). */
-        g_loop_count = (u16)u16_at(row->bytes[P_LOOPS], 0);
         for (slot = 0; slot < MAX_PLAYERS; ++slot) {
             if (!g_players[slot].active ||
                     g_input_owners[slot] != INPUT_OWNER_CPU)

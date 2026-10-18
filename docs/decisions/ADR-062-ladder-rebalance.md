@@ -119,6 +119,13 @@ CLAUDE.md now asks for the bigger runs. CHAMPS in regular-bot doubles is
 6.8 of 60 at this size, under M4-OPP-06's 8 (that task measured 60
 matches, where it read 8); unchanged here.
 
+*Amended again 2026-10-18 (KNOWN_ISSUES #37):* the doubles schedule now
+counts from each match, which made SURF CREW as easy as GOTH CLUB. LANI
+late every 4th, MIA every 6th, JADE every 10th (CHAMPS was 98 of 960 for
+the regular bot, under M4-OPP-06's 8 of 60). Doubles at 1,920 a rung,
+regular bot / net bot: GOTH CLUB 792 / 1599, SURF CREW 545 / 1097, TWINS
+398 / 824, CHAMPS 295 / 409; singles unchanged.
+
 ## Consequences
 
 - EASY and HARD scale the new styles by the same rules (ADR-025): EASY

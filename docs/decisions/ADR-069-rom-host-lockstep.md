@@ -24,10 +24,12 @@ alone passed every check. So "the ports match the host" did not yet mean
   `include/cpu_schedule.h` holds the rule for when a CPU thinks (a lane
   cover on one frame in four, staggered by slot). It is used by `main.c`
   (`UPDATE_CPU`, the demo's P1), `test_step_scheduled`, `match_stats`,
-  `conformance` and `lockstep`, which each had their own copy. It counts
-  `g_loop_count`. On the SNES that is the main loop's count since
-  power-on; host programs set it: the harnesses to their frame, and the
-  lockstep to the ROM's.
+  `conformance` and `lockstep`, which each had their own copy. It counted
+  `g_loop_count`, the main loop's count since power-on on the SNES, which
+  host programs set (the harnesses to their frame, the lockstep to the
+  ROM's). *Amended 2026-10-18 (KNOWN_ISSUES #37):* it counts the match's
+  `g_game_state.frame_count` now, so nobody sets it and the lockstep no
+  longer records the loop count.
 - **`make lockstep`.**
   - `mesen_probe.py lockstep-record` runs a timeline on the release ROM and
     records, every frame, the match config, the input owners, the loop
@@ -50,6 +52,13 @@ alone passed every check. So "the ports match the host" did not yet mean
   is.
 
 ## Rejected: counting the schedule from the match
+
+*Amended 2026-10-18: done after all.* With the ladder tuned over all four
+phases (KNOWN_ISSUES #38, #40) the margins held everywhere but SURF CREW,
+which the pinned phase made as easy as GOTH CLUB (792 and 783 bot wins
+of 1,920); three doubles partners were retuned for it. `make perf` had
+zero overruns, `modifiers_fun` the tightest at 218 of 225 scanlines (213
+before). The original reasons, as they stood:
 
 Keying the stagger to `g_game_state.frame_count`, so that a match's phase
 no longer depends on menu time (#37), was built and measured. It made

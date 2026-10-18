@@ -24,21 +24,14 @@ static inline void test_step(PlayerIntent intents[MAX_PLAYERS])
     game_update(intents);
 }
 
-/* main.c's loop count (profile.c), which CPU_THINKS reads; the host
- * harnesses set it. */
-u16 g_loop_count;
-
 /*
  * One frame with the CPUs on main.c's schedule (CPU_THINKS, ADR-018,
- * ADR-069), `loop` standing in for the main loop's count. Slot 0 (the P1
- * stand-in) is the caller's.
+ * ADR-069). Slot 0 (the P1 stand-in) is the caller's.
  */
-static inline void test_step_scheduled(PlayerIntent intents[MAX_PLAYERS],
-    u16 loop)
+static inline void test_step_scheduled(PlayerIntent intents[MAX_PLAYERS])
 {
     u8 slot;
 
-    g_loop_count = loop;
     for (slot = 1; slot < MAX_PLAYERS; ++slot) {
         if (!g_players[slot].active ||
                 g_input_owners[slot] != INPUT_OWNER_CPU)
