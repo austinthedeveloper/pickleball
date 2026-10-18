@@ -2,6 +2,7 @@
 #define OPTIONS_H
 
 #include "game_types.h"
+#include "menu.h"
 #include "opponents.h"
 
 /*
@@ -73,7 +74,8 @@ const char *options_scoring_name(u8 modifiers);
 enum { OPTIONS_ROW_POINTS = 0, OPTIONS_ROW_SCORING = 1,
        OPTIONS_ROW_DIFFICULTY = 2, OPTIONS_ROW_SOUND = 3,
        OPTIONS_ROW_CAMERA = 4, OPTIONS_ROW_AMOUNT = 5, OPTIONS_ROWS = 6 };
-enum { OPTIONS_EDIT_STAY = 0, OPTIONS_EDIT_DONE = 1, OPTIONS_EDIT_CANCEL = 2 };
+enum { OPTIONS_EDIT_STAY = MENU_EDIT_STAY, OPTIONS_EDIT_DONE = MENU_EDIT_DONE,
+       OPTIONS_EDIT_CANCEL = MENU_EDIT_CANCEL };
 
 typedef struct {
     u8 row;

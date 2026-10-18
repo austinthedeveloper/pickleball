@@ -105,7 +105,7 @@ HOST_CORE := src/ai.c src/audio_events.c src/ball.c src/collision.c \
 	src/projection.c src/practice.c src/rules.c src/save.c src/select.c \
 	src/serve.c src/story.c src/replay.c src/career.c src/career_page.c \
 	src/museum.c
-HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice audio pause_menu modifiers open_play replay career career_page museum flair
+HOST_TESTS := player ball collision serve rules ai projection match match_flow input events doubles layout select save court_style opponents options story practice audio pause_menu modifiers open_play replay career career_page museum flair menu
 
 host-check: assets
 	@mkdir -p build/host

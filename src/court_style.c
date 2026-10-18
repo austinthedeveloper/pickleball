@@ -221,8 +221,9 @@ u8 court_edit_input(u8 choice[COURT_PARTS], u8 *venue, u8 *time,
 {
     u8 row = g_court_edit.row;
     u8 part;
+    u8 keys = menu_edit_keys(&g_court_edit.row, COURT_ROWS, pressed);
 
-    if (pressed & PAD_Y) {
+    if (keys == MENU_EDIT_CANCEL) {
         for (part = 0; part < COURT_PARTS; ++part)
             choice[part] = g_court_edit.original[part];
         *venue = g_court_edit.original_venue;
@@ -233,22 +234,18 @@ u8 court_edit_input(u8 choice[COURT_PARTS], u8 *venue, u8 *time,
         g_court_edit.recolor = 1;
         return COURT_EDIT_CANCEL;
     }
-    if (pressed & (PAD_B | PAD_START))
-        return COURT_EDIT_DONE;
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_court_edit.row = menu_row(row, COURT_ROWS, pressed);
-    else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row == COURT_ROW_VENUE) {
-            *venue = menu_step(*venue, VENUE_COUNT + 1, pressed);
-        } else if (row == COURT_ROW_TIME) {
-            *time = menu_step(*time, COURT_TIMES, pressed);
-            g_court_edit.retime = 1;
-        } else {
-            part = row - COURT_ROW_PARTS;
-            choice[part] = menu_step(choice[part], g_court_part_count[part],
-                pressed);
-            g_court_edit.recolor = 1;
-        }
+    if (keys != MENU_EDIT_STEP)
+        return keys;
+    if (row == COURT_ROW_VENUE) {
+        *venue = menu_step(*venue, VENUE_COUNT + 1, pressed);
+    } else if (row == COURT_ROW_TIME) {
+        *time = menu_step(*time, COURT_TIMES, pressed);
+        g_court_edit.retime = 1;
+    } else {
+        part = row - COURT_ROW_PARTS;
+        choice[part] = menu_step(choice[part], g_court_part_count[part],
+            pressed);
+        g_court_edit.recolor = 1;
     }
     return COURT_EDIT_STAY;
 }

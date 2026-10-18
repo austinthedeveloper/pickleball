@@ -3,6 +3,7 @@
 
 #include "game_types.h"
 #include "input.h"
+#include "menu.h"
 
 /*
  * Practice mode (docs/decisions/ADR-028-practice.md): a ball machine on the
@@ -118,8 +119,9 @@ void practice_finish(void);
 /* Practice page editor (like OPTIONS, ADR-025). */
 enum { PRACTICE_ROW_SHOT = 0, PRACTICE_ROW_TARGET = 1, PRACTICE_ROW_RATE = 2,
        PRACTICE_ROW_ZONE = 3, PRACTICE_ROWS = 4 };
-enum { PRACTICE_EDIT_STAY = 0, PRACTICE_EDIT_DONE = 1,
-       PRACTICE_EDIT_CANCEL = 2 };
+enum { PRACTICE_EDIT_STAY = MENU_EDIT_STAY,
+       PRACTICE_EDIT_DONE = MENU_EDIT_DONE,
+       PRACTICE_EDIT_CANCEL = MENU_EDIT_CANCEL };
 
 typedef struct {
     u8 row;

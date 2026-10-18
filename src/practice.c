@@ -400,19 +400,16 @@ u8 practice_edit_changed(const u8 values[PRACTICE_ROWS])
 u8 practice_edit_input(u8 values[PRACTICE_ROWS], u16 pressed)
 {
     u8 row = g_practice_edit.row;
-    u8 count = s_counts[row];
     u8 i;
+    u8 keys = menu_edit_keys(&g_practice_edit.row, PRACTICE_ROWS, pressed);
 
-    if (pressed & PAD_Y) {
+    if (keys == MENU_EDIT_CANCEL) {
         for (i = 0; i < PRACTICE_ROWS; ++i)
             values[i] = g_practice_edit.original[i];
         return PRACTICE_EDIT_CANCEL;
     }
-    if (pressed & (PAD_B | PAD_START))
-        return PRACTICE_EDIT_DONE;
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_practice_edit.row = menu_row(row, PRACTICE_ROWS, pressed);
-    else if (pressed & (PAD_LEFT | PAD_RIGHT))
-        values[row] = menu_step(values[row], count, pressed);
+    if (keys != MENU_EDIT_STEP)
+        return keys;
+    values[row] = menu_step(values[row], s_counts[row], pressed);
     return PRACTICE_EDIT_STAY;
 }

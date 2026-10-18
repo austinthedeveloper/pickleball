@@ -187,21 +187,18 @@ u8 modifiers_edit_changed(u8 modifiers, u8 modifiers2)
 u8 modifiers_edit_input(u8 *modifiers, u8 *modifiers2, u16 pressed)
 {
     u8 row = g_modifiers_edit.row;
+    u8 keys = menu_edit_keys(&g_modifiers_edit.row, MODIFIERS_ROWS, pressed);
 
-    if (pressed & PAD_Y) {
+    if (keys == MENU_EDIT_CANCEL) {
         *modifiers = g_modifiers_edit.original;
         *modifiers2 = g_modifiers_edit.original2;
         return MODIFIERS_EDIT_CANCEL;
     }
-    if (pressed & (PAD_B | PAD_START))
-        return MODIFIERS_EDIT_DONE;
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_modifiers_edit.row = menu_row(row, MODIFIERS_ROWS, pressed);
-    else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row == MODIFIERS_ROW_COLORS)
-            *modifiers2 ^= MODIFIER2_INVERSE;
-        else
-            *modifiers ^= modifiers_row_bit(row);
-    }
+    if (keys != MENU_EDIT_STEP)
+        return keys;
+    if (row == MODIFIERS_ROW_COLORS)
+        *modifiers2 ^= MODIFIER2_INVERSE;
+    else
+        *modifiers ^= modifiers_row_bit(row);
     return MODIFIERS_EDIT_STAY;
 }

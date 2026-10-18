@@ -2,6 +2,7 @@
 #define MODIFIERS_H
 
 #include "game_types.h"
+#include "menu.h"
 #include "player.h"
 
 /*
@@ -88,8 +89,9 @@ enum { MODIFIERS_ROW_BALL = 0, MODIFIERS_ROW_SPEED = 1,
        MODIFIERS_ROW_RALLY = 4, MODIFIERS_ROW_FOOTING = 5,
        MODIFIERS_ROW_LIGHTS = 6, MODIFIERS_ROW_COLORS = 7,
        MODIFIERS_ROWS = 8 };
-enum { MODIFIERS_EDIT_STAY = 0, MODIFIERS_EDIT_DONE = 1,
-       MODIFIERS_EDIT_CANCEL = 2 };
+enum { MODIFIERS_EDIT_STAY = MENU_EDIT_STAY,
+       MODIFIERS_EDIT_DONE = MENU_EDIT_DONE,
+       MODIFIERS_EDIT_CANCEL = MENU_EDIT_CANCEL };
 
 typedef struct {
     u8 row;

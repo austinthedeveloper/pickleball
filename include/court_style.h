@@ -3,6 +3,7 @@
 
 #include "game_types.h"
 #include "court_colors.h"
+#include "menu.h"
 #include "venues.h"
 
 /*
@@ -48,9 +49,11 @@ const char *court_style_venue_name(u8 saved);
 
 /* court_edit_input results. */
 enum {
-    COURT_EDIT_STAY = 0,
-    COURT_EDIT_DONE = 1,        /* keep the choice (save it if it changed) */
-    COURT_EDIT_CANCEL = 2       /* the choice is back to what it was */
+    COURT_EDIT_STAY = MENU_EDIT_STAY,
+    COURT_EDIT_DONE = MENU_EDIT_DONE,   /* keep the choice (save it if it
+                                           changed) */
+    COURT_EDIT_CANCEL = MENU_EDIT_CANCEL /* the choice is back to what it
+                                            was */
 };
 
 /* Editor rows: the venue, the time, then one per part

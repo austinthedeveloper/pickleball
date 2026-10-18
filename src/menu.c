@@ -26,3 +26,18 @@ u8 menu_row(u8 row, u8 count, u16 pressed)
         return menu_next(row, count);
     return row;
 }
+
+u8 menu_edit_keys(u8 *row, u8 rows, u16 pressed)
+{
+    if (pressed & PAD_Y)
+        return MENU_EDIT_CANCEL;
+    if (pressed & (PAD_B | PAD_START))
+        return MENU_EDIT_DONE;
+    if (pressed & (PAD_UP | PAD_DOWN)) {
+        *row = menu_row(*row, rows, pressed);
+        return MENU_EDIT_STAY;
+    }
+    if (pressed & (PAD_LEFT | PAD_RIGHT))
+        return MENU_EDIT_STEP;
+    return MENU_EDIT_STAY;
+}

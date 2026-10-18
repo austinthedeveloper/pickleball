@@ -153,8 +153,9 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *modifiers,
 {
     u8 index;
     u8 row = g_options_edit.row;
+    u8 keys = menu_edit_keys(&g_options_edit.row, OPTIONS_ROWS, pressed);
 
-    if (pressed & PAD_Y) {
+    if (keys == MENU_EDIT_CANCEL) {
         *points = g_options_edit.original_points;
         *difficulty = g_options_edit.original_difficulty;
         *sound = g_options_edit.original_sound;
@@ -162,29 +163,25 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *modifiers,
         *camera = g_options_edit.original_camera;
         return OPTIONS_EDIT_CANCEL;
     }
-    if (pressed & (PAD_B | PAD_START))
-        return OPTIONS_EDIT_DONE;
-    if (pressed & (PAD_UP | PAD_DOWN))
-        g_options_edit.row = menu_row(row, OPTIONS_ROWS, pressed);
-    else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row == OPTIONS_ROW_CAMERA) {
-            *camera = options_camera_saved(options_camera_on(*camera) == 0,
-                options_camera_amount(*camera));
-        } else if (row == OPTIONS_ROW_AMOUNT) {
-            index = menu_step(options_camera_amount(*camera),
-                OPTIONS_CAMERA_AMOUNTS, pressed);
-            *camera = options_camera_saved(options_camera_on(*camera), index);
-        } else if (row == OPTIONS_ROW_SCORING) {
-            *modifiers ^= MODIFIER_WIN_BY_2;
-        } else if (row == OPTIONS_ROW_SOUND) {
-            *sound = menu_step(*sound, AUDIO_SETTINGS, pressed);
-        } else if (row == OPTIONS_ROW_POINTS) {
-            index = menu_step(points_index(*points), OPTIONS_POINT_CHOICES,
-                pressed);
-            *points = g_options_points[index];
-        } else {
-            *difficulty = menu_step(*difficulty, DIFFICULTY_COUNT, pressed);
-        }
+    if (keys != MENU_EDIT_STEP)
+        return keys;
+    if (row == OPTIONS_ROW_CAMERA) {
+        *camera = options_camera_saved(options_camera_on(*camera) == 0,
+            options_camera_amount(*camera));
+    } else if (row == OPTIONS_ROW_AMOUNT) {
+        index = menu_step(options_camera_amount(*camera),
+            OPTIONS_CAMERA_AMOUNTS, pressed);
+        *camera = options_camera_saved(options_camera_on(*camera), index);
+    } else if (row == OPTIONS_ROW_SCORING) {
+        *modifiers ^= MODIFIER_WIN_BY_2;
+    } else if (row == OPTIONS_ROW_SOUND) {
+        *sound = menu_step(*sound, AUDIO_SETTINGS, pressed);
+    } else if (row == OPTIONS_ROW_POINTS) {
+        index = menu_step(points_index(*points), OPTIONS_POINT_CHOICES,
+            pressed);
+        *points = g_options_points[index];
+    } else {
+        *difficulty = menu_step(*difficulty, DIFFICULTY_COUNT, pressed);
     }
     return OPTIONS_EDIT_STAY;
 }

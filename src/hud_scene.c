@@ -62,13 +62,10 @@
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 11
 #define RECORDS_COUNT_COL 23        /* four digits, one cell from the edge */
-#define COURT_PAGE_ROWS 8           /* the court box: header, gap, 6 rows */
+/* Settings pages (COURT, OPTIONS, PRACTICE, MODIFIERS): header, gap, rows. */
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
-#define OPTIONS_PAGE_ROWS (OPTIONS_ROWS + 2) /* header, gap, rows */
-#define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
-#define MODIFIERS_PAGE_ROWS (MODIFIERS_ROWS + 2) /* header, gap, rows */
 
 /* Last HUD inputs, so the BG3 map is only rebuilt when something changes. */
 static u8 s_hud_score[2];
@@ -98,13 +95,11 @@ static u8 s_title_part;
 /* A menu item that lost the cursor and still shows it, redrawn on the
  * frame after the move (0xff: none). */
 static u8 s_title_stale;
-/* Court and options page rows on screen: value | cursor (bit 7); 0xff not
- * drawn. */
-static u8 s_court_row_drawn[COURT_ROWS];
-static u8 s_options_row_drawn[OPTIONS_ROWS];
-static u8 s_practice_row_drawn[PRACTICE_ROWS];
+/* The open settings page's rows on screen (one page shows at a time):
+ * value | cursor (bit 7); 0xff not drawn. */
+#define SETTINGS_ROWS_MAX MODIFIERS_ROWS
+static u8 s_setting_drawn[SETTINGS_ROWS_MAX];
 static u8 s_practice_best_drawn;   /* the zone whose best is shown */
-static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
 #define HUD_TITLE_CLEARED 0xfe
 #define HUD_TITLE_UNKNOWN 0xff
 /* Title drawing (staged steps and area parts) waits for a later frame once
@@ -960,15 +955,10 @@ static void hud_join_counter(void)
     s_join_drawn = hud_join_state();
 }
 
-/* A court page row's value: the venue choice, or a part's preset. */
-static u8 hud_court_value(u8 index)
-{
-    if (index == COURT_ROW_VENUE)
-        return g_save.settings.venue;
-    if (index == COURT_ROW_TIME)
-        return g_save.settings.time;
-    return g_save.settings.court[index - COURT_ROW_PARTS];
-}
+/* ---- The settings pages: COURT, OPTIONS, PRACTICE, MODIFIERS (R13) ----
+ * One box each: a header, a gap, then a "<VALUE   >" row per setting
+ * (PRACTICE adds a gap and its best streak). Drawn a part per frame; once
+ * drawn, a changed row (Left/Right, Up/Down) redraws, one per frame. */
 
 /* A settings page row: cursor, label, and "<VALUE   >". */
 static void hud_setting_row(u8 row, const char *label, const char *name,
@@ -992,25 +982,45 @@ static void hud_setting_row(u8 row, const char *label, const char *name,
     hud_text(COURT_VALUE_COL, row, HUD_PAL_WHITE, text);
 }
 
-/* One court page row. */
-static void hud_court_row(u8 index)
+/* The open page's rows (TITLE_PAGE_*), and its editor's cursor row. */
+static u8 hud_settings_rows(u8 page)
 {
-    static const char *const labels[COURT_ROWS] = {
-        "VENUE", "TIME", "SURFACE", "KITCHEN", "SURROUND", "LINES"
-    };
-    u8 value = hud_court_value(index);
-    u8 cursor = g_court_edit.row == index;
-
-    hud_setting_row(COURT_FIRST_ROW + index, labels[index],
-        index == COURT_ROW_VENUE ? court_style_venue_name(value) :
-        index == COURT_ROW_TIME ? court_style_time_name(value) :
-        court_style_name(index - COURT_ROW_PARTS, value), cursor);
-    s_court_row_drawn[index] = value | (cursor << 7);
+    if (page == TITLE_PAGE_COURT)
+        return COURT_ROWS;
+    if (page == TITLE_PAGE_OPTIONS)
+        return OPTIONS_ROWS;
+    if (page == TITLE_PAGE_PRACTICE)
+        return PRACTICE_ROWS;
+    return MODIFIERS_ROWS;
 }
 
-/* An options page row's value as drawn (under bit 7, the cursor's). */
-static u8 hud_options_value(u8 index)
+static u8 hud_settings_cursor(u8 page)
 {
+    if (page == TITLE_PAGE_COURT)
+        return g_court_edit.row;
+    if (page == TITLE_PAGE_OPTIONS)
+        return g_options_edit.row;
+    if (page == TITLE_PAGE_PRACTICE)
+        return g_practice_edit.row;
+    return g_modifiers_edit.row;
+}
+
+/* A row's value as drawn (under bit 7, the cursor's): the saved setting,
+ * or for OPTIONS what its row shows of it. */
+static u8 hud_settings_value(u8 page, u8 index)
+{
+    if (page == TITLE_PAGE_COURT) {
+        if (index == COURT_ROW_VENUE)
+            return g_save.settings.venue;
+        if (index == COURT_ROW_TIME)
+            return g_save.settings.time;
+        return g_save.settings.court[index - COURT_ROW_PARTS];
+    }
+    if (page == TITLE_PAGE_PRACTICE)
+        return g_save.settings.practice[index];
+    if (page != TITLE_PAGE_OPTIONS)
+        return modifiers_row_on(index, g_save.settings.modifiers,
+            g_save.modifiers2);
     if (index == OPTIONS_ROW_POINTS)
         return g_save.settings.points;
     if (index == OPTIONS_ROW_SCORING)
@@ -1024,29 +1034,26 @@ static u8 hud_options_value(u8 index)
     return g_save.settings.difficulty;
 }
 
-/* One options page row (ADR-025, ADR-065). */
-static void hud_options_row(u8 index)
+/* An OPTIONS row's value name (ADR-025, ADR-065): POINTS and AMOUNT are
+ * numbers. */
+static const char *hud_options_name(u8 index, u8 value)
 {
-    static const char *const labels[OPTIONS_ROWS] = {
-        "POINTS", "SCORING", "DIFFICULTY", "SOUND", "CAMERA", "  AMOUNT"
-    };
-    u8 value = hud_options_value(index);
-    u8 cursor = g_options_edit.row == index;
-    char text[5];
-    const char *name = text;
+    static char text[5];
     u8 percent;
 
     if (index == OPTIONS_ROW_POINTS) {
         text[0] = value >= 20 ? '2' : value >= 10 ? '1' : '0' + value;
         text[1] = value >= 10 ? (char)('0' + value % 10) : 0;
         text[2] = 0;
-    } else if (index == OPTIONS_ROW_SCORING) {
-        name = options_scoring_name(value);
-    } else if (index == OPTIONS_ROW_SOUND) {
-        name = audio_setting_name(value);
-    } else if (index == OPTIONS_ROW_CAMERA) {
-        name = value ? "ON" : "OFF";
-    } else if (index == OPTIONS_ROW_AMOUNT) {
+        return text;
+    }
+    if (index == OPTIONS_ROW_SCORING)
+        return options_scoring_name(value);
+    if (index == OPTIONS_ROW_SOUND)
+        return audio_setting_name(value);
+    if (index == OPTIONS_ROW_CAMERA)
+        return value ? "ON" : "OFF";
+    if (index == OPTIONS_ROW_AMOUNT) {
         /* ADR-050: "85%", "100%". */
         percent = g_options_cameras[value];
         text[0] = (char)('0' + percent / 100);
@@ -1054,100 +1061,61 @@ static void hud_options_row(u8 index)
         text[2] = (char)('0' + percent % 10);
         text[3] = '%';
         text[4] = 0;
-        if (text[0] == '0')
-            name = text + 1;
-    } else {
-        name = options_difficulty_name(value);
+        return text[0] == '0' ? text + 1 : text;
     }
-    hud_setting_row(COURT_FIRST_ROW + index, labels[index], name, cursor);
-    s_options_row_drawn[index] = value | (cursor << 7);
+    return options_difficulty_name(value);
 }
 
-/* Options page: the box, the header, then a row per frame. */
-static u8 hud_options_draw_part(u8 part)
+static const char *hud_settings_label(u8 page, u8 index)
 {
-    if (part == 0) {
-        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
-            OPTIONS_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        for (part = 0; part < OPTIONS_ROWS; ++part)
-            s_options_row_drawn[part] = 0xff;
-        return 0;
-    }
-    if (part == 1) {
-        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "OPTIONS");
-        return 0;
-    }
-    hud_options_row(part - 2);
-    return part - 2 == OPTIONS_ROWS - 1;
-}
-
-/* One modifiers page row (ADR-033): the row's bit is its value. */
-static void hud_modifiers_row(u8 index)
-{
-    u8 value = modifiers_row_on(index, g_save.settings.modifiers,
-        g_save.modifiers2);
-    u8 cursor = g_modifiers_edit.row == index;
-
-    hud_setting_row(COURT_FIRST_ROW + index, modifiers_row_label(index),
-        modifiers_value_name(index, g_save.settings.modifiers,
-            g_save.modifiers2), cursor);
-    s_modifiers_row_drawn[index] = value | (cursor << 7);
-}
-
-/* Modifiers page: the box, the header, then a row per frame. */
-static u8 hud_modifiers_draw_part(u8 part)
-{
-    u8 i;
-
-    if (part == 0) {
-        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
-            MODIFIERS_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        for (i = 0; i < MODIFIERS_ROWS; ++i)
-            s_modifiers_row_drawn[i] = 0xff;
-        return 0;
-    }
-    if (part == 1) {
-        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "MODIFIERS");
-        return 0;
-    }
-    hud_modifiers_row(part - 2);
-    return part - 2 == MODIFIERS_ROWS - 1;
-}
-
-/* After the modifiers page is drawn: a changed row, one per frame. */
-static void hud_modifiers_refresh(void)
-{
-    u8 index;
-
-    for (index = 0; index < MODIFIERS_ROWS; ++index) {
-        if (s_modifiers_row_drawn[index] !=
-                (modifiers_row_on(index, g_save.settings.modifiers,
-                    g_save.modifiers2) |
-                 ((g_modifiers_edit.row == index) << 7))) {
-            hud_modifiers_row(index);
-            return;
-        }
-    }
-}
-
-/* One practice page row (ADR-028). */
-static void hud_practice_row(u8 index)
-{
-    static const char *const labels[PRACTICE_ROWS] = {
+    static const char *const court[COURT_ROWS] = {
+        "VENUE", "TIME", "SURFACE", "KITCHEN", "SURROUND", "LINES"
+    };
+    static const char *const options[OPTIONS_ROWS] = {
+        "POINTS", "SCORING", "DIFFICULTY", "SOUND", "CAMERA", "  AMOUNT"
+    };
+    static const char *const practice[PRACTICE_ROWS] = {
         "SHOT", "TARGET", "RATE", "RETURN TO"
     };
-    u8 value = g_save.settings.practice[index];
-    u8 cursor = g_practice_edit.row == index;
-    const char *name = index == PRACTICE_ROW_SHOT ? practice_shot_name(value) :
-        index == PRACTICE_ROW_TARGET ? practice_target_name(value) :
-        index == PRACTICE_ROW_RATE ? practice_rate_name(value) :
-        practice_zone_name(value);
 
-    hud_setting_row(COURT_FIRST_ROW + index, labels[index], name, cursor);
-    s_practice_row_drawn[index] = value | (cursor << 7);
+    if (page == TITLE_PAGE_COURT)
+        return court[index];
+    if (page == TITLE_PAGE_OPTIONS)
+        return options[index];
+    if (page == TITLE_PAGE_PRACTICE)
+        return practice[index];
+    return modifiers_row_label(index);
 }
 
-/* The best streak for the RETURN TO zone (M4-PRACTICE-03). */
+static const char *hud_settings_name(u8 page, u8 index, u8 value)
+{
+    if (page == TITLE_PAGE_COURT)
+        return index == COURT_ROW_VENUE ? court_style_venue_name(value) :
+            index == COURT_ROW_TIME ? court_style_time_name(value) :
+            court_style_name(index - COURT_ROW_PARTS, value);
+    if (page == TITLE_PAGE_OPTIONS)
+        return hud_options_name(index, value);
+    if (page == TITLE_PAGE_PRACTICE)
+        return index == PRACTICE_ROW_SHOT ? practice_shot_name(value) :
+            index == PRACTICE_ROW_TARGET ? practice_target_name(value) :
+            index == PRACTICE_ROW_RATE ? practice_rate_name(value) :
+            practice_zone_name(value);
+    return modifiers_value_name(index, g_save.settings.modifiers,
+        g_save.modifiers2);
+}
+
+/* One row of the open page. */
+static void hud_settings_row(u8 page, u8 index)
+{
+    u8 value = hud_settings_value(page, index);
+    u8 cursor = hud_settings_cursor(page) == index;
+
+    hud_setting_row(COURT_FIRST_ROW + index, hud_settings_label(page, index),
+        hud_settings_name(page, index, value), cursor);
+    s_setting_drawn[index] = value | (cursor << 7);
+}
+
+/* The best streak for PRACTICE's RETURN TO zone (M4-PRACTICE-03). */
 static void hud_practice_best(void)
 {
     u8 zone = g_save.settings.practice[PRACTICE_ROW_ZONE];
@@ -1157,68 +1125,71 @@ static void hud_practice_best(void)
     s_practice_best_drawn = zone;
 }
 
-/* Practice page: the box, the header, a row per frame, then the best. */
-static u8 hud_practice_draw_part(u8 part)
+/* A settings page: the box, the header, a row per part, and PRACTICE's
+ * best; nonzero when the page is complete. */
+static u8 hud_settings_draw_part(u8 page, u8 part)
 {
+    static const char *const headers[TITLE_PAGE_MODIFIERS + 1] = {
+        0, "COURT", 0, "OPTIONS", "PRACTICE", "MODIFIERS"
+    };
+    u8 rows = hud_settings_rows(page);
+    u8 practice = page == TITLE_PAGE_PRACTICE;
+    u8 i;
+
     if (part == 0) {
+        /* PRACTICE: a gap and the best under the rows. */
         hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
-            PRACTICE_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        for (part = 0; part < PRACTICE_ROWS; ++part)
-            s_practice_row_drawn[part] = 0xff;
+            rows + (practice ? 4 : 2), hud_entry(' ', HUD_PAL_WHITE));
+        for (i = 0; i < SETTINGS_ROWS_MAX; ++i)
+            s_setting_drawn[i] = 0xff;
         s_practice_best_drawn = 0xff;
         return 0;
     }
     if (part == 1) {
-        hud_text(12, TITLE_MENU_ROW, HUD_PAL_YELLOW, "PRACTICE");
+        /* The columns each page had (not all centred alike). */
+        hud_text(page == TITLE_PAGE_COURT ? 13 : 12, TITLE_MENU_ROW,
+            HUD_PAL_YELLOW, headers[page]);
         return 0;
     }
-    if (part < 2 + PRACTICE_ROWS) {
-        hud_practice_row(part - 2);
-        return 0;
+    if (part < 2 + rows) {
+        hud_settings_row(page, part - 2);
+        return practice == 0 && part - 2 == rows - 1;
     }
     hud_practice_best();
     return 1;
 }
 
-static void hud_practice_refresh(void)
+/* After a settings page is drawn: the first row whose value or cursor
+ * changed, one per frame, then PRACTICE's best for a new zone. */
+static void hud_settings_refresh(u8 page)
 {
+    u8 rows = hud_settings_rows(page);
+    u8 cursor = hud_settings_cursor(page);
     u8 index;
 
-    for (index = 0; index < PRACTICE_ROWS; ++index) {
-        if (s_practice_row_drawn[index] != (g_save.settings.practice[index] |
-                ((g_practice_edit.row == index) << 7))) {
-            hud_practice_row(index);
+    for (index = 0; index < rows; ++index) {
+        if (s_setting_drawn[index] != (hud_settings_value(page, index) |
+                ((cursor == index) << 7))) {
+            hud_settings_row(page, index);
             return;
         }
     }
-    if (s_practice_best_drawn != g_save.settings.practice[PRACTICE_ROW_ZONE])
+    if (page == TITLE_PAGE_PRACTICE &&
+            s_practice_best_drawn !=
+                g_save.settings.practice[PRACTICE_ROW_ZONE])
         hud_practice_best();
-}
-
-/* After the options page is drawn: a changed row, one per frame. */
-static void hud_options_refresh(void)
-{
-    u8 index;
-
-    for (index = 0; index < OPTIONS_ROWS; ++index) {
-        if (s_options_row_drawn[index] != (hud_options_value(index) |
-                ((g_options_edit.row == index) << 7))) {
-            hud_options_row(index);
-            return;
-        }
-    }
 }
 
 /* Title views for the area: the menu choice, or a page: 0x7f + its
  * TITLE_PAGE_*. Joining draws the counter apart (ADR-066). */
 #define HUD_TITLE_VIEW_PAGE(page) (0x7f + (page))
 #define HUD_TITLE_VIEW_COURT HUD_TITLE_VIEW_PAGE(TITLE_PAGE_COURT)
-#define HUD_TITLE_VIEW_OPTIONS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_OPTIONS)
-#define HUD_TITLE_VIEW_PRACTICE HUD_TITLE_VIEW_PAGE(TITLE_PAGE_PRACTICE)
-#define HUD_TITLE_VIEW_MODIFIERS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_MODIFIERS)
 /* The CAREER page (ADR-047): a view per sub-view, RECORDS among them. */
 #define HUD_TITLE_VIEW_CAREER 0x90
 #define HUD_CAREER_NAMING 4         /* EDIT while typing the name */
+/* COURT, OPTIONS, PRACTICE, MODIFIERS (CAREER's views are apart). */
+#define HUD_TITLE_VIEW_SETTINGS(v) \
+    ((v) >= HUD_TITLE_VIEW_COURT && (v) < HUD_TITLE_VIEW_CAREER)
 
 /* Runs on every idle title frame behind the demo: one test, not one per
  * page. */
@@ -1232,43 +1203,6 @@ static u8 hud_title_view(void)
         return HUD_TITLE_VIEW_PAGE(g_title_page);
     return g_title_mode;
 }
-
-/* Court page: the box, the header, then a part per frame. */
-static u8 hud_court_draw_part(u8 part)
-{
-    u8 i;
-
-    if (part == 0) {
-        hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
-            COURT_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        for (i = 0; i < COURT_ROWS; ++i)
-            s_court_row_drawn[i] = 0xff;
-        return 0;
-    }
-    if (part == 1) {
-        hud_text(13, TITLE_MENU_ROW, HUD_PAL_YELLOW, "COURT");
-        return 0;
-    }
-    hud_court_row(part - 2);
-    return part - 2 == COURT_ROWS - 1;
-}
-
-/* After the court page is drawn: the first row whose value or cursor
- * changed (Left/Right, Up/Down), one per frame. */
-static void hud_court_refresh(void)
-{
-    u8 index;
-    u8 want;
-
-    for (index = 0; index < COURT_ROWS; ++index) {
-        want = hud_court_value(index) | ((g_court_edit.row == index) << 7);
-        if (s_court_row_drawn[index] != want) {
-            hud_court_row(index);
-            return;
-        }
-    }
-}
-
 
 /* ---- The CAREER page (ADR-047, M4-CAREER-02) ---- */
 
@@ -1742,14 +1676,8 @@ static u8 hud_records_draw_part(u8 part);
  * row per part: the title demo leaves little frame time. */
 static u8 hud_title_draw_part(u8 view, u8 part)
 {
-    if (view == HUD_TITLE_VIEW_COURT)
-        return hud_court_draw_part(part);
-    if (view == HUD_TITLE_VIEW_OPTIONS)
-        return hud_options_draw_part(part);
-    if (view == HUD_TITLE_VIEW_PRACTICE)
-        return hud_practice_draw_part(part);
-    if (view == HUD_TITLE_VIEW_MODIFIERS)
-        return hud_modifiers_draw_part(part);
+    if (HUD_TITLE_VIEW_SETTINGS(view))
+        return hud_settings_draw_part(view - HUD_TITLE_VIEW_PAGE(0), part);
     if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_RECORDS)
         return hud_records_draw_part(part);
     if (view >= HUD_TITLE_VIEW_CAREER)
@@ -1852,14 +1780,8 @@ static void hud_title_area_update(void)
             /* A drawn page redraws a changed row; a drawn menu, nothing. */
             if (view < HUD_TITLE_VIEW_COURT)
                 return;
-            if (view == HUD_TITLE_VIEW_COURT)
-                hud_court_refresh();
-            else if (view == HUD_TITLE_VIEW_OPTIONS)
-                hud_options_refresh();
-            else if (view == HUD_TITLE_VIEW_PRACTICE)
-                hud_practice_refresh();
-            else if (view == HUD_TITLE_VIEW_MODIFIERS)
-                hud_modifiers_refresh();
+            if (HUD_TITLE_VIEW_SETTINGS(view))
+                hud_settings_refresh(view - HUD_TITLE_VIEW_PAGE(0));
             else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_SLOTS)
                 hud_career_slots_refresh();
             else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_EDIT)
