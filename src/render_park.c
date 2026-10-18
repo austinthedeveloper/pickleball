@@ -95,7 +95,7 @@ enum {
     PARK_MSG_WAIT = 5,          /* arg: court */
     PARK_MSG_PEEK = 6,          /* arg: court */
     PARK_MSG_CALLED = 7,
-    PARK_MSG_WON = 8,
+    PARK_MSG_WON = 8,           /* arg 1: "2 IN A ROW" (ADR-071) */
     PARK_MSG_LOST = 9,
     PARK_MSG_2P_JOINED = 10,
     PARK_MSG_2P_LEFT = 11,
@@ -170,9 +170,18 @@ static u8 park_message(u8 *arg)
         *arg = g_open_play.called;
         return PARK_MSG_CALLED;
     }
-    /* Back from your game: its result first, for a few seconds. */
-    if (s_result_timer && g_open_play.last_won != OPEN_NONE)
-        return g_open_play.last_won ? PARK_MSG_WON : PARK_MSG_LOST;
+    /* Back from your game: its result first, for a few seconds. Off
+     * after OPEN_STAY_MAX wins in a row (ADR-071): that, then (rated)
+     * your points. */
+    if (s_result_timer && g_open_play.last_won != OPEN_NONE) {
+        if (g_open_play.last_won == 0)
+            return PARK_MSG_LOST;
+        if (g_open_play.last_streak >= OPEN_STAY_MAX &&
+                (g_open_play.rating == OPEN_RATING_NONE ||
+                    s_result_timer > PARK_RESULT_FRAMES / 2))
+            *arg = 1;
+        return PARK_MSG_WON;
+    }
     if (open_board_near()) {
         *arg = g_open_play.board_page + 1;      /* 0: not read yet */
         return PARK_MSG_BOARD;
@@ -258,8 +267,11 @@ static void park_draw_message(u8 message, u8 arg)
         break;
     case PARK_MSG_CALLED:
         /* "WITH ACE VS TWINS": the captain next in line partners you,
-         * or 2P does. */
-        if (g_open_play.two_players) {
+         * or 2P does. Called again as a winner (ADR-071): "WINNERS STAY:
+         * VS SNOWBIRDS" (26 characters at most). */
+        if (g_open_play.stay_court == arg) {
+            at = text_append(at, "WINNERS STAY:");
+        } else if (g_open_play.two_players) {
             at = text_append(at, "WITH 2P");
         } else if (g_open_play.partner < OPPONENT_COUNT) {
             at = text_append(at, "WITH ");
@@ -278,7 +290,12 @@ static void park_draw_message(u8 message, u8 arg)
         at = text_count(at, g_open_play.last_score[0]);
         *at++ = '-';
         at = text_count(at, g_open_play.last_score[1]);
-        if (g_open_play.rating != OPEN_RATING_NONE) {
+        if (arg) {
+            /* "YOU WON 11-4  2 IN A ROW": off after the cap. */
+            at = text_append(at, "  ");
+            at = text_count(at, g_open_play.last_streak);
+            at = text_append(at, " IN A ROW");
+        } else if (g_open_play.rating != OPEN_RATING_NONE) {
             at = text_append(at, "  ");
             at = text_count(at, open_rating_points(g_open_play.rating));
             at = text_append(at, " PTS");

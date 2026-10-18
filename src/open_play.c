@@ -248,21 +248,6 @@ u8 open_your_wait(void)
     return OPEN_NONE;
 }
 
-static u8 stack_pop(OpenCourt *court)
-{
-    u8 entry;
-    u8 i;
-
-    if (!court->stack_count)
-        return OPEN_NONE;
-    entry = court->stack[0];
-    ++g_open_play.stacks;
-    for (i = 1; i < court->stack_count; ++i)
-        court->stack[i - 1] = court->stack[i];
-    --court->stack_count;
-    return entry;
-}
-
 static u8 stack_remove(OpenCourt *court, u8 entry)
 {
     u8 i;
@@ -277,6 +262,37 @@ static u8 stack_remove(OpenCourt *court, u8 entry)
         ++g_open_play.stacks;
         return 1;
     }
+    return 0;
+}
+
+/* The first entry in a stack that is not skip, taken out (OPEN_NONE
+ * skips nothing: the front). */
+static u8 stack_take(OpenCourt *court, u8 skip)
+{
+    u8 entry;
+    u8 i;
+
+    for (i = 0; i < court->stack_count; ++i) {
+        entry = court->stack[i];
+        if (entry != skip) {
+            stack_remove(court, entry);
+            return entry;
+        }
+    }
+    return OPEN_NONE;
+}
+
+/* Nonzero when a team waits in any stack. */
+static u8 team_waiting(u8 team)
+{
+    const OpenCourt *court = g_open_play.court;
+    u8 c;
+    u8 i;
+
+    for (c = 0; c < OPEN_COURTS; ++c, ++court)
+        for (i = 0; i < court->stack_count; ++i)
+            if (court->stack[i] == team)
+                return 1;
     return 0;
 }
 
@@ -318,24 +334,57 @@ static void stack_join(u8 entry)
 }
 
 /* The next entry for a court: its own stack, else the front team of the
- * longest other stack (never your paddle: it waits where you put it). */
-static u8 next_entry(u8 c)
+ * longest other stack (never your paddle: it waits where you put it).
+ * Never skip: your partner's team, when you stay on (ADR-071). */
+static u8 next_entry(u8 c, u8 skip)
 {
     OpenCourt *court = &g_open_play.court[c];
     OpenCourt *other = g_open_play.court;
     OpenCourt *best = 0;
+    u8 entry;
     u8 o;
 
-    if (court->stack_count)
-        return stack_pop(court);
+    if (court->stack_count) {
+        entry = stack_take(court, skip);
+        if (entry != OPEN_NONE)
+            return entry;
+    }
     for (o = 0; o < OPEN_COURTS; ++o, ++other) {
         if (other == court || other->stack_count == 0 ||
-                other->stack[0] == OPEN_YOU)
+                other->stack[0] == OPEN_YOU || other->stack[0] == skip)
             continue;
         if (!best || other->stack_count > best->stack_count)
             best = other;
     }
-    return best ? stack_pop(best) : OPEN_NONE;
+    return best ? stack_take(best, OPEN_NONE) : OPEN_NONE;
+}
+
+/* A game won by a side (ADR-071): its streak goes on, or starts. */
+static void court_won(OpenCourt *court, u8 side)
+{
+    if (court->stay != side)
+        court->streak = 0;
+    ++court->streak;
+    court->stay = side;
+}
+
+/* You give up your place as a winner (B at a rack while you wait to be
+ * called again): you come off, and the court's next game is a fresh one. */
+static void leave_stay(void)
+{
+    OpenCourt *court;
+
+    if (g_open_play.stay_court >= OPEN_COURTS)
+        return;
+    court = &g_open_play.court[g_open_play.stay_court];
+    if (court->playing[0] == OPEN_YOU)
+        court->playing[0] = OPEN_NONE;
+    if (court->playing[1] == OPEN_YOU)
+        court->playing[1] = OPEN_NONE;
+    court->stay = OPEN_NONE;
+    court->streak = 0;
+    g_open_play.stay_court = OPEN_NONE;
+    ++g_open_play.lineup;
 }
 
 static void court_next_point(OpenCourt *court)
@@ -345,32 +394,56 @@ static void court_next_point(OpenCourt *court)
     court->rally = 0;
 }
 
-/* Changeover over: the next two on, then the two off join stacks. */
+/* Changeover over. Winners stay (ADR-071): the losers join a stack and
+ * the next entry comes on against the winners, at the other side. A
+ * fresh game (no winners staying, or they have won OPEN_STAY_MAX in a
+ * row): the two off join stacks, then the next two come on. */
 static u8 court_start_game(u8 c)
 {
     OpenCourt *court = &g_open_play.court[c];
     u8 off0 = court->playing[0];
     u8 off1 = court->playing[1];
+    u8 stay = court->stay;
+    u8 skip = OPEN_NONE;
     u8 side;
 
-    /* The two off go to the back of their stacks first, so a court whose
+    if (stay >= 2 || court->streak >= OPEN_STAY_MAX ||
+            court->playing[stay] == OPEN_NONE)
+        stay = OPEN_NONE;
+    /* Those off go to the back of their stacks first, so a court whose
      * stack is short keeps its own level playing (the CHAMP court has two
      * teams); anyone waiting is ahead of them. */
     ++g_open_play.lineup;
-    court->playing[0] = OPEN_NONE;
-    court->playing[1] = OPEN_NONE;
-    stack_join(off0);
-    stack_join(off1);
-    court->playing[0] = next_entry(c);
-    court->playing[1] = next_entry(c);
+    if (stay != OPEN_NONE) {
+        court->playing[stay ^ 1] = OPEN_NONE;
+        stack_join(stay ? off0 : off1);
+        /* You stay on with the same partner: their team waits on. */
+        if (court->playing[stay] == OPEN_YOU && g_open_play.two_players == 0)
+            skip = g_open_play.partner;
+        court->playing[stay ^ 1] = next_entry(c, skip);
+    } else {
+        court->stay = OPEN_NONE;
+        court->streak = 0;
+        court->playing[0] = OPEN_NONE;
+        court->playing[1] = OPEN_NONE;
+        stack_join(off0);
+        stack_join(off1);
+        court->playing[0] = next_entry(c, OPEN_NONE);
+        court->playing[1] = next_entry(c, OPEN_NONE);
+    }
     court->score[0] = 0;
     court->score[1] = 0;
     if (court->playing[0] == OPEN_NONE || court->playing[1] == OPEN_NONE) {
-        /* Not enough players yet: wait for the next changeover. */
+        /* Not enough players yet (winners staying come off too): wait for
+         * the next changeover. */
         stack_join(court->playing[0]);
         stack_join(court->playing[1]);
         court->playing[0] = OPEN_NONE;
         court->playing[1] = OPEN_NONE;
+        court->stay = OPEN_NONE;
+        court->streak = 0;
+        if (g_open_play.stay_court == c)
+            g_open_play.stay_court = OPEN_NONE;
         court->state = OPEN_COURT_CHANGEOVER;
         court->timer = OPEN_CHANGEOVER_FRAMES;
         return OPEN_EVENT_NONE;
@@ -383,6 +456,16 @@ static u8 court_start_game(u8 c)
         g_open_play.called = c;
         g_open_play.call_timer = 0;
         g_open_play.opponent = court->playing[side ^ 1];
+        if (side == stay) {
+            /* Called again as a winner: the same partner, while their
+             * team still waits (another court may have taken it). */
+            g_open_play.stay_court = c;
+            if (g_open_play.partner == OPEN_NONE ||
+                    team_waiting(g_open_play.partner))
+                return OPEN_EVENT_CALLED;
+        } else {
+            g_open_play.stay_court = OPEN_NONE;
+        }
         /* Your partner: the captain of the team waiting next at this
          * court (they stay in line); none waiting, the regular. */
         g_open_play.partner = court->stack_count &&
@@ -415,6 +498,7 @@ static u8 court_update(u8 c)
         return OPEN_EVENT_NONE;
     side = (u8)(open_random() & 1);
     if (++court->score[side] >= OPEN_GAME_POINTS) {
+        court_won(court, side);
         court->state = OPEN_COURT_CHANGEOVER;
         court->timer = OPEN_CHANGEOVER_FRAMES;
         return OPEN_EVENT_NONE;
@@ -441,6 +525,8 @@ void open_play_begin(u16 seed, u8 two_players)
         court->stack_count = 0;
         court_next_point(court);
         court->age = 255;           /* these games are already going */
+        court->stay = OPEN_NONE;
+        court->streak = 0;
     }
     /* Each team at its level's court: the first two play, the rest wait. */
     for (entry = 0; entry < OPPONENT_COUNT; ++entry) {
@@ -467,6 +553,8 @@ void open_play_begin(u16 seed, u8 two_players)
     g_open_play.last_score[0] = 0;
     g_open_play.last_score[1] = 0;
     g_open_play.board_page = OPEN_NONE;
+    g_open_play.stay_court = OPEN_NONE;
+    g_open_play.last_streak = 0;
     open_play_rate(OPEN_RATING_NONE, 0);
 }
 
@@ -474,6 +562,8 @@ static u8 open_press_rack(u8 rack)
 {
     OpenCourt *court = &g_open_play.court[rack];
 
+    /* Waiting to be called again as a winner, you give that up. */
+    leave_stay();
     if (g_open_play.your_court == rack) {
         stack_remove(court, OPEN_YOU);
         g_open_play.your_court = OPEN_NONE;
@@ -553,19 +643,31 @@ void open_play_return(u8 won, u8 points_for, u8 points_against)
 {
     u8 c = g_open_play.called;
     OpenCourt *court;
+    u8 side;
 
     g_open_play.last_won = won ? 1 : 0;
     g_open_play.last_score[0] = points_for;
     g_open_play.last_score[1] = points_against;
+    g_open_play.last_streak = 0;
     g_open_play.called = OPEN_NONE;
+    g_open_play.stay_court = OPEN_NONE;
     if (c >= OPEN_COURTS)
         return;
     court = &g_open_play.court[c];
-    /* You leave; the court's next game starts after a changeover. */
-    if (court->playing[0] == OPEN_YOU)
-        court->playing[0] = OPEN_NONE;
-    if (court->playing[1] == OPEN_YOU)
-        court->playing[1] = OPEN_NONE;
+    /* Winners stay (ADR-071): won, below the cap, you stay on and the
+     * changeover calls you again; otherwise you leave. The court's next
+     * game starts after a changeover. */
+    side = court->playing[0] == OPEN_YOU ? 0 :
+        court->playing[1] == OPEN_YOU ? 1 : OPEN_NONE;
+    if (side != OPEN_NONE) {
+        court_won(court, won ? side : side ^ 1);
+        if (won)
+            g_open_play.last_streak = court->streak;
+        if (won && court->streak < OPEN_STAY_MAX)
+            g_open_play.stay_court = c;
+        else
+            court->playing[side] = OPEN_NONE;
+    }
     court->state = OPEN_COURT_CHANGEOVER;
     court->timer = OPEN_CHANGEOVER_FRAMES;
     ++g_open_play.lineup;

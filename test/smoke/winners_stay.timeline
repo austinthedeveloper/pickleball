@@ -1,0 +1,35 @@
+# Winners stay on (ADR-071). Run with the pokes in docs/decisions/ADR-071
+# (ADR-070's career player on 14 points, court 1's second game set to 6-6
+# so it ends at once, and each of your games started at 10-0). OPEN PLAY (Down
+# twice), into the park; left to court 1's rack, stack, step back. The
+# winners of court 1's game stay; after the next game you are called. You
+# win (YOU WON 11-0  16 PTS) and stay on: the changeover calls you again,
+# WINNERS STAY: VS SNOWBIRDS, with the same partner. You win again and come
+# off: YOU WON 11-0  2 IN A ROW, then your points. No B in the park between
+# the games: B at the rack gives up your place.
+70 71 down
+80 81 down
+90 91 start
+160 178 up
+205 269 left
+280 281 b
+295 305 down
+2160 2161 b
+2280 2281 b
+2400 2401 b
+2520 2521 b
+2640 2641 b
+2760 2761 b
+3120 3121 b
+3240 3241 b
+3360 3361 b
+3480 3481 b
+3600 3601 b
+shot 1920
+shot 2840
+shot 2950
+shot 3040
+shot 3680
+shot 3740
+shot 3800
+shot 3880

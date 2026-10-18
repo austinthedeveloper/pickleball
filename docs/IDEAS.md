@@ -215,8 +215,9 @@ scrolling park, people walking between courts, and partners from the
 stack.
 
 A park rating opens the higher courts (ADR-070). More, from the same pass:
-- **Winners stay on:** the real parks' "two off, two on", with a cap of
-  two or three wins, instead of everyone coming off after each game.
+- **Winners stay on** (done: [ADR-071](decisions/ADR-071-winners-stay.md),
+  a cap of two wins): the real parks' "two off, two on", instead of
+  everyone coming off after each game.
 - **Ladder teams at the park:** a team you have beaten on the ladder joins
   the stacks at its level, to play against or partner.
 

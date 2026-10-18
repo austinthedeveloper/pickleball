@@ -115,8 +115,8 @@ Open Play takes you to a park with three courts, a game going on each, just like
 
 1. Walk with the Control Pad. The paddles on each court's rack are the players waiting; yours is the coloured one.
 2. Press B at a rack to put your paddle in the stack. Press B again to take it back.
-3. When a game ends, the next paddles go on. When it's your turn the screen shows **YOUR GAME!** The captain of the next team in line partners you, and you play doubles against the team you were drawn with.
-4. After the game, B takes you back to the park. START in the park returns to the title.
+3. When a game ends, the winners stay on and the next paddle goes on against them; after two wins in a row, the winners come off too. When it's your turn the screen shows **YOUR GAME!** The captain of the next team in line partners you, and you play doubles against the team you were drawn with.
+4. After the game, B takes you back to the park. Win, and you stay on for another game with the same partner: the screen shows **WINNERS STAY**. Win twice in a row and you come off to give someone else a turn. START in the park returns to the title.
 
 **Park points.** Every career player starts with 10 park points. Win a game at your level and you earn 2; lose and you drop 1. At 15 points the CLUB court opens, and at 25 the CHAMP court, and once a court is open it stays open. (Beating the ROOKIE court once you've moved up earns nothing.) Without a career player, or on KID, every court is open.
 
@@ -344,7 +344,7 @@ Each manual section needs one or two screenshots; most come from existing smoke 
 | Title Screen | Title menu with the demo behind it | `title`, `menu` |
 | Controls | SNES controller line art (drawn, not captured) | — |
 | Singles and Doubles | Player Select, paddle row | `select` |
-| Open Play | The park with three courts; the clubhouse | `open_play`, `clubhouse` |
+| Open Play | The park with three courts; the clubhouse; winners staying on | `open_play`, `clubhouse`, `winners_stay` |
 | Practice | Ball machine with return-zone corners lit | `practice`, `zones` |
 | Court | COURT page over a non-default venue | `court`, `venue`, `venue_preview` |
 | Career | Name keyboard; a player card | `career` |

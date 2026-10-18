@@ -8,8 +8,10 @@
  * Open play (docs/decisions/ADR-034-open-play.md): a park with three
  * courts. Each court has a game going and a paddle stack: paddles in line
  * for the next game. Entries are ladder teams (ADR-023, a pair each) or
- * you. When a game ends all four come off and the top two entries go on;
- * the players coming off join the back of a stack. You walk the park, put
+ * you. When a game ends the winners stay on and the next entry comes on
+ * against them; the losers join the back of a stack. Winners who have
+ * stayed for OPEN_STAY_MAX games in a row come off too, and the top two
+ * entries go on (ADR-071). You walk the park, put
  * your paddle in a court's stack, and play when your turn comes. Pure:
  * render_park.c draws it and main.c runs the match.
  *
@@ -29,6 +31,7 @@ enum {
     OPEN_YOU = 0x80,            /* an entry: you (and a regular partner) */
     OPEN_NONE = 0xff,
     OPEN_GAME_POINTS = 7,       /* the park's own games: first to 7 */
+    OPEN_STAY_MAX = 2,          /* winners stay on for this many wins */
     /* A point every 1 to 3 s, so a game lasts about half a minute. */
     OPEN_POINT_MIN_FRAMES = 60,
     OPEN_POINT_SPAN_FRAMES = 128,  /* a power of two (a mask, no divide) */
@@ -111,6 +114,9 @@ typedef struct {
     u8 rally;                   /* animation: frames into the rally */
     u8 age;                     /* frames since this game began (to 255):
                                    the new players walk on first */
+    u8 stay;                    /* the side on a winning streak (it stays
+                                   on at the changeover), or OPEN_NONE */
+    u8 streak;                  /* games in a row that side has won */
 } OpenCourt;
 
 /* open_play_update results. */
@@ -148,6 +154,9 @@ typedef struct {
     u8 board_page;              /* the records board's page, or OPEN_NONE */
     u8 rating;                  /* yours (ADR-070), or OPEN_RATING_NONE */
     u8 best_court;              /* the highest court open to you */
+    u8 stay_court;              /* you won and stay on this court (until
+                                   your next game there), or OPEN_NONE */
+    u8 last_streak;             /* your last game: wins in a row there */
 } OpenPlay;
 
 extern OpenPlay g_open_play;
@@ -159,7 +168,9 @@ void open_play_begin(u16 seed, u8 two_players);
  * Returns OPEN_EVENT_*. While called, input is ignored. */
 u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed);
 /* Back from your match: you won or lost by this score; your court's game
- * ends and the next one starts. */
+ * ends and the next one starts. Won, below OPEN_STAY_MAX in a row, you
+ * stay on with the same partner (stay_court): the changeover calls you
+ * again. */
 void open_play_return(u8 won, u8 points_for, u8 points_against);
 
 /* A court's skill level as text ("ROOKIE", "CLUB", "CHAMP"), and the

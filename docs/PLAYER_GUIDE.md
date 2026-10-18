@@ -27,16 +27,20 @@ its own level. On KID, every court is KID.
   players waiting for that court; yours is the coloured one.
 - Press **B** at a rack to put your paddle in its stack (B again takes it
   back). Walk past a court to see who's playing.
-- When a game ends, everyone comes off and the next paddles go on. When
-  it's yours: **YOUR GAME!** The captain of the team waiting next at that
+- **Winners stay on:** when a game ends, the losers come off and the
+  next paddle goes on against the winners. After two wins in a row the
+  winners come off too. When it's yours: **YOUR GAME!** The captain of the team waiting next at that
   court partners you ("WITH PETE VS SURF CREW"); you play doubles against the
   team you were drawn with, at that court's level, with your POINTS and
   MODIFIERS.
 - **Two players:** press Start on controller 2 (on the title or in the
   park) and 2P comes along as your partner in your games; press it again
   to leave.
-- After the game, **B** takes you back to the park. **Start** in the park
-  goes back to the title.
+- After the game, **B** takes you back to the park. Win and you stay on:
+  the next team in line takes you on, with the same partner
+  (`WINNERS STAY: VS SNOWBIRDS`). Win twice in a row and you come off
+  (`YOU WON 11-4  2 IN A ROW`); B at a rack while you wait gives up your
+  place. **Start** in the park goes back to the title.
 - **Park points:** a career player starts with 10 (the park's status
   line and the career card show them). The CLUB court opens at 15 and
   the CHAMP court at 25, and once open a court stays open. A win at your
