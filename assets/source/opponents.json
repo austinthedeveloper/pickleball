@@ -178,7 +178,7 @@
           "style": {"late_period": 3, "reaction": 4, "dink_period": 2,
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
-                    "speed": 18,
+                    "speed": 16,
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         },
         {
@@ -189,7 +189,7 @@
           "style": {"late_period": 3, "reaction": 0, "dink_period": 2,
                     "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24,
                     "aim": "away", "depth": "alternate", "recover": 56,
-                    "speed": 18,
+                    "speed": 16,
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         }
       ]
@@ -212,7 +212,7 @@
           "shorts": [[26, 12, 4], [31, 20, 8]], "shoe": [28, 20, 13],
           "style": {"late_period": 3, "reaction": 3, "dink_period": 5,
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
-                    "aim": "mix", "depth": "alternate", "recover": 92,
+                    "aim": "mix", "depth": "alternate", "recover": 88,
                     "speed": 20,
                     "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
@@ -221,7 +221,7 @@
           "hair": [3, 3, 4],
           "shirt": [[20, 3, 12], [28, 8, 18], [31, 18, 25]],
           "shorts": [[2, 14, 16], [4, 22, 24]], "shoe": [19, 12, 8],
-          "style": {"late_period": 4, "reaction": 0, "dink_period": 5,
+          "style": {"late_period": 3, "reaction": 0, "dink_period": 5,
                     "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56,
                     "aim": "mix", "depth": "alternate", "recover": 92,
                     "speed": 20,
@@ -248,7 +248,7 @@
           "style": {"late_period": 5, "reaction": 0, "dink_period": 4,
                     "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64,
                     "aim": "mix", "depth": "alternate", "recover": 50,
-                    "speed": 20,
+                    "speed": 19,
                     "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         },
         {

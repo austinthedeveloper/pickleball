@@ -92,6 +92,33 @@ Singles RAVEN/KAI and MAX/ACE remain ties (KNOWN_ISSUES #40): separating
 them moves captains, and so doubles, with ACE already at M4-OPP-06's
 floor.
 
+*Amended again 2026-10-18 (KNOWN_ISSUES #40):* singles RAVEN/KAI and
+MAX/ACE were ties at 480 a rung. Retuned (`TUNING_VERSION` 3), ACE kept
+at the M4-OPP-06 floor: RAVEN speed 16 (was 18) and MAX 19 (was 20),
+easier; KAI recover 88 (was 92), easier; for doubles, VLAD speed 16 (was
+18) and LANI late every 3rd (was 4th) give back what the captains moved.
+Bot wins at 960 a singles rung and 1,920 a doubles rung (`MATCHES=320`;
+`MATCHES=160 PHASES=4`):
+
+| Rung | Singles | Doubles, regular bot | Doubles, net bot |
+|---|---|---|---|
+| 1 | DAD 874 | HENDERSON 1920 | 1920 |
+| 2 | MARGE 837 | SNOWBIRDS 1920 | 1920 |
+| 3 | BRAD 753 | GYM BROS 1561 | 1873 |
+| 4 | PETE 490 | PIRATES 1409 | 1777 |
+| 5 | RAVEN 389 (was 265) | GOTH CLUB 811 (was 783) | 1536 (was 1365) |
+| 6 | KAI 282 (was 249) | SURF CREW 642 (was 669) | 1296 (was 1239) |
+| 7 | MAX 208 (was 141) | TWINS 457 (was 383) | 736 (was 804) |
+| 8 | ACE 154 (MAX was easier) | CHAMPS 218 | 409 |
+
+Every gap is 3.5 standard errors or more (singles; DAD to MARGE is the
+closest) and 7 or more in doubles. The 60-match tables CLAUDE.md used to
+quote now print `ladder order: NO` in places, as they could print `yes`
+by luck before: at that size one standard error is about 3.5 wins.
+CLAUDE.md now asks for the bigger runs. CHAMPS in regular-bot doubles is
+6.8 of 60 at this size, under M4-OPP-06's 8 (that task measured 60
+matches, where it read 8); unchanged here.
+
 ## Consequences
 
 - EASY and HARD scale the new styles by the same rules (ADR-025): EASY
