@@ -172,10 +172,11 @@ static void test_your_turn(void)
         assert(open_play_update(1, 0, 1) == OPEN_EVENT_NONE);
     assert(FROM_FP(g_open_play.x_fp) == 128);
     assert(open_play_update(0, 0, 0) == OPEN_EVENT_PLAY);
-    /* Back from the match: you leave, the court changes over. */
-    open_play_return(1, 11, 7);
+    /* Back from a lost match: you leave, the court changes over (a win
+     * keeps you on: test_you_stay). */
+    open_play_return(0, 7, 11);
     assert(g_open_play.called == OPEN_NONE);
-    assert(g_open_play.last_won == 1 && g_open_play.last_score[0] == 11);
+    assert(g_open_play.last_won == 0 && g_open_play.last_score[1] == 11);
     assert(g_open_play.court[c].state == OPEN_COURT_CHANGEOVER);
     assert(open_walkable(g_open_play.x_fp, g_open_play.y_fp));
     for (frames = 0; frames <= OPEN_CHANGEOVER_FRAMES; ++frames)
@@ -373,6 +374,288 @@ static void test_rating(void)
     check_population();
 }
 
+/* ADR-071: run court c's game to its end with side winning it (the other
+ * side's points held at 0). */
+static void finish_game(u8 c, u8 side)
+{
+    OpenCourt *court = &g_open_play.court[c];
+    u16 n;
+
+    for (n = 0; court->state == OPEN_COURT_PLAYING && n < 2000; ++n) {
+        court->score[side] = OPEN_GAME_POINTS - 1;
+        court->score[side ^ 1] = 0;
+        open_play_update(0, 0, 0);
+    }
+    assert(court->state == OPEN_COURT_CHANGEOVER);
+    assert(court->stay == side);
+}
+
+/* Through court c's changeover; OPEN_EVENT_CALLED if it called you. */
+static u8 run_changeover(u8 c)
+{
+    OpenCourt *court = &g_open_play.court[c];
+    u8 event = OPEN_EVENT_NONE;
+    u16 n;
+
+    for (n = 0; court->state == OPEN_COURT_CHANGEOVER &&
+            n <= OPEN_CHANGEOVER_FRAMES; ++n)
+        if (open_play_update(0, 0, 0) == OPEN_EVENT_CALLED)
+            event = OPEN_EVENT_CALLED;
+    return event;
+}
+
+/* Winners stay on, the losers leave; after OPEN_STAY_MAX wins in a row
+ * the winners come off too. */
+static void test_winners_stay(void)
+{
+    OpenCourt *court = &g_open_play.court[0];
+    u8 winner;
+    u8 loser;
+    u8 next;
+
+    open_play_begin(321, 0);
+    assert(court->stay == OPEN_NONE && court->streak == 0);
+    winner = court->playing[1];
+    loser = court->playing[0];
+    next = court->stack[0];
+    finish_game(0, 1);
+    assert(court->streak == 1);
+    run_changeover(0);
+    assert(court->state == OPEN_COURT_PLAYING);
+    /* The winners keep their side; the next team comes on at the other;
+     * the losers wait at the back. */
+    assert(court->playing[1] == winner);
+    assert(court->playing[0] == next);
+    assert(court->stack[court->stack_count - 1] == loser);
+    assert(court->stay == 1 && court->streak == 1);
+    check_population();
+    /* A second win in a row: the cap, so all four come off. */
+    finish_game(0, 1);
+    assert(court->streak == OPEN_STAY_MAX);
+    run_changeover(0);
+    assert(court->state == OPEN_COURT_PLAYING);
+    assert(court->playing[0] != winner && court->playing[1] != winner);
+    assert(court->stay == OPEN_NONE && court->streak == 0);
+    check_population();
+    /* The other side winning ends a streak and starts its own. */
+    finish_game(0, 0);
+    run_changeover(0);
+    winner = court->playing[0];
+    finish_game(0, 1);
+    assert(court->stay == 1 && court->streak == 1);
+    run_changeover(0);
+    assert(court->playing[0] != winner);
+    check_population();
+}
+
+/* Stack at a court and play up to your call there, then its match. */
+static void wait_for_call(u8 c)
+{
+    unsigned long frames = 0;
+    u8 event = OPEN_EVENT_NONE;
+
+    place_you(open_rack_x(c), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    place_you(128, 200);
+    while (event != OPEN_EVENT_CALLED && frames < 60UL * 60 * 5) {
+        event = open_play_update(0, 0, 0);
+        ++frames;
+    }
+    assert(event == OPEN_EVENT_CALLED && g_open_play.called == c);
+    for (frames = 1; frames < OPEN_CALL_FRAMES; ++frames)
+        open_play_update(0, 0, 0);
+    assert(open_play_update(0, 0, 0) == OPEN_EVENT_PLAY);
+}
+
+/* You win: you stay on, called again with the same partner against a team
+ * that isn't your partner's; a second win and you come off. */
+static void test_you_stay(void)
+{
+    u8 c = 0;
+    OpenCourt *court = &g_open_play.court[c];
+    u8 partner;
+    u8 first;
+    u8 side;
+
+    open_play_begin(99, 0);
+    wait_for_call(c);
+    partner = g_open_play.partner;
+    first = g_open_play.opponent;
+    assert(partner < OPPONENT_COUNT);
+    assert(court->stack[0] == partner);
+    assert(g_open_play.stay_court == OPEN_NONE);
+    open_play_return(1, 11, 4);
+    assert(g_open_play.last_won == 1 && g_open_play.last_streak == 1);
+    assert(g_open_play.stay_court == c);
+    assert(court->playing[0] == OPEN_YOU || court->playing[1] == OPEN_YOU);
+    side = court->playing[0] == OPEN_YOU ? 0 : 1;
+    assert(court->stay == side && court->streak == 1);
+    check_population();
+    /* The changeover calls you again: same side, same partner, and the
+     * partner's team (first in line) is skipped. */
+    assert(run_changeover(c) == OPEN_EVENT_CALLED);
+    assert(g_open_play.called == c);
+    assert(court->state == OPEN_COURT_YOURS);
+    assert(court->playing[side] == OPEN_YOU);
+    assert(g_open_play.stay_court == c);
+    assert(g_open_play.partner == partner);
+    assert(g_open_play.opponent < OPPONENT_COUNT);
+    assert(g_open_play.opponent != partner);
+    assert(g_open_play.opponent != first);  /* the losers went to the back */
+    assert(court->stack[0] == partner);
+    check_population();
+    printf("open play: winners stay, you and %s's captain vs %s\n",
+        g_opponent_team[partner], g_opponent_team[g_open_play.opponent]);
+    /* A second win: the cap, you come off. */
+    open_play_return(1, 11, 9);
+    assert(g_open_play.last_streak == OPEN_STAY_MAX);
+    assert(g_open_play.stay_court == OPEN_NONE);
+    assert(court->playing[0] != OPEN_YOU && court->playing[1] != OPEN_YOU);
+    assert(run_changeover(c) == OPEN_EVENT_NONE);
+    assert(court->state == OPEN_COURT_PLAYING);
+    assert(court->stay == OPEN_NONE && court->streak == 0);
+    check_population();
+
+    /* 2P as your partner: no partner team to skip, still called again. */
+    open_play_begin(99, 1);
+    wait_for_call(c);
+    open_play_return(1, 11, 2);
+    assert(run_changeover(c) == OPEN_EVENT_CALLED);
+    assert(g_open_play.stay_court == c);
+    check_population();
+}
+
+/* You lose: you come off and the winners stay. B at a rack while waiting
+ * to be called again gives up your place. */
+static void test_you_lose(void)
+{
+    u8 c = 0;
+    OpenCourt *court = &g_open_play.court[c];
+    u8 winner;
+
+    open_play_begin(99, 0);
+    wait_for_call(c);
+    winner = g_open_play.opponent;
+    open_play_return(0, 6, 11);
+    assert(g_open_play.last_won == 0 && g_open_play.last_streak == 0);
+    assert(g_open_play.stay_court == OPEN_NONE);
+    assert(court->playing[0] != OPEN_YOU && court->playing[1] != OPEN_YOU);
+    assert(court->playing[court->stay] == winner && court->streak == 1);
+    run_changeover(c);
+    assert(court->state == OPEN_COURT_PLAYING);
+    assert(court->playing[court->stay] == winner);
+    check_population();
+
+    /* Won, then stacked elsewhere before the call: you give up the stay. */
+    open_play_begin(99, 0);
+    wait_for_call(c);
+    open_play_return(1, 11, 4);
+    assert(g_open_play.stay_court == c);
+    place_you(open_rack_x(1), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    assert(g_open_play.stay_court == OPEN_NONE);
+    assert(court->playing[0] != OPEN_YOU && court->playing[1] != OPEN_YOU);
+    assert(court->stay == OPEN_NONE);
+    assert(run_changeover(c) == OPEN_EVENT_NONE);
+    assert(court->state == OPEN_COURT_PLAYING);
+    check_population();
+}
+
+/* Nobody waiting: the winners come off and the court waits. Eight teams
+ * always leave someone waiting, so the stacks are emptied by hand (the
+ * population check does not apply). */
+static void test_stay_nobody_waiting(void)
+{
+    u8 c = 2;
+    OpenCourt *court = &g_open_play.court[c];
+    u8 i;
+
+    /* A team that beat you, nobody anywhere to play it. */
+    open_play_begin(5, 0);
+    for (i = 0; i < OPEN_COURTS; ++i)
+        g_open_play.court[i].stack_count = 0;
+    court->playing[1] = OPEN_YOU;
+    court->state = OPEN_COURT_YOURS;
+    g_open_play.called = c;
+    open_play_return(0, 2, 11);
+    assert(court->stay == 0 && court->streak == 1);
+    run_changeover(c);
+    assert(court->state == OPEN_COURT_CHANGEOVER);
+    assert(court->playing[0] == OPEN_NONE && court->playing[1] == OPEN_NONE);
+    assert(court->stay == OPEN_NONE && court->streak == 0);
+    assert(court->stack_count == 1 && court->stack[0] == 6);
+
+    /* You won, and only your partner's team waits: you come off. */
+    open_play_begin(5, 0);
+    for (i = 0; i < OPEN_COURTS; ++i)
+        g_open_play.court[i].stack_count = 0;
+    court->playing[0] = OPEN_YOU;
+    court->playing[1] = OPEN_NONE;      /* no losers to come back on */
+    court->stack[0] = 7;
+    court->stack_count = 1;
+    court->state = OPEN_COURT_YOURS;
+    g_open_play.called = c;
+    g_open_play.partner = 7;
+    open_play_return(1, 11, 3);
+    assert(g_open_play.stay_court == c);
+    assert(run_changeover(c) == OPEN_EVENT_NONE);
+    assert(g_open_play.called == OPEN_NONE);
+    assert(g_open_play.stay_court == OPEN_NONE);
+    assert(court->playing[0] == OPEN_NONE && court->playing[1] == OPEN_NONE);
+    assert(court->stack_count == 1 && court->stack[0] == 7);
+}
+
+/* A long soak with you in it: stack, play, win or lose at random, stay
+ * on or come off; nobody is lost or duplicated. */
+static void test_stay_soak(void)
+{
+    unsigned long f;
+    u16 rng = 0x1234;
+    u16 games = 0;
+    u16 stays = 0;
+    u16 caps = 0;
+    u16 team_caps = 0;
+    u8 c;
+    u8 event;
+    u8 rack = 0;
+
+    open_play_begin(2024, 0);
+    for (f = 0; f < 60UL * 60 * 30; ++f) {
+        if (g_open_play.called == OPEN_NONE &&
+                g_open_play.your_court == OPEN_NONE &&
+                g_open_play.stay_court == OPEN_NONE) {
+            rack = rack >= OPEN_COURTS - 1 ? 0 : rack + 1;
+            place_you(open_rack_x(rack), OPEN_RACK_Y);
+            open_play_update(0, 0, 1);
+            place_you(128, 200);
+        }
+        for (c = 0; c < OPEN_COURTS; ++c)
+            if (g_open_play.court[c].streak >= OPEN_STAY_MAX &&
+                    g_open_play.court[c].state == OPEN_COURT_CHANGEOVER &&
+                    g_open_play.court[c].timer == 1)
+                ++team_caps;
+        event = open_play_update(0, 0, 0);
+        if (event == OPEN_EVENT_CALLED &&
+                g_open_play.stay_court != OPEN_NONE) {
+            ++stays;
+            assert(g_open_play.opponent != g_open_play.partner);
+        }
+        if (event == OPEN_EVENT_PLAY) {
+            rng ^= rng << 7;
+            rng ^= rng >> 9;
+            rng ^= rng << 8;
+            open_play_return(rng & 1, 11, 5);
+            if (g_open_play.last_streak >= OPEN_STAY_MAX)
+                ++caps;
+            ++games;
+        }
+        check_population();
+    }
+    printf("open play: 30 minutes with you, %u games, %u stays, %u capped, "
+        "%u team caps\n", games, stays, caps, team_caps);
+    assert(games >= 20 && stays >= 3 && caps >= 1 && team_caps >= 10);
+}
+
 int main(void)
 {
     test_levels();
@@ -384,6 +667,11 @@ int main(void)
     test_two_players();
     test_clubhouse();
     test_rating();
+    test_winners_stay();
+    test_you_stay();
+    test_you_lose();
+    test_stay_nobody_waiting();
+    test_stay_soak();
     printf("open play host checks passed\n");
     return 0;
 }
