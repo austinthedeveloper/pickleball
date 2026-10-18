@@ -49,8 +49,14 @@
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
 #define TITLE_MENU_ROW 12           /* SINGLES ... MODIFIERS (rows 12-20) */
 #define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
-#define TITLE_2P_ROW 21
-#define TITLE_2P_COL 9              /* 14-character 2P join line */
+#define TITLE_JOIN_ROW 21          /* the join prompt under the menu */
+#define TITLE_JOIN_TEXT "FRIENDS: PRESS START"
+#define TITLE_JOIN_COL ((32 - (sizeof(TITLE_JOIN_TEXT) - 1)) / 2)
+/* The join counter (ADR-066): "1P. 2P. 3Px 4Px" in a panel where the
+ * match scoreboard goes, on the title only. */
+#define JOIN_PANEL_COL 7
+#define JOIN_PANEL_INNER 15
+#define JOIN_FIRST_COL (JOIN_PANEL_COL + 1)
 #define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
 #define RECORDS_WIDTH 24
@@ -70,11 +76,16 @@ static u16 s_hud_scene;
 static u8 s_hud_valid;
 static u8 s_sub_panel;             /* 0 none, 1 ARCADE RULES, 2 MATCH POINT */
 
-/* Title menu choice (TITLE_*), the open page (TITLE_PAGE_*), and 2P join;
- * owned by main.c's title input. */
+/* Title menu choice (TITLE_*), the open page (TITLE_PAGE_*), and who
+ * joined (TITLE_JOIN_*); owned by main.c's title input. */
 u8 g_title_mode;
 u8 g_title_page;
-u8 g_title_2p;
+u8 g_title_joined;
+/* The join counter on screen: the joined bits | Multitap (bit 4), or
+ * JOIN_UNDRAWN (rows cleared) or JOIN_PANEL (the panel, not its text). */
+#define JOIN_UNDRAWN 0xff
+#define JOIN_PANEL 0xfe
+static u8 s_join_drawn;
 /*
  * Title area (rows 12-22: the menu or a page), drawn a part per
  * idle frame by hud_title_area_update, apart from the staged scene steps so
@@ -293,9 +304,11 @@ static void hud_practice_title(void)
 static void hud_draw_scores(void)
 {
     hud_clear_rows(SCORE_PANEL_ROW, 3);
-    /* The title (ADR-065): the demo behind the menu has no scoreboard. */
+    /* The title (ADR-065): the demo behind the menu has no scoreboard; the
+     * join counter takes its place (ADR-066). */
     if (g_attract) {
         s_sub_panel = 0xff;
+        s_join_drawn = JOIN_UNDRAWN;
         hud_draw_score_digits();
         return;
     }
@@ -891,12 +904,50 @@ static void hud_title_menu(u8 choice, u8 half)
         hud_title_item(i, choice);
 }
 
-static void hud_title_2p_line(void)
+static void hud_title_join_line(void)
 {
-    /* ADR-020: Start on pad 2 joins (or leaves) as 2P. */
-    hud_text(TITLE_2P_COL, TITLE_2P_ROW,
-        g_title_2p ? HUD_PAL_YELLOW : HUD_PAL_WHITE,
-        g_title_2p ? "  2P JOINED!  " : "2P PRESS START");
+    /* ADR-066: Start on any other controller joins (or leaves). */
+    hud_text(TITLE_JOIN_COL, TITLE_JOIN_ROW, HUD_PAL_WHITE, TITLE_JOIN_TEXT);
+}
+
+/* What the join counter shows: who joined, and whether 3P and 4P can. */
+static u8 hud_join_state(void)
+{
+    return g_title_joined | (g_multitap_present ? 16 : 0);
+}
+
+/* The join counter (ADR-066): the panel on one frame, then a label and a
+ * dot (joined) or a grey x per controller, in the ring colours: 1P red,
+ * 2P blue, 3P yellow, 4P green (render.c sets the title's BG3 palettes 2
+ * and 3 for them). */
+static void hud_join_counter(void)
+{
+    static const char *const labels[MAX_HUMAN_PADS] = {
+        "1P", "2P", "3P", "4P"
+    };
+    static const u16 dots[MAX_HUMAN_PADS] = {
+        hud_entry(HUD_TILE_DOT, HUD_PAL_TEAM_RIGHT),
+        hud_entry(HUD_TILE_DOT, HUD_PAL_TEAM_LEFT),
+        hud_entry(HUD_TILE_DOT, HUD_PAL_YELLOW),
+        hud_entry(HUD_TILE_DOT_ALT, HUD_PAL_TEAM_LEFT)
+    };
+    u8 joined = g_title_joined;
+    u8 col = JOIN_FIRST_COL;
+    u8 i;
+
+    if (s_join_drawn == JOIN_UNDRAWN) {
+        hud_panel(JOIN_PANEL_COL, SCORE_PANEL_ROW, JOIN_PANEL_INNER);
+        s_join_drawn = JOIN_PANEL;
+        return;
+    }
+    for (i = 0; i < MAX_HUMAN_PADS; ++i) {
+        hud_text(col, SCORE_TEXT_ROW, HUD_PAL_WHITE, labels[i]);
+        hud_tile(col + 2, SCORE_TEXT_ROW, (joined & 1) ? dots[i] :
+            hud_entry(HUD_TILE_X_OFF, HUD_PAL_WHITE));
+        joined >>= 1;
+        col += 4;
+    }
+    s_join_drawn = hud_join_state();
 }
 
 /* A court page row's value: the venue choice, or a part's preset. */
@@ -1148,10 +1199,8 @@ static void hud_options_refresh(void)
     }
 }
 
-/* Title views for the area: the menu choice (bits 0-3) and 2P (bit 4), or
- * a page: 0x7f + its TITLE_PAGE_*. */
-#define HUD_TITLE_VIEW_CHOICE 15
-#define HUD_TITLE_VIEW_2P 16
+/* Title views for the area: the menu choice, or a page: 0x7f + its
+ * TITLE_PAGE_*. Joining draws the counter apart (ADR-066). */
 #define HUD_TITLE_VIEW_PAGE(page) (0x7f + (page))
 #define HUD_TITLE_VIEW_COURT HUD_TITLE_VIEW_PAGE(TITLE_PAGE_COURT)
 #define HUD_TITLE_VIEW_OPTIONS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_OPTIONS)
@@ -1171,7 +1220,7 @@ static u8 hud_title_view(void)
             g_career_page.view);
     if (g_title_page != TITLE_PAGE_MENU)
         return HUD_TITLE_VIEW_PAGE(g_title_page);
-    return g_title_mode | (g_title_2p << 4);
+    return g_title_mode;
 }
 
 /* Court page: the box, the header, then a part per frame. */
@@ -1698,10 +1747,10 @@ static u8 hud_title_draw_part(u8 view, u8 part)
     /* Parts stay at most two rows: each waits for a frame under
      * HUD_TITLE_SCANLINE_LIMIT, which leaves room for no more. */
     if (part < (TITLE_ENTRIES + 1) / 2) {
-        hud_title_menu(view & HUD_TITLE_VIEW_CHOICE, part);
+        hud_title_menu(view, part);
         return 0;
     }
-    hud_title_2p_line();
+    hud_title_join_line();
     return 1;
 }
 
@@ -1768,25 +1817,25 @@ static void hud_title_area_update(void)
         /* Coloured by the choice now, so another move since is fine. */
         if (s_title_part == 0xff && s_title_view < HUD_TITLE_VIEW_COURT &&
                 view < HUD_TITLE_VIEW_COURT)
-            hud_title_item(s_title_stale, view & HUD_TITLE_VIEW_CHOICE);
+            hud_title_item(s_title_stale, view);
         s_title_stale = 0xff;
         return;
     }
     if (s_title_view != view && s_title_part == 0xff &&
             s_title_view < HUD_TITLE_VIEW_COURT &&
             view < HUD_TITLE_VIEW_COURT) {
-        if ((s_title_view ^ view) & HUD_TITLE_VIEW_CHOICE) {
-            hud_title_item(view & HUD_TITLE_VIEW_CHOICE,
-                view & HUD_TITLE_VIEW_CHOICE);
-            s_title_stale = s_title_view & HUD_TITLE_VIEW_CHOICE;
-        }
-        if ((s_title_view ^ view) & HUD_TITLE_VIEW_2P)
-            hud_title_2p_line();
+        hud_title_item(view, view);
+        s_title_stale = s_title_view;
         s_title_view = view;
         return;
     }
     if (hud_title_wait(HUD_TITLE_SCANLINE_LIMIT))
         return;
+    /* The join counter (ADR-066), between the area's parts. */
+    if (s_title_part == 0xff && s_join_drawn != hud_join_state()) {
+        hud_join_counter();
+        return;
+    }
 
     if (s_title_view == view) {
         if (s_title_part == 0xff) {
@@ -2172,4 +2221,5 @@ void hud_scene_initialize(void)
     s_prompt_page = 0xff;
     s_prompt_text = 0;
     s_title_stale = 0xff;
+    s_join_drawn = JOIN_UNDRAWN;
 }

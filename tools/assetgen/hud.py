@@ -73,6 +73,11 @@ HUD_TILE_CURSOR = 5
 HUD_TILE_BAR_ON = 6
 HUD_TILE_BAR_OFF = 7
 HUD_TILE_BALL_ICON = 8
+# ADR-066: the title's join counter: a dot in the text colour, a dot in
+# the border colour, and an x in the border colour (not joined).
+HUD_TILE_DOT = 9
+HUD_TILE_DOT_ALT = 10
+HUD_TILE_X_OFF = 11
 HUD_TILE_BIG_BASE = 128
 
 
@@ -106,6 +111,15 @@ def hud_assets():
     tiles[HUD_TILE_BALL_ICON] = tile_from_strings([
         "nnggggnn", "ngtgtggn", "gtgggtgg", "gggtgggg",
         "gtgggtgg", "ggtgggtg", "ngggtggn", "nnggggnn"], m)
+    dot = ["nnnnnnnn", "nn{0}{0}{0}{0}nn", "n{0}{0}{0}{0}{0}{0}n",
+           "n{0}{0}{0}{0}{0}{0}n", "n{0}{0}{0}{0}{0}{0}n",
+           "n{0}{0}{0}{0}{0}{0}n", "nn{0}{0}{0}{0}nn", "nnnnnnnn"]
+    tiles[HUD_TILE_DOT] = tile_from_strings([r.format("t") for r in dot], m)
+    tiles[HUD_TILE_DOT_ALT] = tile_from_strings([r.format("g") for r in dot],
+                                                m)
+    tiles[HUD_TILE_X_OFF] = tile_from_strings([
+        "nnnnnnnn", "ngnnnngn", "nngnngnn", "nnnggnnn",
+        "nnnggnnn", "nngnngnn", "ngnnnngn", "nnnnnnnn"], m)
     # ASCII 32..95 map to tile number == character code (navy background).
     for code in range(32, 96):
         glyph = FONT.get(chr(code))

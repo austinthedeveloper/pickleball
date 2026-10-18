@@ -51,6 +51,7 @@ int main(void)
         assert(g_match_config.paddle_id[2] == PADDLE_STANDARD);
         assert(!match_slot_active(1) && !match_slot_active(3));
         assert(g_match_config.human[0] && !g_match_config.human[2]);
+        assert(match_slot_controller(2) == MATCH_CPU);
 
         p1.palette_id = PAL_RED;
         match_config_select(MATCH_SINGLES, &p1, 0);
@@ -63,6 +64,19 @@ int main(void)
         assert(g_match_config.palette_id[2] == PAL_RED);
         assert(g_match_config.palette_id[3] == PAL_GOLD);
         assert(g_match_config.human[2] && !g_match_config.human[1]);
+        /* ADR-066: ring colours follow who plays the slot: 1P, 2P (here
+         * versus, on slot 2), and the CPUs. */
+        assert(match_slot_controller(0) == 0);
+        assert(match_slot_controller(2) == 1);
+        assert(match_slot_controller(1) == MATCH_CPU);
+        assert(match_slot_controller(3) == MATCH_CPU);
+        /* 2P partnering 1P (open play, ADR-034) is on slot 1. */
+        g_match_config.human[1] = 1;
+        g_match_config.human[2] = 0;
+        assert(match_slot_controller(1) == 1);
+        assert(match_slot_controller(2) == MATCH_CPU);
+        g_match_config.human[1] = 0;
+        g_match_config.human[2] = 1;
         assert(g_match_config.paddle_id[2] == PADDLE_WOOD);
         assert(g_match_config.variant[1] == PLAYER_VARIANT_FEMALE);
         assert(match_config_palettes_unique());

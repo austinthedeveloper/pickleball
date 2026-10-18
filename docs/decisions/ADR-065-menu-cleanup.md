@@ -33,7 +33,8 @@ they were built. A review of every menu screen found:
   CAREER, RECORDS; COURT, OPTIONS, MODIFIERS. Nine entries, rows 12-20;
   the 2P line moves to row 21. The HUD's title view keeps the choice in
   bits 0-3 (it was 0-2) and 2P in bit 4.
-- **The title's demo has no scoreboard**: while `g_attract` the score
+- **The title's demo has no scoreboard** (ADR-066 puts the join counter
+  there): while `g_attract` the score
   panels' rows stay clear and score changes draw nothing. A match redraws
   them on its full redraw, as before. The menu's prompt is `@ SELECT`.
 - **RECORDS** is a title entry. It opens the CAREER page on its RECORDS

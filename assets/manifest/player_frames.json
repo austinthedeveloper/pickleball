@@ -355,5 +355,7 @@
     "flex",
     "en_garde"
   ],
-  "celebrations_doc": "ADR-064: the frames a player may celebrate a point with (opponents.json 'celebrate', the cheer when absent), in id order."
+  "celebrations_doc": "ADR-064: the frames a player may celebrate a point with (opponents.json 'celebrate', the cheer when absent), in id order.",
+  "ring_slot": 26,
+  "ring_slot_doc": "ADR-066: the free sheet slot (name table 2) the player rings' tiles are generated into: five 16x8 pairs, an even tile first."
 }

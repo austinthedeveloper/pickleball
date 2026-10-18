@@ -37,6 +37,7 @@ from assetgen.common import AssetError, paths, read_png  # noqa: E402,F401
 from assetgen.hud import (HUD_TILE_BALL_ICON, HUD_TILE_BAR_OFF,  # noqa: E402
                           HUD_TILE_BAR_ON, HUD_TILE_BIG_BASE,
                           HUD_TILE_BUTTON_B, HUD_TILE_CLEAR, HUD_TILE_CURSOR,
+                          HUD_TILE_DOT, HUD_TILE_DOT_ALT, HUD_TILE_X_OFF,
                           HUD_TILE_PANEL_L, HUD_TILE_PANEL_T,
                           HUD_TILE_PANEL_TL, hud_assets)
 from assetgen.obj import obj_assets, palette_parts_header  # noqa: E402
@@ -87,6 +88,9 @@ def generated_files():
         f"#define HUD_TILE_BAR_ON {HUD_TILE_BAR_ON}",
         f"#define HUD_TILE_BAR_OFF {HUD_TILE_BAR_OFF}",
         f"#define HUD_TILE_BALL_ICON {HUD_TILE_BALL_ICON}",
+        f"#define HUD_TILE_DOT {HUD_TILE_DOT}",
+        f"#define HUD_TILE_DOT_ALT {HUD_TILE_DOT_ALT}",
+        f"#define HUD_TILE_X_OFF {HUD_TILE_X_OFF}",
         f"#define HUD_TILE_BIG_BASE {HUD_TILE_BIG_BASE}",
         f"#define HUD_BIG_CHARS \"{big_chars}\"",
         "#endif", ""]

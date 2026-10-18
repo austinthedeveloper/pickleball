@@ -24,10 +24,16 @@ enum { TITLE_PAGE_MENU = 0, TITLE_PAGE_COURT = 1, TITLE_PAGE_CAREER = 2,
        TITLE_PAGE_OPTIONS = 3, TITLE_PAGE_PRACTICE = 4,
        TITLE_PAGE_MODIFIERS = 5 };
 
-/* Title menu choice, the open page, and 2P joined (set by main.c). */
+/* Controllers joined on the title (ADR-066): bit n for controller n + 1.
+ * 1P is always in; 2P is on port 2, 3P and 4P on a Multitap. Only 1P and
+ * 2P play until M4-MP-01. */
+enum { TITLE_JOIN_1P = 1, TITLE_JOIN_2P = 2, TITLE_JOIN_3P = 4,
+       TITLE_JOIN_4P = 8 };
+
+/* Title menu choice, the open page, and who joined (set by main.c). */
 extern u8 g_title_mode;
 extern u8 g_title_page;
-extern u8 g_title_2p;
+extern u8 g_title_joined;
 
 /* The close call's frame is drawn (ADR-041): its close-up may show. */
 u8 hud_replay_framed(void);

@@ -66,6 +66,13 @@ u16 g_obj_overflow_frames;
  * config, read by render_bodies (src/asm/render_bodies.asm). */
 u16 rb_hat[MAX_PLAYERS];
 static const u16 s_hat_tiles[HAT_COUNT] = HAT_TILES;
+/* Each slot's ring (ADR-066) for render_bodies: the left half's tile in
+ * the low byte, its attribute (with the tile's name table bit) in the
+ * high, 0 for none. */
+u16 rb_ring[MAX_PLAYERS];
+u8 rb_ring_x;
+u8 rb_ring_y;
+static const u16 s_ring_tiles[OBJ_RING_COLORS] = OBJ_RING_TILES;
 
 /* Inputs for ram_copy (src/asm/ram_copy.asm). */
 u16 ram_copy_src;
@@ -200,11 +207,19 @@ u8 g_objpal_shadow;
 
 /* Composes player palettes and picks the OBJ layout for the match mode
  * (ADR-018); uploads happen in render_commit's VBlank. */
+/* BG3 colours 1-2 of palettes 2 and 3 on the title (ADR-066). */
+static const u16 s_join_hud_colors[2][2] = {
+    { 32364, 8966 },            /* (12, 19, 31) blue, (6, 24, 8) green */
+    { 8511, 4212 }              /* (31, 9, 8) red, (20, 3, 4) */
+};
+
 void render_apply_match_config(void)
 {
+    const u16 *hud;
     u8 team;
     u8 slot;
     u8 look = RENDER_LOOK();
+    u16 tile;
 
     s_doubles = g_match_config.mode == MATCH_DOUBLES;
     s_applied_mode = g_match_config.mode;
@@ -239,14 +254,34 @@ void render_apply_match_config(void)
     /* Hats (M4-OPP-04): render_bodies draws or parks them every frame. */
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         rb_hat[slot] = s_hat_tiles[match_slot_hat(slot)];
+    /* Rings (ADR-066) in each player's colour, CPUs grey; none in the
+     * title's demo. render_bodies draws them; parked ones stay parked. */
+    for (slot = 0; slot < MAX_PLAYERS; ++slot) {
+        rb_ring[slot] = 0;
+        if (!g_attract && match_slot_active(slot)) {
+            tile = s_ring_tiles[match_slot_controller(slot) == MATCH_CPU ?
+                OBJ_RING_COLORS - 1 : match_slot_controller(slot)];
+            rb_ring[slot] = (tile & 0xff) |
+                ((u16)(OBJ_ATTR(g_objpal_objects, 0) | (tile >> 8)) << 8);
+        }
+        if (rb_ring[slot] == 0) {
+            render_obj_hide(RENDER_OAM_RINGS + 2 * slot);
+            render_obj_hide(RENDER_OAM_RINGS + 2 * slot + 1);
+        }
+    }
     /* Ponytails are written only for female players; park the rest. */
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         if (!match_slot_active(slot) ||
                 g_match_config.variant[slot] != PLAYER_VARIANT_FEMALE)
             render_obj_hide(RENDER_OAM_ACCESSORIES + slot);
     for (team = 0; team < 2; ++team) {
-        s_hud_team_colors[team][0] = match_team_hud_colors(team)[0];
-        s_hud_team_colors[team][1] = match_team_hud_colors(team)[1];
+        /* The title has no scoreboard: its join counter (ADR-066) takes
+         * BG3 palettes 2-3 for the ring colours, 2P blue and 4P green,
+         * and 1P red (assets/source: RING_COLORS in obj.py). */
+        hud = g_attract ? s_join_hud_colors[team] :
+            match_team_hud_colors(team);
+        s_hud_team_colors[team][0] = hud[0];
+        s_hud_team_colors[team][1] = hud[1];
     }
     s_palette_dirty = 1;
     /* Back to the title from a LAVA match, or into one: the kitchen. */
@@ -314,8 +349,12 @@ typedef char oam_watcher_after_replay[
     (RENDER_OAM_WATCHER >= RENDER_OAM_REPLAY + 2) ? 1 : -1];
 typedef char oam_zone_after_watcher[
     (RENDER_OAM_ZONE >= RENDER_OAM_WATCHER + 2) ? 1 : -1];
-typedef char oam_hidden_after_zone[
-    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_ZONE + 4) ? 1 : -1];
+typedef char oam_rings_after_zone[
+    (RENDER_OAM_RINGS >= RENDER_OAM_ZONE + 4) ? 1 : -1];
+typedef char oam_hidden_after_rings[
+    (RENDER_OAM_FIRST_HIDDEN >= RENDER_OAM_RINGS + 2 * MAX_PLAYERS) ? 1 : -1];
+typedef char oam_rings_match_asm[
+    (RENDER_OAM_RINGS == ASM_OAM_RINGS) ? 1 : -1];
 
 /* OAM writer inputs (src/asm/oam_write.asm); declared in render_internal.h. */
 u8 oam_in_id;
@@ -500,8 +539,11 @@ static void render_players(void)
                 render_obj_hide(RENDER_OAM_BODIES +
                     RENDER_OAM_GROUP_SIZE * j + RENDER_OAM_GROUP_BODY);
             }
-            if (rb_depth[j] == -32767)
+            if (rb_depth[j] == -32767) {
                 render_obj_hide(RENDER_OAM_SHADOWS + j);
+                render_obj_hide(RENDER_OAM_RINGS + 2 * j);
+                render_obj_hide(RENDER_OAM_RINGS + 2 * j + 1);
+            }
         }
     }
 }
@@ -980,6 +1022,36 @@ static void render_flair(void)
     g_flair.repaint = 0;
 }
 
+/* Flair's frame, when anything is up: an event's own frame (a contact, a
+ * bounce) is skipped, as it is the rally's heaviest and the effect starts
+ * a frame later unseen; a phase change is drawn a frame later too. */
+static void render_flair_frame(void)
+{
+    if (g_flair.fresh) {
+        g_flair.fresh = 0;
+    } else if (g_game_state.phase != s_flair_phase) {
+        /* A phase change (a match's result: the trophy) is drawn on the
+         * next frame: the change's own frame is a heavy one too. */
+        s_flair_phase = g_game_state.phase;
+        s_flair_busy = 1;
+    } else if ((g_game_state.phase == GAME_PHASE_POINT_RESULT ||
+            g_game_state.phase == GAME_PHASE_MATCH_RESULT) &&
+            g_flair.result_frames < RENDER_FLAIR_QUIET) {
+        /* A result's first frames are the HUD's (its banner, the quip):
+         * flair waits, only the streak is put away. */
+        if (s_streak_shown) {
+            obj_park(RENDER_OAM_STREAK);
+            s_streak_shown = 0;
+        }
+    } else if (g_flair.active || g_flair.repaint || (s_flair_busy &&
+            (oam_cam_x != s_flair_cam_x || oam_cam_y != s_flair_cam_y ||
+             (g_game_state.frame_count & 7) == 0))) {
+        /* Idle objects (a held emote, the trophy) only when the camera
+         * moved or an emote's bob turns. */
+        render_flair();
+    }
+}
+
 /* The close call (ADR-041) shows during its point result only. */
 #define RENDER_REPLAY_WANTED() \
     (g_replay.active && !g_attract && \
@@ -1198,32 +1270,10 @@ void render_prepare(void)
     render_replay_ball();
     render_watcher();
     render_effects();
-    /* ADR-064: one test on most frames (the doubles budget); an event's
-     * own frame (a contact, a bounce) is skipped: it is the rally's
-     * heaviest, and the effect starts a frame later unseen. */
-    if (g_flair.fresh) {
-        g_flair.fresh = 0;
-    } else if (g_game_state.phase != s_flair_phase) {
-        /* A phase change (a match's result: the trophy) is drawn on the
-         * next frame: the change's own frame is a heavy one too. */
-        s_flair_phase = g_game_state.phase;
-        s_flair_busy = 1;
-    } else if ((g_game_state.phase == GAME_PHASE_POINT_RESULT ||
-            g_game_state.phase == GAME_PHASE_MATCH_RESULT) &&
-            g_flair.result_frames < RENDER_FLAIR_QUIET) {
-        /* A result's first frames are the HUD's (its banner, the quip):
-         * flair waits, only the streak is put away. */
-        if (s_streak_shown) {
-            obj_park(RENDER_OAM_STREAK);
-            s_streak_shown = 0;
-        }
-    } else if (g_flair.active || g_flair.repaint || (s_flair_busy &&
-            (oam_cam_x != s_flair_cam_x || oam_cam_y != s_flair_cam_y ||
-             (g_game_state.frame_count & 7) == 0))) {
-        /* Idle objects (a held emote, the trophy) only when the camera
-         * moved or an emote's bob turns. */
-        render_flair();
-    }
+    /* ADR-064: one test on an idle frame (the doubles budget). */
+    if (g_flair.fresh | g_flair.active | g_flair.repaint | s_flair_busy |
+            (g_game_state.phase ^ s_flair_phase))
+        render_flair_frame();
     if (s_critter_a)
         render_critter();
     /* The practice objects only in practice, and once more to hide them:

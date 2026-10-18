@@ -7,8 +7,12 @@ controller 2. First to 5 points wins (or another score you set in OPTIONS).
 On the title screen, Up/Down chooses a way to play (**SINGLES**, **DOUBLES**,
 **OPEN PLAY**, **PRACTICE**), your players and records (**CAREER**,
 **RECORDS**), or a setting (**COURT**, **OPTIONS**, **MODIFIERS**). Pressing
-Start on controller 2 adds a second player (`2P JOINED!`); press it again to
-leave. Start or B on controller 1 opens Player Select (or the park, or that
+Start on another controller joins (`FRIENDS: PRESS START`); press it again
+to leave. The counter at the top shows who's in: `1P` to `4P`, a dot in the
+player's colour (1P red, 2P blue, 3P yellow, 4P green) or a grey x.
+Controllers 3 and 4 join only with a Super Multitap, and sit out until
+four-player matches arrive (`M4-MP-01`). In a match, a ring at each
+player's feet is in the same colours, grey for the CPU. Start or B on controller 1 opens Player Select (or the park, or that
 page).
 
 ## Open play
