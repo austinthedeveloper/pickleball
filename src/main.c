@@ -101,6 +101,25 @@ static u8 update_pause_menu(u16 pressed)
     return 1;
 }
 
+/* Opens a scene's screen (a fade or a forced-blank load) and resyncs the
+ * overrun latch after it. The match screen (a match, or the title's
+ * attract demo) applies the new match config itself. */
+static void enter_scene(u8 scene)
+{
+    if (scene == SCENE_MATCH) {
+        g_match_config_changed = 0;
+        render_open_match();
+    } else if (scene == SCENE_PARK) {
+        render_park_open();
+    } else if (scene == SCENE_SELECT) {
+        render_select_open();
+    } else {
+        render_museum_open();
+    }
+    s_scene = scene;
+    profile_resync();
+}
+
 /* Your game in the park is up (ADR-034): doubles with a regular partner
  * (the default CPU) against the team drawn with you, on the saved options
  * and modifiers. No intro card, and the ladder stays where it is. */
@@ -124,10 +143,7 @@ static void start_open_play_match(void)
     /* ADR-047: you play as your career player, in their saved look. */
     match_config_career_p1();
     game_start_match();
-    g_match_config_changed = 0;
-    render_open_match();
-    s_scene = SCENE_MATCH;
-    profile_resync();
+    enter_scene(SCENE_MATCH);
 }
 
 /* The park's ball machine (M4-OPEN-05): practice on the saved drill, in
@@ -139,19 +155,8 @@ static void start_park_practice(void)
     match_config_practice();
     match_config_career_p1();           /* ADR-047 */
     game_start_match();
-    g_match_config_changed = 0;
     g_pause_park = 1;
-    render_open_match();
-    s_scene = SCENE_MATCH;
-    profile_resync();
-}
-
-/* The park, from the title or back from your game. */
-static void open_park(void)
-{
-    render_park_open();
-    s_scene = SCENE_PARK;
-    profile_resync();
+    enter_scene(SCENE_MATCH);
 }
 
 /* One park frame (ADR-034): the D-pad walks, B stacks or takes your
@@ -174,10 +179,7 @@ static void update_park(void)
     if ((pressed & PAD_START) && g_open_play.called == OPEN_NONE) {
         audio_ui(SFX_BACK);
         game_start_attract();
-        g_match_config_changed = 0;
-        render_open_match();
-        s_scene = SCENE_MATCH;
-        profile_resync();
+        enter_scene(SCENE_MATCH);
         return;
     }
     event = open_play_update(move_x, move_y, (pressed & PAD_B) != 0);
@@ -567,11 +569,7 @@ static void update_museum(void)
         save_write();
     render_museum_close();
     game_start_attract();
-    /* render_open_match applies the new config itself. */
-    g_match_config_changed = 0;
-    render_open_match();
-    s_scene = SCENE_MATCH;
-    profile_resync();
+    enter_scene(SCENE_MATCH);
 }
 
 /* One Player Select frame: 1P reads port 1, 2P port 2. */
@@ -600,11 +598,7 @@ static void update_select(void)
         game_start_attract();
     }
     s_practice_pending = 0;
-    /* render_open_match applies the new config itself. */
-    g_match_config_changed = 0;
-    render_open_match();
-    s_scene = SCENE_MATCH;
-    profile_resync();
+    enter_scene(SCENE_MATCH);
 }
 
 int main(void)
@@ -667,9 +661,7 @@ int main(void)
         }
         if (s_open_museum) {
             s_open_museum = 0;
-            render_museum_open();
-            s_scene = SCENE_MUSEUM;
-            profile_resync();
+            enter_scene(SCENE_MUSEUM);
             continue;
         }
         if (s_open_park) {
@@ -678,14 +670,12 @@ int main(void)
                 g_match_config_changed = 0;
             }
             s_open_park = 0;
-            open_park();
+            enter_scene(SCENE_PARK);
             continue;
         }
         if (s_open_select) {
             s_open_select = 0;
-            render_select_open();
-            s_scene = SCENE_SELECT;
-            profile_resync();
+            enter_scene(SCENE_SELECT);
             continue;
         }
 #ifdef RENDER_DIAGNOSTICS
@@ -736,7 +726,7 @@ int main(void)
                     g_game_state.team_score[0], g_game_state.team_score[1]);
                 game_start_attract();
                 g_match_config_changed = 0;
-                open_park();
+                enter_scene(SCENE_PARK);
                 continue;
             }
             PROFILE_MARK(1);
