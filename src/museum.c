@@ -1,5 +1,6 @@
 #include "museum.h"
 #include "input.h"
+#include "menu.h"
 
 Museum g_museum;
 
@@ -53,9 +54,9 @@ static u8 museum_move(u8 cursor, u16 pressed)
     u8 last = MUSEUM_HATS - 1;
 
     if (pressed & PAD_LEFT)
-        return cursor ? cursor - 1 : last;
+        return menu_prev(cursor, MUSEUM_HATS);
     if (pressed & PAD_RIGHT)
-        return cursor < last ? cursor + 1 : 0;
+        return menu_next(cursor, MUSEUM_HATS);
     if (pressed & PAD_UP) {
         if (row)
             return cursor - MUSEUM_COLS;

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "career_page.h"
 #include "input.h"
+#include "menu.h"
 #include "museum.h"
 #include "paddle_stats.h"
 #include "palette_parts.h"
@@ -109,24 +110,6 @@ void career_page_begin_records(void)
     g_career_page.view = CAREER_VIEW_RECORDS;
 }
 
-/* Up/Down through count rows, wrapping. */
-static u8 page_row(u8 row, u8 count, u16 pressed)
-{
-    if (pressed & PAD_UP)
-        return row ? row - 1 : count - 1;
-    if (pressed & PAD_DOWN)
-        return row + 1 >= count ? 0 : row + 1;
-    return row;
-}
-
-/* Left/Right through count values, wrapping. */
-static u8 page_step(u8 value, u8 count, u16 pressed)
-{
-    if (pressed & PAD_LEFT)
-        return value ? value - 1 : count - 1;
-    return value + 1 >= count ? 0 : value + 1;
-}
-
 static u8 page_erase_combo(u16 pressed, u16 held)
 {
     return (held & (PAD_L | PAD_R)) == (PAD_L | PAD_R) && (pressed & PAD_X);
@@ -167,7 +150,7 @@ static u8 page_slots(u16 pressed, u16 held)
         page_open_edit(1);
         return CAREER_PAGE_STAY;
     }
-    g_career_page.row = page_row(row, CAREER_SLOT_ROWS, pressed);
+    g_career_page.row = menu_row(row, CAREER_SLOT_ROWS, pressed);
     return CAREER_PAGE_STAY;
 }
 
@@ -239,14 +222,14 @@ static void key_move(u16 pressed)
     u8 count;
 
     if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        g_career_page.key_col = page_step(col, key_row_count(row), pressed);
+        g_career_page.key_col = menu_step(col, key_row_count(row), pressed);
         return;
     }
     if (!(pressed & (PAD_UP | PAD_DOWN)))
         return;
     if (row == CAREER_KEY_ROWS - 1)
         col = col ? 7 : 2;
-    row = page_row(row, CAREER_KEY_ROWS, pressed);
+    row = menu_row(row, CAREER_KEY_ROWS, pressed);
     if (row == CAREER_KEY_ROWS - 1) {
         col = col < CAREER_KEY_COLS / 2 ? 0 : 1;
     } else {
@@ -328,28 +311,28 @@ static void page_change(CareerPlayer *player, u8 row, u16 pressed)
 
     switch (row) {
     case CAREER_EDIT_BODY:
-        player->variant = page_step(player->variant, 2, pressed);
+        player->variant = menu_step(player->variant, 2, pressed);
         break;
     case CAREER_EDIT_SKIN:
-        player->skin = page_step(player->skin, CAREER_SKINS, pressed);
+        player->skin = menu_step(player->skin, CAREER_SKINS, pressed);
         break;
     case CAREER_EDIT_HAIR:
         tries = CAREER_HAIRS;
         do {
-            player->hair = page_step(player->hair, CAREER_HAIRS, pressed);
+            player->hair = menu_step(player->hair, CAREER_HAIRS, pressed);
         } while (career_hair_unlocked(player, player->hair) == 0 && --tries);
         break;
     case CAREER_EDIT_SHIRT:
-        player->shirt = page_step(player->shirt, PAL_COUNT, pressed);
+        player->shirt = menu_step(player->shirt, PAL_COUNT, pressed);
         break;
     case CAREER_EDIT_HAT:
         tries = CAREER_HATS;
         do {
-            player->hat = page_step(player->hat, CAREER_HATS, pressed);
+            player->hat = menu_step(player->hat, CAREER_HATS, pressed);
         } while (career_hat_unlocked(player, player->hat) == 0 && --tries);
         break;
     case CAREER_EDIT_PADDLE:
-        player->paddle = page_step(player->paddle, PADDLE_COUNT, pressed);
+        player->paddle = menu_step(player->paddle, PADDLE_COUNT, pressed);
         break;
     default:
         return;
@@ -397,7 +380,7 @@ static u8 page_edit(u16 pressed, u16 held)
         page_change(player, row, pressed);
         return CAREER_PAGE_STAY;
     }
-    g_career_page.row = page_row(row, CAREER_EDIT_ROWS, pressed);
+    g_career_page.row = menu_row(row, CAREER_EDIT_ROWS, pressed);
     return CAREER_PAGE_STAY;
 }
 

@@ -1,5 +1,6 @@
 #include "court.h"
 #include "input.h"
+#include "menu.h"
 #include "modifiers.h"
 #include "options.h"
 
@@ -194,10 +195,8 @@ u8 modifiers_edit_input(u8 *modifiers, u8 *modifiers2, u16 pressed)
     }
     if (pressed & (PAD_B | PAD_START))
         return MODIFIERS_EDIT_DONE;
-    if (pressed & PAD_UP)
-        g_modifiers_edit.row = row ? row - 1 : MODIFIERS_ROWS - 1;
-    else if (pressed & PAD_DOWN)
-        g_modifiers_edit.row = row == MODIFIERS_ROWS - 1 ? 0 : row + 1;
+    if (pressed & (PAD_UP | PAD_DOWN))
+        g_modifiers_edit.row = menu_row(row, MODIFIERS_ROWS, pressed);
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
         if (row == MODIFIERS_ROW_COLORS)
             *modifiers2 ^= MODIFIER2_INVERSE;

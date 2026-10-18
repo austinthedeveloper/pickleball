@@ -1,5 +1,6 @@
 #include "audio_events.h"
 #include "input.h"
+#include "menu.h"
 #include "modifiers.h"
 #include "options.h"
 #include "player.h"
@@ -152,7 +153,6 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *modifiers,
 {
     u8 index;
     u8 row = g_options_edit.row;
-    u8 left = (pressed & PAD_LEFT) != 0;
 
     if (pressed & PAD_Y) {
         *points = g_options_edit.original_points;
@@ -164,40 +164,26 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *modifiers,
     }
     if (pressed & (PAD_B | PAD_START))
         return OPTIONS_EDIT_DONE;
-    if (pressed & PAD_UP)
-        g_options_edit.row = row ? row - 1 : OPTIONS_ROWS - 1;
-    else if (pressed & PAD_DOWN)
-        g_options_edit.row = row == OPTIONS_ROWS - 1 ? 0 : row + 1;
+    if (pressed & (PAD_UP | PAD_DOWN))
+        g_options_edit.row = menu_row(row, OPTIONS_ROWS, pressed);
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
         if (row == OPTIONS_ROW_CAMERA) {
             *camera = options_camera_saved(options_camera_on(*camera) == 0,
                 options_camera_amount(*camera));
         } else if (row == OPTIONS_ROW_AMOUNT) {
-            index = options_camera_amount(*camera);
-            if (left)
-                index = index ? index - 1 : OPTIONS_CAMERA_AMOUNTS - 1;
-            else
-                index = index + 1 >= OPTIONS_CAMERA_AMOUNTS ? 0 : index + 1;
+            index = menu_step(options_camera_amount(*camera),
+                OPTIONS_CAMERA_AMOUNTS, pressed);
             *camera = options_camera_saved(options_camera_on(*camera), index);
         } else if (row == OPTIONS_ROW_SCORING) {
             *modifiers ^= MODIFIER_WIN_BY_2;
         } else if (row == OPTIONS_ROW_SOUND) {
-            if (left)
-                *sound = *sound ? *sound - 1 : AUDIO_SETTINGS - 1;
-            else
-                *sound = *sound + 1 >= AUDIO_SETTINGS ? 0 : *sound + 1;
+            *sound = menu_step(*sound, AUDIO_SETTINGS, pressed);
         } else if (row == OPTIONS_ROW_POINTS) {
-            index = points_index(*points);
-            if (left)
-                index = index ? index - 1 : OPTIONS_POINT_CHOICES - 1;
-            else
-                index = index + 1 >= OPTIONS_POINT_CHOICES ? 0 : index + 1;
+            index = menu_step(points_index(*points), OPTIONS_POINT_CHOICES,
+                pressed);
             *points = g_options_points[index];
-        } else if (left) {
-            *difficulty = *difficulty ? *difficulty - 1 : DIFFICULTY_COUNT - 1;
         } else {
-            *difficulty = *difficulty + 1 >= DIFFICULTY_COUNT ? 0 :
-                *difficulty + 1;
+            *difficulty = menu_step(*difficulty, DIFFICULTY_COUNT, pressed);
         }
     }
     return OPTIONS_EDIT_STAY;

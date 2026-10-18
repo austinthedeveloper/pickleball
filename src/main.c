@@ -10,6 +10,7 @@
 #include "serve.h"
 #include "input.h"
 #include "match.h"
+#include "menu.h"
 #include "modifiers.h"
 #include "open_play.h"
 #include "options.h"
@@ -432,12 +433,11 @@ static void update_title(void)
     else if (g_title_page == TITLE_PAGE_MODIFIERS)
         update_title_modifiers(pressed);
     else {
+        /* Two tests, not menu_row: Up and Down together cancel out. */
         if (pressed & PAD_UP)
-            g_title_mode = g_title_mode ? g_title_mode - 1 :
-                TITLE_ENTRIES - 1;
+            g_title_mode = menu_prev(g_title_mode, TITLE_ENTRIES);
         if (pressed & PAD_DOWN)
-            g_title_mode = g_title_mode == TITLE_ENTRIES - 1 ? 0 :
-                g_title_mode + 1;
+            g_title_mode = menu_next(g_title_mode, TITLE_ENTRIES);
         title_joins();
         if (pressed & (PAD_START | PAD_B)) {
             if (g_title_mode == TITLE_CAREER) {

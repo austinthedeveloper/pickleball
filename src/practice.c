@@ -5,6 +5,7 @@
 #include "events.h"
 #include "game.h"
 #include "match.h"
+#include "menu.h"
 #include "player.h"
 #include "practice.h"
 #include "save.h"
@@ -409,13 +410,9 @@ u8 practice_edit_input(u8 values[PRACTICE_ROWS], u16 pressed)
     }
     if (pressed & (PAD_B | PAD_START))
         return PRACTICE_EDIT_DONE;
-    if (pressed & PAD_UP)
-        g_practice_edit.row = row ? row - 1 : PRACTICE_ROWS - 1;
-    else if (pressed & PAD_DOWN)
-        g_practice_edit.row = row == PRACTICE_ROWS - 1 ? 0 : row + 1;
-    else if (pressed & PAD_LEFT)
-        values[row] = values[row] ? values[row] - 1 : count - 1;
-    else if (pressed & PAD_RIGHT)
-        values[row] = values[row] + 1 >= count ? 0 : values[row] + 1;
+    if (pressed & (PAD_UP | PAD_DOWN))
+        g_practice_edit.row = menu_row(row, PRACTICE_ROWS, pressed);
+    else if (pressed & (PAD_LEFT | PAD_RIGHT))
+        values[row] = menu_step(values[row], count, pressed);
     return PRACTICE_EDIT_STAY;
 }

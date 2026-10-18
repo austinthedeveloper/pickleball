@@ -1,6 +1,6 @@
 # Refactor Plan
 
-Status: **R0–R11, R15 done; R12–R14 planned; R16–R25 (optimization before the character models) on `feature/cld-optimize`**
+Status: **R0–R11, R15–R20, R22, R23, R26 done (R16–R23 merged from `feature/cld-optimize`); R12–R14, R25 planned; cleanup round R27+ on `feature/cld-cleanup`**
 
 The POC grew quickly, much of it while fighting 816-tcc's code generation
 for performance. These refactors make the code easier to change before the
@@ -46,9 +46,10 @@ gameplay.
 | R21 | No per-frame hides of objects already hidden (debug marker in release, spark, inactive ball) | ~2–3 scanlines a frame for nothing | Medium | Dropped: after R20 a hide costs under a scanline, and other scenes (select, park, the stress scene) reuse those OAM entries, so per-entry hidden flags would be fragile |
 | R22 | Small 816-tcc fixes on per-frame and hit-frame paths: multiplies by ±1 and by the player size (`ai_choose_aim`, `ai_plan_intercept`, `ai_opponent_at_net`, `rules`' last hitter team), the collision loop by pointer | Each a `tcc__mul` (16 iterations for a negative factor) | Medium | Done |
 | R23 | The swing lookahead skips its probe when the ball's x/y range over the window cannot reach the swing box | The lookahead is the largest single AI cost (R15 notes) | Medium | Done (steady pace only; see the notes) |
-| R24 | Metasprite OAM writer: a per-frame object list per player, written in one pass | Required for multi-object character models; ~4× cheaper per object | High | With the character models |
+| R24 | Metasprite OAM writer: a per-frame object list per player, written in one pass | Required for multi-object character models; ~4× cheaper per object | High | Partly overtaken: `render_bodies.asm` already writes each player's objects in one pass; a general object list waits for the character models |
 | R25 | `ai_think` on a static scratch copy of the player and style | ~4–6 scanlines per think, 36 pointer accesses | Low | Later |
 | R26 | `oam_write_pair`: a hat's two halves in one call (one camera and bounds test, the second entry copied from the first) | Since ADR-059 every player wears a hat object, two `oam_write` calls each | Medium | Done (see the notes) |
+| R27 | One wrap-step helper (`menu_prev`/`menu_next`/`menu_step`/`menu_row`, `src/menu.c`) for every menu and settings cursor | `step_value` (court) and `page_step` (career) were identical, and ~20 inline `v ? v - 1 : n - 1` copies were spread over seven files | Low | Done |
 
 ### R16–R22 notes
 

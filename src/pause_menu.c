@@ -1,4 +1,5 @@
 #include "input.h"
+#include "menu.h"
 #include "pause_menu.h"
 
 u8 g_pause_choice;
@@ -30,11 +31,6 @@ u8 pause_input(u16 pressed)
             return PAUSE_DO_MAIN_MENU;
         return PAUSE_DO_RESUME;
     }
-    if (pressed & PAD_UP)
-        g_pause_choice = g_pause_choice ? g_pause_choice - 1 :
-            PAUSE_CHOICES - 1;
-    else if (pressed & PAD_DOWN)
-        g_pause_choice = g_pause_choice + 1 >= PAUSE_CHOICES ? 0 :
-            g_pause_choice + 1;
+    g_pause_choice = menu_row(g_pause_choice, PAUSE_CHOICES, pressed);
     return PAUSE_STAY;
 }

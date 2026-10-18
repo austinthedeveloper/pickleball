@@ -2,6 +2,7 @@
 #define VENUES_DEFINE
 #include "court_style.h"
 #include "input.h"
+#include "menu.h"
 #include "opponents.h"
 
 CourtEdit g_court_edit;
@@ -215,14 +216,6 @@ u8 court_edit_changed(const u8 choice[COURT_PARTS], u8 venue, u8 time)
     return 0;
 }
 
-/* Left/Right on a value with count settings, wrapping. */
-static u8 step_value(u8 value, u8 count, u16 pressed)
-{
-    if (pressed & PAD_LEFT)
-        return value ? value - 1 : count - 1;
-    return value + 1 >= count ? 0 : value + 1;
-}
-
 u8 court_edit_input(u8 choice[COURT_PARTS], u8 *venue, u8 *time,
     u16 pressed)
 {
@@ -242,19 +235,17 @@ u8 court_edit_input(u8 choice[COURT_PARTS], u8 *venue, u8 *time,
     }
     if (pressed & (PAD_B | PAD_START))
         return COURT_EDIT_DONE;
-    if (pressed & PAD_UP)
-        g_court_edit.row = row ? row - 1 : COURT_ROWS - 1;
-    else if (pressed & PAD_DOWN)
-        g_court_edit.row = row == COURT_ROWS - 1 ? 0 : row + 1;
+    if (pressed & (PAD_UP | PAD_DOWN))
+        g_court_edit.row = menu_row(row, COURT_ROWS, pressed);
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
         if (row == COURT_ROW_VENUE) {
-            *venue = step_value(*venue, VENUE_COUNT + 1, pressed);
+            *venue = menu_step(*venue, VENUE_COUNT + 1, pressed);
         } else if (row == COURT_ROW_TIME) {
-            *time = step_value(*time, COURT_TIMES, pressed);
+            *time = menu_step(*time, COURT_TIMES, pressed);
             g_court_edit.retime = 1;
         } else {
             part = row - COURT_ROW_PARTS;
-            choice[part] = step_value(choice[part], g_court_part_count[part],
+            choice[part] = menu_step(choice[part], g_court_part_count[part],
                 pressed);
             g_court_edit.recolor = 1;
         }
