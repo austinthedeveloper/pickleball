@@ -154,18 +154,9 @@ static int bot_wins(u8 opponent, u8 late, u8 matches)
         test_bot_skill(late, match);
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0)
-            intents[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            intents[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++match;
-                wins += g_game_state.match_winner == 0;
-            }
-        } else {
-            counted = 0;
+        if (test_bot_buttons(&intents[0], frames, &counted)) {
+            ++match;
+            wins += g_game_state.match_winner == 0;
         }
         test_step(intents);
         /* Measuring one opponent: a win's B rematches them here. */

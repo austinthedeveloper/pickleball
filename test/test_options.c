@@ -240,18 +240,11 @@ static int bot_wins(u8 difficulty, u8 late, u8 matches, u8 kid_style,
                 intents[0].hit_pressed = 1;
         }
         /* A KID P1 presses nothing at all: the serve goes by itself. */
-        if (!kid_style && g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0)
-            intents[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            intents[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++match;
-                wins += g_game_state.match_winner == 0;
-            }
-        } else {
-            counted = 0;
+        if (!kid_style)
+            test_bot_serve(&intents[0], frames);
+        if (test_bot_match_over(&intents[0], &counted)) {
+            ++match;
+            wins += g_game_state.match_winner == 0;
         }
         test_step(intents);
         if (g_game_state.shot_serial != serial) {

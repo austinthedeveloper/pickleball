@@ -18,8 +18,7 @@ static u8 press(u16 pressed)
  * PLAYER: the tests start from slot 1 (row 0). */
 static void fresh(void)
 {
-    memset(g_host_sram, 0, sizeof(g_host_sram));
-    save_initialize();
+    test_blank_save();
     career_page_begin();
     assert(g_career_page.row == CAREER_ROW_NOBODY);
     g_career_page.row = 0;

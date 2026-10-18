@@ -400,22 +400,13 @@ static MatchStats bot_matches(u8 modifiers, u8 matches, u8 mode, u8 opponent)
         test_bot_skill(5, match);
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0)
-            intents[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            intents[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++match;
-                stats.wins += g_game_state.match_winner == 0;
-                stats.close_wins += g_game_state.team_score[0] ==
-                    g_game_state.team_score[1] + 1 ||
-                    g_game_state.team_score[1] ==
-                    g_game_state.team_score[0] + 1;
-            }
-        } else {
-            counted = 0;
+        if (test_bot_buttons(&intents[0], frames, &counted)) {
+            ++match;
+            stats.wins += g_game_state.match_winner == 0;
+            stats.close_wins += g_game_state.team_score[0] ==
+                g_game_state.team_score[1] + 1 ||
+                g_game_state.team_score[1] ==
+                g_game_state.team_score[0] + 1;
         }
         if (g_popcorn_level > stats.popcorn_max)
             stats.popcorn_max = g_popcorn_level;

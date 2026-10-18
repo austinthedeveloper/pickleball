@@ -7,17 +7,6 @@
 
 /* ADR-061: the HAT MUSEUM's input. */
 
-static u8 unlock_bit(const char *name)
-{
-    u8 i;
-
-    for (i = 0; i < CAREER_UNLOCKS; ++i)
-        if (strcmp(g_career_unlock_names[i], name) == 0)
-            return i;
-    assert(0);
-    return 0;
-}
-
 /* The case holding a named hat. */
 static u8 case_of(const char *name)
 {
@@ -99,7 +88,7 @@ static void test_wear(void)
     g_museum.cursor = crown;
     assert(museum_input(PAD_B) == MUSEUM_STAY && p->hat == 0);
     /* Unlocked, it can; the save is written on leaving. */
-    p->unlocked |= (u16)(1 << unlock_bit("CROWN"));
+    p->unlocked |= (u16)(1 << test_unlock_bit("CROWN"));
     assert(museum_unlocked(crown) && museum_unlocked_count() == 2);
     g_museum.changed = 0;
     assert(museum_input(PAD_B) == MUSEUM_STAY);

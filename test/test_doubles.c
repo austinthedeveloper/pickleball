@@ -7,6 +7,7 @@
 #include "match.h"
 #include "rules.h"
 #include "serve.h"
+#include "test_support.h"
 
 /* ADR-018 arcade doubles. */
 
@@ -101,15 +102,8 @@ static void test_ai_doubles_matches(void)
         memset(intents, 0, sizeof(intents));
         for (i = 0; i < MAX_PLAYERS; ++i)
             ai_update(i, &intents[i]);
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            intents[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++matches;
-            }
-        } else {
-            counted = 0;
-        }
+        if (test_bot_match_over(&intents[0], &counted))
+            ++matches;
         game_update(intents);
         if (g_game_state.shot_serial != serial) {
             serial = g_game_state.shot_serial;

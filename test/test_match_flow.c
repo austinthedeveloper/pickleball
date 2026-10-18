@@ -84,8 +84,7 @@ static unsigned long play_match(u8 *p1_points, u8 *cpu_points)
     while (g_game_state.phase != GAME_PHASE_MATCH_RESULT) {
         /* The bot also has to press B to serve and to skip results. */
         bot_p1();
-        frame(1, g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0);
+        frame(1, test_bot_serve_due(frames));
         ++frames;
         assert(frames < 60UL * 60 * 10);
     }

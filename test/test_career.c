@@ -10,26 +10,9 @@
 
 /* ADR-047: career players, their stats, and unlocks. */
 
-static void fresh(void)
-{
-    memset(g_host_sram, 0, sizeof(g_host_sram));
-    save_initialize();
-}
-
-static u8 unlock_bit(const char *name)
-{
-    u8 i;
-
-    for (i = 0; i < CAREER_UNLOCKS; ++i)
-        if (strcmp(g_career_unlock_names[i], name) == 0)
-            return i;
-    assert(0);
-    return 0;
-}
-
 static void test_slots(void)
 {
-    fresh();
+    test_blank_save();
     assert(g_save.career_active == CAREER_NONE && career_active() == 0);
     assert(career_create(1, "ACE"));
     assert(g_save.career_active == 1 && career_active() == &g_save.career[1]);
@@ -56,7 +39,7 @@ static void test_points_and_matches(void)
 {
     CareerPlayer *p;
 
-    fresh();
+    test_blank_save();
     /* No player: nothing records. */
     career_record_point(1, 1, 1);
     career_record_match(MATCH_SINGLES, 1, 0, 0, 0);
@@ -86,16 +69,16 @@ static void test_points_and_matches(void)
 static void test_unlocks(void)
 {
     CareerPlayer *p;
-    u16 visor = 1 << unlock_bit("VISOR");
-    u16 tricorn = 1 << unlock_bit("TRICORN");
-    u16 pink = 1 << unlock_bit("PINK HAIR");
-    u16 gold = 1 << unlock_bit("GOLD HAIR");
-    u16 beanie = 1 << unlock_bit("BEANIE");
-    u16 viking = 1 << unlock_bit("VIKING");
-    u16 crown = 1 << unlock_bit("CROWN");
+    u16 visor = 1 << test_unlock_bit("VISOR");
+    u16 tricorn = 1 << test_unlock_bit("TRICORN");
+    u16 pink = 1 << test_unlock_bit("PINK HAIR");
+    u16 gold = 1 << test_unlock_bit("GOLD HAIR");
+    u16 beanie = 1 << test_unlock_bit("BEANIE");
+    u16 viking = 1 << test_unlock_bit("VIKING");
+    u16 crown = 1 << test_unlock_bit("CROWN");
     u8 i;
 
-    fresh();
+    test_blank_save();
     career_create(2, "MAX");
     p = career_active();
     /* Free from the start: the cap, bare hair, the first hair colours. */
@@ -193,7 +176,7 @@ static void test_gear(void)
         g_paddle_stats[PADDLE_WOOD], 3) == 0);
 
     /* In a match: the career player's pairing on slot 0 only. */
-    fresh();
+    test_blank_save();
     career_create(0, "ACE");
     career_active()->hat = hat;
     match_config_defaults();

@@ -21,9 +21,7 @@ int main(void)
     while (g_game_state.phase != GAME_PHASE_MATCH_RESULT) {
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0)
-            intents[0].hit_pressed = 1;
+        test_bot_serve(&intents[0], frames);
         if (intents[0].hit_pressed == 0 && g_fx.spark_timer == FX_SPARK_FRAMES)
             assert(g_game_state.hit_stop > 0);   /* spark comes with a hit */
         test_step(intents);

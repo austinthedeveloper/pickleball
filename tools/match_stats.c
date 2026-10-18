@@ -84,18 +84,9 @@ static void play(int late, int matches, int opponent, int difficulty,
         test_bot_skill((u8)late, (u8)match);
         memset(intents, 0, sizeof(intents));
         ai_update(0, &intents[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (frames & 31) == 0)
-            intents[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            intents[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++match;
-                stats->bot_wins += g_game_state.match_winner == 0;
-            }
-        } else {
-            counted = 0;
+        if (test_bot_buttons(&intents[0], frames, &counted)) {
+            ++match;
+            stats->bot_wins += g_game_state.match_winner == 0;
         }
         /* Doubles: the CPUs on main.c's schedule (a lane-covering CPU
          * thinks every fourth frame). */

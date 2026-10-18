@@ -31,9 +31,7 @@ static void test_point_reactions(void)
         test_bot_skill(4, m);
         memset(in, 0, sizeof(in));
         ai_update(0, &in[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-                g_serve_state.server_index == 0 && (f & 31) == 0)
-            in[0].hit_pressed = 1;
+        test_bot_serve(&in[0], f);
         if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
             ++m;
             game_new_match();

@@ -446,18 +446,8 @@ static int unforced_outs(u8 footwork, u8 matches)
         ai_update(0, &in[0]);
         ai_update(1, &in[1]);
         ai_update(3, &in[3]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (f & 31) == 0)
-            in[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            in[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++m;
-            }
-        } else {
-            counted = 0;
-        }
+        if (test_bot_buttons(&in[0], f, &counted))
+            ++m;
         if (g_game_state.phase == GAME_PHASE_POINT_RESULT) {
             hitter = g_ball.last_hitter;
             if (!scored && g_game_state.last_fault == GAME_FAULT_OUT &&
@@ -498,18 +488,8 @@ static int raven_slices(u8 slice, u8 matches, int *presses)
         test_bot_skill(4, m);
         memset(in, 0, sizeof(in));
         ai_update(0, &in[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (f & 31) == 0)
-            in[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            in[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++m;
-            }
-        } else {
-            counted = 0;
-        }
+        if (test_bot_buttons(&in[0], f, &counted))
+            ++m;
         ai_update(2, &in[2]);
         if (in[2].hit_pressed && g_game_state.phase == GAME_PHASE_LIVE) {
             ++*presses;
@@ -565,9 +545,7 @@ static void test_cpu_serve_power(void)
         test_bot_skill(4, m);
         memset(in, 0, sizeof(in));
         ai_update(0, &in[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-                g_serve_state.server_index == 0 && (f & 31) == 0)
-            in[0].hit_pressed = 1;
+        test_bot_serve(&in[0], f);
         if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
             ++m;                        /* a new bot skill each match */
             game_new_match();
@@ -705,18 +683,8 @@ static void scheduled_doubles(u8 opponent, u8 matches, int *serves,
         test_bot_skill(4, m);
         memset(in, 0, sizeof(in));
         ai_update(0, &in[0]);
-        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP &&
-            g_serve_state.server_index == 0 && (f & 31) == 0)
-            in[0].hit_pressed = 1;
-        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT) {
-            in[0].hit_pressed = 1;
-            if (!counted) {
-                counted = 1;
-                ++m;
-            }
-        } else {
-            counted = 0;
-        }
+        if (test_bot_buttons(&in[0], f, &counted))
+            ++m;
         serial = g_game_state.shot_serial;
         test_step_scheduled(in, (u16)f);
         if (g_next_opponent)
