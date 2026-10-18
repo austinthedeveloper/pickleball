@@ -147,6 +147,7 @@ static void hud_career_line(u8 row, const char *label, u16 value)
 static u8 hud_career_card_part(u8 part)
 {
     static char name[CAREER_NAME + 1];
+    static char rating[17];
     const CareerPlayer *player = &g_save.career[g_career_page.slot];
     u8 i;
 
@@ -161,6 +162,10 @@ static u8 hud_career_card_part(u8 part)
         name[CAREER_NAME] = 0;
         hud_text(HUD_HEADER_COL(RECORDS_COL, RECORDS_WIDTH, CAREER_NAME),
             TITLE_MENU_ROW, HUD_PAL_YELLOW, name);
+        /* The park rating (ADR-070), under the name. */
+        text_tenths(text_append(rating, "PARK RATING "),
+            career_park_rating(player));
+        hud_text(RECORDS_COL + 1, TITLE_MENU_ROW + 1, HUD_PAL_WHITE, rating);
         return 0;
     case 2:
         hud_career_mode_line(TITLE_MENU_ROW + 2, "SINGLES", player->wins[0],
@@ -243,6 +248,7 @@ static void hud_career_edit_row(u8 row)
         "NAME", "BODY", "SKIN", "HAIR", "SHIRT", "HAT", "PADDLE"
     };
     static char name[CAREER_NAME + 1];
+    static char rating[17];
     const CareerPlayer *player = &g_save.career[g_career_page.slot];
     u8 cursor = g_career_page.row == row;
     u8 i;

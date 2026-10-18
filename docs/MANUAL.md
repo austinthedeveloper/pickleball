@@ -118,6 +118,8 @@ Open Play takes you to a park with three courts, a game going on each, just like
 3. When a game ends, the next paddles go on. When it's your turn the screen shows **YOUR GAME!** The captain of the next team in line partners you, and you play doubles against the team you were drawn with.
 4. After the game, B takes you back to the park. START in the park returns to the title.
 
+**Your park rating.** Every career player starts at 3.0. Win at your level and your rating climbs 0.2; lose and it drops 0.1. At 3.5 the gold court opens, and at 4.5 the red one, and once a court is open it stays open. (Beating the teal court once you're past it doesn't count.) Without a career player, or on KID, every court is open.
+
 Walk right along the path to reach the **clubhouse**. Inside, press B at the board on the back wall to read your records, or B at the ball machine to practise. You'll still be called for your game while you're inside. Friends can come along too: 2P partners you in every game, and with a Super Multitap, 3P and 4P take the other side of the net.
 
 ### Practice

@@ -41,6 +41,15 @@ int main(void)
     assert(strcmp(buf, "1005") == 0);
     text_count4(buf, 9999);
     assert(strcmp(buf, "9999") == 0);
+    /* The park rating (ADR-070). */
+    end = text_tenths(buf, 30);
+    assert(strcmp(buf, "3.0") == 0 && end == buf + 3);
+    text_tenths(buf, 45);
+    assert(strcmp(buf, "4.5") == 0);
+    text_tenths(buf, 7);
+    assert(strcmp(buf, "0.7") == 0);
+    text_tenths(buf, 255);
+    assert(strcmp(buf, "25.5") == 0);
     printf("text host checks passed\n");
     return 0;
 }

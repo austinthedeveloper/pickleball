@@ -3,6 +3,8 @@
 #include <string.h>
 #include "career.h"
 #include "match.h"
+#include "open_play.h"
+#include "options.h"
 #include "opponents.h"
 #include "paddle_stats.h"
 #include "game.h"
@@ -191,6 +193,64 @@ static void test_gear(void)
     assert(g_players[0].paddle == PADDLE_BLUE);
 }
 
+/* ADR-070: the park rating, packed in CareerPlayer.park. */
+static void test_park_rating(void)
+{
+    CareerPlayer *p;
+
+    test_blank_save();
+    career_create(0, "ACE");
+    p = career_active();
+    /* A new player (or one saved before the rating: park 0) is 3.0 with
+     * the first court. */
+    assert(p->park == 0);
+    assert(career_park_rating(p) == 30 && career_park_court(p) == 0);
+
+    /* Wins at the first court: 3.0, 3.2, 3.4, then 3.6 opens the next. */
+    career_rate_park(p, 0, 1);
+    career_rate_park(p, 0, 1);
+    assert(career_park_rating(p) == 34 && g_career_park_opened == OPEN_NONE);
+    career_rate_park(p, 0, 1);
+    assert(g_career_park_before == 34 && g_career_park_after == 36);
+    assert(g_career_park_opened == 1 && career_park_court(p) == 1);
+    /* A loss drops the rating below 3.5; the court stays open. */
+    career_rate_park(p, 1, 0);
+    career_rate_park(p, 1, 0);
+    assert(career_park_rating(p) == 34 && career_park_court(p) == 1);
+    assert(g_career_park_opened == OPEN_NONE);
+    /* The floor holds in the byte. */
+    p->park = (u8)((1 << CAREER_PARK_COURT_SHIFT) |
+        (OPEN_RATING_MIN - CAREER_PARK_BASE));
+    career_rate_park(p, 0, 0);
+    assert(career_park_rating(p) == OPEN_RATING_MIN);
+    assert(career_park_court(p) == 1);
+    /* ...and the cap, with the top court. */
+    p->park = (u8)(OPEN_RATING_MAX - CAREER_PARK_BASE);
+    career_rate_park(p, 2, 1);
+    assert(career_park_rating(p) == OPEN_RATING_MAX);
+    assert(career_park_court(p) == 2 && g_career_park_opened == 2);
+
+    /* Through a match: open_play is the court + 1; KID is not rated. */
+    p->park = 0;
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
+    career_record_match(MATCH_DOUBLES, 1, 4, 3, 2);         /* court 2 */
+    assert(career_park_rating(p) == 33 && g_career_park_before == 30);
+    career_record_match(MATCH_DOUBLES, 1, 4, 3, 0);         /* the ladder */
+    assert(career_park_rating(p) == 33);
+    assert(g_career_park_before == OPEN_RATING_NONE);
+    g_match_config.difficulty = DIFFICULTY_KID;
+    career_record_match(MATCH_DOUBLES, 0, 4, 3, 1);
+    assert(career_park_rating(p) == 33);
+    assert(g_career_park_before == OPEN_RATING_NONE);
+    g_match_config.difficulty = DIFFICULTY_MEDIUM;
+
+    /* It survives a save round trip. */
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(career_park_rating(career_active()) == 33);
+}
+
 int main(void)
 {
     test_slots();
@@ -198,6 +258,7 @@ int main(void)
     test_unlocks();
     test_migrate_v11();
     test_gear();
+    test_park_rating();
     puts("career host checks passed");
     return 0;
 }

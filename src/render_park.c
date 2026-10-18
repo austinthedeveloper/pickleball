@@ -103,7 +103,8 @@ enum {
     PARK_MSG_HOUSE = 12,        /* inside, nothing near */
     PARK_MSG_BOARD = 13,        /* @ READ THE RECORDS, or arg: a page + 1 */
     PARK_MSG_MACHINE = 14,      /* @ PRACTICE */
-    PARK_MSG_BENCH = 15         /* who waits */
+    PARK_MSG_BENCH = 15,        /* who waits */
+    PARK_MSG_LOCKED = 16        /* arg: a court above your rating */
 };
 
 /* 2P joining or leaving shows for a moment (ADR-034). */
@@ -184,6 +185,8 @@ static u8 park_message(u8 *arg)
         *arg = rack;
         if (g_open_play.your_court == rack)
             return PARK_MSG_TAKE;
+        if (open_court_open(rack) == 0)
+            return PARK_MSG_LOCKED;
         return g_open_play.court[rack].stack_count >= OPEN_STACK_MAX ?
             PARK_MSG_FULL : PARK_MSG_STACK;
     }
@@ -275,6 +278,17 @@ static void park_draw_message(u8 message, u8 arg)
         at = text_count(at, g_open_play.last_score[0]);
         *at++ = '-';
         at = text_count(at, g_open_play.last_score[1]);
+        if (g_open_play.rating != OPEN_RATING_NONE) {
+            at = text_append(at, "  RATED ");
+            at = text_tenths(at, g_open_play.rating);
+        }
+        break;
+    case PARK_MSG_LOCKED:
+        /* "OPENS AT 3.5  YOU'RE 3.2" (ADR-070) */
+        at = text_append(at, "OPENS AT ");
+        at = text_tenths(at, open_court_floor(arg));
+        at = text_append(at, "  YOU'RE ");
+        at = text_tenths(at, g_open_play.rating);
         break;
     case PARK_MSG_2P_JOINED:
         at = text_append(at, "2P JOINED: YOUR PARTNER!");
@@ -303,8 +317,14 @@ static void park_draw_message(u8 message, u8 arg)
         at = text_append(at, "THE CLUBHOUSE  START EXIT");
         break;
     default:
-        at = text_append(at, g_open_play.two_players ?
-            "YOU AND 2P  START EXIT" : "OPEN PLAY  START EXIT");
+        /* "OPEN PLAY 3.4  START EXIT": your rating, when rated. */
+        at = text_append(at, g_open_play.two_players ? "YOU AND 2P" :
+            "OPEN PLAY");
+        if (g_open_play.rating != OPEN_RATING_NONE) {
+            *at++ = ' ';
+            at = text_tenths(at, g_open_play.rating);
+        }
+        at = text_append(at, "  START EXIT");
         break;
     }
     *at = 0;

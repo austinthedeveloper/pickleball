@@ -15,5 +15,7 @@ char *text_count(char *out, u16 value);
 /* value right-aligned in four cells, leading zeros as spaces ("  12");
  * up to 9999 (the records saturate there, SAVE_COUNTER_MAX). */
 char *text_count4(char *out, u16 value);
+/* tenths as a decimal, "3.0" to "25.5" (the park rating, ADR-070). */
+char *text_tenths(char *out, u8 tenths);
 
 #endif

@@ -16,6 +16,10 @@
  * The courts are skill levels (ADR-034, amended): <3.5, 3.5-4.5, and 4.5+.
  * Each ladder team calls one home (the ladder's order is its difficulty),
  * and your game there is EASY, MEDIUM, or HARD.
+ *
+ * A career player has a park rating (ADR-070), in tenths (30 is 3.0): a
+ * game moves it, and a court opens once it reaches the court's level.
+ * Unrated (no career player, or KID), every court is open.
  */
 
 enum {
@@ -75,7 +79,19 @@ enum {
     OPEN_BENCH_X = 344,
     OPEN_BENCH_Y = 132,
     OPEN_SPOT_REACH = 16,
-    OPEN_BOARD_PAGES = 4            /* records shown, one per B */
+    OPEN_BOARD_PAGES = 4,           /* records shown, one per B */
+
+    /* The park rating (ADR-070), in tenths. A win at your level (the
+     * court whose range holds your rating) or above it moves you up more
+     * than a loss moves you down, so winning a third of your games there
+     * holds your place; below your level a win counts for nothing. */
+    OPEN_RATING_NONE = 0,           /* unrated: every court open */
+    OPEN_RATING_START = 30,         /* a new player: 3.0 */
+    OPEN_RATING_MIN = 20,
+    OPEN_RATING_MAX = 60,
+    OPEN_RATING_WIN = 2,            /* a win at your level */
+    OPEN_RATING_WIN_UP = 3,         /* a win on a court above it */
+    OPEN_RATING_LOSS = 1            /* a loss anywhere */
 };
 
 typedef enum {
@@ -105,7 +121,8 @@ enum {
     OPEN_EVENT_CALLED = 4,      /* your game is up: the call banner */
     OPEN_EVENT_PLAY = 5,        /* the banner is done: start the match */
     OPEN_EVENT_BOARD = 6,       /* B at the records board: the next page */
-    OPEN_EVENT_PRACTICE = 7     /* B at the ball machine: start practice */
+    OPEN_EVENT_PRACTICE = 7,    /* B at the ball machine: start practice */
+    OPEN_EVENT_LOCKED = 8       /* that court is above your rating */
 };
 
 typedef struct {
@@ -128,6 +145,8 @@ typedef struct {
     u8 last_won;                /* your last game: 1 won, 0 lost, none */
     u8 last_score[2];           /* yours, theirs */
     u8 board_page;              /* the records board's page, or OPEN_NONE */
+    u8 rating;                  /* yours (ADR-070), or OPEN_RATING_NONE */
+    u8 best_court;              /* the highest court open to you */
 } OpenPlay;
 
 extern OpenPlay g_open_play;
@@ -149,6 +168,19 @@ const char *open_court_level_name(u8 court);
 u8 open_court_difficulty(u8 court, u8 saved_difficulty);
 /* The court a ladder team plays at. */
 u8 open_team_court(u8 team);
+
+/* The park rating (ADR-070). Your rating and the highest court open to
+ * you (main.c sets them from the career player when the park opens and
+ * after each game); OPEN_RATING_NONE opens every court. */
+void open_play_rate(u8 rating, u8 best_court);
+/* The lowest rating a court opens at (tenths: 0, 35, 45). */
+u8 open_court_floor(u8 court);
+/* The court whose range holds a rating. */
+u8 open_rating_court(u8 rating);
+/* A rating after a game on a court, won or lost. */
+u8 open_rating_after(u8 rating, u8 court, u8 won);
+/* Nonzero when you may stack at a court. */
+u8 open_court_open(u8 court);
 
 /* Court geometry and lookups (render_park.c and the HUD). */
 s16 open_court_left(u8 court);

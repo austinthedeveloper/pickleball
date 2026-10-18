@@ -9,6 +9,7 @@
 #include "input.h"
 #include "match.h"
 #include "modifiers.h"
+#include "open_play.h"
 #include "options.h"
 #include "paddle_stats.h"
 #include "practice.h"
@@ -169,6 +170,8 @@ void game_new_match(void)
     /* A record beaten in a match left early waits for the next game over
      * (ADR-040), which asks for its initials. */
     g_career_new_unlocks = 0;
+    g_career_park_before = OPEN_RATING_NONE;   /* ADR-070 */
+    g_career_park_opened = OPEN_NONE;
     players_initialize();
     ball_initialize();
     serve_initialize();

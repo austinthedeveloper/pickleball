@@ -73,7 +73,10 @@ enum {
     CAREER_SLOTS = 3,
     CAREER_NAME = 8,            /* letters, space-padded */
     CAREER_TEAMS = 8,           /* ladder teams (OPPONENT_COUNT, checked) */
-    CAREER_NONE = 0xff          /* no active player */
+    CAREER_NONE = 0xff,         /* no active player */
+    CAREER_PARK_BASE = 19,      /* CareerPlayer.park: 2.0 is stored as 1 */
+    CAREER_PARK_RATING = 0x3f,
+    CAREER_PARK_COURT_SHIFT = 6
 };
 
 typedef struct {
@@ -98,7 +101,11 @@ typedef struct {
     u8 hat;                     /* HAT id, 0 the cap */
     u8 paddle;                  /* PADDLE_* */
     u8 beaten[CAREER_TEAMS];    /* wins over each ladder team */
-    u8 reserved;
+    u8 park;                    /* the park rating (ADR-070): bits 0-5 the
+                                   rating less CAREER_PARK_BASE tenths, 0
+                                   never rated (3.0); bits 6-7 the highest
+                                   court reached. Was reserved (always 0),
+                                   so the layout is unchanged */
 } CareerPlayer;
 
 typedef struct {

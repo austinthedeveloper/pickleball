@@ -2,6 +2,8 @@
 #include <string.h>
 #include "career.h"
 #include "match.h"
+#include "open_play.h"
+#include "options.h"
 #include "opponents.h"
 #include "paddle_stats.h"
 #include "palette_parts.h"
@@ -13,6 +15,9 @@ typedef char career_teams_fit[OPPONENT_COUNT <= CAREER_TEAMS ? 1 : -1];
 typedef char career_unlocks_fit[CAREER_UNLOCKS <= 16 ? 1 : -1];
 
 u16 g_career_new_unlocks;
+u8 g_career_park_before;
+u8 g_career_park_after;
+u8 g_career_park_opened;
 
 CareerPlayer *career_active(void)
 {
@@ -110,18 +115,56 @@ void career_record_point(u8 shots, u8 won, u8 served)
         player->longest_rally = shots;
 }
 
+u8 career_park_rating(const CareerPlayer *player)
+{
+    u8 stored = player->park & CAREER_PARK_RATING;
+
+    return stored ? (u8)(stored + CAREER_PARK_BASE) : OPEN_RATING_START;
+}
+
+u8 career_park_court(const CareerPlayer *player)
+{
+    u8 court = player->park >> CAREER_PARK_COURT_SHIFT;
+
+    return court < OPEN_COURTS ? court : OPEN_COURTS - 1;
+}
+
+void career_rate_park(CareerPlayer *player, u8 court, u8 won)
+{
+    u8 before = career_park_rating(player);
+    u8 after = open_rating_after(before, court, won);
+    u8 best = career_park_court(player);
+    u8 reached = open_rating_court(after);
+
+    g_career_park_before = before;
+    g_career_park_after = after;
+    g_career_park_opened = OPEN_NONE;
+    if (reached > best) {
+        best = reached;
+        g_career_park_opened = reached;
+    }
+    player->park = (u8)((best << CAREER_PARK_COURT_SHIFT) |
+        (after - CAREER_PARK_BASE));
+}
+
 void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     u8 open_play)
 {
     CareerPlayer *player = career_active();
 
     g_career_new_unlocks = 0;
+    g_career_park_before = OPEN_RATING_NONE;
+    g_career_park_opened = OPEN_NONE;
     if (player == 0)
         return;
     if (mode > MATCH_DOUBLES)
         mode = MATCH_DOUBLES;
-    if (open_play)
+    if (open_play) {
         career_bump(&player->open_play);
+        /* KID's games are all KID (ADR-034): not rated. */
+        if (g_match_config.difficulty != DIFFICULTY_KID)
+            career_rate_park(player, (u8)(open_play - 1), won);
+    }
     if (won) {
         career_bump(&player->wins[mode]);
         career_bump(&player->streak);

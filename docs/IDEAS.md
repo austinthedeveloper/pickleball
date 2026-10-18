@@ -162,6 +162,14 @@ food-truck chef.
   match, then a win/lose card.
 - Progress (which rung you've reached) needs saving: battery save (below),
   a password screen, or a short ladder played in one sitting.
+- Later ideas (2026-10-18), not started:
+  - **A second lap** after the Champs: every rung a difficulty step up, or
+    a hidden ninth team; a mark on the records page for clearing it.
+  - **A signature move per team** (the Gym Bros smash everything, the Goth
+    Club resets, the Twins poach): AI work in both `player_step`s and the
+    probe, with stats, lockstep, and perf.
+  - **An arcade run:** climb with three lives instead of free rematches,
+    a home for the best-streak record.
 
 ## Practice mode: ball machine
 
@@ -205,6 +213,12 @@ grounds, peek at other courts, and put your paddle in a court's **paddle
 stack**. When your turn comes, you play. Still to come: a bigger,
 scrolling park, people walking between courts, and partners from the
 stack.
+
+A park rating opens the higher courts (ADR-070). More, from the same pass:
+- **Winners stay on:** the real parks' "two off, two on", with a cap of
+  two or three wins, instead of everyone coming off after each game.
+- **Ladder teams at the park:** a team you have beaten on the ladder joins
+  the stacks at its level, to play against or partner.
 
 ## Play modifiers
 

@@ -17,6 +17,13 @@
  * WRAM only, for the result screen. */
 extern u16 g_career_new_unlocks;
 
+/* The park rating before and after the last finished open play game
+ * (ADR-070), OPEN_RATING_NONE when it was not rated, and the court it
+ * opened (OPEN_NONE: none); WRAM only, for the result screen. */
+extern u8 g_career_park_before;
+extern u8 g_career_park_after;
+extern u8 g_career_park_opened;
+
 /* The active player, or 0 when none is chosen. */
 CareerPlayer *career_active(void);
 /* A new player in an empty slot with a name (CAREER_NAME letters or
@@ -35,9 +42,18 @@ u8 career_hat_unlocked(const CareerPlayer *player, u8 hat);
 /* A finished point in a career match: its shots, whether 1P's team won
  * it, and whether 1P served it. */
 void career_record_point(u8 shots, u8 won, u8 served);
+/* A player's park rating in tenths (ADR-070; 3.0 until their first game)
+ * and the highest court they have reached. */
+u8 career_park_rating(const CareerPlayer *player);
+u8 career_park_court(const CareerPlayer *player);
+/* A park game on a court: the rating moves (open_rating_after) and a
+ * court it reaches opens; sets g_career_park_*. */
+void career_rate_park(CareerPlayer *player, u8 court, u8 won);
+
 /* A finished career match against the CPU; opponent is the ladder team
- * (OPPONENT_NONE for the default CPU), open_play a park game. Updates the
- * stats and the unlocks (g_career_new_unlocks); the caller writes. */
+ * (OPPONENT_NONE for the default CPU), open_play a park game: its court
+ * + 1, rated (ADR-070) unless the match is on KID. Updates the stats and
+ * the unlocks (g_career_new_unlocks); the caller writes. */
 void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     u8 open_play);
 /* The player's OBJ palette (ADR-013 roles): skin ramp and hair from the

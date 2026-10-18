@@ -325,6 +325,48 @@ static void test_clubhouse(void)
     check_population();
 }
 
+/* ADR-070: the park rating's rules, and courts above it closed. */
+static void test_rating(void)
+{
+    /* Levels: <3.5, 3.5-4.5, 4.5+. */
+    assert(open_rating_court(20) == 0 && open_rating_court(34) == 0);
+    assert(open_rating_court(35) == 1 && open_rating_court(44) == 1);
+    assert(open_rating_court(45) == 2 && open_rating_court(60) == 2);
+    assert(open_court_floor(1) == 35 && open_court_floor(2) == 45);
+    /* At your level a win is +0.2, above it +0.3, below it nothing; a
+     * loss is -0.1 anywhere. */
+    assert(open_rating_after(30, 0, 1) == 32);
+    assert(open_rating_after(30, 1, 1) == 33);
+    assert(open_rating_after(30, 2, 1) == 33);
+    assert(open_rating_after(40, 0, 1) == 40);
+    assert(open_rating_after(40, 0, 0) == 39);
+    assert(open_rating_after(40, 1, 0) == 39);
+    /* The floor and the cap. */
+    assert(open_rating_after(OPEN_RATING_MIN, 0, 0) == OPEN_RATING_MIN);
+    assert(open_rating_after(59, 2, 1) == OPEN_RATING_MAX);
+    assert(open_rating_after(OPEN_RATING_MAX, 2, 1) == OPEN_RATING_MAX);
+
+    /* Unrated (a fresh park): every court open. */
+    open_play_begin(7, 0);
+    assert(g_open_play.rating == OPEN_RATING_NONE);
+    assert(open_court_open(0) && open_court_open(1) && open_court_open(2));
+    /* Rated 3.2 with only the first court reached: the others closed. */
+    open_play_rate(32, 0);
+    assert(open_court_open(0) && !open_court_open(1) && !open_court_open(2));
+    place_you(open_rack_x(1), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_LOCKED);
+    assert(g_open_play.your_court == OPEN_NONE);
+    place_you(open_rack_x(0), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    /* A court reached stays open below its level (best_court). */
+    open_play_rate(42, 2);
+    assert(open_court_open(2));
+    place_you(open_rack_x(2), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    assert(g_open_play.your_court == 2);
+    check_population();
+}
+
 int main(void)
 {
     test_levels();
@@ -335,6 +377,7 @@ int main(void)
     test_soak();
     test_two_players();
     test_clubhouse();
+    test_rating();
     printf("open play host checks passed\n");
     return 0;
 }

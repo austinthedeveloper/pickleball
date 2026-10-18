@@ -1,0 +1,149 @@
+# The park rating (ADR-070). Run with the pokes in docs/decisions/ADR-070:
+# a career player ACE rated 3.4 with the first court. OPEN PLAY (Down
+# twice), into the park: OPEN PLAY 3.4. Up to court 2's rack: OPENS AT 3.5,
+# and B is refused. Left to court 1's rack, stack, step back, and wait for
+# the game (the pokes start it at 10-0); after it, the rating's move.
+70 71 down
+80 81 down
+90 91 start
+shot 150
+160 178 up
+shot 185
+190 191 b
+shot 200
+205 269 left
+shot 275
+280 281 b
+shot 290
+295 305 down
+shot 320
+shot 900
+1440 1441 b
+1560 1561 b
+1680 1681 b
+1800 1801 b
+1920 1921 b
+2040 2041 b
+2160 2161 b
+2280 2281 b
+2400 2401 b
+2520 2521 b
+2640 2641 b
+2760 2761 b
+2880 2881 b
+3000 3001 b
+3120 3121 b
+3240 3241 b
+3360 3361 b
+3480 3481 b
+3600 3601 b
+3720 3721 b
+3840 3841 b
+3960 3961 b
+4080 4081 b
+4200 4201 b
+4320 4321 b
+shot 1400
+shot 1430
+shot 1460
+shot 1490
+shot 1520
+shot 1550
+shot 1580
+shot 1610
+shot 1640
+shot 1670
+shot 1700
+shot 1730
+shot 1760
+shot 1790
+shot 1820
+shot 1850
+shot 1880
+shot 1910
+shot 1940
+shot 1970
+shot 2000
+shot 2030
+shot 2060
+shot 2090
+shot 2120
+shot 2150
+shot 2180
+shot 2210
+shot 2240
+shot 2270
+shot 2300
+shot 2330
+shot 2360
+shot 2390
+shot 2420
+shot 2450
+shot 2480
+shot 2510
+shot 2540
+shot 2570
+shot 2600
+shot 2630
+shot 2660
+shot 2690
+shot 2720
+shot 2750
+shot 2780
+shot 2810
+shot 2840
+shot 2870
+shot 2900
+shot 2930
+shot 2960
+shot 2990
+shot 3020
+shot 3050
+shot 3080
+shot 3110
+shot 3140
+shot 3170
+shot 3200
+shot 3230
+shot 3260
+shot 3290
+shot 3320
+shot 3350
+shot 3380
+shot 3410
+shot 3440
+shot 3470
+shot 3500
+shot 3530
+shot 3560
+shot 3590
+shot 3620
+shot 3650
+shot 3680
+shot 3710
+shot 3740
+shot 3770
+shot 3800
+shot 3830
+shot 3860
+shot 3890
+shot 3920
+shot 3950
+shot 3980
+shot 4010
+shot 4040
+shot 4070
+shot 4100
+shot 4130
+shot 4160
+shot 4190
+shot 4220
+shot 4250
+shot 4280
+shot 4310
+shot 4340
+shot 4370
+shot 4400
+shot 4430
+shot 4460
+shot 4490

@@ -13,6 +13,7 @@
 #include "match.h"
 #include "menu.h"
 #include "modifiers.h"
+#include "career.h"
 #include "open_play.h"
 #include "options.h"
 #include "pause_menu.h"
@@ -140,7 +141,7 @@ static void start_open_play_match(void)
         options_difficulty(g_save.settings.difficulty));
     g_match_config.modifiers = modifiers_valid(g_save.settings.modifiers);
     g_match_config.modifiers2 = modifiers2_valid(g_save.modifiers2);
-    g_match_config.open_play = 1;
+    g_match_config.open_play = (u8)(g_open_play.called + 1);
     /* ADR-047: you play as your career player, in their saved look. */
     match_config_career_p1();
     game_start_match();
@@ -158,6 +159,20 @@ static void start_park_practice(void)
     game_start_match();
     g_pause_park = 1;
     enter_scene(SCENE_MATCH);
+}
+
+/* The park rating (ADR-070): the career player's, so the courts above it
+ * stay closed; none (every court open) without one or on KID. */
+static void park_rate(void)
+{
+    const CareerPlayer *player = career_active();
+
+    if (player == 0 ||
+            options_difficulty(g_save.settings.difficulty) == DIFFICULTY_KID)
+        open_play_rate(OPEN_RATING_NONE, 0);
+    else
+        open_play_rate(career_park_rating(player),
+            career_park_court(player));
 }
 
 /* One park frame (ADR-034): the D-pad walks, B stacks or takes your
@@ -186,7 +201,8 @@ static void update_park(void)
     event = open_play_update(move_x, move_y, (pressed & PAD_B) != 0);
     if (event == OPEN_EVENT_STACKED || event == OPEN_EVENT_CALLED)
         audio_ui(SFX_CONFIRM);
-    else if (event == OPEN_EVENT_UNSTACKED || event == OPEN_EVENT_FULL)
+    else if (event == OPEN_EVENT_UNSTACKED || event == OPEN_EVENT_FULL ||
+            event == OPEN_EVENT_LOCKED)
         audio_ui(SFX_BACK);
     if (event == OPEN_EVENT_BOARD)
         audio_ui(SFX_BLIP);
@@ -448,6 +464,7 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_OPEN_PLAY) {
                 open_play_begin(g_game_state.frame_count,
                     (g_title_joined & TITLE_JOIN_2P) != 0);
+                park_rate();
                 s_open_park = 1;
                 return;
             } else if (g_title_mode == TITLE_MODIFIERS) {
@@ -710,6 +727,7 @@ int main(void)
                 g_back_to_park = 0;
                 open_play_return(g_game_state.match_winner == 0,
                     g_game_state.team_score[0], g_game_state.team_score[1]);
+                park_rate();
                 game_start_attract();
                 g_match_config_changed = 0;
                 enter_scene(SCENE_PARK);

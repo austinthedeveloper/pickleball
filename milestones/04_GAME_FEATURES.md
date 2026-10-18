@@ -160,6 +160,9 @@ each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 on, in
   - Verified: ADR-034 (amended), `test_opponents.c: test_partner`, `test_open_play.c`; `open_play.timeline` shows "WITH PETE VS SURF CREW" and PETE's look in the match.
 - [x] `M4-OPEN-04` A second player in the park: 2P joins and plays as your partner.
   - Verified: ADR-034 (amended), `test_open_play.c: test_two_players` (co-op pad mapping, versus unchanged). The headless runner cannot press port 2 (KNOWN_ISSUES #16): check by hand with a second pad.
+- [x] `M4-OPEN-06` A park rating: a career player's rating moves with their park games and opens the 3.5-4.5 and 4.5+ courts.
+  - Accept: 3.0 to start; a win at your level or above counts for more than a loss, below it for nothing; a court opens at its level and stays open; a closed court refuses your paddle and says why; the result and the park show the move; unrated (no career player, KID) every court is open; no save layout change; simulation unchanged; zero overruns.
+  - Verified: [ADR-070](../docs/decisions/ADR-070-park-rating.md), `test_open_play.c: test_rating`, `test_career.c: test_park_rating`, MesenCE (`park_rating.timeline` with pokes: the locked rack, a court opened on the result, the rating in the park and on the card); golden trace and lockstep identical; `make perf` zero overruns.
 
 ## Practice
 

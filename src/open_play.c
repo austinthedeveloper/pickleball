@@ -52,6 +52,50 @@ u8 open_court_difficulty(u8 court, u8 saved_difficulty)
     return levels[court < OPEN_COURTS ? court : 0];
 }
 
+/* Each court's floor (ADR-070): its level name's lower bound. */
+static const u8 s_court_floor[OPEN_COURTS] = { 0, 35, 45 };
+
+u8 open_court_floor(u8 court)
+{
+    return s_court_floor[court < OPEN_COURTS ? court : 0];
+}
+
+u8 open_rating_court(u8 rating)
+{
+    u8 c = OPEN_COURTS - 1;
+
+    while (c && rating < s_court_floor[c])
+        --c;
+    return c;
+}
+
+u8 open_rating_after(u8 rating, u8 court, u8 won)
+{
+    u8 level = open_rating_court(rating);
+    u8 gain;
+
+    if (won == 0)
+        return rating >= OPEN_RATING_MIN + OPEN_RATING_LOSS ?
+            (u8)(rating - OPEN_RATING_LOSS) : OPEN_RATING_MIN;
+    if (court < level)
+        return rating;
+    gain = court > level ? OPEN_RATING_WIN_UP : OPEN_RATING_WIN;
+    return rating + gain <= OPEN_RATING_MAX ? (u8)(rating + gain) :
+        OPEN_RATING_MAX;
+}
+
+void open_play_rate(u8 rating, u8 best_court)
+{
+    g_open_play.rating = rating;
+    g_open_play.best_court = rating == OPEN_RATING_NONE ||
+        best_court >= OPEN_COURTS ? OPEN_COURTS - 1 : best_court;
+}
+
+u8 open_court_open(u8 court)
+{
+    return court <= g_open_play.best_court;
+}
+
 s16 open_court_left(u8 court)
 {
     return s_court_left[court < OPEN_COURTS ? court : 0];
@@ -418,6 +462,7 @@ void open_play_begin(u16 seed, u8 two_players)
     g_open_play.last_score[0] = 0;
     g_open_play.last_score[1] = 0;
     g_open_play.board_page = OPEN_NONE;
+    open_play_rate(OPEN_RATING_NONE, 0);
 }
 
 static u8 open_press_rack(u8 rack)
@@ -429,6 +474,8 @@ static u8 open_press_rack(u8 rack)
         g_open_play.your_court = OPEN_NONE;
         return OPEN_EVENT_UNSTACKED;
     }
+    if (open_court_open(rack) == 0)
+        return OPEN_EVENT_LOCKED;
     if (court->stack_count >= OPEN_STACK_MAX)
         return OPEN_EVENT_FULL;
     if (g_open_play.your_court != OPEN_NONE)

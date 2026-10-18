@@ -257,6 +257,9 @@ frame over the singles demo.
 
 ## Not yet
 
+*Amended 2026-10-18 (ADR-070):* a career player's park rating opens the
+3.5-4.5 and 4.5+ courts; unrated, every court is open as before.
+
 - The park resets on each visit. Waiting teams are drawn only on the
   clubhouse bench (the first two); elsewhere their paddles are on the
   racks.

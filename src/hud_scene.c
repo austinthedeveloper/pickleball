@@ -13,9 +13,11 @@
 #include "hud_internal.h"
 #include "court_style.h"
 #include "audio_events.h"
+#include "career.h"
 #include "career_page.h"
 #include "modifiers.h"
 #include "museum.h"
+#include "open_play.h"
 #include "options.h"
 #include "paddle_stats.h"
 #include "pause_menu.h"
@@ -636,6 +638,27 @@ static const char *hud_result_prompt(void)
     return "@ REMATCH  START MENU";
 }
 
+/* After a rated park game (ADR-070): "RATED 3.4 TO 3.6", or a court it
+ * opened, "3.5-4.5 OPEN! RATED 3.6". */
+static void hud_result_rating(void)
+{
+    static char text[29];
+    char *at = text;
+
+    if (g_career_park_before == OPEN_RATING_NONE)
+        return;
+    if (g_career_park_opened != OPEN_NONE) {
+        at = text_append(at, open_court_level_name(g_career_park_opened));
+        at = text_append(at, " OPEN! RATED ");
+    } else {
+        at = text_append(at, "RATED ");
+        at = text_tenths(at, g_career_park_before);
+        at = text_append(at, " TO ");
+    }
+    text_tenths(at, g_career_park_after);
+    hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, text);
+}
+
 static void hud_result_story(u8 step)
 {
     static char next[] = "NEXT UP: 123456789";
@@ -661,8 +684,13 @@ static void hud_result_story(u8 step)
                 *lines, step == HUD_STEP_EXTRA5);
         return;
     }
-    /* Open play (ADR-034) is off the ladder: no next-up line. */
-    if (!won || g_match_config.open_play)
+    /* Open play (ADR-034) is off the ladder: no next-up line, but the
+     * park rating's move (ADR-070). */
+    if (g_match_config.open_play) {
+        hud_result_rating();
+        return;
+    }
+    if (!won)
         return;
     if (g_match_config.opponent == OPPONENT_COUNT - 1) {
         hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW,
