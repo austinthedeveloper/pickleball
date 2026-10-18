@@ -1,11 +1,13 @@
 # M4 — Game Features
 
-Target version: **0.4.0** (first GitHub release; see [RELEASING.md](../docs/RELEASING.md))
+Versions: M4 work ships in tagged releases from 0.4.0 (the first GitHub
+release) on; the current one is `VERSION_NAME` in the `Makefile` (see
+[RELEASING.md](../docs/RELEASING.md)).
 
 Outcome: the POC grows into a game you return to: saved records and
 settings, themed opponents on a ladder, and several venues. Design notes for
-each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 to
-ADR-024.
+each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 on, in
+[docs/decisions/](../docs/decisions/).
 
 ## Save and records
 
@@ -58,7 +60,7 @@ ADR-024.
 - [x] `M4-AI-02` Situational shots: drops and dinks against net players, put-aways, dink rallies with speed-ups.
   - Verified: [ADR-037](../docs/decisions/ADR-037-situational-shots.md), `test_ai.c: test_tactics`; against a net-playing bot every net team is tougher in singles (CHAMPS 24 → 7 bot wins of 60). Not done: speed-ups out of a dink rally (put-aways of high balls stay).
 - [x] `M4-AI-05` Balance doubles: TWINS are easy for a net-playing human (57-59 of 60 bot wins), GOTH CLUB over-dink, HENDERSON and GYM BROS are near-certain wins.
-  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md), `test_ai.c: test_footwork, test_middle_aim`; the doubles ladder gets harder each rung (average bot wins of 60: 60, 52, 49, 37, 22, 20, 18, 4; TWINS against the net bot 59 → 21). The cause was CPU mis-hits from sliding into the swing (`footwork`).
+  - Verified: [ADR-038](../docs/decisions/ADR-038-doubles-balance.md), `test_ai.c: test_footwork, test_doubles_aim` (the middle aim; `test_middle_aim` until ADR-039); the doubles ladder gets harder each rung (average bot wins of 60: 60, 52, 49, 37, 22, 20, 18, 4; TWINS against the net bot 59 → 21). The cause was CPU mis-hits from sliding into the swing (`footwork`).
 - [x] `M4-AI-03` Doubles teamwork: the CPU partner moves up and back with you, covers the middle, poaches.
   - Verified: [ADR-036](../docs/decisions/ADR-036-teamwork.md), `test_ai.c: test_teamwork`, `test_doubles.c`; middle balls lost untouched near zero for both sides in the ADR-036 table.
 - [x] `M4-AI-04` Smarter aim: the gap between doubles opponents, the open court.
@@ -121,6 +123,10 @@ ADR-024.
 - [x] `M4-FUN-02` More quips: sixteen a side, in a shuffled order.
   - Accept: sixteen PG lines for every ladder team, the human side, and the default CPU; a side says all of them before any again, in a new order each pass; display only; zero overruns.
   - Verified: [ADR-063](../docs/decisions/ADR-063-more-quips.md), `test_story.c: test_quips`, the asset build's line checks, MesenCE screenshots of the golden run's point results; `make perf` zero overruns; golden trace identical from Player Select on (the title starts a frame later).
+- [x] `M4-FUN-03` Close call replay: a long rally that ends just out shows a close-up of the line, and by how many inches (from GOOFY_IDEAS.md).
+  - Verified: [ADR-041](../docs/decisions/ADR-041-close-call-replay.md), `test/test_replay.c`, MesenCE with the thresholds dropped; display only, golden trace identical; `make perf` zero overruns.
+- [x] `M4-FUN-04` The partner sitting out: in a singles ladder match the opponent's doubles partner watches from the venue's stands and cheers their teammate's points (from GOOFY_IDEAS.md).
+  - Verified: [ADR-042](../docs/decisions/ADR-042-sitting-out.md), the asset build's watcher spot check, MesenCE at PARK, LAKESIDE, and SUNSET (nobody in doubles); display only, golden trace identical; `make perf` zero overruns.
 
 ## Career
 

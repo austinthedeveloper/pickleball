@@ -83,4 +83,4 @@ Outcome: one human and one CPU can complete a serve and rally ending in one corr
 - [x] Net, in/out, required bounces, and point ownership are deterministic.
   - Verified: `test/SCENARIOS.md` fixtures in `make check`.
 - [ ] Ball remains readable on real hardware.
-- [ ] Tag/version `0.2.0` is ready.
+- [ ] Tag/version `0.2.0` is ready. *Superseded: versions are now tagged releases ([RELEASING.md](../docs/RELEASING.md)); this box stays open with the hardware run.*

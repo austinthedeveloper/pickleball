@@ -11,6 +11,8 @@ This is the only cross-milestone status sheet. Detailed tasks live in the linked
 
 ## Milestones
 
+M1–M4 stay open only because their real-hardware runs are pending ([test/hardware-log.md](../test/hardware-log.md)).
+
 - [ ] [M1 — Bootable Court](01_BOOTABLE_COURT.md)
   - Exit: real SNES boots and P1 can move/pause within a correctly lined static court.
 - [ ] [M2 — Playable Rally](02_PLAYABLE_RALLY.md)

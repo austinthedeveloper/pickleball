@@ -64,13 +64,13 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
   - Accept: 15-minute soak, at least 3 matches, reset, pause, rematch, and cold boot pass.
 - [x] `M3-QA-04` Review object, VRAM, ROM, stack/static-RAM, and generated-asset budgets.
   - Accept: actual values appear in `dist/build-report.md`; no overlap/overflow warning.
-  - Verified: `dist/build-report.md` records ROM bank usage, VRAM map, OAM plan, tile budgets, and static RAM span; no overlap. Open item: BG1 uses 625 tiles against ADR-016's 512 plan (docs/09).
+  - Verified: `dist/build-report.md` records ROM bank usage, VRAM map, OAM plan, tile budgets, and static RAM span; no overlap. The BG1 item (625 tiles against ADR-016's 512 plan) was resolved by raising the budget to 896 tiles (ADR-016 amended; KNOWN_ISSUES #2).
 - [ ] `M3-QA-05` Confirm internal ROM header and checksum/complement.
   - Accept: ROM inspection tool and hardware both recognize and boot the image.
-  - Progress: `tools/build_report.py` verifies title, LoROM/SlowROM, NTSC, no SRAM, and recomputes the checksum; MesenCE boots it. Real-hardware boot pending (M3-QA-03).
+  - Progress: `tools/build_report.py` verifies title, LoROM FastROM (map mode `$30`, ADR-017), NTSC, 2 KiB battery SRAM (cart type `$02`, ADR-021), and recomputes the checksum; MesenCE boots it. Real-hardware boot pending (M3-QA-03).
 - [ ] `M3-QA-06` Close or document every defect.
   - Accept: zero blockers/majors; every accepted minor has reproduction and reason to defer.
-  - Progress: `docs/KNOWN_ISSUES.md` lists open items; #1 (frame overruns) and #2 (BG1 budget) need a decision.
+  - Progress: `docs/KNOWN_ISSUES.md` lists open items; #1 (frame overruns) and #2 (BG1 budget) are Resolved.
 - [x] `M3-DIST-01` Produce distribution bundle.
   - Accept: versioned ROM, checksum, build report, controls/rules readme, source revision, and hardware log are present.
   - Verified: `make dist` bundles the versioned ROM, SHA-256, build report, player guide (controls/rules), source revision, and hardware log.
@@ -79,11 +79,12 @@ Outcome: a complete first-to-five arcade match and rematch is certified on real 
 
 - [ ] All required tasks above are complete.
 - [ ] POC success test in the root README passes with a new player.
+  - The test (formerly in the root README): a new player can power on a real NTSC SNES, move, serve, sustain a rally against the CPU, see an unambiguous fault and score, finish a first-to-five match, and rematch without resetting. No sprite dropout, lockup, input loss, or steadily worsening frame time may appear during a 15-minute hardware session.
 - [ ] One tile set visibly supports all four player palettes.
 - [ ] Four-player input/entity/OAM seams are demonstrated even though gameplay remains 1P vs CPU.
 - [ ] Candidate passes two emulator families and an NTSC real SNES/SFC.
 - [ ] Master cross-cutting gates are complete.
-- [ ] Tag/version `0.3.0` is ready.
+- [ ] Tag/version `0.3.0` is ready. *Superseded: versions are now tagged releases ([RELEASING.md](../docs/RELEASING.md)); this box stays open with the hardware run.*
 
 ## Handoff after M3
 
