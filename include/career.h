@@ -23,6 +23,9 @@ extern u16 g_career_new_unlocks;
 extern u8 g_career_park_before;
 extern u8 g_career_park_after;
 extern u8 g_career_park_opened;
+/* A park game to rate on the next frame (career_park_flush): its court +
+ * 1, or 0. WRAM only. */
+extern u8 g_career_park_pending;
 
 /* The active player, or 0 when none is chosen. */
 CareerPlayer *career_active(void);
@@ -50,10 +53,16 @@ u8 career_park_court(const CareerPlayer *player);
  * court it reaches opens; sets g_career_park_*. */
 void career_rate_park(CareerPlayer *player, u8 court, u8 won);
 
+/* Rates the park game career_record_match left pending, if any: on the
+ * frame after the match ends, before its save write (the match-end frame
+ * is the heaviest; KNOWN_ISSUES #41). */
+void career_park_flush(void);
+
 /* A finished career match against the CPU; opponent is the ladder team
  * (OPPONENT_NONE for the default CPU), open_play a park game: its court
- * + 1, rated (ADR-070) unless the match is on KID. Updates the stats and
- * the unlocks (g_career_new_unlocks); the caller writes. */
+ * + 1, rated (ADR-070) unless the match is on KID, by career_park_flush.
+ * Updates the stats and the unlocks (g_career_new_unlocks); the caller
+ * writes. */
 void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     u8 open_play);
 /* The player's OBJ palette (ADR-013 roles): skin ramp and hair from the

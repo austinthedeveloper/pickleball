@@ -230,16 +230,24 @@ static void test_park_rating(void)
     assert(career_park_rating(p) == OPEN_RATING_MAX);
     assert(career_park_court(p) == 2 && g_career_park_opened == 2);
 
-    /* Through a match: open_play is the court + 1; KID is not rated. */
+    /* Through a match: open_play is the court + 1; KID is not rated. The
+     * rating waits for the next frame's flush (KNOWN_ISSUES #41). */
     p->park = 0;
     g_match_config.difficulty = DIFFICULTY_MEDIUM;
     career_record_match(MATCH_DOUBLES, 1, 4, 3, 2);         /* court 2 */
+    assert(career_park_rating(p) == 30 && g_career_park_pending == 2);
+    career_park_flush();
     assert(career_park_rating(p) == 33 && g_career_park_before == 30);
+    assert(g_career_park_pending == 0);
+    career_park_flush();                                    /* only once */
+    assert(career_park_rating(p) == 33);
     career_record_match(MATCH_DOUBLES, 1, 4, 3, 0);         /* the ladder */
+    career_park_flush();
     assert(career_park_rating(p) == 33);
     assert(g_career_park_before == OPEN_RATING_NONE);
     g_match_config.difficulty = DIFFICULTY_KID;
     career_record_match(MATCH_DOUBLES, 0, 4, 3, 1);
+    career_park_flush();
     assert(career_park_rating(p) == 33);
     assert(g_career_park_before == OPEN_RATING_NONE);
     g_match_config.difficulty = DIFFICULTY_MEDIUM;

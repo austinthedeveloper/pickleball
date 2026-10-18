@@ -70,6 +70,9 @@ when the layout changes). An older ROM ignores the byte.
   `career_rate_park`, which `career_record_match` calls for a park game
   that is not on KID. `MatchConfig.open_play` is now the court + 1 (it was
   1), so the match end knows the court.
+- The rating is applied on the frame after the match ends
+  (`career_park_flush`, before the deferred save write): on the
+  match-end frame it tipped the frame budget (KNOWN_ISSUES #41).
 - `main.c` sets the park's points from the career player when the park
   opens and after each game (`park_rate`).
 - The court labels are sprites in the park's white font
