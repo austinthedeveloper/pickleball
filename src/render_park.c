@@ -104,7 +104,8 @@ enum {
     PARK_MSG_BOARD = 13,        /* @ READ THE RECORDS, or arg: a page + 1 */
     PARK_MSG_MACHINE = 14,      /* @ PRACTICE */
     PARK_MSG_BENCH = 15,        /* who waits */
-    PARK_MSG_LOCKED = 16        /* arg: a court above your rating */
+    PARK_MSG_LOCKED = 16,       /* arg: a court above your rating */
+    PARK_MSG_PICK = 17          /* @ TAKE, Y picks (ADR-072); arg: pick */
 };
 
 /* 2P joining or leaving shows for a moment (ADR-034). */
@@ -192,8 +193,14 @@ static u8 park_message(u8 *arg)
         return PARK_MSG_BENCH;
     if (rack != OPEN_NONE) {
         *arg = rack;
-        if (g_open_play.your_court == rack)
+        if (g_open_play.your_court == rack) {
+            /* Teams to pick from, and no 2P (open_pick_ready). */
+            if (g_open_play.pickable && g_open_play.two_players == 0) {
+                *arg = g_open_play.pick;
+                return PARK_MSG_PICK;
+            }
             return PARK_MSG_TAKE;
+        }
         if (open_court_open(rack) == 0)
             return PARK_MSG_LOCKED;
         return g_open_play.court[rack].stack_count >= OPEN_STACK_MAX ?
@@ -248,6 +255,13 @@ static void park_draw_message(u8 message, u8 arg)
         break;
     case PARK_MSG_TAKE:
         at = text_append(at, "@ TAKE YOUR PADDLE");
+        break;
+    case PARK_MSG_PICK:
+        /* "@ TAKE  Y PARTNER: RAVEN" (24 at the longest captain), or
+         * "@ TAKE  Y PARTNER: NEXT UP" (26). */
+        at = text_append(at, "@ TAKE  Y PARTNER: ");
+        at = text_append(at, arg < OPPONENT_COUNT ?
+            g_opponent_captain[arg] : "NEXT UP");
         break;
     case PARK_MSG_FULL:
         at = text_append(at, "THIS STACK IS FULL");

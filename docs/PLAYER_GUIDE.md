@@ -33,6 +33,14 @@ its own level. On KID, every court is KID.
   court partners you ("WITH PETE VS SURF CREW"); you play doubles against the
   team you were drawn with, at that court's level, with your POINTS and
   MODIFIERS.
+- **Pick your partner:** a career player can choose their partner from
+  the captains of the ladder teams they have beaten. Holding your paddle
+  at its rack, press **Y**: `@ TAKE  Y PARTNER: NEXT UP` changes to each
+  captain you may pick in ladder order (`@ TAKE  Y PARTNER: MARGE`), then
+  back to NEXT UP (the captain next in line, as before). Your pick
+  partners you in every game ("WITH MARGE VS GYM BROS") and their team is
+  never drawn against you. With 2P along, 2P is your partner and Y does
+  nothing.
 - **Two players:** press Start on controller 2 (on the title or in the
   park) and 2P comes along as your partner in your games; press it again
   to leave.

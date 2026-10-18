@@ -1,0 +1,37 @@
+# Pick your partner (ADR-072). Run with the pokes in docs/decisions/ADR-072
+# (ADR-070's career player ACE on 14 points, having beaten SNOWBIRDS and
+# GOTH CLUB; court 1 at 6-6 so its game ends soon; your game started at
+# 10-0). OPEN PLAY (Down twice), into
+# the park; left to court 1's rack and stack: @ TAKE  Y PARTNER: NEXT UP.
+# Y cycles MARGE, RAVEN, NEXT UP, MARGE; step back and wait. The call:
+# WITH MARGE VS GYM BROS (the winners of court 1; SNOWBIRDS lost), and the
+# match has MARGE on your side.
+70 71 down
+80 81 down
+90 91 start
+160 178 up
+205 269 left
+280 281 b
+shot 300
+310 311 y
+shot 330
+340 341 y
+shot 360
+370 371 y
+shot 390
+400 401 y
+shot 420
+435 445 down
+shot 460
+shot 500
+shot 700
+shot 1000
+shot 1300
+shot 1600
+shot 1640
+shot 1680
+shot 1720
+shot 1760
+shot 1800
+shot 1900
+shot 2000
