@@ -50,6 +50,13 @@ static u8 s_volley_check[MAX_PLAYERS];
  * reaction (GYM BROS let 40% of serves bounce twice). Outside AiState
  * (golden traces); singles CPUs think every frame, so nothing changes. */
 static u16 s_last_think[MAX_PLAYERS];
+/* ai_slide's last speed and answer by slot and axis (ai_swing_connects);
+ * AI_NO_SPEED forgets them at match start (ai_initialize). */
+#define AI_NO_SPEED 0x7fff
+static s16 s_slide_vx[MAX_PLAYERS];
+static s16 s_slide_vy[MAX_PLAYERS];
+static s16 s_slide_x[MAX_PLAYERS];
+static s16 s_slide_y[MAX_PLAYERS];
 
 /* Net play (ADR-035): volleys are legal once both bounces are done. */
 #define AI_VOLLEYS_LEGAL() \
@@ -95,6 +102,8 @@ void ai_initialize(void)
         s_open_aim[i] = AI_AIM_PATTERN;
         s_volley_check[i] = 0;
         s_last_think[i] = 0;
+        s_slide_vx[i] = AI_NO_SPEED;
+        s_slide_vy[i] = AI_NO_SPEED;
     }
 }
 
@@ -567,6 +576,7 @@ typedef char ai_windup_skip_is_3[PLAYER_WINDUP_FRAMES - 1 == 3 ? 1 : -1];
 
 static u8 ai_swing_connects(const Player *player)
 {
+    u8 slot;
     u8 step = 1;
     u8 n;
     u8 volleys;
@@ -591,10 +601,23 @@ static u8 ai_swing_connects(const Player *player)
     s_reach_x = player->x_fp;
     s_reach_y = player->y_fp;
     if (s_style->footwork) {
-        s_reach_x += ai_slide(player->vx_fp,
-            g_paddle_swing_limit[player->paddle]);
-        s_reach_y += ai_slide(player->vy_fp,
-            g_paddle_swing_limit[player->paddle]);
+        /* The slide depends only on the speed within a match (the paddle's
+         * limit and the friction are the match's): a running player's
+         * speed holds, so the last answer is kept per slot. On ICE the
+         * slide is a long loop (the doubles budget, modifiers_fun). */
+        slot = s_slot;
+        if (player->vx_fp != s_slide_vx[slot]) {
+            s_slide_vx[slot] = player->vx_fp;
+            s_slide_x[slot] = ai_slide(player->vx_fp,
+                g_paddle_swing_limit[player->paddle]);
+        }
+        if (player->vy_fp != s_slide_vy[slot]) {
+            s_slide_vy[slot] = player->vy_fp;
+            s_slide_y[slot] = ai_slide(player->vy_fp,
+                g_paddle_swing_limit[player->paddle]);
+        }
+        s_reach_x += s_slide_x[slot];
+        s_reach_y += s_slide_y[slot];
     }
     if (!g_ball_paced && (AI_WINDOW_MISSES(g_ball.x_fp, g_ball.vx_fp,
             s_reach_x, g_hit_box.reach_x, g_hit_box.reach_x_span) ||

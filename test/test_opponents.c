@@ -104,6 +104,7 @@ static void play_match(u8 p1_wins)
             game_update(intents);
     }
     assert(g_game_state.phase == GAME_PHASE_MATCH_RESULT);
+    game_update(intents);       /* the result's next frame writes the save */
 }
 
 static void test_ladder(void)

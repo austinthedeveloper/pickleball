@@ -294,6 +294,9 @@ typedef struct {
 void save_initialize(void);
 /* Writes g_save to the older copy. Call only at safe points. */
 void save_write(void);
+/* A write save_record_match left for the next frame, if any (the match
+ * result calls it each frame; save_write does it too). */
+void save_flush(void);
 /* Back to defaults and written to both copies. */
 void save_clear(void);
 /* Zeroes the records and their initials (settings stay) and writes. */

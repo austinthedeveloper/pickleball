@@ -127,8 +127,10 @@ static void test_records(void)
     save_record_rally(9);
     assert(g_save.records.longest_rally == 12);
 
-    /* Written with the match, and loaded back. */
+    /* Written with the match (on the next frame: save_flush), and loaded
+     * back. */
     save_record_match(MATCH_SINGLES, 1, 1, 1);
+    save_flush();
     memset(&g_save, 0, sizeof(g_save));
     save_initialize();
     assert(g_save.records.longest_rally == 12);

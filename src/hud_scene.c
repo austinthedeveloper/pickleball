@@ -117,6 +117,16 @@ static u8 s_modifiers_row_drawn[MODIFIERS_ROWS];
  * worse than an occasional dropped frame. */
 #define HUD_TITLE_MAX_WAITS 6
 static u8 s_title_waits;
+/* A match's staged steps wait the same way once the frame's work passes
+ * this scanline: the heaviest (the point banner) costs about 86, and a
+ * doubles rally's contact or point frame already reaches 130-140 with
+ * three CPUs thinking (KNOWN_ISSUES #35). A step a frame late shows
+ * nothing; a dropped frame does. At most HUD_TITLE_MAX_WAITS in a row. */
+#define HUD_MATCH_SCANLINE_LIMIT 136
+/* ...for at most this many frames in a row (a third of a second): forced
+ * sooner, a waited step landed on a heavy frame itself. */
+#define HUD_MATCH_MAX_WAITS 20
+static u8 s_match_waits;
 
 
 /* The title prompt's rows (BANNER_ROW - 1 and its panel) as last drawn, for
@@ -2158,12 +2168,18 @@ void hud_scene_update(void)
     if (s_scene_step < HUD_STEP_DONE && !busy && HUD_IS_TITLE(key) &&
             hud_title_wait(hud_title_step_limit(s_scene_step))) {
         busy = 1;
+    } else if (s_scene_step < HUD_STEP_DONE && !busy && !HUD_IS_TITLE(key) &&
+            profile_scanline() > HUD_MATCH_SCANLINE_LIMIT &&
+            s_match_waits < HUD_MATCH_MAX_WAITS) {
+        ++s_match_waits;
+        busy = 1;
     } else if (s_scene_step < HUD_STEP_DONE && !busy) {
         /* The logo steps between two title views draw nothing, so the
          * title area may still draw on their frames (M4-UI-01). */
         idle = HUD_IS_TITLE(key) && HUD_IS_TITLE(s_prev_scene) &&
             (s_scene_step == HUD_STEP_BIG || s_scene_step == HUD_STEP_EXTRA);
         PROFILE_MARK(15);
+        s_match_waits = 0;
         hud_scene_step(key, s_scene_step);
         /* The title: CLEAR, BIG, EXTRA (the logo's second row), PROMPT,
          * and a new prompt's text in halves (EXTRA2, EXTRA3). */
@@ -2218,6 +2234,7 @@ void hud_scene_initialize(void)
     s_title_view = HUD_TITLE_UNKNOWN;
     s_title_part = 0;
     s_title_waits = 0;
+    s_match_waits = 0;
     s_prompt_page = 0xff;
     s_prompt_text = 0;
     s_title_stale = 0xff;

@@ -640,6 +640,7 @@ int main(void)
     g_next_opponent = 0;
     game_start_attract();
     render_initialize();
+    g_match_started = 0;
     /* render_initialize applied the attract config already. */
     g_match_config_changed = 0;
     /* Restart timing after the forced-blank uploads. */
@@ -746,6 +747,13 @@ int main(void)
             render_apply_match_config();
             hud_scene_invalidate();
             g_match_config_changed = 0;
+            s_switched = 1;
+        }
+        /* A rematch (or any new match set up in game_update) is a switch
+         * too, though its config is the same: game_new_match and the first
+         * draw run past one VBlank (KNOWN_ISSUES #35). */
+        if (g_match_started) {
+            g_match_started = 0;
             s_switched = 1;
         }
         render_prepare();

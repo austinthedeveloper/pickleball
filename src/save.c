@@ -127,8 +127,12 @@ static void save_defaults(void)
     g_save.career_active = CAREER_NONE;
 }
 
+/* A write waiting for the next frame (save_write_soon). */
+static u8 s_write_pending;
+
 void save_write(void)
 {
+    s_write_pending = 0;
     s_current ^= 1;
     ++g_save.sequence;
     g_save.checksum = save_checksum(&g_save);
@@ -359,6 +363,7 @@ static void save_remap_kitchen_v10(void)
 
 void save_initialize(void)
 {
+    s_write_pending = 0;
     static u8 raw[2][SAVE_RAW_BYTES];
     u8 valid0;
     u8 valid1;
@@ -478,5 +483,13 @@ void save_record_match(u8 mode, u8 vs_cpu, u8 won, u8 points_against)
             s_streak_held = 0;
         }
     }
-    save_write();
+    /* On the next frame (save_flush): the match's last frame is the
+     * game's heaviest, and the records are in RAM already. */
+    s_write_pending = 1;
+}
+
+void save_flush(void)
+{
+    if (s_write_pending)
+        save_write();
 }

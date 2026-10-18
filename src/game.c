@@ -60,6 +60,9 @@ void game_set_phase(u8 phase)
     g_flair.wake = 1;                   /* presentation only (ADR-064) */
 }
 
+/* Set by game_new_match: main.c counts the frame as a scene switch. */
+u8 g_match_started;
+
 void game_initialize(void)
 {
     /* Zero padding too: the struct is compared whole by RST-01 and traces. */
@@ -162,6 +165,7 @@ void game_new_match(void)
 {
     g_next_opponent = 0;
     g_back_to_park = 0;
+    g_match_started = 1;            /* main.c: this frame is a switch */
     /* A record beaten in a match left early waits for the next game over
      * (ADR-040), which asks for its initials. */
     g_career_new_unlocks = 0;
@@ -385,6 +389,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
 
 static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 {
+    save_flush();                       /* the match's records */
     game_freeze_players(g_game_state.match_winner);
     if (g_attract) {
         if (g_game_state.phase_timer >= GAME_ATTRACT_RESULT_FRAMES)

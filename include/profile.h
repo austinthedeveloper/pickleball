@@ -12,6 +12,10 @@ enum { PROFILE_STAGES = 16 };
 
 /* Main-loop iterations that missed their VBlank (frame-overrun latch). */
 extern u16 g_overrun_frames;
+/* The main-loop iterations (g_loop_count) of the first and last overrun. */
+extern u16 g_overrun_loop;
+extern u16 g_overrun_first_loop;
+extern u16 g_overrun_first_work;    /* g_work_scanline then */
 /* Main-loop iterations since boot (diagnostics and smoke probes). */
 extern u16 g_loop_count;
 /* Scanline reached when the frame's CPU work finished; worst case kept. */
@@ -25,6 +29,8 @@ extern u16 g_vblank_used_max;
 /* Per-stage worst and wrapping-sum scanline costs. */
 extern u16 g_stage_scanline_max[PROFILE_STAGES];
 extern u16 g_stage_scanline_sum[PROFILE_STAGES];
+/* The main-loop iteration (g_loop_count) each stage's maximum was set on. */
+extern u16 g_stage_max_loop[PROFILE_STAGES];
 
 void profile_initialize(void);
 /* The PPU's current scanline (0-261; VBlank from 225). */

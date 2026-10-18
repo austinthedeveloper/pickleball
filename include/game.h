@@ -86,6 +86,9 @@ void game_start_match(void);
  * and that mode's ladder starts over. */
 void game_quit_match(void);
 void game_set_phase(u8 phase);
+/* A new match was set up (game_new_match): main.c's frame accounting treats
+ * that frame as a scene switch and clears it. */
+extern u8 g_match_started;
 void game_update(const PlayerIntent intents[MAX_PLAYERS]);
 /* Nonzero when the ball's pace varies by frame: a slow ball (ADR-025),
  * BALL SPEED off 100% (ADR-049), or FAST BALL (ADR-033). Otherwise it

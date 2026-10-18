@@ -7,11 +7,16 @@
 #define VISIBLE_SCANLINES 225
 
 u16 g_overrun_frames;
+u16 g_overrun_loop;
+u16 g_overrun_first_loop;
+u16 g_overrun_first_work;
 u16 g_loop_count;
 u16 g_work_scanline;
 u16 g_work_scanline_max;
 u16 g_vblank_used_max;
 u16 g_stage_scanline_max[PROFILE_STAGES];
+/* The main-loop iteration (g_loop_count) each maximum was set on. */
+u16 g_stage_max_loop[PROFILE_STAGES];
 u16 g_stage_scanline_sum[PROFILE_STAGES];
 
 static u16 s_last_vblank;
@@ -37,12 +42,15 @@ void profile_initialize(void)
     u8 i;
 
     g_overrun_frames = 0;
+    g_overrun_loop = 0;
+    g_overrun_first_loop = 0;
     g_loop_count = 0;
     g_work_scanline = 0;
     g_work_scanline_max = 0;
     g_vblank_used_max = 0;
     for (i = 0; i < PROFILE_STAGES; ++i) {
         g_stage_scanline_max[i] = 0;
+        g_stage_max_loop[i] = 0;
         g_stage_scanline_sum[i] = 0;
     }
     s_last_vblank = snes_vblank_count;
@@ -84,8 +92,14 @@ void profile_frame_end(void)
 {
     u16 now = snes_vblank_count;
 
-    if ((u16)(now - s_last_vblank) > 1)
+    if ((u16)(now - s_last_vblank) > 1) {
+        if (g_overrun_frames == 0) {
+            g_overrun_first_loop = g_loop_count;
+            g_overrun_first_work = g_work_scanline;
+        }
         ++g_overrun_frames;
+        g_overrun_loop = g_loop_count;
+    }
     s_last_vblank = now;
 }
 
@@ -96,8 +110,10 @@ void profile_mark(u8 stage)
     u16 line = profile_scanline();
     u16 used = line >= s_stage_start ? line - s_stage_start :
         line + SCANLINES_PER_FRAME - s_stage_start;
-    if (used > g_stage_scanline_max[stage])
+    if (used > g_stage_scanline_max[stage]) {
         g_stage_scanline_max[stage] = used;
+        g_stage_max_loop[stage] = g_loop_count;
+    }
     g_stage_scanline_sum[stage] += used;
     s_stage_start = line;
 }
