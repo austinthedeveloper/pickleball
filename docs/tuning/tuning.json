@@ -1,5 +1,5 @@
 {
-  "tuning_version": 1,
+  "tuning_version": 2,
   "generated_by": "make tuning-export (tools/tuning_export.py) from the game's headers and tables; do not edit. See docs/TUNING.md.",
   "units": {
     "frame": "One simulation step. 60 a second (NTSC); the game has no PAL timing.",
@@ -1101,7 +1101,7 @@
       "note": "[captain, partner] per ladder rung, as authored (singles plays only the captain).",
       "value": [
         [
-          {"late_period": 3, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
           {"late_period": 2, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 22, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
         ],
         [
@@ -1118,15 +1118,15 @@
         ],
         [
           {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 3, "reaction": 0, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 3, "reaction": 3, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 3, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 4, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 20, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 5, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
@@ -1155,7 +1155,7 @@
         ],
         [
           {"late_period": 2, "reaction": 14, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 2, "reaction": 14, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 2, "reaction": 10, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 2, "reaction": 13, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
@@ -1192,7 +1192,7 @@
         ],
         [
           {"late_period": 2, "reaction": 9, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 2, "reaction": 9, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 2, "reaction": 5, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 2, "reaction": 8, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
@@ -1200,7 +1200,7 @@
         ],
         [
           {"late_period": 2, "reaction": 5, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 18, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 2, "reaction": 5, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 19, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 3, "reaction": 5, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 19, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 2, "reaction": 5, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 20, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
@@ -1212,7 +1212,7 @@
       "note": "opponent_styles on MEDIUM (unchanged).",
       "value": [
         [
-          {"late_period": 3, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
           {"late_period": 2, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 22, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
         ],
         [
@@ -1229,15 +1229,15 @@
         ],
         [
           {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 3, "reaction": 0, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 3, "reaction": 3, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 3, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 4, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 20, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 7, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 5, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
@@ -1249,7 +1249,7 @@
       "note": "opponent_styles after HARD's adjustment.",
       "value": [
         [
-          {"late_period": 6, "reaction": 3, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 17, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 5, "reaction": 3, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 17, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
           {"late_period": 5, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 23, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
         ],
         [
@@ -1266,15 +1266,15 @@
         ],
         [
           {"late_period": 6, "reaction": 1, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 6, "reaction": 1, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 6, "reaction": 0, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 6, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 21, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 6, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 21, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 8, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 21, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 9, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
-          {"late_period": 9, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 22, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+          {"late_period": 12, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 22, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
         ],
         [
           {"late_period": 9, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 23, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
@@ -1296,7 +1296,7 @@
     }
   },
   "sources": {
-    "assets/source/opponents.json": "c7623739db0fa460",
+    "assets/source/opponents.json": "4bdf3ca01ebbf114",
     "assets/source/paddles.json": "980979af85d09689",
     "assets/source/career.json": "876f110235c66697"
   }
