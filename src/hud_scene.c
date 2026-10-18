@@ -638,8 +638,8 @@ static const char *hud_result_prompt(void)
     return "@ REMATCH  START MENU";
 }
 
-/* After a rated park game (ADR-070): "RATED 3.4 TO 3.6", or a court it
- * opened, "3.5-4.5 OPEN! RATED 3.6". */
+/* After a rated park game (ADR-070): "PARK POINTS 14 TO 16", or a court
+ * it opened, "CLUB COURT OPEN! 16 PTS". */
 static void hud_result_rating(void)
 {
     static char text[29];
@@ -649,13 +649,15 @@ static void hud_result_rating(void)
         return;
     if (g_career_park_opened != OPEN_NONE) {
         at = text_append(at, open_court_level_name(g_career_park_opened));
-        at = text_append(at, " OPEN! RATED ");
+        at = text_append(at, " COURT OPEN! ");
+        at = text_count(at, open_rating_points(g_career_park_after));
+        text_append(at, " PTS");
     } else {
-        at = text_append(at, "RATED ");
-        at = text_tenths(at, g_career_park_before);
+        at = text_append(at, "PARK POINTS ");
+        at = text_count(at, open_rating_points(g_career_park_before));
         at = text_append(at, " TO ");
+        text_count(at, open_rating_points(g_career_park_after));
     }
-    text_tenths(at, g_career_park_after);
     hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, text);
 }
 

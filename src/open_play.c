@@ -37,7 +37,7 @@ u8 open_team_court(u8 team)
 const char *open_court_level_name(u8 court)
 {
     static const char *const names[OPEN_COURTS] = {
-        "<3.5", "3.5-4.5", "4.5+"
+        "ROOKIE", "CLUB", "CHAMP"
     };
     return names[court < OPEN_COURTS ? court : 0];
 }
@@ -52,7 +52,7 @@ u8 open_court_difficulty(u8 court, u8 saved_difficulty)
     return levels[court < OPEN_COURTS ? court : 0];
 }
 
-/* Each court's floor (ADR-070): its level name's lower bound. */
+/* Each court's floor (ADR-070), in tenths: 15 and 25 park points. */
 static const u8 s_court_floor[OPEN_COURTS] = { 0, 35, 45 };
 
 u8 open_court_floor(u8 court)
@@ -89,6 +89,11 @@ void open_play_rate(u8 rating, u8 best_court)
     g_open_play.rating = rating;
     g_open_play.best_court = rating == OPEN_RATING_NONE ||
         best_court >= OPEN_COURTS ? OPEN_COURTS - 1 : best_court;
+}
+
+u8 open_rating_points(u8 rating)
+{
+    return rating > OPEN_RATING_MIN ? (u8)(rating - OPEN_RATING_MIN) : 0;
 }
 
 u8 open_court_open(u8 court)
@@ -349,7 +354,7 @@ static u8 court_start_game(u8 c)
     u8 side;
 
     /* The two off go to the back of their stacks first, so a court whose
-     * stack is short keeps its own level playing (the 4.5+ court has two
+     * stack is short keeps its own level playing (the CHAMP court has two
      * teams); anyone waiting is ahead of them. */
     ++g_open_play.lineup;
     court->playing[0] = OPEN_NONE;

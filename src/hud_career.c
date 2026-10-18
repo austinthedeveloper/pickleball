@@ -5,6 +5,7 @@
 #include "hud_internal.h"
 #include "hud_tiles.h"
 #include "museum.h"
+#include "open_play.h"
 #include "paddle_stats.h"
 #include "save.h"
 #include "text.h"
@@ -162,9 +163,9 @@ static u8 hud_career_card_part(u8 part)
         name[CAREER_NAME] = 0;
         hud_text(HUD_HEADER_COL(RECORDS_COL, RECORDS_WIDTH, CAREER_NAME),
             TITLE_MENU_ROW, HUD_PAL_YELLOW, name);
-        /* The park rating (ADR-070), under the name. */
-        text_tenths(text_append(rating, "PARK RATING "),
-            career_park_rating(player));
+        /* The park points (ADR-070), under the name. */
+        text_count(text_append(rating, "PARK POINTS "),
+            open_rating_points(career_park_rating(player)));
         hud_text(RECORDS_COL + 1, TITLE_MENU_ROW + 1, HUD_PAL_WHITE, rating);
         return 0;
     case 2:

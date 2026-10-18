@@ -13,12 +13,13 @@
  * your paddle in a court's stack, and play when your turn comes. Pure:
  * render_park.c draws it and main.c runs the match.
  *
- * The courts are skill levels (ADR-034, amended): <3.5, 3.5-4.5, and 4.5+.
+ * The courts are skill levels (ADR-034, amended): ROOKIE, CLUB, and CHAMP.
  * Each ladder team calls one home (the ladder's order is its difficulty),
  * and your game there is EASY, MEDIUM, or HARD.
  *
- * A career player has a park rating (ADR-070), in tenths (30 is 3.0): a
- * game moves it, and a court opens once it reaches the court's level.
+ * A career player has a park rating (ADR-070): a game moves it, and a
+ * court opens once it reaches the court's level. It is kept in tenths
+ * (30 is 3.0) and shown as park points, 0 to 40 (open_rating_points).
  * Unrated (no career player, or KID), every court is open.
  */
 
@@ -86,8 +87,8 @@ enum {
      * than a loss moves you down, so winning a third of your games there
      * holds your place; below your level a win counts for nothing. */
     OPEN_RATING_NONE = 0,           /* unrated: every court open */
-    OPEN_RATING_START = 30,         /* a new player: 3.0 */
-    OPEN_RATING_MIN = 20,
+    OPEN_RATING_START = 30,         /* a new player: 10 points */
+    OPEN_RATING_MIN = 20,           /* 0 points */
     OPEN_RATING_MAX = 60,
     OPEN_RATING_WIN = 2,            /* a win at your level */
     OPEN_RATING_WIN_UP = 3,         /* a win on a court above it */
@@ -161,7 +162,7 @@ u8 open_play_update(s16 move_x, s16 move_y, u8 b_pressed);
  * ends and the next one starts. */
 void open_play_return(u8 won, u8 points_for, u8 points_against);
 
-/* A court's skill level as text ("<3.5", "3.5-4.5", "4.5+"), and the
+/* A court's skill level as text ("ROOKIE", "CLUB", "CHAMP"), and the
  * difficulty (ADR-025) of your game there: EASY, MEDIUM, HARD; KID (the
  * saved difficulty) stays KID, for its swing assist. */
 const char *open_court_level_name(u8 court);
@@ -173,12 +174,16 @@ u8 open_team_court(u8 team);
  * you (main.c sets them from the career player when the park opens and
  * after each game); OPEN_RATING_NONE opens every court. */
 void open_play_rate(u8 rating, u8 best_court);
-/* The lowest rating a court opens at (tenths: 0, 35, 45). */
+/* The lowest rating a court opens at (tenths: 0, 35, 45; 15 and 25
+ * points). */
 u8 open_court_floor(u8 court);
 /* The court whose range holds a rating. */
 u8 open_rating_court(u8 rating);
 /* A rating after a game on a court, won or lost. */
 u8 open_rating_after(u8 rating, u8 court, u8 won);
+/* A rating as the park points shown (0 to 40): no decimals, no 1990s
+ * player knew a 3.5. */
+u8 open_rating_points(u8 rating);
 /* Nonzero when you may stack at a court. */
 u8 open_court_open(u8 court);
 

@@ -213,7 +213,7 @@ static void test_park_rating(void)
     career_rate_park(p, 0, 1);
     assert(g_career_park_before == 34 && g_career_park_after == 36);
     assert(g_career_park_opened == 1 && career_park_court(p) == 1);
-    /* A loss drops the rating below 3.5; the court stays open. */
+    /* A loss drops the rating below the CLUB court's; it stays open. */
     career_rate_park(p, 1, 0);
     career_rate_park(p, 1, 0);
     assert(career_park_rating(p) == 34 && career_park_court(p) == 1);

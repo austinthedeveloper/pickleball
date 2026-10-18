@@ -1,6 +1,6 @@
-# The park rating (ADR-070). Run with the pokes in docs/decisions/ADR-070:
-# a career player ACE rated 3.4 with the first court. OPEN PLAY (Down
-# twice), into the park: OPEN PLAY 3.4. Up to court 2's rack: OPENS AT 3.5,
+# Park points (ADR-070). Run with the pokes in docs/decisions/ADR-070:
+# a career player ACE on 14 points with the first court. OPEN PLAY (Down
+# twice), into the park: OPEN PLAY 14 PTS. Up to the CLUB rack: OPENS AT 15,
 # and B is refused. Left to court 1's rack, stack, step back, and wait for
 # the game (the pokes start it at 10-0); after it, the rating's move.
 70 71 down

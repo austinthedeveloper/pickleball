@@ -279,16 +279,17 @@ static void park_draw_message(u8 message, u8 arg)
         *at++ = '-';
         at = text_count(at, g_open_play.last_score[1]);
         if (g_open_play.rating != OPEN_RATING_NONE) {
-            at = text_append(at, "  RATED ");
-            at = text_tenths(at, g_open_play.rating);
+            at = text_append(at, "  ");
+            at = text_count(at, open_rating_points(g_open_play.rating));
+            at = text_append(at, " PTS");
         }
         break;
     case PARK_MSG_LOCKED:
-        /* "OPENS AT 3.5  YOU'RE 3.2" (ADR-070) */
+        /* "OPENS AT 15 PTS  YOU HAVE 12" (ADR-070) */
         at = text_append(at, "OPENS AT ");
-        at = text_tenths(at, open_court_floor(arg));
-        at = text_append(at, "  YOU'RE ");
-        at = text_tenths(at, g_open_play.rating);
+        at = text_count(at, open_rating_points(open_court_floor(arg)));
+        at = text_append(at, " PTS  YOU HAVE ");
+        at = text_count(at, open_rating_points(g_open_play.rating));
         break;
     case PARK_MSG_2P_JOINED:
         at = text_append(at, "2P JOINED: YOUR PARTNER!");
@@ -317,12 +318,15 @@ static void park_draw_message(u8 message, u8 arg)
         at = text_append(at, "THE CLUBHOUSE  START EXIT");
         break;
     default:
-        /* "OPEN PLAY 3.4  START EXIT": your rating, when rated. */
-        at = text_append(at, g_open_play.two_players ? "YOU AND 2P" :
-            "OPEN PLAY");
-        if (g_open_play.rating != OPEN_RATING_NONE) {
-            *at++ = ' ';
-            at = text_tenths(at, g_open_play.rating);
+        /* "OPEN PLAY 14 PTS  START EXIT": your points, when rated. */
+        if (g_open_play.rating == OPEN_RATING_NONE) {
+            at = text_append(at, g_open_play.two_players ? "YOU AND 2P" :
+                "OPEN PLAY");
+        } else {
+            at = text_append(at, g_open_play.two_players ? "YOU+2P " :
+                "OPEN PLAY ");
+            at = text_count(at, open_rating_points(g_open_play.rating));
+            at = text_append(at, " PTS");
         }
         at = text_append(at, "  START EXIT");
         break;
