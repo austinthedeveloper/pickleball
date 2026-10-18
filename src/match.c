@@ -300,24 +300,31 @@ void match_compose_palette(u8 slot, u16 out[16])
         g_match_config.skin_id[slot], g_match_config.paddle_id[slot], out);
 }
 
-void match_compose_parts(u8 palette_id, u8 skin_id, u8 paddle_id,
-    u16 out[16])
+void match_compose_look(const u16 *team, const u16 *skin, const u16 *paddle,
+    u16 hair, u16 out[16])
 {
-    const u16 *team = g_pal_team[palette_id & 3];
-    const u16 *skin = g_pal_skin[skin_id % SKIN_COUNT];
-    const u16 *paddle = g_pal_paddle[paddle_id % PADDLE_PART_COUNT];
     u8 i;
 
     out[0] = 0;
-    out[1] = g_pal_shared[0][0];
+    out[PAL_SLOT_OUTLINE] = g_pal_shared[0][0];
     for (i = 0; i < 3; ++i) {
-        out[2 + i] = skin[i];
-        out[11 + i] = paddle[i];
+        out[PAL_SLOT_SKIN + i] = skin[i];
+        out[PAL_SLOT_PADDLE + i] = paddle[i];
     }
     for (i = 0; i < 6; ++i)
-        out[5 + i] = team[i];
-    out[14] = g_pal_shared[0][1];
-    out[15] = skin[3];
+        out[PAL_SLOT_TEAM + i] = team[i];
+    out[PAL_SLOT_HIGHLIGHT] = g_pal_shared[0][1];
+    out[PAL_SLOT_HAIR] = hair;
+}
+
+void match_compose_parts(u8 palette_id, u8 skin_id, u8 paddle_id,
+    u16 out[16])
+{
+    const u16 *skin = g_pal_skin[skin_id % SKIN_COUNT];
+
+    /* The skin part's fourth colour is its hair. */
+    match_compose_look(g_pal_team[palette_id & 3], skin,
+        g_pal_paddle[paddle_id % PADDLE_PART_COUNT], skin[3], out);
 }
 
 u8 match_team_palette(u8 team)

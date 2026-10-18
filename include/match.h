@@ -95,6 +95,20 @@ u8 match_config_palettes_unique(void);
 /* Builds a slot's 16-colour OBJ palette from shared/team/skin/paddle parts. */
 void match_compose_palette(u8 slot, u16 out[16]);
 /* Same composition from explicit part IDs (stress scene, select screens). */
+/* A player's OBJ palette (ADR-013's contract): 0 clear, the shared outline
+ * and highlight, a three-colour skin ramp, the team's six, the paddle's
+ * three, and the hair. */
+enum {
+    PAL_SLOT_OUTLINE = 1,
+    PAL_SLOT_SKIN = 2,          /* 2-4 */
+    PAL_SLOT_TEAM = 5,          /* 5-10 */
+    PAL_SLOT_PADDLE = 11,       /* 11-13 */
+    PAL_SLOT_HIGHLIGHT = 14,
+    PAL_SLOT_HAIR = 15
+};
+/* The palette from its parts: team (6 colours), skin (3), paddle (3). */
+void match_compose_look(const u16 *team, const u16 *skin, const u16 *paddle,
+    u16 hair, u16 out[16]);
 void match_compose_parts(u8 palette_id, u8 skin_id, u8 paddle_id,
     u16 out[16]);
 /* HUD label colour for a team: the palette of its first slot (0 or 2). */

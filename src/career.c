@@ -171,21 +171,10 @@ static u16 career_rule_count(const CareerPlayer *player, u8 rule, u16 value)
 void career_compose_with(const CareerPlayer *player, u8 shirt, u8 paddle,
     u16 out[16])
 {
-    const u16 *team = g_pal_team[shirt % PAL_COUNT];
-    const u16 *skin = g_career_skins[player->skin % CAREER_SKINS];
-    const u16 *part = g_pal_paddle[paddle % PADDLE_PART_COUNT];
-    u8 i;
-
-    out[0] = 0;
-    out[1] = g_pal_shared[0][0];
-    for (i = 0; i < 3; ++i) {
-        out[2 + i] = skin[i];
-        out[11 + i] = part[i];
-    }
-    for (i = 0; i < 6; ++i)
-        out[5 + i] = team[i];
-    out[14] = g_pal_shared[0][1];
-    out[15] = g_career_hair[player->hair % CAREER_HAIRS];
+    match_compose_look(g_pal_team[shirt % PAL_COUNT],
+        g_career_skins[player->skin % CAREER_SKINS],
+        g_pal_paddle[paddle % PADDLE_PART_COUNT],
+        g_career_hair[player->hair % CAREER_HAIRS], out);
 }
 
 void career_compose_palette(const CareerPlayer *player, u16 out[16])
