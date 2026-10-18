@@ -63,6 +63,35 @@ regular-bot doubles did not before, with the short-serve change alone):
 DAD (unchanged style) wins more for the bot only from the soft central
 short serves.
 
+*Amended 2026-10-18 (KNOWN_ISSUES #38):* at 60 matches a rung these
+tables were in order by luck in places. With `make stats ... PHASES=4`
+(the doubles CPU schedule's four phases added up) and `MATCHES=80`, and
+the tool's hour-long cap replaced by ten minutes a match (it had cut the
+upper rungs to 576-700 of 960), the doubles regular-bot table had GOTH
+CLUB, SURF CREW, and TWINS within about one standard error of each
+other, and singles had MARGE easier than DAD. The tool now also compares
+rungs by win rate, not wins. Retuned (`TUNING_VERSION` 2): VLAD reaction 0
+(was 4; `reaction` steps by four frames for a lane cover, and more of it
+made VLAD harder, not easier), LANI late every 4th (was 3rd), MIA every
+7th (was 5th), DAD every 2nd (was 3rd). Bot wins, before → after:
+
+| Rung | Singles (of 240) | Doubles, regular bot (of 960) | Doubles, net bot (of 960) |
+|---|---|---|---|
+| 1 | DAD 186 → 220 | HENDERSON 960 → 960 | 960 → 960 |
+| 2 | MARGE 206 → 206 | SNOWBIRDS 960 → 960 | 960 → 960 |
+| 3 | BRAD 185 → 185 | GYM BROS 783 → 783 | 939 → 939 |
+| 4 | PETE 128 → 128 | PIRATES 701 → 701 | 888 → 888 |
+| 5 | RAVEN 74 → 74 | GOTH CLUB 313 → 409 | 772 → 675 |
+| 6 | KAI 69 → 69 | SURF CREW 298 → 337 | 663 → 611 |
+| 7 | MAX 40 → 40 | TWINS 275 → 186 | 542 → 406 |
+| 8 | ACE 37 → 37 | CHAMPS 115 → 115 | 214 → 214 |
+
+At 1,920 a rung the doubles gaps from GOTH CLUB down are 114 and 286
+(regular bot) and 126 and 435 (net bot), five or more standard errors.
+Singles RAVEN/KAI and MAX/ACE remain ties (KNOWN_ISSUES #40): separating
+them moves captains, and so doubles, with ACE already at M4-OPP-06's
+floor.
+
 ## Consequences
 
 - EASY and HARD scale the new styles by the same rules (ADR-025): EASY

@@ -158,3 +158,4 @@ current one.
 | Version | Release | What changed |
 |---|---|---|
 | 1 | 0.23.1 | The first export: the game as of 0.23.1, including the ladder rebalance (ADR-062), CPU serve power and duds (ADR-058), slice (ADR-056, 057), and GHOST BALL, POPCORN and ICE (ADR-053). |
+| 2 | next | The doubles ladder's upper rungs spaced out (KNOWN_ISSUES #38, ADR-062 amended): VLAD reaction 0 (was 4), LANI late every 4th (was 3rd), MIA every 7th (was 5th); DAD late every 2nd (was 3rd), easier than MARGE in singles. |

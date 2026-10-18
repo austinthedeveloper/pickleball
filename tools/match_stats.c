@@ -20,6 +20,10 @@
  *                                      # three bot skills (LATE 0)
  *
  * SPEED (6th): BALL SPEED percent (70..120 by 5; ADR-049), default 100.
+ * PHASES (7th): doubles only, how many phases of the CPU schedule to add
+ * up (1-4; KNOWN_ISSUES #37, #38): phase p starts the loop count at p, so
+ * PHASES 4 plays each table four times over with the lane covers thinking
+ * on different frames. Default 1 (phase 0 alone).
  * MODE (5th): 0 singles, 1 doubles, +2 the net bot. OPPONENT -2 runs every
  * ladder opponent in order and prints a table; LATE 0 adds up three bot
  * skills (late every 3rd, 4th, and 5th shot) like the ADR tables.
@@ -58,12 +62,15 @@ static void net_bot(void)
 }
 
 static u8 s_speed;
+static int s_phases = 1;
 
 static void play(int late, int matches, int opponent, int difficulty,
-    int mode, Stats *stats)
+    int mode, int phase, Stats *stats)
 {
     unsigned long frames = 0;
-    unsigned long cap = 60UL * 60 * 60;
+    /* Ten minutes a match: a safety net for a stuck match, not a limit
+     * (an hour in all cut big runs short). */
+    unsigned long cap = 60UL * 60 * 10 * (unsigned long)matches;
     u8 previous = 0xff;
     u8 counted = 0;
     int match = 0;
@@ -91,7 +98,7 @@ static void play(int late, int matches, int opponent, int difficulty,
         /* Doubles: the CPUs on main.c's schedule (a lane-covering CPU
          * thinks every fourth frame). */
         if (mode & MODE_DOUBLES)
-            test_step_scheduled(intents, (u16)frames);
+            test_step_scheduled(intents, (u16)(frames + phase));
         else
             test_step(intents);
         /* Measuring one opponent: a win's B rematches them here. */
@@ -118,13 +125,18 @@ static void play_skills(int late, int matches, int opponent, int difficulty,
     int mode, Stats *stats)
 {
     int skill;
+    int phase;
+    int phases = (mode & MODE_DOUBLES) ? s_phases : 1;
 
     memset(stats, 0, sizeof(*stats));
-    if (late)
-        play(late, matches, opponent, difficulty, mode, stats);
-    else
-        for (skill = 3; skill <= 5; ++skill)
-            play(skill, matches, opponent, difficulty, mode, stats);
+    for (phase = 0; phase < phases; ++phase) {
+        if (late)
+            play(late, matches, opponent, difficulty, mode, phase, stats);
+        else
+            for (skill = 3; skill <= 5; ++skill)
+                play(skill, matches, opponent, difficulty, mode, phase,
+                    stats);
+    }
 }
 
 static const char *opponent_name(int opponent, int mode)
@@ -143,8 +155,10 @@ int main(int argc, char **argv)
     int difficulty = argc > 4 ? atoi(argv[4]) : DIFFICULTY_MEDIUM;
     int mode = argc > 5 ? atoi(argv[5]) : 0;
     int speed = argc > 6 ? atoi(argv[6]) : 0;
+    int phases = argc > 7 ? atoi(argv[7]) : 1;
     /* SPEED (6th, ADR-049): a ball speed percent; 0 keeps the game's. */
     s_speed = speed ? (u8)speed : OPTIONS_BALL_SPEED;
+    s_phases = phases < 1 ? 1 : phases > 4 ? 4 : phases;
     Stats stats;
     int team;
     int i;
@@ -152,27 +166,34 @@ int main(int argc, char **argv)
     printf("%s, %s bot, P1 late %s; %d matches each on %s\n",
         (mode & MODE_DOUBLES) ? "Doubles (P1 + CPU partner)" : "Singles",
         (mode & MODE_NET_BOT) ? "net" : "regular",
-        late ? "" : "every 3rd/4th/5th", late ? matches : matches * 3,
+        late ? "" : "every 3rd/4th/5th",
+        (late ? matches : matches * 3) *
+            ((mode & MODE_DOUBLES) ? s_phases : 1),
         options_difficulty_name((u8)difficulty));
+    if ((mode & MODE_DOUBLES) && s_phases > 1)
+        printf("  (schedule phases 0-%d added up)\n", s_phases - 1);
     if (late)
         printf("  (P1 mistimes every %d shot(s))\n", late);
 
     if (opponent == -2) {
         /* The ladder (M4-OPP-02): each rung should be harder. */
-        int previous = 0x7fff;
+        /* Compared as win rates: a capped run can finish fewer. */
+        double previous = 2.0;
+        double rate;
         int ordered = 1;
 
         printf("  %-10s %9s %8s %7s\n", "rung", "bot wins", "of", "avg s");
         for (i = 0; i < OPPONENT_COUNT; ++i) {
             play_skills(late, matches, i, difficulty, mode, &stats);
+            rate = stats.matches ? (double)stats.bot_wins / stats.matches :
+                0.0;
             printf("  %d %-10s %7d %8d %7.1f%s\n", i + 1,
                 opponent_name(i, mode), stats.bot_wins, stats.matches,
                 stats.matches ? stats.frames / 60.0 / stats.matches : 0.0,
-                stats.bot_wins > previous ? "  (easier than the rung before)" :
-                "");
-            if (stats.bot_wins > previous)
+                rate > previous ? "  (easier than the rung before)" : "");
+            if (rate > previous)
                 ordered = 0;
-            previous = stats.bot_wins;
+            previous = rate;
         }
         printf("  ladder order: %s\n", ordered ? "yes" : "NO");
         return 0;
