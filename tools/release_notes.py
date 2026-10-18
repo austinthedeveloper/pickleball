@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Release notes for `make publish`: an optional hand-written intro, the
-commits since the previous release tag, and the ROM's checksum. Stdlib only."""
+commits since the previous release tag, the tuning version (ADR-068), and
+the ROM's checksum. Stdlib only."""
 import argparse
 import hashlib
+import json
 import subprocess
 from pathlib import Path
 
@@ -28,6 +30,22 @@ if args.intro:
     lines += [args.intro.read_text("utf-8").strip(), ""]
 lines += [f"## Changes since {previous}" if previous else "## Changes", ""]
 lines += subjects or ["- (no commits)"]
+
+
+def tuning_version(ref):
+    text = git("show", f"{ref}:docs/tuning/tuning.json")
+    return json.loads(text)["tuning_version"] if text else None
+
+
+# Ports follow the tuning version (docs/TUNING.md).
+now = tuning_version("HEAD")
+before = tuning_version(previous) if previous else None
+if now is not None:
+    moved = "unchanged" if before == now else \
+        f"changed from {before}" if before is not None else "first export"
+    lines += ["", "## Tuning", "",
+              f"- Tuning version {now} ({moved} since {previous or 'start'}; "
+              "`docs/TUNING.md`)."]
 lines += ["", "## Download", "",
           f"- `{args.rom.name}`: the ROM. Runs in MesenCE, bsnes, and "
           "flash carts; a physical cart needs 120 ns ROM and 2 KiB battery "

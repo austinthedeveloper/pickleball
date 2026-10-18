@@ -63,7 +63,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check tcc-check clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
+.PHONY: all debug release hardware-test profile assets check host-check asset-check tcc-check tuning-dump tuning-export tuning-check conformance clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
 
 all: debug
 
@@ -116,7 +116,31 @@ host-check: assets
 	done
 
 CC_HOST ?= cc
-check: host-check asset-check tcc-check
+check: host-check asset-check tcc-check tuning-check
+
+# The gameplay tuning as one file for ports (ADR-068, docs/TUNING.md):
+# tuning-export rewrites docs/tuning/tuning.json, tuning-check (in check)
+# fails while it is stale or a value changed without a TUNING_VERSION bump.
+tuning-dump: assets
+	@mkdir -p build/host
+	@python3 tools/tuning_export.py --inc build/host/tuning_constants.inc
+	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
+		-Iassets/generated -Ibuild/host tools/tuning_dump.c $(HOST_CORE) \
+		-o build/host/tuning_dump
+	@build/host/tuning_dump > build/host/tuning_raw.json
+tuning-export: tuning-dump
+	@python3 tools/tuning_export.py --write build/host/tuning_raw.json
+tuning-check: tuning-dump
+	@python3 tools/tuning_export.py --check build/host/tuning_raw.json
+
+# Frame-by-frame traces of fixed match scenarios for ports to diff against
+# (tools/conformance.c, ADR-068): build/conformance/<scenario>.trace.
+conformance: assets
+	@mkdir -p build/host build/conformance
+	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
+		-Iassets/generated -Itest tools/conformance.c $(HOST_CORE) \
+		-o build/host/conformance
+	@build/host/conformance build/conformance
 
 # C that 816-tcc miscompiles (CLAUDE.md): the host tests can't see it.
 tcc-check:

@@ -171,7 +171,7 @@ static s16 move_toward(s16 from, s16 to)
 
 /* ICE (ADR-053): how far (px) a player moving at v (12.4, 0-31) coasts to
  * a stop with the ice's friction, 1: v (v - 1) / 32. */
-static const u8 s_ice_coast[32] = {
+const u8 g_ai_ice_coast[32] = {
     0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 6,
     7, 8, 9, 10, 11, 13, 14, 15, 17, 18, 20, 21, 23, 25, 27, 29
 };
@@ -181,9 +181,9 @@ static s16 move_toward_ice(s16 from, s16 to, s16 v)
 {
     s16 delta = to - from;
 
-    if (delta > 0 && v > 0 && s_ice_coast[v & 31] >= delta)
+    if (delta > 0 && v > 0 && g_ai_ice_coast[v & 31] >= delta)
         return 0;
-    if (delta < 0 && v < 0 && s_ice_coast[(-v) & 31] >= -delta)
+    if (delta < 0 && v < 0 && g_ai_ice_coast[(-v) & 31] >= -delta)
         return 0;
     return move_toward(from, to);
 }

@@ -246,3 +246,9 @@ touching the simulation.
 - [x] `M4-UI-01` Draw the title pages faster.
   - Accept: the records page fills in under about 0.25 s (today about 0.5 s, because rows wait for frames with time left while the demo runs) with zero overruns. One option is an assembly text writer like `hud_fill`.
   - Verified: the records page fills in 4-8 frames after the button (0.07-0.13 s; it was 15-18). `hud_text`'s loop is assembly (`src/asm/hud_text.asm`, a page row about 60 → a few scanlines), the area draws parts back to back while the frame is under its limit, and on the no-op logo steps between title views. The BG3 map is identical at every shot of nine HUD timelines. A new title prompt draws in three steps (panel, two halves): in one step (about 106 scanlines) it dropped a frame on `court.timeline` once the demo got faster.
+
+## Ports
+
+- [x] `M4-PORT-01` A tuning reference for ports: every simulation constant and derived table in one generated, committed file (`docs/tuning/tuning.json`), a `TUNING_VERSION` bumped with any value change, conformance traces a port can diff frame by frame, and `docs/TUNING.md` (units, the port rules, the SNES-limited values).
+  - Accept: `make check` fails while the export is stale or a value changes without a version bump; the export prints the values the game compiles (no number typed twice); golden trace identical; zero overruns on `make perf`.
+  - Verified: [ADR-068](../docs/decisions/ADR-068-tuning-reference.md).

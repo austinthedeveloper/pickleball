@@ -25,12 +25,18 @@ typedef enum {
 } PlayerPose;
 
 enum {
+    /* A swing: windup, then the frames it can meet the ball, then
+     * recovery. */
     PLAYER_WINDUP_FRAMES = 4,
     PLAYER_ACTIVE_FRAMES = 3,
-    /* Standard paddle; paddle SPEED moves these two (ADR-020). */
+    /* The standard paddle's; g_paddle_recovery holds each paddle's
+     * (paddle SPEED, ADR-020). */
     PLAYER_RECOVERY_FRAMES = 7,
 
-    /* 12.4 units: 0.25, 0.1875, 1.5, 0.375 and 0.75 px/frame. */
+    /* 12.4 units per frame: accel 0.25 px/frame/frame (0.1875 on a
+     * diagonal), top speed 1.5 px/frame, friction 0.375 px/frame/frame.
+     * A diagonal's speed limit is the straight one x 181/256
+     * (g_player_diagonal_limit). */
     PLAYER_ACCEL_FP = 4,
     PLAYER_DIAGONAL_ACCEL_FP = 3,
     PLAYER_MAX_SPEED_FP = 24,
@@ -40,9 +46,11 @@ enum {
     PLAYER_ICE_ACCEL_FP = 2,
     PLAYER_ICE_DIAGONAL_ACCEL_FP = 2,
     PLAYER_ICE_FRICTION_FP = 1,
-    /* Diagonal limits use the 181/256 normalization from the spec. */
+    /* Top speed while swinging, 0.75 px/frame, for the standard paddle;
+     * g_paddle_swing_limit holds each paddle's. */
     PLAYER_SWING_MAX_SPEED_FP = 12,
-    /* CPU runs at 80% of human top speed. */
+    /* The default CPU's top speed, 80% of a human's; each opponent's is
+     * its AiStyle.speed (opponents.json). */
     PLAYER_CPU_MAX_SPEED_FP = 19,
 
     PLAYER_SEPARATION_X = 16,

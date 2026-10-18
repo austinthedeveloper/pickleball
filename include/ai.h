@@ -67,6 +67,8 @@ extern AiState g_ai_slots[MAX_PLAYERS];
 /* Play style per slot (ADR-023), set when a match starts; outside AiState,
  * which golden traces compare byte for byte. */
 extern AiStyle g_ai_styles[MAX_PLAYERS];
+/* ICE (ADR-053): px a player at speed v (12.4, 0-31) coasts to a stop. */
+extern const u8 g_ai_ice_coast[32];
 
 /* Swing lookahead probe (exposed for test_ai.c's equivalence check). */
 typedef struct {

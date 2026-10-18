@@ -34,7 +34,12 @@ ROM headless for smoke, perf, and golden checks.
    `ladder order: yes`. Retune with `assets/source/opponents.json`; singles
    plays only each team's captain (first player), so tune the second player
    to change doubles alone.
-5. Something visible: screenshot it (below) and look.
+5. When a simulation value changes (a header constant, a table, or
+   `opponents.json`/`paddles.json`): bump `TUNING_VERSION`
+   (`include/tuning.h`), add its row to `docs/TUNING.md`, and
+   `make tuning-export`. The ports copy `docs/tuning/tuning.json`;
+   `make check` fails until it's current (ADR-068).
+6. Something visible: screenshot it (below) and look.
 
 ## Rules of the code
 

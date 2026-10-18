@@ -1,0 +1,1303 @@
+{
+  "tuning_version": 1,
+  "generated_by": "make tuning-export (tools/tuning_export.py) from the game's headers and tables; do not edit. See docs/TUNING.md.",
+  "units": {
+    "frame": "One simulation step. 60 a second (NTSC); the game has no PAL timing.",
+    "fixed_point": "12.4. A name ending _FP is in 1/16 px: a position, a speed in 1/16 px per frame, or gravity in 1/16 px per frame squared. FP_SHIFT is 4.",
+    "ground": "x runs along the court (baseline 16, net 128, baseline 240); y across it (sidelines 90 and 170). Both are ground pixels of the flat court the rules, physics and AI use; the 3/4 view is a display projection (ADR-011).",
+    "scale": "x: 224 px for 44 ft, 5.09 px/ft. y: 80 px for 20 ft, 4 px/ft. The court is squashed across, so a y speed covers about 27% more feet than the same x speed. Keep these units in a port; don't rescale to a true court.",
+    "frames": "A name ending _FRAMES, and AiStyle.reaction, count frames.",
+    "fractions": "_256 is n/256; paddle multipliers are n/64."
+  },
+  "constants": {
+    "include/court.h": {
+      "about": "Court geometry and player bounds, in ground pixels",
+      "values": {
+        "COURT_BASELINE_LEFT": {
+          "value": 16
+        },
+        "COURT_BASELINE_RIGHT": {
+          "value": 240
+        },
+        "COURT_SIDELINE_TOP": {
+          "value": 90
+        },
+        "COURT_SIDELINE_BOTTOM": {
+          "value": 170
+        },
+        "COURT_NET_X": {
+          "value": 128
+        },
+        "COURT_KITCHEN_LEFT_X": {
+          "value": 92
+        },
+        "COURT_KITCHEN_RIGHT_X": {
+          "value": 164
+        },
+        "COURT_CENTERLINE_Y": {
+          "value": 130
+        },
+        "COURT_NET_HEIGHT": {
+          "value": 12
+        },
+        "PLAYER_RUNOFF_BACK": {
+          "value": 12
+        },
+        "PLAYER_RUNOFF_SIDE": {
+          "value": 10
+        },
+        "PLAYER_NET_GAP": {
+          "value": 8
+        },
+        "PLAYER_SPAWN_X": {
+          "value": 40
+        },
+        "PLAYER_SPAWN_Y": {
+          "value": 150
+        },
+        "PLAYER_CLAMP_MIN_X": {
+          "value": 4
+        },
+        "PLAYER_CLAMP_MAX_X": {
+          "value": 120
+        },
+        "PLAYER_CLAMP_MIN_Y": {
+          "value": 84
+        },
+        "PLAYER_CLAMP_MAX_Y": {
+          "value": 180
+        },
+        "PLAYER_RIGHT_CLAMP_MIN_X": {
+          "value": 136
+        },
+        "PLAYER_RIGHT_CLAMP_MAX_X": {
+          "value": 252
+        }
+      }
+    },
+    "include/ball.h": {
+      "about": "Ball flight and bounce",
+      "values": {
+        "BALL_GRAVITY_FP": {
+          "value": -3,
+          "note": "12.4 units: -0.1875 px/frame^2."
+        },
+        "BALL_BOUNCE_VERTICAL_256": {
+          "value": 141,
+          "note": "Bounce retention as n/256: 141 = 55%, 236 = 92%."
+        },
+        "BALL_BOUNCE_PLANAR_256": {
+          "value": 236
+        },
+        "BALL_MIN_BOUNCE_VZ_FP": {
+          "value": 4
+        },
+        "BALL_START_X": {
+          "value": 104
+        },
+        "BALL_START_Y": {
+          "value": 112
+        },
+        "BALL_START_Z": {
+          "value": 0
+        },
+        "BALL_START_VZ_FP": {
+          "value": 0
+        },
+        "BALL_NO_HITTER": {
+          "value": 255
+        },
+        "BALL_RALLY_INACTIVE": {
+          "value": 0
+        },
+        "BALL_RALLY_LIVE": {
+          "value": 1
+        },
+        "BALL_EVENT_NONE": {
+          "value": 0
+        },
+        "BALL_EVENT_BOUNCE": {
+          "value": 1
+        },
+        "BALL_EVENT_NET_FAULT": {
+          "value": 2
+        },
+        "BALL_EVENT_OUT": {
+          "value": 4
+        }
+      }
+    },
+    "include/collision.h": {
+      "about": "Hit box, shot targets, paces, flight times",
+      "values": {
+        "HIT_REACH_X": {
+          "value": 22
+        },
+        "HIT_REACH_Y": {
+          "value": 16
+        },
+        "HIT_REACH_Z": {
+          "value": 24
+        },
+        "HIT_SWEET_X": {
+          "value": 14,
+          "note": "Contacts inside the sweet box go where aimed; stretched contacts at the edge of reach spray wide and long by HIT_STRETCH_* pixels."
+        },
+        "HIT_SWEET_Y": {
+          "value": 10
+        },
+        "HIT_STRETCH_WIDE": {
+          "value": 20
+        },
+        "HIT_STRETCH_LONG": {
+          "value": 16
+        },
+        "HIT_TARGET_LANE_TOP": {
+          "value": 104
+        },
+        "HIT_TARGET_LANE_CENTER": {
+          "value": 130
+        },
+        "HIT_TARGET_LANE_BOTTOM": {
+          "value": 156
+        },
+        "HIT_TARGET_SHORT_RIGHT": {
+          "value": 176,
+          "note": "Targets for a left-team hitter; the right team mirrors them."
+        },
+        "HIT_TARGET_NEUTRAL_RIGHT": {
+          "value": 204
+        },
+        "HIT_TARGET_DEEP_RIGHT": {
+          "value": 228
+        },
+        "HIT_TARGET_SHORT_LEFT": {
+          "value": 80
+        },
+        "HIT_TARGET_NEUTRAL_LEFT": {
+          "value": 52
+        },
+        "HIT_TARGET_DEEP_LEFT": {
+          "value": 28
+        },
+        "HIT_PACE_DEEP_FP": {
+          "value": 48,
+          "note": "Horizontal pace in 12.4 units: 3.0 / 2.75 / 2.5 px per frame. Flight time is distance / pace, clamped so lobs stay below the HUD (apex ~50 px) and inside the AI's 60-step prediction horizon."
+        },
+        "HIT_PACE_NEUTRAL_FP": {
+          "value": 44
+        },
+        "HIT_PACE_SHORT_FP": {
+          "value": 40
+        },
+        "HIT_FLIGHT_MIN_FRAMES": {
+          "value": 24
+        },
+        "HIT_FLIGHT_MAX_FRAMES": {
+          "value": 46
+        },
+        "HIT_PACE_DRIVE_FP": {
+          "value": 60,
+          "note": "Shot types (ADR-019), in 12.4 pace and flight frames. 3.75 px/frame"
+        },
+        "HIT_DRIVE_MIN_FRAMES": {
+          "value": 16
+        },
+        "HIT_DRIVE_MAX_FRAMES": {
+          "value": 30
+        },
+        "HIT_DRIVE_STRETCH_WIDE": {
+          "value": 26
+        },
+        "HIT_DRIVE_STRETCH_LONG": {
+          "value": 22
+        },
+        "HIT_PACE_LOB_FP": {
+          "value": 28,
+          "note": "1.75 px/frame, high arc"
+        },
+        "HIT_LOB_MIN_FRAMES": {
+          "value": 44
+        },
+        "HIT_LOB_MAX_FRAMES": {
+          "value": 50,
+          "note": "apex ~58 px; < AI horizon"
+        },
+        "HIT_PACE_DINK_FP": {
+          "value": 24,
+          "note": "1.5 px/frame"
+        },
+        "HIT_PACE_SLICE_FP": {
+          "value": 30,
+          "note": "Slice (ADR-056): slow (time to get back), never deep, and steady off a stretch; no higher than a standard shot's longest flight. 1.875 px/frame"
+        },
+        "HIT_SLICE_MIN_FRAMES": {
+          "value": 34
+        },
+        "HIT_SLICE_STRETCH_WIDE": {
+          "value": 10
+        },
+        "HIT_SLICE_STRETCH_LONG": {
+          "value": 8
+        },
+        "HIT_FAST_DROP_STRETCH_LONG": {
+          "value": 34,
+          "note": "A fast drop (a drive aimed short, ADR-056) is flat: off a stretch it flies on past the kitchen, where it can be attacked."
+        },
+        "HIT_TARGET_DINK_RIGHT": {
+          "value": 146,
+          "note": "A dink lands inside the opponent's kitchen."
+        },
+        "HIT_TARGET_DINK_LEFT": {
+          "value": 110
+        }
+      }
+    },
+    "include/player.h": {
+      "about": "Movement, swing timing, fixed point",
+      "values": {
+        "FP_SHIFT": {
+          "value": 4
+        },
+        "FP_ONE": {
+          "value": 16
+        },
+        "PLAYER_STATE_IDLE": {
+          "value": 0
+        },
+        "PLAYER_STATE_MOVE": {
+          "value": 1
+        },
+        "PLAYER_STATE_WINDUP": {
+          "value": 2
+        },
+        "PLAYER_STATE_ACTIVE": {
+          "value": 3
+        },
+        "PLAYER_STATE_RECOVERY": {
+          "value": 4
+        },
+        "PLAYER_POSE_NONE": {
+          "value": 0
+        },
+        "PLAYER_POSE_TOSS": {
+          "value": 1
+        },
+        "PLAYER_POSE_CHEER": {
+          "value": 2
+        },
+        "PLAYER_WINDUP_FRAMES": {
+          "value": 4,
+          "note": "A swing: windup, then the frames it can meet the ball, then recovery."
+        },
+        "PLAYER_ACTIVE_FRAMES": {
+          "value": 3
+        },
+        "PLAYER_RECOVERY_FRAMES": {
+          "value": 7,
+          "note": "The standard paddle's; g_paddle_recovery holds each paddle's (paddle SPEED, ADR-020)."
+        },
+        "PLAYER_ACCEL_FP": {
+          "value": 4,
+          "note": "12.4 units per frame: accel 0.25 px/frame/frame (0.1875 on a diagonal), top speed 1.5 px/frame, friction 0.375 px/frame/frame. A diagonal's speed limit is the straight one x 181/256 (g_player_diagonal_limit)."
+        },
+        "PLAYER_DIAGONAL_ACCEL_FP": {
+          "value": 3
+        },
+        "PLAYER_MAX_SPEED_FP": {
+          "value": 24
+        },
+        "PLAYER_FRICTION_FP": {
+          "value": 6
+        },
+        "PLAYER_ICE_ACCEL_FP": {
+          "value": 2,
+          "note": "ICE (ADR-053): half the acceleration and a sixth of the friction, so a run takes 12 frames to reach top speed and slides about 18 px."
+        },
+        "PLAYER_ICE_DIAGONAL_ACCEL_FP": {
+          "value": 2
+        },
+        "PLAYER_ICE_FRICTION_FP": {
+          "value": 1
+        },
+        "PLAYER_SWING_MAX_SPEED_FP": {
+          "value": 12,
+          "note": "Top speed while swinging, 0.75 px/frame, for the standard paddle; g_paddle_swing_limit holds each paddle's."
+        },
+        "PLAYER_CPU_MAX_SPEED_FP": {
+          "value": 19,
+          "note": "The default CPU's top speed, 80% of a human's; each opponent's is its AiStyle.speed (opponents.json)."
+        },
+        "PLAYER_SEPARATION_X": {
+          "value": 16
+        },
+        "PLAYER_SEPARATION_Y": {
+          "value": 12
+        },
+        "PLAYER_VARIANT_MALE": {
+          "value": 0
+        },
+        "PLAYER_VARIANT_FEMALE": {
+          "value": 1
+        },
+        "PLAYER_IDLE_CEL_FRAMES": {
+          "value": 20
+        },
+        "PLAYER_RUN_CEL_FRAMES": {
+          "value": 6
+        }
+      }
+    },
+    "include/serve.h": {
+      "about": "Serve placement, toss, charge, duds",
+      "values": {
+        "SERVE_TOSS_FRAMES": {
+          "value": 18
+        },
+        "SERVE_TOSS_POSE_FRAMES": {
+          "value": 10
+        },
+        "SERVE_TOSS_VZ_FP": {
+          "value": 32
+        },
+        "SERVE_HAND_OFFSET_X": {
+          "value": 10
+        },
+        "SERVE_HAND_Z": {
+          "value": 14
+        },
+        "SERVE_STANCE_OFFSET_Y": {
+          "value": 22
+        },
+        "SERVE_BASELINE_GAP": {
+          "value": 12,
+          "note": "Feet behind the baseline: the server as far back as the runoff allows, the receiver and the server's partner a little less. A player's body reaches toward the net past their feet, so less looks like standing in the court."
+        },
+        "SERVE_RECEIVER_GAP": {
+          "value": 8
+        },
+        "SERVE_PARTNER_KITCHEN_GAP": {
+          "value": 8
+        },
+        "SERVE_TARGET_LANE_SHIFT": {
+          "value": 12
+        },
+        "SERVE_TARGET_SHORT_RIGHT": {
+          "value": 178,
+          "note": "Targets for a left-team server; the right team mirrors them."
+        },
+        "SERVE_TARGET_NEUTRAL_RIGHT": {
+          "value": 200
+        },
+        "SERVE_TARGET_DEEP_RIGHT": {
+          "value": 224
+        },
+        "SERVE_TARGET_SHORT_LEFT": {
+          "value": 78
+        },
+        "SERVE_TARGET_NEUTRAL_LEFT": {
+          "value": 56
+        },
+        "SERVE_TARGET_DEEP_LEFT": {
+          "value": 32
+        },
+        "SERVE_FLIGHT_FRAMES": {
+          "value": 40
+        },
+        "SERVE_CHARGE_MAX": {
+          "value": 30,
+          "note": "The charged serve (ADR-044): holding a swing button runs a meter from 0 up to SERVE_CHARGE_MAX and back down, a frame a step; the release serves at that level. A tap (let go before the meter reaches SERVE_CHARGE_DUD) is the classic serve. Once it has, a release below SERVE_CHARGE_DUD is a dud into the net; from there up the flight shortens a frame for every two levels, SERVE_FLIGHT_FRAMES down to 27."
+        },
+        "SERVE_CHARGE_DUD": {
+          "value": 4
+        },
+        "SERVE_CHARGE_CLASSIC": {
+          "value": 4,
+          "note": "The serve without a meter (CPUs, KID): today's 40-frame flight."
+        },
+        "SERVE_DUD_PAST_NET": {
+          "value": 6,
+          "note": "A dud lands just past the net, low and slow: it meets the net."
+        },
+        "SERVE_DUD_FRAMES": {
+          "value": 30
+        }
+      }
+    },
+    "include/game.h": {
+      "about": "Match phases, faults, timers",
+      "values": {
+        "GAME_PHASE_SERVE_SETUP": {
+          "value": 0
+        },
+        "GAME_PHASE_SERVE_TOSS": {
+          "value": 1
+        },
+        "GAME_PHASE_LIVE": {
+          "value": 2
+        },
+        "GAME_PHASE_SERVE_FAULT": {
+          "value": 3
+        },
+        "GAME_PHASE_POINT_RESULT": {
+          "value": 4
+        },
+        "GAME_PHASE_MATCH_RESULT": {
+          "value": 5
+        },
+        "GAME_FAULT_NONE": {
+          "value": 0
+        },
+        "GAME_FAULT_NET": {
+          "value": 1
+        },
+        "GAME_FAULT_KITCHEN": {
+          "value": 2
+        },
+        "GAME_FAULT_WRONG_BOX": {
+          "value": 3
+        },
+        "GAME_FAULT_OUT": {
+          "value": 4
+        },
+        "GAME_FAULT_SECOND_BOUNCE": {
+          "value": 5
+        },
+        "GAME_FAULT_EARLY_VOLLEY": {
+          "value": 6
+        },
+        "GAME_FAULT_LAVA": {
+          "value": 7,
+          "note": "ADR-033: stepped into the kitchen"
+        },
+        "GAME_REQUIRED_BOUNCE_NONE": {
+          "value": 0
+        },
+        "GAME_REQUIRED_BOUNCE_SERVE": {
+          "value": 1
+        },
+        "GAME_REQUIRED_BOUNCE_RETURN": {
+          "value": 2
+        },
+        "GAME_POINTS_TO_WIN": {
+          "value": 5,
+          "note": "the default; g_match_config decides"
+        },
+        "GAME_SERVE_READY_FRAMES": {
+          "value": 20
+        },
+        "GAME_POINT_RESULT_MIN_FRAMES": {
+          "value": 20
+        },
+        "GAME_POINT_RESULT_FRAMES": {
+          "value": 90
+        },
+        "GAME_HIT_STOP_FRAMES": {
+          "value": 2
+        },
+        "GAME_HIT_FLASH_FRAMES": {
+          "value": 2
+        },
+        "GAME_NO_TEAM": {
+          "value": 255
+        },
+        "GAME_ATTRACT_RESULT_FRAMES": {
+          "value": 150
+        },
+        "GAME_ATTRACT_LATE_PERIOD": {
+          "value": 5
+        },
+        "GAME_BALL_PACE_TICKS": {
+          "value": 72
+        }
+      }
+    },
+    "include/ai.h": {
+      "about": "CPU defaults (the default AiStyle is in the tables)",
+      "values": {
+        "AI_PREDICT_MAX_STEPS": {
+          "value": 60
+        },
+        "AI_RECOVER_X": {
+          "value": 208,
+          "note": "right team; mirrored for the left"
+        },
+        "AI_RECOVER_Y": {
+          "value": 130
+        },
+        "AI_RECOVER_Y_TOP": {
+          "value": 110,
+          "note": "Doubles lane homes (ADR-018): top and bottom of the half."
+        },
+        "AI_RECOVER_Y_BOTTOM": {
+          "value": 150
+        },
+        "AI_CONTACT_OFFSET_X": {
+          "value": 10,
+          "note": "Stand this far behind the predicted contact point (difficulty knob)."
+        },
+        "AI_DEAD_ZONE": {
+          "value": 3
+        },
+        "AI_SERVE_DELAY_FRAMES": {
+          "value": 50
+        },
+        "AI_ASSIST_SERVE_FRAMES": {
+          "value": 90,
+          "note": "KID (ADR-025): a human's serve goes by itself after this long, which leaves time to aim with the D-pad."
+        },
+        "AI_LATE_SHOT_PERIOD": {
+          "value": 7,
+          "note": "Difficulty: every Nth return the CPU is deliberately late and takes a stretched last-chance contact, which sprays the ball (no randomness)."
+        },
+        "AI_PUTAWAY_Z": {
+          "value": 14,
+          "note": "Shot choice (ADR-019): put-away drive on a ball at least this high within this distance of the net; lob when an opponent is this close to the net."
+        },
+        "AI_PUTAWAY_NET_DISTANCE": {
+          "value": 48
+        },
+        "AI_LOB_NET_DISTANCE": {
+          "value": 44
+        },
+        "AI_SWING_LOOKAHEAD": {
+          "value": 5,
+          "note": "Look ahead windup + first active frame when deciding to swing."
+        }
+      }
+    },
+    "src/ai.c": {
+      "about": "CPU positioning, private to ai.c",
+      "values": {
+        "AI_AIM_PATTERN": {
+          "value": 2,
+          "note": "Doubles aim for the swing (ADR-039): -1 top lane, 0 the middle, 1 bottom lane; AI_AIM_PATTERN for the lane pattern. Held through the swing like the block volley. Picked on the swing's first held frame, not on the press frame, which already pays for the swing lookahead (any work there dropped frames); contact is 4 frames later."
+        },
+        "AI_NO_SPEED": {
+          "value": 32767,
+          "note": "ai_slide's last speed and answer by slot and axis (ai_swing_connects); AI_NO_SPEED forgets them at match start (ai_initialize)."
+        },
+        "AI_VOLLEY_MIN_Z": {
+          "value": 64,
+          "note": "A volley is played between these heights (12.4): lower is a half-volley the player lets bounce, higher is over their head."
+        },
+        "AI_PREDICT_BLOCK": {
+          "value": 8,
+          "note": "Ground contact prediction using the ball's own constants. x/y are linear until the bounce, so only z is stepped; the loop is capped so a bad state can never hang the frame. Eight steps at a time while the ball stays up: after k steps z is z + k*vz + g*k(k-1)/2 and vz is vz + k*g, exactly. A falling parabola is below zero only past its one crossing, so a block that ends above ground never touched it, and the block that lands is stepped singly: the same result as one step at a time, in about an eighth of the loop (a single step cost 816-tcc about a scanline; M4-UI-03/04)."
+        },
+        "AI_PREDICT_BLOCK_FALL": {
+          "value": -84,
+          "note": "g * 8 * 7 / 2"
+        },
+        "AI_UP_DISTANCE": {
+          "value": 64,
+          "note": "A player within this of the net is \"up\" (ADR-037 shot choice)."
+        },
+        "AI_PAIR_UP_DISTANCE": {
+          "value": 80,
+          "note": "A human is \"up\" within this of the net: their partner comes in."
+        },
+        "AI_SHIFT_MAX": {
+          "value": 8,
+          "note": "The pair's shift toward the ball's side, at most."
+        },
+        "AI_MIDDLE_BAND": {
+          "value": 12
+        },
+        "AI_POACH_BAND": {
+          "value": 20
+        },
+        "AI_MIDDLE_MARGIN": {
+          "value": 10
+        },
+        "AI_OPEN_MARGIN": {
+          "value": 12
+        },
+        "AI_SPLIT_DISTANCE": {
+          "value": 32
+        },
+        "AI_SWING_REACH_X": {
+          "value": 64,
+          "note": "The ball moves < 8 px/frame, so a ball farther than this in x cannot arrive within the swing lookahead."
+        },
+        "AI_MEET_RISE_MAX": {
+          "value": 10,
+          "note": "The intercept meets a bounced ball this many frames after the bounce at most (near the top of its rise)."
+        }
+      }
+    },
+    "include/options.h": {
+      "about": "Difficulty, points, ball cycle",
+      "values": {
+        "DIFFICULTY_KID": {
+          "value": 0,
+          "note": "slowest ball, swings for you, easiest CPU"
+        },
+        "DIFFICULTY_EASY": {
+          "value": 1,
+          "note": "slow ball, easier CPU"
+        },
+        "DIFFICULTY_MEDIUM": {
+          "value": 2,
+          "note": "the shipped game"
+        },
+        "DIFFICULTY_HARD": {
+          "value": 3,
+          "note": "normal ball, harder CPU"
+        },
+        "DIFFICULTY_COUNT": {
+          "value": 4
+        },
+        "OPTIONS_POINTS_DEFAULT": {
+          "value": 5
+        },
+        "OPTIONS_POINT_CHOICES": {
+          "value": 7
+        },
+        "OPTIONS_BALL_CYCLE": {
+          "value": 60,
+          "note": "The ball's step pattern repeats every 60 frames: KID's 2 in 3 and EASY's 3 in 4 divide it, and 5% ball speed steps (ADR-049)."
+        },
+        "OPTIONS_BALL_SPEED": {
+          "value": 100,
+          "note": "The ball's speed, percent (ADR-049). The BALL SPEED row is gone (ADR-065: FAST BALL is the one speed setting); `make stats SPEED=` still tries others."
+        },
+        "OPTIONS_CAMERA_AMOUNTS": {
+          "value": 11,
+          "note": "CAMERA (ADR-050, ADR-065): OFF or ON, and its AMOUNT, 50% to 100% in 5% steps, in g_save.camera. 2-12 is ON at AMOUNT 0-10, as every save since ADR-050 has it; 0 (older saves) and 1 are OFF at the default amount; OPTIONS_CAMERA_OFF | amount is OFF keeping an amount. Bit 7 stays clear: the options page marks its cursor with it."
+        },
+        "OPTIONS_CAMERA_AMOUNT_DEFAULT": {
+          "value": 7,
+          "note": "85%"
+        },
+        "OPTIONS_CAMERA_OFF": {
+          "value": 64
+        }
+      }
+    },
+    "include/modifiers.h": {
+      "about": "Modifiers",
+      "values": {
+        "MODIFIER_BIG_BALL": {
+          "value": 1,
+          "note": "a 14 px ball, reach and sweet spot +4 px"
+        },
+        "MODIFIER_FAST_BALL": {
+          "value": 2,
+          "note": "one extra ball step every 3rd frame"
+        },
+        "MODIFIER_WIN_BY_2": {
+          "value": 4,
+          "note": "first to POINTS, but by two"
+        },
+        "MODIFIER_LAVA": {
+          "value": 8,
+          "note": "stepping into your kitchen loses the point"
+        },
+        "MODIFIER_GHOST_BALL": {
+          "value": 16,
+          "note": "high in flight, the ball only blinks"
+        },
+        "MODIFIER_POPCORN": {
+          "value": 32,
+          "note": "every hit in a rally adds pace"
+        },
+        "MODIFIER_ICE": {
+          "value": 64,
+          "note": "players slide"
+        },
+        "MODIFIER_GLOW": {
+          "value": 128,
+          "note": "lights out: neon outlines, a night court"
+        },
+        "MODIFIER_ALL": {
+          "value": 255
+        },
+        "MODIFIER_COUNT": {
+          "value": 8
+        },
+        "MODIFIER2_INVERSE": {
+          "value": 1,
+          "note": "every colour inverted"
+        },
+        "MODIFIER2_ALL": {
+          "value": 1
+        },
+        "MODIFIER2_COUNT": {
+          "value": 1
+        },
+        "MODIFIER_BIG_REACH": {
+          "value": 4,
+          "note": "Big ball: the hit box grows by the ball's extra radius."
+        },
+        "MODIFIER_LAVA_MARGIN": {
+          "value": 8,
+          "note": "Lava: CPUs keep their feet this far behind their kitchen line."
+        },
+        "MODIFIER_GHOST_Z": {
+          "value": 8,
+          "note": "Ghost ball: at or above this height (px) the ball shows only on MODIFIER_GHOST_SHOWN frames in every 16."
+        },
+        "MODIFIER_GHOST_SHOWN": {
+          "value": 2
+        },
+        "MODIFIER_POPCORN_STRIDE": {
+          "value": 12,
+          "note": "Popcorn: each level adds a ball step on one tick in every MODIFIER_POPCORN_STRIDE (5 a cycle, about +8%), up to the cap (+50%)."
+        },
+        "MODIFIER_POPCORN_LEVELS": {
+          "value": 6
+        },
+        "MODIFIER_NEON_LIFT": {
+          "value": 6
+        }
+      }
+    },
+    "include/match.h": {
+      "about": "Match setup",
+      "values": {
+        "MATCH_NO_PALETTE": {
+          "value": 255
+        },
+        "MATCH_CPU": {
+          "value": 255,
+          "note": "Who plays the slot (ADR-066): 0 for 1P, 1 for 2P (3P and 4P with M4-MP-01), or MATCH_CPU for a CPU. Its ring has that player's colour."
+        },
+        "MATCH_SINGLES": {
+          "value": 0
+        },
+        "MATCH_DOUBLES": {
+          "value": 1,
+          "note": "docs/decisions/ADR-018-doubles.md"
+        }
+      }
+    },
+    "include/practice.h": {
+      "about": "Practice mode",
+      "values": {
+        "PRACTICE_SHOT_DRIVE": {
+          "value": 0
+        },
+        "PRACTICE_SHOT_LOB": {
+          "value": 1
+        },
+        "PRACTICE_SHOT_DINK": {
+          "value": 2
+        },
+        "PRACTICE_SHOT_MIX": {
+          "value": 3
+        },
+        "PRACTICE_SHOTS": {
+          "value": 4
+        },
+        "PRACTICE_TARGET_KITCHEN": {
+          "value": 0
+        },
+        "PRACTICE_TARGET_DEEP": {
+          "value": 1
+        },
+        "PRACTICE_TARGET_FOREHAND": {
+          "value": 2
+        },
+        "PRACTICE_TARGET_BACKHAND": {
+          "value": 3
+        },
+        "PRACTICE_TARGET_AT_YOU": {
+          "value": 4
+        },
+        "PRACTICE_TARGET_RANDOM": {
+          "value": 5
+        },
+        "PRACTICE_TARGETS": {
+          "value": 6
+        },
+        "PRACTICE_RATE_SLOW": {
+          "value": 0
+        },
+        "PRACTICE_RATE_NORMAL": {
+          "value": 1
+        },
+        "PRACTICE_RATE_FAST": {
+          "value": 2
+        },
+        "PRACTICE_RATES": {
+          "value": 3
+        },
+        "PRACTICE_ZONE_ANY": {
+          "value": 0
+        },
+        "PRACTICE_ZONE_KITCHEN": {
+          "value": 1
+        },
+        "PRACTICE_ZONE_DEEP": {
+          "value": 2
+        },
+        "PRACTICE_ZONE_LEFT": {
+          "value": 3
+        },
+        "PRACTICE_ZONE_RIGHT": {
+          "value": 4
+        },
+        "PRACTICE_ZONES": {
+          "value": 5
+        },
+        "PRACTICE_MACHINE_X": {
+          "value": 232,
+          "note": "The machine: on the far baseline, centred; feeds leave its nozzle (the sprite's left edge, 8 px up; render.c draws it there)."
+        },
+        "PRACTICE_MACHINE_Y": {
+          "value": 130
+        },
+        "PRACTICE_MACHINE_Z": {
+          "value": 8
+        },
+        "PRACTICE_FIRST_FEED_FRAMES": {
+          "value": 60
+        },
+        "PRACTICE_FEED_TIMEOUT_FRAMES": {
+          "value": 300,
+          "note": "a stuck feed ends anyway"
+        },
+        "PRACTICE_STREAK_MAX": {
+          "value": 99,
+          "note": "two digits on the score panel"
+        },
+        "PRACTICE_TURN_FRAMES": {
+          "value": 6,
+          "note": "The nozzle turns one pose per PRACTICE_TURN_FRAMES toward the next feed's lane (up through centre to down), and kicks back on a feed."
+        },
+        "PRACTICE_KICK_FRAMES": {
+          "value": 6
+        },
+        "PRACTICE_AIM_SPREAD": {
+          "value": 12,
+          "note": "lanes this far off centre turn"
+        },
+        "PRACTICE_ZONE_DEEP_DEPTH": {
+          "value": 36,
+          "note": "the DEEP zone, from the baseline"
+        },
+        "PRACTICE_ZONE_LINE_WIDTH": {
+          "value": 22,
+          "note": "LEFT and RIGHT, from the sideline"
+        },
+        "PRACTICE_ZONE_FLASH_FRAMES": {
+          "value": 32,
+          "note": "the zone's corners blink on a hit"
+        },
+        "PRACTICE_POSE_UP": {
+          "value": 0
+        },
+        "PRACTICE_POSE_CENTER": {
+          "value": 1
+        },
+        "PRACTICE_POSE_DOWN": {
+          "value": 2
+        },
+        "PRACTICE_WAIT": {
+          "value": 0
+        },
+        "PRACTICE_FEED": {
+          "value": 1
+        },
+        "PRACTICE_RETURN": {
+          "value": 2
+        }
+      }
+    },
+    "include/replay.h": {
+      "about": "Close-call replay",
+      "values": {
+        "REPLAY_MIN_SHOTS": {
+          "value": 8,
+          "note": "a long rally, serve included"
+        },
+        "REPLAY_MAX_INCHES": {
+          "value": 6,
+          "note": "out by this much or less"
+        },
+        "REPLAY_NEAR_FP": {
+          "value": 256,
+          "note": "Court scale: 224 px is 44 ft, so a 12.4 pixel is 528 / 3584 inch, about 151 / 1024 (court.h). 16-bit: only for distances up to REPLAY_NEAR_FP."
+        }
+      }
+    },
+    "assets/generated/paddle_stats.h": {
+      "about": "Paddle profiles (from paddles.json)",
+      "values": {
+        "PADDLE_WOOD": {
+          "value": 0
+        },
+        "PADDLE_BLUE": {
+          "value": 1
+        },
+        "PADDLE_RED": {
+          "value": 2
+        },
+        "PADDLE_GOLD": {
+          "value": 3
+        },
+        "PADDLE_COUNT": {
+          "value": 4
+        },
+        "PADDLE_STANDARD": {
+          "value": 1
+        },
+        "PADDLE_STAT_MAX": {
+          "value": 5
+        },
+        "PADDLE_GEARS": {
+          "value": 13,
+          "note": "Tables hold every paddle with every career gear (ADR-047): row hat * PADDLE_COUNT + paddle; hat 0 (the cap) is the plain paddle."
+        },
+        "PADDLE_PROFILES": {
+          "value": 52
+        }
+      }
+    },
+    "assets/generated/opponents.h": {
+      "about": "Opponents (from opponents.json)",
+      "values": {
+        "OPPONENT_COUNT": {
+          "value": 8
+        },
+        "OPPONENT_NONE": {
+          "value": 255
+        },
+        "AI_AIM_AWAY": {
+          "value": 0
+        },
+        "AI_AIM_BODY": {
+          "value": 1
+        },
+        "AI_AIM_MIX": {
+          "value": 2
+        },
+        "AI_DEPTH_ALTERNATE": {
+          "value": 0
+        },
+        "AI_DEPTH_DEEP": {
+          "value": 1
+        }
+      }
+    }
+  },
+  "tables": {
+    "player_diagonal_limit": {
+      "note": "Per-axis speed limit on a diagonal for each straight limit 0-31 (12.4): limit * 181 / 256, as a table.",
+      "value": [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 7, 7, 8, 9, 9, 10, 11, 12, 12, 13, 14, 14, 15, 16, 16, 17, 18, 19, 19, 20, 21, 21]
+    },
+    "ai_ice_coast": {
+      "note": "ICE: px a player moving at v (12.4, 0-31) coasts to a stop, v (v - 1) / 32.",
+      "value": [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 17, 18, 20, 21, 23, 25, 27, 29]
+    },
+    "options_points": {
+      "note": "The POINTS choices.",
+      "value": [3, 5, 7, 9, 11, 15, 21]
+    },
+    "ball_pace_KID": {
+      "note": "Ball steps on each frame from a 60-frame cycle's start (GAME_BALL_PACE_TICKS entries; the 12 past the cycle repeat its start). 0 = the ball skips the frame, 2 = it steps twice. This is how difficulty and FAST BALL change ball speed: the step pattern, not the velocity.",
+      "value": [0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1]
+    },
+    "ball_pace_KID_fast_ball": {
+      "note": "As ball_pace_KID, with FAST BALL.",
+      "value": [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2]
+    },
+    "ball_pace_EASY": {
+      "note": "As ball_pace_KID, on EASY.",
+      "value": [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1]
+    },
+    "ball_pace_EASY_fast_ball": {
+      "note": "As ball_pace_EASY, with FAST BALL.",
+      "value": [0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2, 0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2, 0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2, 0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2, 0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2, 0, 1, 2, 1, 0, 2, 1, 1, 1, 1, 1, 2]
+    },
+    "ball_pace_MEDIUM": {
+      "note": "As ball_pace_KID, on MEDIUM (one step a frame).",
+      "value": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    },
+    "ball_pace_MEDIUM_fast_ball": {
+      "note": "As ball_pace_MEDIUM, with FAST BALL.",
+      "value": [1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2]
+    },
+    "ball_pace_HARD": {
+      "note": "As ball_pace_KID, on HARD.",
+      "value": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    },
+    "ball_pace_HARD_fast_ball": {
+      "note": "As ball_pace_HARD, with FAST BALL.",
+      "value": [1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2]
+    },
+    "popcorn_steps": {
+      "note": "POPCORN: the extra steps each level (hit 1, 2, ...) adds to the pace table, per tick.",
+      "value": [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]]
+    },
+    "paddle_stats": {
+      "note": "Bars [power, control, speed] per paddle profile; a profile is hat * PADDLE_COUNT + paddle (hat 0 is the plain paddle).",
+      "value": [[2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [2, 4, 3], [4, 3, 2], [1, 3, 5], [2, 4, 3], [3, 2, 4], [5, 1, 3], [2, 2, 5], [3, 4, 2], [4, 2, 3], [5, 2, 2], [3, 1, 5], [3, 5, 1], [4, 3, 2], [5, 2, 2], [3, 2, 4], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5], [2, 5, 2], [3, 3, 3], [5, 2, 2], [2, 2, 5]]
+    },
+    "paddle_power_mul": {
+      "note": "Shot pace x n / 64, per profile.",
+      "value": [61, 64, 70, 61, 61, 61, 67, 58, 61, 64, 70, 61, 64, 67, 70, 64, 64, 67, 70, 64, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61, 61, 64, 70, 61]
+    },
+    "paddle_control_mul": {
+      "note": "Stretch spray x n / 64, per profile.",
+      "value": [58, 64, 67, 67, 58, 61, 64, 64, 61, 67, 70, 67, 61, 67, 67, 70, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67, 58, 64, 67, 67]
+    },
+    "paddle_swing_limit": {
+      "note": "Movement limit while swinging (12.4), per profile.",
+      "value": [11, 12, 11, 13, 11, 12, 11, 13, 12, 13, 12, 13, 11, 12, 11, 13, 11, 11, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13, 11, 12, 11, 13]
+    },
+    "paddle_recovery": {
+      "note": "Recovery frames after a swing, per profile.",
+      "value": [7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 8, 7, 7, 7, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6, 7, 7, 7, 6]
+    },
+    "ai_default_style": {
+      "note": "The default CPU (opponents.json default_style).",
+      "value": {
+        "late_period": 7,
+        "reaction": 0,
+        "dink_period": 4,
+        "lob_distance": 44,
+        "putaway_z": 14,
+        "putaway_distance": 48,
+        "aim": 0,
+        "depth": 0,
+        "recover": 80,
+        "speed": 19,
+        "volley": 0,
+        "net": 0,
+        "team": 0,
+        "tactics": 0,
+        "footwork": 0,
+        "slice": 0,
+        "serve_power": 4,
+        "serve_dud": 0
+      }
+    },
+    "ai_partner_style": {
+      "note": "A human's CPU partner in doubles.",
+      "value": {
+        "late_period": 7,
+        "reaction": 0,
+        "dink_period": 4,
+        "lob_distance": 44,
+        "putaway_z": 14,
+        "putaway_distance": 48,
+        "aim": 0,
+        "depth": 0,
+        "recover": 80,
+        "speed": 19,
+        "volley": 1,
+        "net": 48,
+        "team": 1,
+        "tactics": 1,
+        "footwork": 1,
+        "slice": 0,
+        "serve_power": 4,
+        "serve_dud": 0
+      }
+    },
+    "opponent_styles": {
+      "note": "[captain, partner] per ladder rung, as authored (singles plays only the captain).",
+      "value": [
+        [
+          {"late_period": 3, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 22, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
+        ],
+        [
+          {"late_period": 3, "reaction": 3, "dink_period": 3, "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 14, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 5, "dink_period": 3, "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 15, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 20, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 13, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8},
+          {"late_period": 7, "reaction": 10, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 15, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
+        ],
+        [
+          {"late_period": 3, "reaction": 1, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 7, "reaction": 2, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 3, "reaction": 3, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 3, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 20, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 5, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
+          {"late_period": 12, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
+        ]
+      ]
+    },
+    "opponent_styles_KID": {
+      "note": "opponent_styles after KID's adjustment (options_apply_difficulty).",
+      "value": [
+        [
+          {"late_period": 2, "reaction": 16, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 12, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 10, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 18, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
+        ],
+        [
+          {"late_period": 2, "reaction": 13, "dink_period": 3, "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 12, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 15, "dink_period": 3, "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 12, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 30, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 12, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8},
+          {"late_period": 2, "reaction": 20, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 12, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
+        ],
+        [
+          {"late_period": 2, "reaction": 11, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 12, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 14, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 14, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 13, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 10, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 10, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 16, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 10, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 17, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 10, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 18, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
+          {"late_period": 4, "reaction": 10, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 18, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
+        ]
+      ]
+    },
+    "opponent_styles_EASY": {
+      "note": "opponent_styles after EASY's adjustment.",
+      "value": [
+        [
+          {"late_period": 2, "reaction": 11, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 14, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 5, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 20, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
+        ],
+        [
+          {"late_period": 2, "reaction": 8, "dink_period": 3, "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 12, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 10, "dink_period": 3, "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 13, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 25, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 12, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8},
+          {"late_period": 3, "reaction": 15, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 13, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
+        ],
+        [
+          {"late_period": 2, "reaction": 6, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 3, "reaction": 7, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 9, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 9, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 8, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 5, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 5, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 18, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 5, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 19, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 5, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 20, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
+          {"late_period": 6, "reaction": 5, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 20, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
+        ]
+      ]
+    },
+    "opponent_styles_MEDIUM": {
+      "note": "opponent_styles on MEDIUM (unchanged).",
+      "value": [
+        [
+          {"late_period": 3, "reaction": 6, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 22, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
+        ],
+        [
+          {"late_period": 3, "reaction": 3, "dink_period": 3, "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 14, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 2, "reaction": 5, "dink_period": 3, "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 15, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 2, "reaction": 20, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 13, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8},
+          {"late_period": 7, "reaction": 10, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 15, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
+        ],
+        [
+          {"late_period": 3, "reaction": 1, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 7, "reaction": 2, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 3, "reaction": 4, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 18, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 3, "reaction": 3, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 3, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 20, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 20, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 5, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 5, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
+          {"late_period": 12, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 22, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
+        ]
+      ]
+    },
+    "opponent_styles_HARD": {
+      "note": "opponent_styles after HARD's adjustment.",
+      "value": [
+        [
+          {"late_period": 6, "reaction": 3, "dink_period": 6, "lob_distance": 0, "putaway_z": 20, "putaway_distance": 40, "aim": 0, "depth": 0, "recover": 84, "speed": 17, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 5, "reaction": 0, "dink_period": 0, "lob_distance": 30, "putaway_z": 12, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 64, "speed": 23, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 18, "serve_dud": 10}
+        ],
+        [
+          {"late_period": 6, "reaction": 0, "dink_period": 3, "lob_distance": 100, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 15, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 5, "reaction": 2, "dink_period": 3, "lob_distance": 90, "putaway_z": 18, "putaway_distance": 40, "aim": 0, "depth": 1, "recover": 88, "speed": 16, "volley": 0, "net": 0, "team": 0, "tactics": 0, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 5, "reaction": 17, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 14, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 8},
+          {"late_period": 12, "reaction": 7, "dink_period": 0, "lob_distance": 0, "putaway_z": 10, "putaway_distance": 128, "aim": 1, "depth": 1, "recover": 76, "speed": 16, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 30, "serve_dud": 12}
+        ],
+        [
+          {"late_period": 6, "reaction": 0, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 12, "reaction": 0, "dink_period": 0, "lob_distance": 20, "putaway_z": 10, "putaway_distance": 80, "aim": 1, "depth": 1, "recover": 80, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 6, "reaction": 1, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 6, "reaction": 1, "dink_period": 2, "lob_distance": 0, "putaway_z": 30, "putaway_distance": 24, "aim": 0, "depth": 0, "recover": 56, "speed": 19, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 3, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 6, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 21, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 6, "reaction": 0, "dink_period": 5, "lob_distance": 50, "putaway_z": 12, "putaway_distance": 56, "aim": 2, "depth": 0, "recover": 92, "speed": 21, "volley": 1, "net": 44, "team": 1, "tactics": 1, "footwork": 0, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 9, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 21, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0},
+          {"late_period": 9, "reaction": 0, "dink_period": 4, "lob_distance": 36, "putaway_z": 10, "putaway_distance": 64, "aim": 2, "depth": 0, "recover": 50, "speed": 22, "volley": 1, "net": 44, "team": 0, "tactics": 1, "footwork": 1, "slice": 0, "serve_power": 4, "serve_dud": 0}
+        ],
+        [
+          {"late_period": 9, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 23, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20},
+          {"late_period": 20, "reaction": 0, "dink_period": 3, "lob_distance": 48, "putaway_z": 12, "putaway_distance": 56, "aim": 0, "depth": 0, "recover": 80, "speed": 23, "volley": 1, "net": 60, "team": 1, "tactics": 1, "footwork": 1, "slice": 4, "serve_power": 30, "serve_dud": 20}
+        ]
+      ]
+    },
+    "opponent_paddle": {
+      "note": "[captain, partner] paddle per rung.",
+      "value": [[0, 2], [0, 0], [2, 2], [3, 3], [0, 0], [1, 1], [3, 3], [3, 3]]
+    },
+    "opponent_hat": {
+      "note": "[captain, partner] hat per rung (hats change the paddle profile).",
+      "value": [[1, 0], [1, 1], [2, 2], [3, 4], [5, 5], [5, 5], [0, 0], [1, 1]]
+    },
+    "practice_zone_rects": {
+      "note": "Practice target zones [x0, y0, x1, y1].",
+      "value": [[128, 90, 240, 170], [128, 90, 164, 170], [204, 90, 240, 170], [128, 90, 240, 112], [128, 148, 240, 170]]
+    }
+  },
+  "sources": {
+    "assets/source/opponents.json": "c7623739db0fa460",
+    "assets/source/paddles.json": "980979af85d09689",
+    "assets/source/career.json": "876f110235c66697"
+  }
+}
