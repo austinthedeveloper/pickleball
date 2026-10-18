@@ -1,81 +1,90 @@
-# SNES Pickleball — Preproduction Pack
+# Pickleball '94
 
-Working title: **Pickleball '94**. The name is a placeholder, not a shipping title.
+An arcade pickleball game for the Super Nintendo: a fixed court seen from the
+side, chunky movement, committed swings, and short matches. The name is a
+working title.
 
-This pack is the source of truth for a real-hardware Super Nintendo proof of concept. It is deliberately small: one local player against a CPU opponent, one court, one match, and placeholder art. The architecture leaves room for four local players through one Super Multitap connected to controller port 2.
+It runs on a real NTSC SNES/Super Famicom: a 1 MiB LoROM FastROM cart
+(ADR-017) with 2 KiB of battery-backed SRAM for records and settings
+(ADR-021), no enhancement chip. It is written in C for 816-tcc (PVSnesLib)
+plus 65816 assembly in `src/asm/`; the simulation and rules also build on the
+host for tests.
 
-## Product sentence
+## What's in the game
 
-An arcade pickleball game with the readable, physical feel of 16-bit dodgeball games: a fixed horizontal court, chunky movement, committed swings, exaggerated reactions, and short matches.
+- Singles and doubles against CPU teams, or with a friend: 2P on controller 2;
+  controllers 3 and 4 join through a Super Multitap but sit out until
+  four-player matches arrive (`M4-MP-01`).
+- A ladder of eight CPU teams with their own play styles, story cards, and
+  portraits, kept per mode.
+- Open play at the park, a practice ball machine, and career players with
+  stats and cosmetic unlocks.
+- Venues, court colours, night courts, options, and modifiers.
+- Pickleball rules with rally scoring: the serve, the two-bounce rule, and
+  kitchen volleys.
 
-## Locked POC scope
-
-- NTSC, 256×224, 60 Hz target.
-- Real unmodified SNES/Super Famicom compatibility.
-- Standard cartridge hardware only: no enhancement chip. FastROM (120 ns ROM) is required; see ADR-017. 2 KiB of battery-backed SRAM keeps records (ADR-021); without it the game still runs and records last until power-off.
-- PVSnesLib with C first and assembly only after profiling proves a need.
-- One human on the left versus one CPU player on the right.
-- Static court with recognizable pickleball lines.
-- D-pad movement, one context-sensitive hit button, Start to pause.
-- Serve, rally, faults, score, win state, and instant rematch.
-- One shared 32×32 player graphics set with palette swaps and horizontal flip.
-- Future target: two-versus-two with 1–4 humans; a Super Multitap in port 2 supplies pads 2–4.
-
-## Explicitly out of scope for the first three milestones
-
-- Online play, season mode, character stats, music, announcer, replay, scrolling courts, Mode 7, special chips, and final art.
-- Tournament-complete pickleball rules. The POC uses the simplified rules in [Gameplay Spec](docs/01_GAMEPLAY_SPEC.md).
-- PAL tuning. The build must not rely on emulator-only behavior, but NTSC is the first certified target.
+Controls and rules are in [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md) and the
+booklet draft in [docs/MANUAL.md](docs/MANUAL.md).
 
 ## Read this first
 
-1. [Product Brief](docs/00_PRODUCT_BRIEF.md)
-2. [Gameplay Spec](docs/01_GAMEPLAY_SPEC.md)
-3. [Technical Plan](docs/02_TECHNICAL_PLAN.md)
-4. [Sprite and Asset Pipeline](docs/03_SPRITE_ASSET_PIPELINE.md)
-5. [Input and Multitap Plan](docs/04_INPUT_MULTITAP_PLAN.md)
-6. [Repository Bootstrap](docs/06_REPO_BOOTSTRAP.md)
-7. [Mockup Conflict Decisions](docs/10_MOCKUP_DECISIONS.md)
-8. [Master Checklist](milestones/00_MASTER_CHECKLIST.md)
+1. [CLAUDE.md](CLAUDE.md): how the code is built, the rules of the code, and
+   the checks before calling something done.
+2. [docs/MANUAL.md](docs/MANUAL.md) and
+   [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md): the game as it plays.
+3. [docs/decisions/](docs/decisions/): the ADRs from ADR-018 on; ADR-001 to
+   ADR-017 are in [07_DECISIONS_AND_RISKS.md](docs/07_DECISIONS_AND_RISKS.md)
+   and [10_MOCKUP_DECISIONS.md](docs/10_MOCKUP_DECISIONS.md).
+4. [milestones/04_GAME_FEATURES.md](milestones/04_GAME_FEATURES.md): the
+   feature tasks, done and open.
+5. [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md): defects, open and fixed.
+6. [docs/REFACTOR_PLAN.md](docs/REFACTOR_PLAN.md): refactors and
+   optimization passes.
+7. [docs/NEXT_GAME_PLAYBOOK.md](docs/NEXT_GAME_PLAYBOOK.md): lessons for the
+   next project.
 
-## Milestone sheets
+Also current: the VRAM/OAM/ROM record in
+[09_M1_VRAM_AND_BUILD.md](docs/09_M1_VRAM_AND_BUILD.md), unplanned ideas in
+[IDEAS.md](docs/IDEAS.md), and the release process in
+[RELEASING.md](docs/RELEASING.md).
 
-- [M1 — Bootable Court](milestones/01_BOOTABLE_COURT.md)
-- [M2 — Playable Rally](milestones/02_PLAYABLE_RALLY.md)
-- [M3 — Complete Hardware POC](milestones/03_POC_HARDWARE_BUILD.md)
-
-Every implementation task lives on exactly one milestone sheet. Mark a task `[x]` in the same commit that satisfies its acceptance check. Do not mark parent exit criteria complete until every required child task and test is complete.
+**Historical:** docs 00–06 and 10 are the proof-of-concept plan (one player
+against a CPU, one court, first to five). Where they disagree with the ADRs
+or the manual, the ADRs and the manual win. Milestones M1–M3 are that plan's
+sheets; their open boxes wait on real-hardware runs
+([test/hardware-log.md](test/hardware-log.md)).
 
 ## Build and play
 
-With the pinned PVSnesLib 4.6.0 sibling install described in `toolchain/README.md`:
+With the pinned PVSnesLib 4.6.0 sibling install described in
+`toolchain/README.md`:
 
 ```sh
-make check          # host tests, asset validation fixtures, PROJ checks
-make release        # build/release/pickleball-0.3.0-release-<id>.sfc
-make debug          # adds the debug overlay, landing marker, and stress scene
+make check          # host tests, asset validation, 816-tcc pitfall check
+make release        # build/release/pickleball-<version>-release-<id>.sfc
+make debug          # adds the debug overlay and the OBJ stress scene
 make dist           # dist/: ROM, SHA-256, build report, player guide, hardware log
 make repro          # two clean builds must produce identical hashes
 make smoke SMOKE=m2 # headless MesenCE run of test/smoke/m2.timeline
 make perf           # dropped frames, hangs, and sound on every timeline (test/perf.json)
+make golden-record  # then golden-compare: the simulation trace before and after
+make stats          # host bot matches against the ladder (see CLAUDE.md)
 make release PROFILE=1  # per-stage scanline profiler (see include/profile.h)
 ```
 
-The ROM boots into a CPU-vs-CPU demo (alternating singles and doubles) behind
-the title; Up/Down picks SINGLES or DOUBLES and Start begins the match.
-Controls and rules are in [docs/PLAYER_GUIDE.md](docs/PLAYER_GUIDE.md). In
-debug and hardware-test builds, pausing shows the build ID and Multitap
-status, and Select opens the OBJ stress scene. Build artifacts are written
-below `build/`; the canonical ROM is the release `.sfc` in `dist/`.
+`<version>` is `VERSION_NAME` in the `Makefile`. The ROM boots into a
+CPU-vs-CPU demo behind the title menu. In debug and hardware-test builds,
+pausing shows the build ID and Multitap status, and Select opens the OBJ
+stress scene. Build artifacts are written below `build/`; the canonical ROM
+is the release `.sfc` in `dist/`. Releases are tagged GitHub Releases
+([docs/RELEASING.md](docs/RELEASING.md)).
 
-Art sources live in `assets/source/` as indexed PNGs plus palette part files.
-`tools/art/` holds the authoring scripts that created them (Pillow required);
-normal builds need only the Python standard library.
-
-## POC success test
-
-The POC is complete when a new player can power on a real NTSC SNES, move, serve, sustain a rally against the CPU, see an unambiguous fault and score, finish a first-to-five match, and rematch without resetting. No sprite dropout, lockup, input loss, or steadily worsening frame time may appear during a 15-minute hardware session.
+Art sources live in `assets/source/` as indexed PNGs plus palette part files
+([assets/source/README.md](assets/source/README.md)). Normal builds need only
+the Python standard library.
 
 ## Sources
 
-Hardware and toolchain claims are linked in [Sources](docs/08_SOURCES.md). Treat those links—not emulator folklore—as the starting point when a low-level assumption is disputed.
+Hardware and toolchain claims are linked in [Sources](docs/08_SOURCES.md).
+Treat those links, not emulator folklore, as the starting point when a
+low-level assumption is disputed.
