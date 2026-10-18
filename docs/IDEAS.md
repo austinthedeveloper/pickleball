@@ -6,20 +6,20 @@ ideas and their follow-ups are tracked as tasks in
 [M4 — Game Features](../milestones/04_GAME_FEATURES.md). Unbaked, just-for-fun
 ideas live in [GOOFY_IDEAS.md](GOOFY_IDEAS.md).
 
-Budget update (2026-10-16, R19): the ROM is now 1 MiB (32 banks), with about
-624 KiB free; the snapshot below is from before. Budget snapshot (2026-10-15,
-release build of `20d22ec`): the ROM was 512 KiB
-(16 LoROM banks); about 307 KiB is used and 205 KiB free. Banks 0-7 are
-full; the free space is in banks 8-13 and 15 (14-15 hold the soundbank).
-`tools/build_report.py` prints the table. Per-screen limits are in
-[09_M1_VRAM_AND_BUILD.md](09_M1_VRAM_AND_BUILD.md).
+Budget (2026-10-16, R19): the ROM is 1 MiB (32 LoROM banks), with about
+624 KiB free; the soundbank is in banks 13-15 and banks 16-31 take new data.
+`tools/build_report.py` prints the current table; per-screen limits are in
+[09_M1_VRAM_AND_BUILD.md](09_M1_VRAM_AND_BUILD.md). Some entries below cite
+the older 512 KiB snapshot (2026-10-15, `20d22ec`: about 307 KiB used, 205
+KiB free).
 
 ## Locations
 
 **Started:** [ADR-024](decisions/ADR-024-venues.md) adds three venues (PARK,
 LAKESIDE, SUNSET) built from the inspiration mocks, with shared ground
-tiles, per-venue default ground colours, and home courts for opponents. The
-notes below are the original idea.
+tiles, per-venue default ground colours, and home courts for opponents.
+[ADR-046](decisions/ADR-046-fun-venues.md) adds DINOSAUR, SPACE, and
+UNDERSEA; more are `M4-VENUE-03`. The notes below are the original idea.
 
 A location swaps the **backdrop** (the top of the screen: sky, trees, fence,
 bleachers, sign) and **recolours the ground**. The court geometry, lines, and
@@ -292,6 +292,10 @@ Today the cart has none (ADR-017: "no SRAM").
   tests; smoke-test with Mesen's `.srm`.
 
 ## Better aiming
+
+**Not started.** Since ADR-056 a held L or R aims a short shot away from
+the net, but the D-pad still both moves and aims. The notes below are the
+original idea.
 
 The D-pad both moves and aims: the shot reads the direction held at contact
 (`collision_apply_targeted_shot`, `intent->aim_x`/`aim_y`). A player running

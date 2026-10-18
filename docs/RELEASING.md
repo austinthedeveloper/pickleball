@@ -32,6 +32,7 @@ the ROM a `-dirty` build ID that matches no commit. Then it:
   tag, and the ROM's SHA-256 (`tools/release_notes.py`);
 - tags and pushes `vX.Y.Z`;
 - creates the release with the `.sfc`, `.sha256`, `build-report.md`, and the
-  player guide (`README.md`) attached.
+  player guide attached: `dist/README.md`, which `make dist` copies from
+  `docs/PLAYER_GUIDE.md` (not the repository's README).
 
 The `.sym` and `.map` debug files stay local in `dist/`.
