@@ -1,5 +1,4 @@
 #include <snes.h>
-#include <string.h>
 #include "hud.h"
 #include "hud_tiles.h"
 #include "ram_copy.h"
@@ -36,14 +35,10 @@ void hud_clear_rows(u8 first_row, u8 count)
 {
     u8 row;
 
-#ifdef HOST_TEST
-    memset(&g_hud_map[(u16)first_row * 32], 0, (u16)count * 64);
-#else
     hud_fill_index = (u16)first_row * 32;
     hud_fill_count = (u16)count * 32;
     hud_fill_value = HUD_TILE_CLEAR;
     hud_fill();
-#endif
     for (row = first_row; row < first_row + count; row += HUD_BAND_ROWS)
         hud_mark(row);
     hud_mark(first_row + count - 1);
@@ -69,17 +64,10 @@ void hud_fill_box(u8 col, u8 row, u8 width, u8 rows, u16 entry)
     u8 last = row + rows;
 
     for (; row < last; ++row) {
-#ifdef HOST_TEST
-        u8 i;
-
-        for (i = 0; i < width; ++i)
-            g_hud_map[(u16)row * 32 + col + i] = entry;
-#else
         hud_fill_index = (u16)row * 32 + col;
         hud_fill_count = width;
         hud_fill_value = entry;
         hud_fill();
-#endif
         hud_mark(row);
     }
 }
@@ -90,30 +78,15 @@ void hud_tile(u8 col, u8 row, u16 entry)
     hud_mark(row);
 }
 
-#ifndef HOST_TEST
 /* Inputs for hud_text_write (src/asm/hud_text.asm, M4-UI-01). */
 const char *hud_text_src;
 u16 hud_text_index;
 u16 hud_text_cols;
 u16 hud_text_attr;
 extern void hud_text_write(void);
-#endif
 
 void hud_text(u8 col, u8 row, u8 palette, const char *text)
 {
-#ifdef HOST_TEST
-    u16 index = (u16)row * 32 + col;
-    u8 c;
-
-    while ((c = (u8)*text++) != 0 && col < 32) {
-        if (c >= 'a' && c <= 'z')
-            c -= 'a' - 'A';
-        if (c < 32 || c > 95)
-            c = '?';
-        g_hud_map[index++] = hud_entry(c, palette);
-        ++col;
-    }
-#else
     if (col < 32) {
         hud_text_src = text;
         hud_text_index = (u16)row * 32 + col;
@@ -121,7 +94,6 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
         hud_text_attr = hud_entry(0, palette);
         hud_text_write();
     }
-#endif
     hud_mark(row);
 }
 
