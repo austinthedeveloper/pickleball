@@ -229,8 +229,8 @@ static void test_levels(void)
     assert(open_team_court(0) == 0 && open_team_court(2) == 0);
     assert(open_team_court(3) == 1 && open_team_court(5) == 1);
     assert(open_team_court(6) == 2 && open_team_court(7) == 2);
-    assert(strcmp(open_court_level_name(0), "<3.5") == 0);
-    assert(strcmp(open_court_level_name(2), "4.5+") == 0);
+    assert(strcmp(open_court_level_name(0), "ROOKIE") == 0);
+    assert(strcmp(open_court_level_name(2), "CHAMP") == 0);
     assert(open_court_difficulty(0, DIFFICULTY_HARD) == DIFFICULTY_EASY);
     assert(open_court_difficulty(1, DIFFICULTY_EASY) == DIFFICULTY_MEDIUM);
     assert(open_court_difficulty(2, DIFFICULTY_MEDIUM) == DIFFICULTY_HARD);
@@ -328,7 +328,13 @@ static void test_clubhouse(void)
 /* ADR-070: the park rating's rules, and courts above it closed. */
 static void test_rating(void)
 {
-    /* Levels: <3.5, 3.5-4.5, 4.5+. */
+    /* Levels: ROOKIE, CLUB, CHAMP. Shown as points: 10 to start, the
+     * courts at 15 and 25, 0 to 40. */
+    assert(open_rating_points(OPEN_RATING_START) == 10);
+    assert(open_rating_points(open_court_floor(1)) == 15);
+    assert(open_rating_points(open_court_floor(2)) == 25);
+    assert(open_rating_points(OPEN_RATING_MIN) == 0);
+    assert(open_rating_points(OPEN_RATING_MAX) == 40);
     assert(open_rating_court(20) == 0 && open_rating_court(34) == 0);
     assert(open_rating_court(35) == 1 && open_rating_court(44) == 1);
     assert(open_rating_court(45) == 2 && open_rating_court(60) == 2);

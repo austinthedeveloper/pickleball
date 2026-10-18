@@ -7,7 +7,7 @@ from .select import indexed_scene
 
 PARK_TILE_BUDGET = 768      # BG1 tiles at VRAM word 0x1000..0x3fff
 SUB = 1                     # BG palette 1 (0 is the HUD's); court n: 1 + n
-# Each court's apron shows its skill level (<3.5, 3.5-4.5, 4.5+): the
+# Each court's apron shows its skill level (ROOKIE, CLUB, CHAMP): the
 # court's tiles use their own copy of the palette with this apron colour.
 LEVEL_APRONS = [(52, 150, 120), (190, 150, 60), (176, 66, 60)]
 # The bench crowd (M4-OPEN-02) uses a palette of its own: the park's, with

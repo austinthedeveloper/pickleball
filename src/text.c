@@ -54,18 +54,3 @@ char *text_count4(char *out, u16 value)
     *out = 0;
     return out;
 }
-
-char *text_tenths(char *out, u8 tenths)
-{
-    u8 whole = 0;
-
-    while (tenths >= 10) {
-        tenths -= 10;
-        ++whole;
-    }
-    out = text_count(out, whole);
-    *out++ = '.';
-    *out++ = (char)('0' + tenths);
-    *out = 0;
-    return out;
-}

@@ -109,16 +109,16 @@ Open Play takes you to a park with three courts, a game going on each, just like
 
 | Court | Colour | CPU level |
 | --- | --- | --- |
-| <3.5 | Teal | EASY |
-| 3.5–4.5 | Gold | MEDIUM |
-| 4.5+ | Red | HARD |
+| ROOKIE | Teal | EASY |
+| CLUB | Gold | MEDIUM |
+| CHAMP | Red | HARD |
 
 1. Walk with the Control Pad. The paddles on each court's rack are the players waiting; yours is the coloured one.
 2. Press B at a rack to put your paddle in the stack. Press B again to take it back.
 3. When a game ends, the next paddles go on. When it's your turn the screen shows **YOUR GAME!** The captain of the next team in line partners you, and you play doubles against the team you were drawn with.
 4. After the game, B takes you back to the park. START in the park returns to the title.
 
-**Your park rating.** Every career player starts at 3.0. Win at your level and your rating climbs 0.2; lose and it drops 0.1. At 3.5 the gold court opens, and at 4.5 the red one, and once a court is open it stays open. (Beating the teal court once you're past it doesn't count.) Without a career player, or on KID, every court is open.
+**Park points.** Every career player starts with 10 park points. Win a game at your level and you earn 2; lose and you drop 1. At 15 points the CLUB court opens, and at 25 the CHAMP court, and once a court is open it stays open. (Beating the ROOKIE court once you've moved up earns nothing.) Without a career player, or on KID, every court is open.
 
 Walk right along the path to reach the **clubhouse**. Inside, press B at the board on the back wall to read your records, or B at the ball machine to practise. You'll still be called for your game while you're inside. Friends can come along too: 2P partners you in every game, and with a Super Multitap, 3P and 4P take the other side of the net.
 

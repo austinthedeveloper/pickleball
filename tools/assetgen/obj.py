@@ -115,7 +115,7 @@ SHADOW_OPAQUE_PALETTE = [0, 0, 0, 0, bgr15(4, 7, 7)] + [0] * 11
 # The park's court labels and scores as sprites (M4-OPEN-05: BG3 text
 # can't scroll with the park): HUD font glyphs, outlined in black, in the
 # objects palette. Yellow (2) for the scores, white (6) for the labels.
-PARK_FONTS = (("YELLOW", "0123456789-NEXTYOU", 2), ("WHITE", "<.+-345", 6))
+PARK_FONTS = (("YELLOW", "0123456789-NEXTYOU", 2), ("WHITE", "ROKIECLUBHAMP", 6))
 
 
 def font_tiles(chars, fill):

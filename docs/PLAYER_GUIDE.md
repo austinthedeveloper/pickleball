@@ -19,8 +19,8 @@ page).
 
 **OPEN PLAY** takes you to a park with three courts, a game going on each,
 just like open play at a real park. The courts are skill levels, marked
-over each court and by its colour: **<3.5** (teal, an EASY game),
-**3.5-4.5** (gold, MEDIUM), and **4.5+** (red, HARD). Each team plays at
+over each court and by its colour: **ROOKIE** (teal, an EASY game),
+**CLUB** (gold, MEDIUM), and **CHAMP** (red, HARD). Each team plays at
 its own level. On KID, every court is KID.
 
 - Walk with the D-pad. The paddles hanging on a court's rack are the
@@ -37,14 +37,13 @@ its own level. On KID, every court is KID.
   to leave.
 - After the game, **B** takes you back to the park. **Start** in the park
   goes back to the title.
-- **Your park rating:** a career player has one, starting at 3.0 (the
-  park's status line and the career card show it). The 3.5-4.5 court
-  opens at 3.5 and the 4.5+ court at 4.5, and once open a court stays
-  open. A win at your level adds 0.2 (0.3 on a court above it), a loss
-  takes 0.1 anywhere, and a win on a court below your level adds
-  nothing. The result shows the move (`RATED 3.4 TO 3.6`, or
-  `3.5-4.5 OPEN!`). With no career player, or on KID, every court is
-  open and nothing is rated.
+- **Park points:** a career player starts with 10 (the park's status
+  line and the career card show them). The CLUB court opens at 15 and
+  the CHAMP court at 25, and once open a court stays open. A win at your
+  level earns 2 (3 on a court above it), a loss costs 1 anywhere, and a
+  win on a court below your level earns nothing. The result shows the
+  move (`PARK POINTS 14 TO 16`, or `CLUB COURT OPEN! 16 PTS`). With no
+  career player, or on KID, every court is open and nothing counts.
 - **The clubhouse:** walk right along the path and the park scrolls on to
   the clubhouse. Go in through the door at the bottom:
   - **B** at the board on the back wall reads your records, a page per
