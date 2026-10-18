@@ -31,8 +31,6 @@ void hud_clear_rows(u8 first_row, u8 count);
 void hud_save_rows(u8 first_row, u8 count, u16 *out);
 void hud_restore_rows(u8 first_row, u8 count, const u16 *in);
 void hud_text(u8 col, u8 row, u8 palette, const char *text);
-/* Single digit or two digits when value >= 10. */
-void hud_number(u8 col, u8 row, u8 palette, u8 value);
 void hud_tile(u8 col, u8 row, u16 entry);
 /* A line of text centred on the 32-column map, without a panel. */
 void hud_center_text(u8 row, u8 palette, const char *text);

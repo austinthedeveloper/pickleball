@@ -193,14 +193,8 @@ u8 g_render_busy;
                   (g_save.settings.modifiers & MODIFIER_LAVA) != 0) : \
      (g_match_config.modifiers & MODIFIER_LAVA) != 0)
 static u8 s_doubles;
-static u8 s_applied_mode;
 
 static void render_load_court(void);
-
-u8 render_match_mode_applied(void)
-{
-    return s_applied_mode;
-}
 u8 g_objpal_objects;
 u8 g_objpal_flash;
 u8 g_objpal_shadow;
@@ -222,7 +216,6 @@ void render_apply_match_config(void)
     u16 tile;
 
     s_doubles = g_match_config.mode == MATCH_DOUBLES;
-    s_applied_mode = g_match_config.mode;
     g_objpal_objects = s_doubles ? RENDER_OBJPAL_DOUBLES_OBJECTS :
         RENDER_OBJPAL_OBJECTS;
     g_objpal_flash = s_doubles ? RENDER_OBJPAL_DOUBLES_FLASH :

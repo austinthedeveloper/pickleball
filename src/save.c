@@ -127,7 +127,7 @@ static void save_defaults(void)
     g_save.career_active = CAREER_NONE;
 }
 
-/* A write waiting for the next frame (save_write_soon). */
+/* A write waiting for the next frame (save_flush). */
 static u8 s_write_pending;
 
 void save_write(void)

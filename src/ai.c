@@ -574,6 +574,10 @@ static fx s_win_low;
  * the steps before it are skipped as one block when they can be. */
 typedef char ai_windup_skip_is_3[PLAYER_WINDUP_FRAMES - 1 == 3 ? 1 : -1];
 
+/* The ball moves < 8 px/frame, so a ball farther than this in x cannot
+ * arrive within the swing lookahead. */
+#define AI_SWING_REACH_X 64
+
 static u8 ai_swing_connects(const Player *player)
 {
     u8 slot;
@@ -584,8 +588,7 @@ static u8 ai_swing_connects(const Player *player)
     s16 fall;
     s16 dx = FROM_FP(g_ball.x_fp) - FROM_FP(player->x_fp);
 
-    /* The ball moves < 8 px/frame, so beyond this it cannot arrive in time. */
-    if (dx > 64 || dx < -64)
+    if (dx > AI_SWING_REACH_X || dx < -AI_SWING_REACH_X)
         return 0;
     /* Contact needs a bounced ball (unless this CPU volleys, ADR-035);
      * skip the lookahead while the bounce is still beyond the swing window
@@ -819,6 +822,10 @@ static u8 ai_steps_inside(fx x, fx y, s16 vx, s16 vy, u8 steps)
     return steps;
 }
 
+/* The intercept meets a bounced ball this many frames after the bounce at
+ * most (near the top of its rise). */
+#define AI_MEET_RISE_MAX 10
+
 static void ai_plan_intercept(const Player *player)
 {
     u8 steps;
@@ -902,11 +909,12 @@ static void ai_plan_intercept(const Player *player)
         return;
     }
 
-    /* Meet the ball near the top of its first bounce. */
+    /* Meet the ball near the top of its first bounce, at most
+     * AI_MEET_RISE_MAX frames after it. */
     bounce_vz = ball_retain(-s_impact_vz, BALL_BOUNCE_VERTICAL_256);
     rise = (u8)(bounce_vz / -BALL_GRAVITY_FP);
-    if (rise > 10)
-        rise = 10;
+    if (rise > AI_MEET_RISE_MAX)
+        rise = AI_MEET_RISE_MAX;
     vx = ball_retain(g_ball.vx_fp, BALL_BOUNCE_PLANAR_256);
     vy = ball_retain(g_ball.vy_fp, BALL_BOUNCE_PLANAR_256);
     if (s_partner_human)

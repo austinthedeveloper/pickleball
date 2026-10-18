@@ -97,16 +97,6 @@ void hud_text(u8 col, u8 row, u8 palette, const char *text)
     hud_mark(row);
 }
 
-void hud_number(u8 col, u8 row, u8 palette, u8 value)
-{
-    if (value >= 10) {
-        g_hud_map[(u16)row * 32 + col] = hud_entry('0' + value / 10, palette);
-        ++col;
-    }
-    g_hud_map[(u16)row * 32 + col] = hud_entry('0' + value % 10, palette);
-    hud_mark(row);
-}
-
 void hud_center_text(u8 row, u8 palette, const char *text)
 {
     u8 length = 0;

@@ -85,8 +85,6 @@ void render_apply_court_colors(void);
 void render_apply_court_time(void);
 /* Slot 0's palette, hat, and ponytail again (the career preview). */
 void render_apply_p1_look(void);
-/* Mode whose palettes/colour math are currently set up. */
-u8 render_match_mode_applied(void);
 /* Scene switches with a fade (ADR-020): the court and match HUD from the
  * current g_match_config, or the Player Select screen. */
 void render_open_match(void);
