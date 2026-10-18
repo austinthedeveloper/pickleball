@@ -41,7 +41,8 @@ OPTIONS page:
   the normal box at boot.
 - **FAST BALL:** extends the slow-ball pace of ADR-025. Steps per tick are
   the difficulty's steps plus one on every 3rd tick
-  (`modifiers_ball_steps`): MEDIUM and HARD step 16 times in 12 frames, EASY
+  (`modifiers_ball_steps`; now `modifiers_ball_pace`, which builds the
+  `g_ball_pace` table): MEDIUM and HARD step 16 times in 12 frames, EASY
   13, and KID 12 (a fast KID ball moves at normal speed). Arcs, bounces, and
   landing spots are unchanged; a 40-step shot lands after 30 frames.
   - Two steps in one frame report both steps' events.
@@ -74,7 +75,9 @@ OPTIONS page:
   the title, while the MODIFIERS page is open with KITCHEN on LAVA (a live
   preview); it changes back when the page closes or the match ends.
 - `tools/art/author_sprites.py` does not draw the machine (ADR-028) or the
-  big ball; both were drawn into the PNGs directly.
+  big ball; both were drawn into the PNGs directly. [`author_sprites.py`
+  was removed by ADR-059; the bodies come from
+  `tools/art/import_kit_sprites.py`.]
 
 ## Save
 

@@ -168,7 +168,8 @@ bandana, or bare hair (`opponents.json` `hat`, `assets/manifest/player_frames.js
   offset plus `hat_offset` (4, −4), so no new per-frame data. Flipped, it
   mirrors as 16 − x with its two halves swapped. A hat can only add pixels,
   so each one covers the cap's pixels; `tools/art/author_hats.py` refuses a
-  hat that leaves any showing.
+  hat that leaves any showing. [Superseded by ADR-059: `author_hats.py` is
+  gone, the bodies are bareheaded, and the cap is a hat itself.]
 - It must draw in front of its own body, so OAM 2–13 are now a group per
   player in depth order: the hat's two halves, then the body. A hat stays
   behind nearer players. Shadows move to 14–17, effects to 18–21,

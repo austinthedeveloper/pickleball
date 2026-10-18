@@ -4,6 +4,8 @@ Status: **Accepted 2026-10-16**
 Milestone: `M4-SERVE-02`. Extends: ADR-044 (the charged serve), ADR-023
 (CPU styles).
 
+Amended by [ADR-062](ADR-062-ladder-rebalance.md): a CPU short serve goes at the classic power, whatever `serve_power` says.
+
 ## Why
 
 Since ADR-044 a human can charge a serve; CPUs all served at the classic

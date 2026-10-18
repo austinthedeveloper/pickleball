@@ -5,6 +5,8 @@ Starts the courts/locations idea in [IDEAS.md](../IDEAS.md).
 Depends on: ADR-016 (BG1 budget), ADR-022 (court colours), ADR-023
 (opponents).
 
+Amended by [ADR-027](ADR-027-two-tone-kitchen.md): a venue can also set a default kitchen colour.
+
 ## What a venue is
 
 A venue changes the **backdrop** and the **default ground colours**. The

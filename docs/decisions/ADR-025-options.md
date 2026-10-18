@@ -47,6 +47,9 @@ OPTIONS), so Up from SINGLES reaches it. It works like the COURT page:
     past the CPU's 60-step prediction.
 - **CPU lookahead:** its swing lookahead knows the pattern
   (`game_ball_moves_ahead`), so CPUs still time their swings on a slow ball.
+  [That function is gone: the lookahead now reads the pace table,
+  `GAME_BALL_STEPS_AHEAD` in `include/game.h`, built by
+  `modifiers_ball_pace`; the AI counts steps with `g_ball_steps`.]
   At normal speed the check is skipped entirely, because extra calls in that
   loop cost real frame time.
 - **KID swing assist** (`ai_assist_swing`):

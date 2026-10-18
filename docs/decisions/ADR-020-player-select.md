@@ -11,6 +11,8 @@ Amended by [ADR-066](ADR-066-join-counter-and-rings.md): joining shows on the ti
 
 Amended by [ADR-065](ADR-065-menu-cleanup.md): a career player chooses only the paddle.
 
+Amended by [ADR-023](ADR-023-cpu-personalities.md): each CPU opponent has its own paddle.
+
 ## Flow
 
 ```
@@ -34,6 +36,8 @@ Title ──Start/B──▶ Player Select (1P) ──B×3──▶ [Player Sele
 - CPUs take the unused colours in order BLUE, RED, GREEN, GOLD, plus the
   standard (BLUE) paddle, so a CPU's paddle is always blue whatever its
   shirt. Slots 1 and 3 are female and slot 2 is male.
+  *Amended by [ADR-023](ADR-023-cpu-personalities.md):* a ladder opponent
+  brings its own paddle (`opponents.json`, `g_opponent_paddle`).
   The attract demo keeps its fixed mockup colours.
 
 ## Paddle stats (ADR-015 open questions)

@@ -6,6 +6,8 @@ story screens yet: opponents come in ladder order.
 Depends on: ADR-013 (palette parts), ADR-014 (female variant), ADR-019
 (shots), ADR-020 (paddles), ADR-021 (save).
 
+Amended by [ADR-062](ADR-062-ladder-rebalance.md): the ladder retuned (mostly `late_period`); a CPU short serve is soft and to the middle.
+
 ## Roster
 
 `assets/source/opponents.json`, in ladder order. Each entry is a team: a

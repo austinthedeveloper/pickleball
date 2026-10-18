@@ -141,6 +141,6 @@ knob, and the one-owner change didn't touch its 4230 frames.
 
 - `test_ai.c: test_footwork`: TWINS' unforced outs over 30 doubles matches (10 until M4-OPP-02),
   without footwork at least 10, with it at most a quarter of that (0 now).
-- `test_ai.c: test_middle_aim`: a tactics CPU in doubles holds a middle aim
-  on even shots and a lane on odd ones; the default CPU always a lane.
+- `test_ai.c: test_middle_aim` (part of `test_doubles_aim` since ADR-039):
+  a tactics CPU in doubles holds a middle aim on even shots and a lane on odd ones; the default CPU always a lane.
 - `test_doubles.c`: one owner per team (it caught the double chase).
