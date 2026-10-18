@@ -18,6 +18,8 @@ u16 g_career_new_unlocks;
 u8 g_career_park_before;
 u8 g_career_park_after;
 u8 g_career_park_opened;
+u8 g_career_park_pending;
+static u8 s_park_won;
 
 CareerPlayer *career_active(void)
 {
@@ -147,6 +149,16 @@ void career_rate_park(CareerPlayer *player, u8 court, u8 won)
         (after - CAREER_PARK_BASE));
 }
 
+void career_park_flush(void)
+{
+    CareerPlayer *player = career_active();
+    u8 court = g_career_park_pending;
+
+    g_career_park_pending = 0;
+    if (court && player)
+        career_rate_park(player, (u8)(court - 1), s_park_won);
+}
+
 void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     u8 open_play)
 {
@@ -155,6 +167,7 @@ void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     g_career_new_unlocks = 0;
     g_career_park_before = OPEN_RATING_NONE;
     g_career_park_opened = OPEN_NONE;
+    g_career_park_pending = 0;
     if (player == 0)
         return;
     if (mode > MATCH_DOUBLES)
@@ -162,8 +175,10 @@ void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
     if (open_play) {
         career_bump(&player->open_play);
         /* KID's games are all KID (ADR-034): not rated. */
-        if (g_match_config.difficulty != DIFFICULTY_KID)
-            career_rate_park(player, (u8)(open_play - 1), won);
+        if (g_match_config.difficulty != DIFFICULTY_KID) {
+            g_career_park_pending = open_play;
+            s_park_won = won;
+        }
     }
     if (won) {
         career_bump(&player->wins[mode]);

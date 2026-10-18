@@ -172,6 +172,7 @@ void game_new_match(void)
     g_career_new_unlocks = 0;
     g_career_park_before = OPEN_RATING_NONE;   /* ADR-070 */
     g_career_park_opened = OPEN_NONE;
+    g_career_park_pending = 0;
     players_initialize();
     ball_initialize();
     serve_initialize();
@@ -392,6 +393,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
 
 static void game_update_match_result(const PlayerIntent intents[MAX_PLAYERS])
 {
+    career_park_flush();                /* ADR-070, KNOWN_ISSUES #41 */
     save_flush();                       /* the match's records */
     game_freeze_players(g_game_state.match_winner);
     if (g_attract) {
