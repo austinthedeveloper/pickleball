@@ -82,6 +82,9 @@ static s16 s_land_x;
 static s16 s_land_y;
 static s16 s_land_impact_vz;
 
+/* Each slot's last thought-out intent, repeated on frames it skips. */
+static PlayerIntent s_held_intent[MAX_PLAYERS];
+
 void ai_initialize(void)
 {
     u8 i;
@@ -105,6 +108,9 @@ void ai_initialize(void)
         s_slide_vx[i] = AI_NO_SPEED;
         s_slide_vy[i] = AI_NO_SPEED;
     }
+    /* A lane cover's first frames repeat its held intent before it has
+     * thought (ADR-069: the lockstep found power-on garbage there). */
+    memset(s_held_intent, 0, sizeof(s_held_intent));
 }
 
 /*
@@ -927,7 +933,6 @@ static void ai_plan_intercept(const Player *player)
 }
 
 static void ai_think(u8 player_index, PlayerIntent *intent);
-static PlayerIntent s_held_intent[MAX_PLAYERS];
 
 /*
  * KID swing assist (ADR-025): nonzero when a swing pressed now would meet

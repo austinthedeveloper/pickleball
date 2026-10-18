@@ -11,9 +11,11 @@
  *
  *   make conformance   # build/conformance/<scenario>.trace
  *
- * The CPUs run on main.c's schedule (TEST_CPU_THINKS); P1 is the bot from
- * tools/match_stats.c. The traces are generated, not committed: rebuild
- * them from the commit a port is matching.
+ * The CPUs run on main.c's schedule (CPU_THINKS), its loop count being
+ * the trace's frame; P1 is the bot from
+ * tools/match_stats.c. make lockstep checks that this host C is the ROM.
+ * The traces are generated, not committed: rebuild them from the commit a
+ * port is matching.
  */
 #include <stdio.h>
 #include <string.h>
@@ -118,11 +120,12 @@ static void run(const Scenario *s, FILE *out)
         if (g_game_state.phase == GAME_PHASE_MATCH_RESULT &&
                 (frame & 63) == 0)
             s_intents[0].hit_pressed = 1;
+        g_loop_count = frame;           /* the schedule's clock */
         for (slot = 1; slot < MAX_PLAYERS; ++slot) {
             if (!g_players[slot].active ||
                     g_input_owners[slot] != INPUT_OWNER_CPU)
                 continue;
-            if (TEST_CPU_THINKS(slot, frame))
+            if (CPU_THINKS(slot))
                 ai_update(slot, &s_intents[slot]);
             else
                 ai_hold_intent(slot, &s_intents[slot]);

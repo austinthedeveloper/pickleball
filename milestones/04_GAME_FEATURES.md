@@ -252,3 +252,7 @@ touching the simulation.
 - [x] `M4-PORT-01` A tuning reference for ports: every simulation constant and derived table in one generated, committed file (`docs/tuning/tuning.json`), a `TUNING_VERSION` bumped with any value change, conformance traces a port can diff frame by frame, and `docs/TUNING.md` (units, the port rules, the SNES-limited values).
   - Accept: `make check` fails while the export is stale or a value changes without a version bump; the export prints the values the game compiles (no number typed twice); golden trace identical; zero overruns on `make perf`.
   - Verified: [ADR-068](../docs/decisions/ADR-068-tuning-reference.md).
+
+- [x] `M4-PORT-02` The ROM and the host in lockstep: one CPU schedule definition (`CPU_THINKS`) for the ROM, the harnesses and the traces, and `make lockstep`, which replays matches recorded from the ROM on the host and compares every simulation field every frame (the asm `player_step` and `ai_probe` against their C, and 816-tcc against cc).
+  - Accept: `make lockstep` identical on a singles, a doubles, and a modifiers match; a change to the C twin alone fails it; `make stats` identical; zero overruns on `make perf`.
+  - Verified: [ADR-069](../docs/decisions/ADR-069-rom-host-lockstep.md). Found and fixed KNOWN_ISSUES #36; #37 and #38 recorded.

@@ -5,6 +5,7 @@
 #include "career_page.h"
 #include "museum.h"
 #include "court_style.h"
+#include "cpu_schedule.h"
 #include "game.h"
 #include "hud_scene.h"
 #include "serve.h"
@@ -409,13 +410,6 @@ static void update_title_practice(u16 pressed)
     s_open_select = 1;
 }
 
-/* The slot is serving: the serve setup and toss only. server_index keeps
- * the last server through the rally, and a lane cover thinking every frame
- * there put a third think on most rally frames (M4-UI-03/04). */
-#define SERVING(slot) \
-    (g_serve_state.server_index == (slot) && \
-     g_game_state.phase <= GAME_PHASE_SERVE_TOSS)
-
 /* Title: Up/Down picks an entry, Start on pad 2 toggles 2P, and Start/B
  * opens Player Select (singles, doubles) or a page (court, records). */
 static void update_title(void)
@@ -490,28 +484,20 @@ static void update_title(void)
      * lane covers on one frame and three or four thinks in all, which
      * dropped frames (M4-UI-03). */
     if (g_match_config.mode == MATCH_DOUBLES ?
-            (g_ai_slots[0].has_target || ((u8)g_loop_count & 3) == 0) :
-            (g_loop_count & 1))
+            (g_ai_slots[0].has_target || (CPU_FRAME() & 3) == 0) :
+            (CPU_FRAME() & 1))
         ai_update(0, &g_player_intents[0]);
     else
         ai_hold_intent(0, &g_player_intents[0]);
 }
 
-/*
- * A CPU playing the ball (or alone on its side, or serving) thinks every
- * frame; a doubles CPU covering its lane thinks every fourth frame,
- * staggered by slot, and repeats its movement in between (ADR-018).
- * A macro so every index is a constant: 816-tcc multiplies for each
- * variable g_players[i] / g_ai_slots[i] access.
- */
+/* A CPU on its schedule (CPU_THINKS, cpu_schedule.h). A macro so every
+ * index is a constant. */
 #define UPDATE_CPU(slot) \
     do { \
         if (g_input_owners[slot] == INPUT_OWNER_CPU && \
                 g_players[slot].active) { \
-            if (!g_players[(slot) ^ 1].active || \
-                    g_ai_slots[slot].has_target || \
-                    SERVING(slot) || \
-                    ((u8)g_loop_count & 3) == (slot)) \
+            if (CPU_THINKS(slot)) \
                 ai_update(slot, &g_player_intents[slot]); \
             else \
                 ai_hold_intent(slot, &g_player_intents[slot]); \

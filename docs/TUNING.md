@@ -14,7 +14,8 @@ and how a port finds out that they changed (ADR-068).
 | `make tuning-export` | Rewrites `tuning.json` (`tools/tuning_export.py`, `tools/tuning_dump.c`). |
 | `make tuning-check` | Part of `make check`: fails while `tuning.json` is stale, or a value changed without a version bump, or the version has no row below. |
 | `make conformance` | `build/conformance/<scenario>.trace`: fixed match scenarios played frame by frame on the host, as plain integers (`tools/conformance.c`). Not committed; generate them at the commit a port is matching. |
-| `make stats` | The ladder tables (`tools/match_stats.c`). A port that can't be bit-exact compares its own ladder to these. |
+| `make lockstep` | Proves the host C the traces come from is the ROM: matches recorded from the ROM, replayed on the host, every field compared every frame (ADR-069). |
+| `make stats` | The ladder tables (`tools/match_stats.c`). A port that can't be bit-exact compares its own ladder to these. Rungs a few wins apart are within noise at 60 matches (KNOWN_ISSUES #38). |
 
 `tuning.json` has five parts: `units`; `constants`, grouped by source file
 (`include/ball.h`, ...), each `{value, note}`; `tables`, each `{note,
@@ -105,10 +106,11 @@ The feel depends on each of them.
    is alone on its side, or serves. Otherwise a doubles CPU covering its
    lane thinks only on frames where `(frame & 3) == slot`, and repeats its
    last movement in between (ADR-018, ADR-043). This started as a frame
-   budget measure, but the ladder was tuned with it, so copy it. Count
-   `frame` from the match's first frame, as the conformance traces and
-   the host harnesses do. (The ROM counts from boot, so its phase depends
-   on time spent in menus.)
+   budget measure, but the ladder was tuned with it, so copy it
+   (`CPU_THINKS`, `include/cpu_schedule.h`). `frame` is a running frame
+   count; where it starts doesn't matter. The ROM counts from power-on,
+   so a match's phase is arbitrary (KNOWN_ISSUES #37); the conformance
+   traces count from their first frame. A held intent starts at zero.
 8. **No randomness in a match.** CPU mistakes are periods: late every
    Nth return (`late_period`), a dink every Nth shot, and so on. A CPU's
    serve is a dud when `frame_count % serve_dud == 0` as it serves.

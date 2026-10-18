@@ -63,7 +63,7 @@ endif
 
 include $(PVSNESLIB_HOME)/devkitsnes/snes_rules
 
-.PHONY: all debug release hardware-test profile assets check host-check asset-check tcc-check tuning-dump tuning-export tuning-check conformance clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
+.PHONY: all debug release hardware-test profile assets check host-check asset-check tcc-check tuning-dump tuning-export tuning-check conformance lockstep clean dist publish smoke repro stats golden-record golden-compare perf sfx-preview
 
 all: debug
 
@@ -173,6 +173,23 @@ golden-record: release
 	@python3 tools/mesen_probe.py golden-record
 golden-compare: release
 	@python3 tools/mesen_probe.py golden-compare
+
+# The ROM against the host C (tools/lockstep.c, ADR-069): a singles and a
+# doubles match replayed on the host from the ROM's intents, every
+# simulation field compared on every frame. Catches the asm twins
+# (player_step, ai_probe) drifting from the C, and 816-tcc miscompiles.
+LOCKSTEP_RUNS := golden:4260 doubles_ladder:2400 modifiers_fun:2400
+lockstep: release
+	@mkdir -p build/host build/lockstep
+	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \
+		-Iassets/generated tools/lockstep.c $(HOST_CORE) \
+		-o build/host/lockstep
+	@for run in $(LOCKSTEP_RUNS); do \
+		t=$${run%%:*}; n=$${run##*:}; \
+		python3 tools/mesen_probe.py lockstep-record \
+			test/smoke/$$t.timeline $$n build/lockstep/$$t.txt && \
+		build/host/lockstep build/lockstep/$$t.txt || exit 1; \
+	done
 
 MESEN_BIN ?= /Applications/Mesen.app/Contents/MacOS/Mesen
 SMOKE ?= m1

@@ -21,6 +21,12 @@
       test/smoke/golden.timeline. A behavior-preserving refactor must keep
       the trace identical even though variables may move in RAM.
 
+  lockstep-record [--config release] TIMELINE FRAMES OUT
+      Writes OUT: on every frame, the match config, the intents, and the
+      simulation state (LOCKSTEP_STATE). tools/lockstep.c replays the
+      match on the host from it and stops at the first frame where the
+      ROM and the host C differ (make lockstep, ADR-069).
+
 Environment: MESEN_BIN overrides /Applications/Mesen.app/.../Mesen.
 """
 import argparse
@@ -48,6 +54,16 @@ GOLDEN_STATE = [
     ("serve", "g_serve_state", 10),
     ("ai", "g_ai_slots", 96),
 ]
+# The ROM-versus-host lockstep (tools/lockstep.c, ADR-069): what it needs to
+# replay a match on the host, then the state it compares.
+LOCKSTEP_STATE = [
+    ("cfg", "g_match_config", 31),
+    ("attract", "g_attract", 1),
+    ("owners", "g_input_owners", 4),
+    ("intents", "g_player_intents", 48),
+    ("charge", "g_serve_charge", 5),
+    ("loops", "g_loop_count", 2),
+] + GOLDEN_STATE
 # Frames before initialization hold MesenCE's randomized power-on RAM. Boot
 # (the sound CPU, the two-bank soundbank, the first court load) ends near
 # frame 10 since v0.5.0; 30 leaves room.
@@ -148,11 +164,11 @@ def resolve(table, spec):
     return f"{name}={symbol_address(table, sym):x}:{size}"
 
 
-def golden_probes(rom):
+def golden_probes(rom, state=GOLDEN_STATE):
     table = symbols(rom)
     ordered = sorted(addr for addr in table.values() if addr >> 16 == 0x7E)
     probes = []
-    for name, sym, size in GOLDEN_STATE:
+    for name, sym, size in state:
         addr = table[sym]
         following = [a for a in ordered if a > addr]
         if following and following[0] - addr < size:
@@ -293,6 +309,11 @@ def main():
                    help="work-RAM write; see the module docstring")
     pf = sub.add_parser("perf")
     pf.add_argument("--config", default="release")
+    lr = sub.add_parser("lockstep-record")
+    lr.add_argument("--config", default="release")
+    lr.add_argument("timeline", type=Path)
+    lr.add_argument("frames", type=int)
+    lr.add_argument("out", type=Path)
     for name in ("golden-record", "golden-compare"):
         g = sub.add_parser(name)
         g.add_argument("--config", default="release")
@@ -303,6 +324,28 @@ def main():
 
     if args.cmd == "perf":
         perf(args.config)
+        return
+
+    if args.cmd == "lockstep-record":
+        rom = rom_for(args.config)
+        lines = run(rom, args.timeline.resolve(), args.frames,
+                    golden_probes(rom, LOCKSTEP_STATE), every=True)
+        if len(lines) < args.frames - 5:
+            raise SystemExit(f"emulator produced only {len(lines)} frames")
+        # Sizes 1 and 2 print as decimal; lockstep reads every field as a
+        # little-endian hex dump.
+        small = {name: size for name, _, size in LOCKSTEP_STATE if size <= 2}
+
+        def as_hex(part):
+            name, _, text = part.partition("=")
+            if name in small:
+                text = int(text).to_bytes(small[name], "little").hex()
+            return f"{name}={text}"
+        lines = [" ".join(line.split()[:2] + [as_hex(p) for p in
+                                             line.split()[2:]])
+                 for line in lines]
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text("\n".join(lines) + "\n")
         return
 
     if args.cmd == "probe":

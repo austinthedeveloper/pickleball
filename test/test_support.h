@@ -9,6 +9,7 @@
 #include <string.h>
 #include "ai.h"
 #include "career.h"
+#include "cpu_schedule.h"
 #include "game.h"
 #include "player.h"
 #include "input.h"
@@ -23,29 +24,26 @@ static inline void test_step(PlayerIntent intents[MAX_PLAYERS])
     game_update(intents);
 }
 
-/*
- * One frame with the CPUs scheduled as main.c schedules them (UPDATE_CPU,
- * ADR-018): a CPU playing the ball, alone on its side, or serving thinks
- * every frame; a doubles CPU covering its lane thinks every fourth frame,
- * staggered by slot, and repeats its movement in between. Slot 0 (the P1
- * stand-in) is the caller's. `loop` is main.c's g_loop_count.
- */
-#define TEST_CPU_THINKS(slot, loop) \
-    (!g_players[(slot) ^ 1].active || g_ai_slots[slot].has_target || \
-     (g_serve_state.server_index == (slot) && \
-      g_game_state.phase <= GAME_PHASE_SERVE_TOSS) || \
-     ((u8)(loop) & 3) == (slot))
+/* main.c's loop count (profile.c), which CPU_THINKS reads; the host
+ * harnesses set it. */
+u16 g_loop_count;
 
+/*
+ * One frame with the CPUs on main.c's schedule (CPU_THINKS, ADR-018,
+ * ADR-069), `loop` standing in for the main loop's count. Slot 0 (the P1
+ * stand-in) is the caller's.
+ */
 static inline void test_step_scheduled(PlayerIntent intents[MAX_PLAYERS],
     u16 loop)
 {
     u8 slot;
 
+    g_loop_count = loop;
     for (slot = 1; slot < MAX_PLAYERS; ++slot) {
         if (!g_players[slot].active ||
                 g_input_owners[slot] != INPUT_OWNER_CPU)
             continue;
-        if (TEST_CPU_THINKS(slot, loop))
+        if (CPU_THINKS(slot))
             ai_update(slot, &intents[slot]);
         else
             ai_hold_intent(slot, &intents[slot]);

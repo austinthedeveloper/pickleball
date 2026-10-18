@@ -26,7 +26,8 @@ ROM headless for smoke, perf, and golden checks.
 3. `make golden-compare` (after `make golden-record` on the base commit; the
    trace lives in `build/golden/`, not git). Identical means the simulation
    is unchanged. A change that alters play will differ; say so, and the user
-   re-records after merging.
+   re-records after merging. When the simulation or its asm changes, also
+   `make lockstep`: the ROM and the host C must agree frame by frame.
 4. When AI, rules, positions, or opponent styles change: `make stats` before
    and after, for the ladder in singles and both doubles bots:
    `make stats LATE=0 MATCHES=20 OPPONENT=-2 DIFFICULTY=2 MODE=0` (then
@@ -54,8 +55,9 @@ ROM headless for smoke, perf, and golden checks.
   compiler bugs: when the ROM and the host tests disagree, read the
   generated assembly (`make src/<file>.asm`, then delete it).
 - **`player_step` exists twice:** C in `src/player.c` (host, under
-  `HOST_TEST`) and `src/asm/player_step.asm` (SNES). Change both; the golden
-  trace compares them.
+  `HOST_TEST`) and `src/asm/player_step.asm` (SNES); so does the AI's ball
+  probe (`src/asm/ai_probe.asm`). Change both; `make lockstep` compares the
+  ROM with the host C (the golden trace only compares ROMs).
 - **WRAM is not cleared at power-on.** Initialize every static at boot or
   scene entry.
 - **OBJ palettes are all in use** (four players in doubles, objects). New UI

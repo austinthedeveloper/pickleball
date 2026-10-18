@@ -879,11 +879,11 @@ static void hud_scene_step(u16 key, u8 step)
             /* The quip's panel under the point's, then its text. */
             hud_center_prompt_panel(QUIP_PANEL_ROW, s_quip);
             s_quip_drawn = 1;
-        } else if (step == HUD_STEP_EXTRA4 && s_quip) {
+        } else if (step >= HUD_STEP_EXTRA4 && s_quip) {
+            /* Its text in halves on two frames, as the point's: both on
+             * one frame overran a doubles point result (ADR-069). */
             hud_center_prompt_half(QUIP_PANEL_ROW, team_hud_palette(winner ^ 1),
-                s_quip, 0);
-            hud_center_prompt_half(QUIP_PANEL_ROW, team_hud_palette(winner ^ 1),
-                s_quip, 1);
+                s_quip, step == HUD_STEP_EXTRA5);
         }
         return;
     }
@@ -982,7 +982,8 @@ void hud_scene_update(void)
                     g_game_state.phase != GAME_PHASE_MATCH_RESULT &&
                     !(g_game_state.phase == GAME_PHASE_POINT_RESULT &&
                       ((g_replay.active && !g_attract) || s_quip))) ||
-                (s_scene_step == HUD_STEP_EXTRA5 &&
+                (s_scene_step == (s_quip ? HUD_STEP_EXTRA6 :
+                        HUD_STEP_EXTRA5) &&
                     g_game_state.phase == GAME_PHASE_POINT_RESULT))
             s_scene_step = HUD_STEP_DONE;
     } else if (!busy) {
