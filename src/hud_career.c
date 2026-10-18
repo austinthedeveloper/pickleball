@@ -159,7 +159,8 @@ static u8 hud_career_card_part(u8 part)
         for (i = 0; i < CAREER_NAME; ++i)
             name[i] = (char)player->name[i];
         name[CAREER_NAME] = 0;
-        hud_page_header(RECORDS_COL, RECORDS_WIDTH, name);
+        hud_text(HUD_HEADER_COL(RECORDS_COL, RECORDS_WIDTH, CAREER_NAME),
+            TITLE_MENU_ROW, HUD_PAL_YELLOW, name);
         return 0;
     case 2:
         hud_career_mode_line(TITLE_MENU_ROW + 2, "SINGLES", player->wins[0],
@@ -411,7 +412,7 @@ static u8 hud_career_naming_part(u8 part)
         return 0;
     }
     if (part == 1) {
-        hud_page_header(CAREER_EDIT_COL, CAREER_EDIT_WIDTH, "NAME");
+        HUD_PAGE_HEADER(CAREER_EDIT_COL, CAREER_EDIT_WIDTH, "NAME");
         hud_career_name_line();
         return 0;
     }
@@ -442,7 +443,7 @@ u8 hud_career_draw_part(u8 view, u8 part)
             return 0;
         }
         if (part == 1) {
-            hud_page_header(CAREER_EDIT_COL, CAREER_EDIT_WIDTH, "PLAYER");
+            HUD_PAGE_HEADER(CAREER_EDIT_COL, CAREER_EDIT_WIDTH, "PLAYER");
             return 0;
         }
         if (part - 2 < CAREER_EDIT_ROWS) {
@@ -461,7 +462,7 @@ u8 hud_career_draw_part(u8 view, u8 part)
         return 0;
     }
     if (part == 1) {
-        hud_page_header(RECORDS_COL, RECORDS_WIDTH, "CAREER");
+        HUD_PAGE_HEADER(RECORDS_COL, RECORDS_WIDTH, "CAREER");
         return 0;
     }
     hud_career_slot_row(part - 2);

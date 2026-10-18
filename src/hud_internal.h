@@ -75,14 +75,18 @@ void hud_title_reset(void);
  * " LONGEST RALLY        nnnn ". */
 void hud_count(u8 col, u8 row, u16 value);
 void hud_record_line(u8 row, const char *label, u16 value);
-/* A page's header on TITLE_MENU_ROW, yellow, centred in its box of width
- * cells from col (an odd spare cell goes right). */
-void hud_page_header(u8 col, u8 width, const char *text);
+/* A page's header column: length cells centred in a box of width cells
+ * from col (an odd spare cell goes right). A constant for a literal. */
+#define HUD_HEADER_COL(col, width, length) ((col) + ((width) - (length)) / 2)
+#define HUD_PAGE_HEADER(col, width, text) \
+    hud_text(HUD_HEADER_COL(col, width, sizeof(text) - 1), TITLE_MENU_ROW, \
+        HUD_PAL_YELLOW, text)
 
-/* hud_settings.c (R13): a settings page (TITLE_PAGE_*) a part at a time
- * (nonzero when complete), then its changed rows, one per call. */
-u8 hud_settings_draw_part(u8 page, u8 part);
-void hud_settings_refresh(u8 page);
+/* hud_settings.c (R13): the open settings page (g_title_page) a part at a
+ * time (nonzero when complete), then its changed rows, one per call. The
+ * page is read, not passed: every argument costs 816-tcc (R33). */
+u8 hud_settings_draw_part(u8 part);
+void hud_settings_refresh(void);
 
 /* hud_career.c (ADR-047): a CAREER view (CAREER_VIEW_* or
  * HUD_CAREER_NAMING) a part at a time, and each view's refresh. */

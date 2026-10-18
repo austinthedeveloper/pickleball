@@ -93,16 +93,6 @@ void hud_count(u8 col, u8 row, u16 value)
 }
 
 /* " LONGEST RALLY        nnnn " */
-void hud_page_header(u8 col, u8 width, const char *text)
-{
-    u8 length = 0;
-
-    while (text[length])
-        ++length;
-    hud_text(col + ((u8)(width - length) >> 1), TITLE_MENU_ROW,
-        HUD_PAL_YELLOW, text);
-}
-
 void hud_record_line(u8 row, const char *label, u16 value)
 {
     hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, label);
@@ -256,7 +246,7 @@ static u8 hud_records_draw_part(u8 part);
 static u8 hud_title_draw_part(u8 view, u8 part)
 {
     if (HUD_TITLE_VIEW_SETTINGS(view))
-        return hud_settings_draw_part(view - HUD_TITLE_VIEW_PAGE(0), part);
+        return hud_settings_draw_part(part);
     if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_RECORDS)
         return hud_records_draw_part(part);
     if (view >= HUD_TITLE_VIEW_CAREER)
@@ -281,7 +271,7 @@ static u8 hud_records_draw_part(u8 part)
             hud_entry(' ', HUD_PAL_WHITE));
         return 0;
     case 1:
-        hud_page_header(RECORDS_COL, RECORDS_WIDTH, "RECORDS");
+        HUD_PAGE_HEADER(RECORDS_COL, RECORDS_WIDTH, "RECORDS");
         return 0;
     case 2:
         hud_record_mode_line(TITLE_MENU_ROW + 2, "SINGLES", MATCH_SINGLES);
@@ -360,7 +350,7 @@ void hud_title_area_update(void)
             if (view < HUD_TITLE_VIEW_COURT)
                 return;
             if (HUD_TITLE_VIEW_SETTINGS(view))
-                hud_settings_refresh(view - HUD_TITLE_VIEW_PAGE(0));
+                hud_settings_refresh();
             else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_SLOTS)
                 hud_career_slots_refresh();
             else if (view == HUD_TITLE_VIEW_CAREER + CAREER_VIEW_EDIT)

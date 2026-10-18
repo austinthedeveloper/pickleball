@@ -187,8 +187,12 @@ u8 modifiers_edit_changed(u8 modifiers, u8 modifiers2)
 u8 modifiers_edit_input(u8 *modifiers, u8 *modifiers2, u16 pressed)
 {
     u8 row = g_modifiers_edit.row;
-    u8 keys = menu_edit_keys(&g_modifiers_edit.row, MODIFIERS_ROWS, pressed);
+    u8 keys;
 
+    /* Most frames press nothing: skip the call (R33). */
+    if (pressed == 0)
+        return MENU_EDIT_STAY;
+    keys = menu_edit_keys(&g_modifiers_edit.row, MODIFIERS_ROWS, pressed);
     if (keys == MENU_EDIT_CANCEL) {
         *modifiers = g_modifiers_edit.original;
         *modifiers2 = g_modifiers_edit.original2;

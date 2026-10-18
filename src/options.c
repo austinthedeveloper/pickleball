@@ -153,8 +153,12 @@ u8 options_edit_input(u8 *points, u8 *difficulty, u8 *sound, u8 *modifiers,
 {
     u8 index;
     u8 row = g_options_edit.row;
-    u8 keys = menu_edit_keys(&g_options_edit.row, OPTIONS_ROWS, pressed);
+    u8 keys;
 
+    /* Most frames press nothing: skip the call (R33). */
+    if (pressed == 0)
+        return MENU_EDIT_STAY;
+    keys = menu_edit_keys(&g_options_edit.row, OPTIONS_ROWS, pressed);
     if (keys == MENU_EDIT_CANCEL) {
         *points = g_options_edit.original_points;
         *difficulty = g_options_edit.original_difficulty;

@@ -221,8 +221,12 @@ u8 court_edit_input(u8 choice[COURT_PARTS], u8 *venue, u8 *time,
 {
     u8 row = g_court_edit.row;
     u8 part;
-    u8 keys = menu_edit_keys(&g_court_edit.row, COURT_ROWS, pressed);
+    u8 keys;
 
+    /* Most frames press nothing: skip the call (R33). */
+    if (pressed == 0)
+        return MENU_EDIT_STAY;
+    keys = menu_edit_keys(&g_court_edit.row, COURT_ROWS, pressed);
     if (keys == MENU_EDIT_CANCEL) {
         for (part = 0; part < COURT_PARTS; ++part)
             choice[part] = g_court_edit.original[part];

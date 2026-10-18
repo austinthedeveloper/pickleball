@@ -55,6 +55,7 @@ gameplay.
 | R30 | One player-palette composer, `match_compose_look`, with named `PAL_SLOT_*` entries (outline 1, skin 2-4, team 5-10, paddle 11-13, highlight 14, hair 15) | `career_compose_with` and `match_compose_parts` were the same loop with magic indices | Low | Done |
 | R31 | `enter_scene` in `main.c`: open a scene's screen, set the scene, resync the overrun latch (the match screen also clears `g_match_config_changed`) | `render_open_match(); s_scene = SCENE_MATCH; profile_resync();` was written five times, and the museum, select, and park openings the same way | Low | Done |
 | R32 | Dead code and names: `hud_number` and `render_match_mode_applied` (and its write-only `s_applied_mode`) removed; `save.c`'s comment names `save_flush`; `ai.c`'s 64 px swing reach and 10-frame rise cap are `AI_SWING_REACH_X` and `AI_MEET_RISE_MAX` | Unused functions, a stale name, magic numbers in the AI | Low | Done: `make stats` identical (singles, both doubles bots) |
+| R33 | Title-page CPU time back to `main`'s after R13, R28, and R12 | Those three put 4-9 scanlines on the worst title-page frames (career and museum 211 → 220, lake and venue 158 → 167, machine 155 → 165), against ground rule 2 | High | Done (see the R27–R33 notes) |
 
 ### R16–R22 notes
 
@@ -236,6 +237,45 @@ and `frame_count` are excluded. Everything else is byte-identical across
 runs, which also confirms that no game state depends on uninitialized RAM.
 The scripted P1 never wins a point, so the P1-scoring paths are covered by
 the host tests rather than the trace.
+
+### R27–R33 notes
+
+The cleanup round (`feature/cld-cleanup`) kept the golden trace and the
+title pages' BG3 map (`g_hud_map`, 97 shots of 15 page timelines)
+identical, but R13, R28, and R12 together cost title-page frames 4-9
+scanlines. The title area draws its parts back to back while a frame stays
+under scanline 140 (M4-UI-01), so a page's worst frame is 140 plus its
+last part: a few calls more in each part showed up whole. Found by
+probing `g_work_scanline` on every frame, `main` against the branch, and
+bisecting the commits. R33's fixes:
+
+- **Settings pages (R13):** each page's row is a one-argument function
+  again (`hud_court_row` etc.), the rows/header come from tables, the part
+  draw tests the rows first and dispatches once, and the page is read from
+  `g_title_page`, not passed. The four row functions per page (value,
+  cursor, label, name, each with two or three arguments) had cost about
+  9 scanlines a part. The editors skip `menu_edit_keys` on frames with no
+  press (most of them).
+- **Counts (R28):** `text_count4` kept its digit in a local (each `out[i]`
+  in the subtraction loop was a pointer access), and `text_count` starts at
+  the leading digit rather than testing four powers for a one- or
+  two-digit count.
+- **Headers (R12):** `hud_page_header` measured its text at run time; the
+  `HUD_PAGE_HEADER` macro gives the same column as a constant.
+
+Release, `make perf` worst work scanline (of 225), `main` → R32 → R33:
+
+| Timeline | main | R32 | R33 |
+|---|---:|---:|---:|
+| career | 211 | 220 | 212 |
+| museum | 211 | 220 | 212 |
+| lake | 158 | 167 | 159 |
+| venue | 158 | 167 | 159 |
+| machine | 155 | 165 | 155 |
+
+Every other timeline is within one scanline of `main` (venue_preview 169 →
+164). Idle page frames (the refresh) are still up to a scanline over
+`main`: one page test per frame.
 
 ### R26 notes
 

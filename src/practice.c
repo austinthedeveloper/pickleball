@@ -401,8 +401,12 @@ u8 practice_edit_input(u8 values[PRACTICE_ROWS], u16 pressed)
 {
     u8 row = g_practice_edit.row;
     u8 i;
-    u8 keys = menu_edit_keys(&g_practice_edit.row, PRACTICE_ROWS, pressed);
+    u8 keys;
 
+    /* Most frames press nothing: skip the call (R33). */
+    if (pressed == 0)
+        return MENU_EDIT_STAY;
+    keys = menu_edit_keys(&g_practice_edit.row, PRACTICE_ROWS, pressed);
     if (keys == MENU_EDIT_CANCEL) {
         for (i = 0; i < PRACTICE_ROWS; ++i)
             values[i] = g_practice_edit.original[i];
