@@ -143,10 +143,10 @@ static void center_text(u8 row, u8 palette, const char *text)
     hud_text((u8)(16 - length / 2), row, palette, text);
 }
 
-/* "ACE   5 OF 12" under the title. */
+/* "ACE  5 OF 12 HATS" under the title (ADR-065: the CARD counts the same). */
 static void draw_count(void)
 {
-    static char text[CAREER_NAME + 12];
+    static char text[CAREER_NAME + 17];
     const CareerPlayer *player = museum_player();
     u8 count = museum_unlocked_count();
     u8 i = 0;
@@ -166,6 +166,11 @@ static void draw_count(void)
     if (MUSEUM_HATS >= 10)
         text[i++] = (char)('0' + MUSEUM_HATS / 10);
     text[i++] = (char)('0' + MUSEUM_HATS % 10);
+    text[i++] = ' ';
+    text[i++] = 'H';
+    text[i++] = 'A';
+    text[i++] = 'T';
+    text[i++] = 'S';
     text[i] = 0;
     hud_fill_box(0, MUS_COUNT_ROW, 32, 1, HUD_TILE_CLEAR);
     center_text(MUS_COUNT_ROW, HUD_PAL_WHITE, text);

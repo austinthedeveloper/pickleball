@@ -1,8 +1,10 @@
-# Practice return zones (M4-PRACTICE-03): Up wraps to PRACTICE; on the page
+# Practice return zones (M4-PRACTICE-03): Down three times to PRACTICE; on the page
 # Up wraps to RETURN TO and Right picks KITCHEN; B to Player Select, Start
 # to play. The kitchen on the machine's side has a corner at each corner,
 # the centre panel reads KITCHEN, and BEST is the kitchen's best.
-70 71 up
+70 71 down     # past DOUBLES and OPEN PLAY to PRACTICE (ADR-065)
+75 76 down
+80 81 down
 90 91 start
 110 111 up
 120 121 right

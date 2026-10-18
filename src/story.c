@@ -31,6 +31,8 @@ void story_initialize(void)
 
 void story_begin_initials(void)
 {
+    const CareerPlayer *player;
+
     /* Two tests, not `g_attract || !g_save_new_records`: 816-tcc
      * miscompiles `|| !` (CLAUDE.md), and the attract demo's matches
      * opened this card. */
@@ -38,6 +40,13 @@ void story_begin_initials(void)
         return;
     if (g_save_new_records == 0)
         return;
+    /* A career player's records carry their name (ADR-065): its first
+     * three letters, without asking. */
+    player = career_active();
+    if (player && player->name[0] != ' ') {
+        save_set_initials(player->name);
+        return;
+    }
     /* Only at a game over (amended 2026-10-16): a loss to the CPU ends the
      * run, the last ladder opponent beaten ends the ladder, and a 2P match
      * has no run. A ladder or open play win keeps its records waiting. */

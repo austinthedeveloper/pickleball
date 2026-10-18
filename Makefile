@@ -125,8 +125,8 @@ tcc-check:
 # Bot-vs-CPU balance numbers (tools/match_stats.c); args: LATE (0: three
 # bot skills), MATCHES, OPPONENT (-1 the default CPU, -2 the whole ladder,
 # else a ladder opponent, ADR-023), DIFFICULTY (0 KID .. 3 HARD, ADR-025),
-# MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02), SPEED (BALL SPEED
-# percent, ADR-049; 0 the default, 100).
+# MODE (0 singles, 1 doubles, +2 the net bot; M4-OPP-02), SPEED (ball speed
+# percent, ADR-049; 0 the game's, 100; not a setting since ADR-065).
 LATE ?= 4
 MATCHES ?= 20
 OPPONENT ?= -1

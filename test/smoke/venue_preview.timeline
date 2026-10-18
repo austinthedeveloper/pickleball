@@ -3,9 +3,9 @@
 # frames of fade, no ambience). LAKESIDE, scrolled past, loads nothing;
 # PARK, rested on, loads. Back to SUNSET, then Y restores AUTO (PARK), and
 # closing loads its ambience only if it changed.
-70 71 down
-75 76 down     # past OPEN PLAY (ADR-034)
-80 81 down
+70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
+75 76 up
+80 81 up
 100 101 start
 120 121 left   # SUNSET
 shot 135       # still the park: the cursor hasn't rested

@@ -3,9 +3,9 @@
 # DUSK, a live recolour of the ground and the backdrop), BLUE surface, NAVY
 # kitchen, GRASS surround, WHITE lines; keep with B; reopen, change, cancel
 # with Y.
-70 71 down
-75 76 down     # past OPEN PLAY (ADR-034)
-80 81 down
+70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
+75 76 up
+80 81 up
 shot 90
 100 101 start
 108 109 down   # TIME

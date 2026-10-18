@@ -14,6 +14,7 @@
 #include "audio_events.h"
 #include "career_page.h"
 #include "modifiers.h"
+#include "museum.h"
 #include "options.h"
 #include "paddle_stats.h"
 #include "pause_menu.h"
@@ -46,9 +47,9 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... PRACTICE (rows 12-19) */
+#define TITLE_MENU_ROW 12           /* SINGLES ... MODIFIERS (rows 12-20) */
 #define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
-#define TITLE_2P_ROW 20
+#define TITLE_2P_ROW 21
 #define TITLE_2P_COL 9              /* 14-character 2P join line */
 #define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
@@ -59,8 +60,7 @@
 #define COURT_FIRST_ROW (TITLE_MENU_ROW + 2)
 #define COURT_LABEL_COL 6
 #define COURT_VALUE_COL 16          /* "<NAME    >" */
-#define OPTIONS_PAGE_ROWS 7         /* header, gap, points, difficulty, sound,
-                                       ball speed, camera */
+#define OPTIONS_PAGE_ROWS (OPTIONS_ROWS + 2) /* header, gap, rows */
 #define PRACTICE_PAGE_ROWS 8        /* header, gap, 4 rows, gap, best */
 #define MODIFIERS_PAGE_ROWS (MODIFIERS_ROWS + 2) /* header, gap, rows */
 
@@ -230,7 +230,8 @@ static u8 team_hud_palette(u8 team)
     return team ? HUD_PAL_TEAM_RIGHT : HUD_PAL_TEAM_LEFT;
 }
 
-/* Score digits only; tens are drawn as a leading digit or a blank. */
+/* Score digits only; tens are drawn as a leading digit or a blank. The
+ * title's demo keeps no scoreboard (ADR-065). */
 static void hud_draw_score_digits(void)
 {
     static const char digits[] = "0123456789";
@@ -238,7 +239,7 @@ static void hud_draw_score_digits(void)
     u8 team;
     u8 score;
 
-    for (team = 0; team < 2; ++team) {
+    for (team = 0; g_attract == 0 && team < 2; ++team) {
         score = g_game_state.team_score[team];
         text[0] = ' ';
         while (score >= 10) {      /* no 816-tcc division */
@@ -292,6 +293,12 @@ static void hud_practice_title(void)
 static void hud_draw_scores(void)
 {
     hud_clear_rows(SCORE_PANEL_ROW, 3);
+    /* The title (ADR-065): the demo behind the menu has no scoreboard. */
+    if (g_attract) {
+        s_sub_panel = 0xff;
+        hud_draw_score_digits();
+        return;
+    }
     hud_panel(LEFT_PANEL_COL, SCORE_PANEL_ROW, SIDE_PANEL_WIDTH);
     hud_text(LEFT_PANEL_COL + 1, SCORE_TEXT_ROW, team_hud_palette(0),
         team_name(0));
@@ -410,7 +417,7 @@ static const char *hud_match_winner_text(void)
 #define HUD_PROMPT_CAREER_NAMING_EMPTY 13   /* nothing to erase: Y backs out */
 static u8 hud_title_prompt_id(void)
 {
-    if (g_title_page != TITLE_PAGE_RECORDS)
+    if (g_title_page != TITLE_PAGE_CAREER)
         return g_title_page;
     if (g_career_page.view == CAREER_VIEW_EDIT && g_career_page.naming)
         return g_career_page.cursor ? HUD_PROMPT_CAREER_NAMING :
@@ -862,8 +869,9 @@ static void hud_record_ladder(u8 row)
 static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
-        "  SINGLES  ", "  DOUBLES  ", "  OPEN PLAY", "  COURT    ",
-        "  CAREER   ", "  OPTIONS  ", "  MODIFIERS", "  PRACTICE "
+        "  SINGLES  ", "  DOUBLES  ", "  OPEN PLAY", "  PRACTICE ",
+        "  CAREER   ", "  RECORDS  ", "  COURT    ", "  OPTIONS  ",
+        "  MODIFIERS"
     };
 
     hud_text(TITLE_MENU_COL, TITLE_MENU_ROW + item,
@@ -873,7 +881,7 @@ static void hud_title_item(u8 item, u8 choice)
             hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW));
 }
 
-/* Two menu items per call (half 0 to 3). */
+/* Two menu items per call (half 0 to 4). */
 static void hud_title_menu(u8 choice, u8 half)
 {
     u8 i = half * 2;
@@ -939,60 +947,58 @@ static void hud_court_row(u8 index)
     s_court_row_drawn[index] = value | (cursor << 7);
 }
 
-/* An options page value: the points, or the difficulty. */
+/* An options page row's value as drawn (under bit 7, the cursor's). */
 static u8 hud_options_value(u8 index)
 {
     if (index == OPTIONS_ROW_POINTS)
         return g_save.settings.points;
+    if (index == OPTIONS_ROW_SCORING)
+        return g_save.settings.modifiers & MODIFIER_WIN_BY_2;
     if (index == OPTIONS_ROW_SOUND)
         return g_save.settings.sound;
-    if (index == OPTIONS_ROW_SPEED)
-        return g_save.settings.ball_speed;
     if (index == OPTIONS_ROW_CAMERA)
-        return g_save.camera;
+        return options_camera_on(g_save.camera);
+    if (index == OPTIONS_ROW_AMOUNT)
+        return options_camera_amount(g_save.camera);
     return g_save.settings.difficulty;
 }
 
-/* One options page row (ADR-025). */
+/* One options page row (ADR-025, ADR-065). */
 static void hud_options_row(u8 index)
 {
+    static const char *const labels[OPTIONS_ROWS] = {
+        "POINTS", "SCORING", "DIFFICULTY", "SOUND", "CAMERA", "  AMOUNT"
+    };
     u8 value = hud_options_value(index);
     u8 cursor = g_options_edit.row == index;
-    char points[3];
-    char speed[5];
+    char text[5];
+    const char *name = text;
+    u8 percent;
 
     if (index == OPTIONS_ROW_POINTS) {
-        points[0] = value >= 20 ? '2' : value >= 10 ? '1' : '0' + value;
-        points[1] = value >= 10 ? (char)('0' + value % 10) : 0;
-        points[2] = 0;
-        hud_setting_row(COURT_FIRST_ROW, "POINTS", points, cursor);
+        text[0] = value >= 20 ? '2' : value >= 10 ? '1' : '0' + value;
+        text[1] = value >= 10 ? (char)('0' + value % 10) : 0;
+        text[2] = 0;
+    } else if (index == OPTIONS_ROW_SCORING) {
+        name = options_scoring_name(value);
     } else if (index == OPTIONS_ROW_SOUND) {
-        hud_setting_row(COURT_FIRST_ROW + 2, "SOUND",
-            audio_setting_name(value), cursor);
-    } else if (index == OPTIONS_ROW_SPEED) {
-        /* ADR-049: "90%". */
-        speed[0] = (char)('0' + options_ball_speed(value) / 100);
-        speed[1] = (char)('0' + options_ball_speed(value) / 10 % 10);
-        speed[2] = (char)('0' + options_ball_speed(value) % 10);
-        speed[3] = '%';
-        speed[4] = 0;
-        hud_setting_row(COURT_FIRST_ROW + 3, "BALL SPEED",
-            speed[0] == '0' ? speed + 1 : speed, cursor);
+        name = audio_setting_name(value);
     } else if (index == OPTIONS_ROW_CAMERA) {
-        /* ADR-050: "OFF", "85%", "100%". */
-        value = g_options_cameras[options_camera_index(value)];
-        speed[0] = (char)('0' + value / 100);
-        speed[1] = (char)('0' + value / 10 % 10);
-        speed[2] = (char)('0' + value % 10);
-        speed[3] = '%';
-        speed[4] = 0;
-        hud_setting_row(COURT_FIRST_ROW + 4, "CAMERA", value == 0 ? "OFF" :
-            speed[0] == '0' ? speed + 1 : speed, cursor);
-        value = g_save.camera;
+        name = value ? "ON" : "OFF";
+    } else if (index == OPTIONS_ROW_AMOUNT) {
+        /* ADR-050: "85%", "100%". */
+        percent = g_options_cameras[value];
+        text[0] = (char)('0' + percent / 100);
+        text[1] = (char)('0' + percent / 10 % 10);
+        text[2] = (char)('0' + percent % 10);
+        text[3] = '%';
+        text[4] = 0;
+        if (text[0] == '0')
+            name = text + 1;
     } else {
-        hud_setting_row(COURT_FIRST_ROW + 1, "DIFFICULTY",
-            options_difficulty_name(value), cursor);
+        name = options_difficulty_name(value);
     }
+    hud_setting_row(COURT_FIRST_ROW + index, labels[index], name, cursor);
     s_options_row_drawn[index] = value | (cursor << 7);
 }
 
@@ -1002,9 +1008,8 @@ static u8 hud_options_draw_part(u8 part)
     if (part == 0) {
         hud_fill_box(RECORDS_COL, TITLE_MENU_ROW, RECORDS_WIDTH,
             OPTIONS_PAGE_ROWS, hud_entry(' ', HUD_PAL_WHITE));
-        s_options_row_drawn[0] = 0xff;
-        s_options_row_drawn[1] = 0xff;
-        s_options_row_drawn[2] = 0xff;
+        for (part = 0; part < OPTIONS_ROWS; ++part)
+            s_options_row_drawn[part] = 0xff;
         return 0;
     }
     if (part == 1) {
@@ -1143,15 +1148,16 @@ static void hud_options_refresh(void)
     }
 }
 
-/* Title views for the area: the menu choice (bits 0-2) and 2P (bit 3), or
+/* Title views for the area: the menu choice (bits 0-3) and 2P (bit 4), or
  * a page: 0x7f + its TITLE_PAGE_*. */
+#define HUD_TITLE_VIEW_CHOICE 15
+#define HUD_TITLE_VIEW_2P 16
 #define HUD_TITLE_VIEW_PAGE(page) (0x7f + (page))
 #define HUD_TITLE_VIEW_COURT HUD_TITLE_VIEW_PAGE(TITLE_PAGE_COURT)
-#define HUD_TITLE_VIEW_RECORDS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_RECORDS)
 #define HUD_TITLE_VIEW_OPTIONS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_OPTIONS)
 #define HUD_TITLE_VIEW_PRACTICE HUD_TITLE_VIEW_PAGE(TITLE_PAGE_PRACTICE)
 #define HUD_TITLE_VIEW_MODIFIERS HUD_TITLE_VIEW_PAGE(TITLE_PAGE_MODIFIERS)
-/* The CAREER page (ADR-047, the RECORDS entry): a view per sub-view. */
+/* The CAREER page (ADR-047): a view per sub-view, RECORDS among them. */
 #define HUD_TITLE_VIEW_CAREER 0x90
 #define HUD_CAREER_NAMING 4         /* EDIT while typing the name */
 
@@ -1159,13 +1165,13 @@ static void hud_options_refresh(void)
  * page. */
 static u8 hud_title_view(void)
 {
-    if (g_title_page == TITLE_PAGE_RECORDS)
+    if (g_title_page == TITLE_PAGE_CAREER)
         return HUD_TITLE_VIEW_CAREER + (g_career_page.view ==
             CAREER_VIEW_EDIT && g_career_page.naming ? HUD_CAREER_NAMING :
             g_career_page.view);
     if (g_title_page != TITLE_PAGE_MENU)
         return HUD_TITLE_VIEW_PAGE(g_title_page);
-    return g_title_mode | (g_title_2p << 3);
+    return g_title_mode | (g_title_2p << 4);
 }
 
 /* Court page: the box, the header, then a part per frame. */
@@ -1233,7 +1239,7 @@ static u8 hud_career_slot_state(u8 row)
 }
 
 /* "> 1 ACE          12W", "  2 NEW PLAYER", then NO PLAYER (yellow when
- * nobody is active) and RECORDS after a gap. */
+ * nobody is active) after a gap. */
 static void hud_career_slot_row(u8 row)
 {
     static char name[CAREER_NAME + 1];
@@ -1247,10 +1253,7 @@ static void hud_career_slot_row(u8 row)
     hud_tile(RECORDS_COL + 1, line, cursor ?
         hud_entry(HUD_TILE_CURSOR, HUD_PAL_YELLOW) :
         hud_entry(' ', HUD_PAL_WHITE));
-    if (row == CAREER_ROW_RECORDS) {
-        hud_text(CAREER_NAME_COL, line,
-            cursor ? HUD_PAL_YELLOW : HUD_PAL_WHITE, "RECORDS");
-    } else if (row == CAREER_ROW_NOBODY) {
+    if (row == CAREER_ROW_NOBODY) {
         hud_text(CAREER_NAME_COL, line, career_active() == 0 ?
             HUD_PAL_YELLOW : HUD_PAL_WHITE, "NO PLAYER");
     } else {
@@ -1296,24 +1299,35 @@ static void hud_career_mode_line(u8 row, const char *label, u16 wins,
     hud_count(RECORDS_COUNT_COL, row, losses);
 }
 
-/* "UNLOCKS           n/16" */
-static void hud_career_unlocks_line(u8 row, const CareerPlayer *player)
+/* "n/m" with one or two digit numbers, written from text; its length. */
+static u8 hud_fraction(char *text, u8 count, u8 total)
 {
-    static char text[6];
-    u8 count = career_unlock_count(player);
     u8 i = 0;
 
     if (count >= 10)
-        text[i++] = '1';
+        text[i++] = (char)('0' + count / 10);
     text[i++] = (char)('0' + count % 10);
     text[i++] = '/';
-#if CAREER_UNLOCKS >= 10
-    text[i++] = '1';
-#endif
-    text[i++] = (char)('0' + CAREER_UNLOCKS % 10);
+    if (total >= 10)
+        text[i++] = (char)('0' + total / 10);
+    text[i++] = (char)('0' + total % 10);
     text[i] = 0;
-    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "UNLOCKS");
-    hud_text(RECORDS_COUNT_COL + 4 - i, row, HUD_PAL_YELLOW, text);
+    return i;
+}
+
+/* "HATS 1/12      HAIR 5/10": what the player may wear, counted as the
+ * HAT MUSEUM counts it (ADR-065). */
+static void hud_career_unlocks_line(u8 row, const CareerPlayer *player)
+{
+    static char text[6];
+    u8 length;
+
+    hud_text(RECORDS_COL + 1, row, HUD_PAL_WHITE, "HATS");
+    hud_fraction(text, career_hats_held(player), MUSEUM_HATS);
+    hud_text(RECORDS_COL + 6, row, HUD_PAL_YELLOW, text);
+    hud_text(RECORDS_COUNT_COL - 6, row, HUD_PAL_WHITE, "HAIR");
+    length = hud_fraction(text, career_hair_held(player), CAREER_HAIRS);
+    hud_text(RECORDS_COUNT_COL + 4 - length, row, HUD_PAL_YELLOW, text);
 }
 
 /* "NEXT: HEADBAND" and how to earn it, or ALL UNLOCKED! */
@@ -1683,15 +1697,15 @@ static u8 hud_title_draw_part(u8 view, u8 part)
         return hud_career_draw_part(view - HUD_TITLE_VIEW_CAREER, part);
     /* Parts stay at most two rows: each waits for a frame under
      * HUD_TITLE_SCANLINE_LIMIT, which leaves room for no more. */
-    if (part < 4) {
-        hud_title_menu(view & 7, part);
+    if (part < (TITLE_ENTRIES + 1) / 2) {
+        hud_title_menu(view & HUD_TITLE_VIEW_CHOICE, part);
         return 0;
     }
     hud_title_2p_line();
     return 1;
 }
 
-/* The records table (ADR-021), now a section of the CAREER page. */
+/* The records table (ADR-021): the title's RECORDS entry (ADR-065). */
 static u8 hud_records_draw_part(u8 part)
 {
     switch (part) {
@@ -1754,18 +1768,19 @@ static void hud_title_area_update(void)
         /* Coloured by the choice now, so another move since is fine. */
         if (s_title_part == 0xff && s_title_view < HUD_TITLE_VIEW_COURT &&
                 view < HUD_TITLE_VIEW_COURT)
-            hud_title_item(s_title_stale, view & 7);
+            hud_title_item(s_title_stale, view & HUD_TITLE_VIEW_CHOICE);
         s_title_stale = 0xff;
         return;
     }
     if (s_title_view != view && s_title_part == 0xff &&
             s_title_view < HUD_TITLE_VIEW_COURT &&
             view < HUD_TITLE_VIEW_COURT) {
-        if ((s_title_view ^ view) & 7) {
-            hud_title_item(view & 7, view & 7);
-            s_title_stale = s_title_view & 7;
+        if ((s_title_view ^ view) & HUD_TITLE_VIEW_CHOICE) {
+            hud_title_item(view & HUD_TITLE_VIEW_CHOICE,
+                view & HUD_TITLE_VIEW_CHOICE);
+            s_title_stale = s_title_view & HUD_TITLE_VIEW_CHOICE;
         }
-        if ((s_title_view ^ view) & 8)
+        if ((s_title_view ^ view) & HUD_TITLE_VIEW_2P)
             hud_title_2p_line();
         s_title_view = view;
         return;
@@ -1847,7 +1862,7 @@ static const char *hud_title_prompt(u8 page)
         return "@ PLAY  Y BACK";
     if (page == HUD_PROMPT_CAREER + CAREER_VIEW_RECORDS)
         return "@ BACK";
-    return "PRESS START";
+    return "@ SELECT";
 }
 
 /*
@@ -2007,7 +2022,7 @@ static void hud_scene_step(u16 key, u8 step)
                 story_quip(winner ^ 1, g_game_state.frame_count);
             /* ADR-064: and its players' faces say how it went. */
             if (s_quip)
-                flair_quip(winner ^ 1);
+                FLAIR_QUIP(winner ^ 1);
         } else if (step <= HUD_STEP_EXTRA2) {
             hud_center_prompt_half(CENTER_PANEL_ROW, team_hud_palette(winner),
                 hud_point_text(winner), step == HUD_STEP_EXTRA2);
@@ -2072,7 +2087,7 @@ void hud_scene_update(void)
     else if (s_hud_score[0] != g_game_state.team_score[0] ||
              s_hud_score[1] != g_game_state.team_score[1]) {
         hud_draw_score_digits();
-        busy = 1;               /* the scene step waits one frame */
+        busy = g_attract == 0;  /* the scene step waits one frame */
     }
 
     key = hud_scene_key();

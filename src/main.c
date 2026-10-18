@@ -333,14 +333,14 @@ static void update_title_options(u16 pressed)
 {
     SaveSettings *settings = &g_save.settings;
     u8 result = options_edit_input(&settings->points, &settings->difficulty,
-        &settings->sound, &settings->ball_speed, &g_save.camera, pressed);
+        &settings->sound, &settings->modifiers, &g_save.camera, pressed);
 
     if (result == OPTIONS_EDIT_STAY)
         return;
     g_title_page = TITLE_PAGE_MENU;
     if (result == OPTIONS_EDIT_DONE &&
             options_edit_changed(settings->points, settings->difficulty,
-                settings->sound, settings->ball_speed, g_save.camera)) {
+                settings->sound, settings->modifiers, g_save.camera)) {
         save_write();
         audio_refresh();            /* SOUND may start or stop ambience */
     }
@@ -398,7 +398,7 @@ static void update_title(void)
 
     ui_sounds(pressed | (g_pad_snapshots[1].pressed & PAD_START));
 
-    if (g_title_page == TITLE_PAGE_RECORDS)
+    if (g_title_page == TITLE_PAGE_CAREER)
         update_title_career(pressed);
     else if (g_title_page == TITLE_PAGE_COURT)
         update_title_court(pressed);
@@ -418,9 +418,12 @@ static void update_title(void)
         if (g_pad_snapshots[1].pressed & PAD_START)
             g_title_2p ^= 1;
         if (pressed & (PAD_START | PAD_B)) {
-            if (g_title_mode == TITLE_RECORDS) {
+            if (g_title_mode == TITLE_CAREER) {
                 career_page_begin();
-                g_title_page = TITLE_PAGE_RECORDS;
+                g_title_page = TITLE_PAGE_CAREER;
+            } else if (g_title_mode == TITLE_RECORDS) {
+                career_page_begin_records();
+                g_title_page = TITLE_PAGE_CAREER;
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
@@ -437,7 +440,7 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_OPTIONS) {
                 options_edit_begin(&g_save.settings.points,
                     &g_save.settings.difficulty, &g_save.settings.sound,
-                    &g_save.settings.ball_speed, &g_save.camera);
+                    &g_save.settings.modifiers, &g_save.camera);
                 g_title_page = TITLE_PAGE_OPTIONS;
             } else if (g_title_mode == TITLE_COURT) {
                 court_edit_begin(g_save.settings.court,

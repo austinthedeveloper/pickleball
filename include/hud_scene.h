@@ -12,12 +12,15 @@ void hud_scene_refresh_title(void);
 /* Call once per frame before VBlank; touches only WRAM. */
 void hud_scene_update(void);
 
-/* Title menu entries (g_title_mode). */
+/* Title menu entries (g_title_mode), ADR-065: the ways to play, then
+ * the players and records, then the settings. */
 enum { TITLE_SINGLES = 0, TITLE_DOUBLES = 1, TITLE_OPEN_PLAY = 2,
-       TITLE_COURT = 3, TITLE_RECORDS = 4, TITLE_OPTIONS = 5,
-       TITLE_MODIFIERS = 6, TITLE_PRACTICE = 7, TITLE_ENTRIES = 8 };
-/* Title pages (g_title_page): the menu, or a page over it. */
-enum { TITLE_PAGE_MENU = 0, TITLE_PAGE_COURT = 1, TITLE_PAGE_RECORDS = 2,
+       TITLE_PRACTICE = 3, TITLE_CAREER = 4, TITLE_RECORDS = 5,
+       TITLE_COURT = 6, TITLE_OPTIONS = 7, TITLE_MODIFIERS = 8,
+       TITLE_ENTRIES = 9 };
+/* Title pages (g_title_page): the menu, or a page over it. CAREER holds
+ * the RECORDS table too (a view of its own). */
+enum { TITLE_PAGE_MENU = 0, TITLE_PAGE_COURT = 1, TITLE_PAGE_CAREER = 2,
        TITLE_PAGE_OPTIONS = 3, TITLE_PAGE_PRACTICE = 4,
        TITLE_PAGE_MODIFIERS = 5 };
 

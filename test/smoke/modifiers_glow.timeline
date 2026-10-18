@@ -1,16 +1,14 @@
 # GLOW (ADR-054): Up from BALL wraps to COLORS, then LIGHTS; GLOW on, keep
 # with B. A singles match against DAD at NIGHT, whatever the COURT page's
 # TIME: neon outlines on the players and the ball, neon paddles.
-70 71 up
-80 81 up
+70 71 up       # wraps to MODIFIERS (ADR-065)
 90 91 start
 110 111 up     # COLORS
 120 121 up     # LIGHTS
 130 131 right  # GLOW
 shot 145
 150 151 b
-170 171 down   # MODIFIERS -> PRACTICE -> SINGLES
-176 177 down
+170 171 down   # MODIFIERS -> SINGLES
 190 191 start
 230 231 start  # confirm Player Select
 310 311 b      # close the intro card

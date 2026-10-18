@@ -216,6 +216,53 @@ static void test_waiting_zzz(void)
     assert(g_flair.emote[2] == FLAIR_EMOTE_NONE);
 }
 
+/* A doubles point result raises at most two emotes: a long rally's star
+ * for the winner who hit last, and a quip's face on the loser nearest the
+ * ball (four at once overran the frame, make perf). */
+static void test_doubles_emotes(void)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f;
+    u8 slot;
+    u8 stars;
+    u8 faces;
+    int results = 0;
+    int starred = 0;
+
+    match_config_doubles();
+    g_attract = 0;
+    game_new_match();
+    for (f = 0; f < 60UL * 60 * 10; ++f) {
+        memset(in, 0, sizeof(in));
+        for (slot = 0; slot < MAX_PLAYERS; ++slot)
+            ai_update(slot, &in[slot]);
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT)
+            game_new_match();
+        test_step(in);
+        if (g_game_state.phase != GAME_PHASE_POINT_RESULT ||
+                g_flair.result_frames != 2)
+            continue;
+        ++results;
+        FLAIR_QUIP(g_game_state.point_winner ^ 1);
+        flair_tick();
+        stars = faces = 0;
+        for (slot = 0; slot < MAX_PLAYERS; ++slot) {
+            if (g_flair.emote[slot] == FLAIR_EMOTE_STAR) {
+                assert(g_players[slot].team == g_game_state.point_winner);
+                ++stars;
+            } else if (g_flair.emote[slot] != FLAIR_EMOTE_NONE) {
+                assert(g_players[slot].team != g_game_state.point_winner);
+                ++faces;
+            }
+        }
+        assert(stars <= 1 && faces == 1);
+        starred += stars;
+    }
+    printf("flair: doubles, %d results, %d stars\n", results, starred);
+    assert(results > 20 && starred > 0);
+    match_config_defaults();
+}
+
 int main(void)
 {
     test_point_reactions();
@@ -223,6 +270,7 @@ int main(void)
     test_quip_emotes();
     test_dink_note();
     test_waiting_zzz();
+    test_doubles_emotes();
     printf("flair host checks passed\n");
     return 0;
 }

@@ -4,6 +4,8 @@ Status: **Accepted 2026-10-14**
 Milestone: `M4-SAVE-03`.
 Depends on: ADR-021 (save), ADR-026 (story cards), ADR-032 (save migration).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): a career player's records take their name, with no card.
+
 ## Why
 
 The records page showed numbers with no names. An arcade high-score table

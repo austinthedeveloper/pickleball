@@ -3,6 +3,8 @@
 Status: **Accepted 2026-10-13**
 Depends on: ADR-019 (shots), ADR-021 (save), ADR-023 (styles).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): the page is POINTS, SCORING, DIFFICULTY, SOUND, CAMERA, AMOUNT.
+
 ## Title page
 
 **OPTIONS** is the last title entry (SINGLES, DOUBLES, COURT, RECORDS,

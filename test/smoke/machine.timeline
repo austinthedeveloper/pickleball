@@ -2,7 +2,9 @@
 # stands on the far baseline and the first feed leaves its nozzle. The
 # nozzle turns toward each feed's lane before it leaves (centre, then up
 # for the first two feeds, then through the centre to down).
-70 71 up
+70 71 down     # past DOUBLES and OPEN PLAY to PRACTICE (ADR-065)
+75 76 down
+80 81 down
 90 91 start
 120 121 b
 200 201 start   # confirm Player Select

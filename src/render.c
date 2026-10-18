@@ -367,6 +367,7 @@ u16 rb_attr;
 u16 rb_count;
 u16 rb_frame;
 u16 rb_oam;
+s16 rb_body_sx[MAX_PLAYERS];        /* each slot's screen x (ADR-064) */
 extern void render_bodies(void);
 
 static u8 s_active_bodies;
@@ -681,6 +682,7 @@ static void render_effects(void)
  * none costs a frame it isn't on screen (the doubles budget).
  */
 #define RENDER_EMOTE_RAISE 42           /* above the head and any hat */
+#define RENDER_FLAIR_QUIET 10           /* a result's first frames: the HUD's */
 #define RENDER_CRITTER_PERIOD 2048      /* frames between a visitor's trips */
 #define RENDER_CRITTER_Y 30             /* screen y: under the scoreboard */
 #define RENDER_TROPHY_Y 34              /* screen y: over the result text */
@@ -692,10 +694,11 @@ u16 rb_react[MAX_PLAYERS];
 static u8 s_react_serial;                /* g_flair.react_serial drawn */
 static u8 s_emote_mask;                 /* emote objects up, by slot bit */
 /* What each emote object shows (emote | bob << 4) and the camera it was
- * placed under: a frozen player's emote is rewritten only on a change. */
+ * placed under, by slot: a frozen player's emote is rewritten only on a
+ * change. */
 static u8 s_emote_key[MAX_PLAYERS];
-static s16 s_emote_cam_x;
-static s16 s_emote_cam_y;
+static s16 s_emote_cam_x[MAX_PLAYERS];
+static s16 s_emote_cam_y[MAX_PLAYERS];
 static u8 s_dust_shown;
 static u8 s_cord_shown;
 static s16 s_dust_sx;                   /* projected when they start */
@@ -706,6 +709,8 @@ static u8 s_trophy_shown;
 static u8 s_pickle_shown;
 static u8 s_flair_busy;                 /* any of the above up */
 static u8 s_flair_phase;                /* the phase render_flair saw */
+static s16 s_flair_cam_x;               /* and the camera it drew under */
+static s16 s_flair_cam_y;
 /* render_bodies: nonzero while any slot has a reaction frame. */
 u16 rb_react_on;
 /* The venue's visitor (0: none) and its second frame; the satellite
@@ -809,26 +814,33 @@ static void render_emotes(void)
     u8 emote;
     u8 key;
     u8 still;
-    s16 x;
+    u8 parity;
     s16 y;
 
     if (!(g_flair.emote[0] | g_flair.emote[1] | g_flair.emote[2] |
             g_flair.emote[3]) && !s_emote_mask)
         return;
-    still = oam_cam_x == s_emote_cam_x && oam_cam_y == s_emote_cam_y;
-    s_emote_cam_x = oam_cam_x;
-    s_emote_cam_y = oam_cam_y;
+    /* A slot every other frame, by parity (make perf); hides at once. */
+    parity = g_game_state.frame_count & 1;
     for (slot = 0; slot < MAX_PLAYERS; ++slot, ++player, bit <<= 1) {
         emote = g_flair.emote[slot];
         if (emote != FLAIR_EMOTE_NONE && player->active) {
+            if ((slot & 1) != parity)
+                continue;
             key = emote | (((g_game_state.frame_count >> 3) & 1) << 4);
+            /* Unchanged since this slot was written (its emote, bob, and
+             * the camera then): leave it. */
+            still = oam_cam_x == s_emote_cam_x[slot] &&
+                oam_cam_y == s_emote_cam_y[slot];
             if (still && player->frozen && (s_emote_mask & bit) &&
                     s_emote_key[slot] == key)
                 continue;
             s_emote_key[slot] = key;
-            x = FROM_FP(player->x_fp);
+            s_emote_cam_x[slot] = oam_cam_x;
+            s_emote_cam_y[slot] = oam_cam_y;
             y = FROM_FP(player->y_fp);
-            obj_put(RENDER_OAM_EMOTES + slot, projection_x(x, y) - 4,
+            /* render_bodies projected the player this frame. */
+            obj_put(RENDER_OAM_EMOTES + slot, rb_body_sx[slot] - 4,
                 y - RENDER_EMOTE_RAISE - (key >> 4),
                 s_emote_tiles[emote], OBJ_ATTR(g_objpal_objects, 0), 0);
             s_emote_mask |= bit;
@@ -950,21 +962,22 @@ static void render_pickle(void)
     }
 }
 
-/* The event-driven objects, the critter, and the trophy: what they leave
- * up keeps s_flair_busy set, so they are hidden once flair goes quiet; a
- * phase change runs it once too (the trophy's match result). */
+/* The event-driven objects and the trophy: what they leave up keeps
+ * s_flair_busy set, so they are hidden once flair goes quiet; a phase
+ * change runs it once too, a frame later (the trophy's match result). The
+ * critter keeps its own pace (render_prepare). */
 static void render_flair(void)
 {
-    s_flair_phase = g_game_state.phase;
     render_streak();
     render_ground_fx();
     render_emotes();
-    if (s_critter_a)
-        render_critter();
     if (s_flair_phase == GAME_PHASE_MATCH_RESULT || s_trophy_shown)
         render_trophy();
     s_flair_busy = s_emote_mask | s_dust_shown | s_cord_shown |
-        s_streak_shown | s_trophy_shown | (s_critter_a != 0);
+        s_streak_shown | s_trophy_shown;
+    s_flair_cam_x = oam_cam_x;
+    s_flair_cam_y = oam_cam_y;
+    g_flair.repaint = 0;
 }
 
 /* The close call (ADR-041) shows during its point result only. */
@@ -1173,7 +1186,7 @@ void render_prepare(void)
 #endif
     if (g_save.camera != s_cam_saved) {
         s_cam_saved = g_save.camera;
-        g_cam_k = g_options_camera_k[options_camera_index(s_cam_saved)];
+        g_cam_k = options_camera_k(s_cam_saved);
     }
     render_camera();
     /* ADR-064: only while flair has something up, or drew it last frame. */
@@ -1188,11 +1201,31 @@ void render_prepare(void)
     /* ADR-064: one test on most frames (the doubles budget); an event's
      * own frame (a contact, a bounce) is skipped: it is the rally's
      * heaviest, and the effect starts a frame later unseen. */
-    if (g_flair.fresh)
+    if (g_flair.fresh) {
         g_flair.fresh = 0;
-    else if (g_flair.active | s_flair_busy |
-            (g_game_state.phase != s_flair_phase))
+    } else if (g_game_state.phase != s_flair_phase) {
+        /* A phase change (a match's result: the trophy) is drawn on the
+         * next frame: the change's own frame is a heavy one too. */
+        s_flair_phase = g_game_state.phase;
+        s_flair_busy = 1;
+    } else if ((g_game_state.phase == GAME_PHASE_POINT_RESULT ||
+            g_game_state.phase == GAME_PHASE_MATCH_RESULT) &&
+            g_flair.result_frames < RENDER_FLAIR_QUIET) {
+        /* A result's first frames are the HUD's (its banner, the quip):
+         * flair waits, only the streak is put away. */
+        if (s_streak_shown) {
+            obj_park(RENDER_OAM_STREAK);
+            s_streak_shown = 0;
+        }
+    } else if (g_flair.active || g_flair.repaint || (s_flair_busy &&
+            (oam_cam_x != s_flair_cam_x || oam_cam_y != s_flair_cam_y ||
+             (g_game_state.frame_count & 7) == 0))) {
+        /* Idle objects (a held emote, the trophy) only when the camera
+         * moved or an emote's bob turns. */
         render_flair();
+    }
+    if (s_critter_a)
+        render_critter();
     /* The practice objects only in practice, and once more to hide them:
      * outside it their per-frame hides cost the doubles budget. */
     if ((g_match_config.practice && !g_attract) || s_practice_drawn) {

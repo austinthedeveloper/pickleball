@@ -199,6 +199,17 @@ static void test_initials_wait_for_game_over(void)
     assert(g_story.card == STORY_CARD_INITIALS);
     g_story.card = STORY_CARD_NONE;
     g_save_new_records = 0;
+
+    /* ADR-065: a career player is named without a card, game over or not. */
+    career_create(0, "ACE");
+    g_match_config.human[2] = 0;
+    match_config_opponent(1);
+    g_game_state.match_winner = 0;
+    save_record_rally(6);
+    story_begin_initials();
+    assert(g_story.card == STORY_CARD_NONE && g_save_new_records == 0);
+    assert(memcmp(g_save.initials.longest_rally, "ACE", 3) == 0);
+    career_select(CAREER_NONE);
 }
 
 /* ADR-047: the unlock card shows what a career player just earned, never

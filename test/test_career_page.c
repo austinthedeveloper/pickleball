@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "career_page.h"
+#include "museum.h"
 #include "input.h"
 #include "palette_parts.h"
 #include "test_support.h"
@@ -184,16 +185,15 @@ static void test_delete_and_records(void)
         CAREER_PAGE_SAVE);
     assert(g_save.career[0].used == 0 && career_active() == 0);
     assert(g_career_page.view == CAREER_VIEW_SLOTS);
-    /* RECORDS, erase, and back. */
+    press(PAD_UP);                              /* wraps to NO PLAYER */
+    assert(g_career_page.row == CAREER_ROW_NOBODY);
+    assert(press(PAD_Y) == CAREER_PAGE_CLOSE);
+    /* RECORDS (the title's own entry, ADR-065): erase, and back out. */
     g_save.records.wins[0] = 9;
-    press(PAD_UP);                              /* wraps to RECORDS */
-    assert(g_career_page.row == CAREER_ROW_RECORDS);
-    press(PAD_B);
+    career_page_begin_records();
     assert(g_career_page.view == CAREER_VIEW_RECORDS);
     career_page_input(PAD_X, PAD_L | PAD_R | PAD_X);
     assert(g_save.records.wins[0] == 0);
-    press(PAD_Y);
-    assert(g_career_page.view == CAREER_VIEW_SLOTS);
     assert(press(PAD_Y) == CAREER_PAGE_CLOSE);
 }
 
@@ -255,11 +255,16 @@ static void test_card_helpers(void)
     CareerPlayer p;
 
     memset(&p, 0, sizeof(p));
-    assert(career_next_unlock(&p) == 0 && career_unlock_count(&p) == 0);
-    p.unlocked = 0x0b;                          /* 0, 1, 3 */
-    assert(career_next_unlock(&p) == 2 && career_unlock_count(&p) == 3);
+    assert(career_next_unlock(&p) == 0);
+    /* ADR-065: the cap, and the five starting hair colours. */
+    assert(career_hats_held(&p) == 1 && career_hair_held(&p) == 5);
+    p.unlocked = 0x1b;                          /* 0, 1, 3 hats; 4 hair */
+    assert(career_next_unlock(&p) == 2);
+    assert(career_hats_held(&p) == 4 && career_hair_held(&p) == 6);
     p.unlocked = (1 << CAREER_UNLOCKS) - 1;
     assert(career_next_unlock(&p) == CAREER_UNLOCKS);
+    assert(career_hats_held(&p) == MUSEUM_HATS);
+    assert(career_hair_held(&p) == CAREER_HAIRS);
     assert(strcmp(career_paddle_name(0), "WOOD") == 0);
     assert(strcmp(career_body_name(1), "FEMALE") == 0);
 }

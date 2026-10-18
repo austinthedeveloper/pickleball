@@ -7,6 +7,8 @@ human player.
 Depends on: ADR-010 (palette per player), ADR-013 (palette parts),
 ADR-014 (accessory object), ADR-015 (paddle constraints), ADR-019 (shots).
 
+Amended by [ADR-065](ADR-065-menu-cleanup.md): a career player chooses only the paddle.
+
 ## Flow
 
 ```

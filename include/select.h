@@ -35,7 +35,8 @@ typedef struct {
 extern SelectState g_select;
 
 /* Opens the screen for 1P: blue, male, standard paddle; 2P defaults to the
- * first colour 1P has not taken. */
+ * first colour 1P has not taken. With a career player active, 1P is that
+ * player and chooses only the paddle (ADR-065). */
 void select_begin(u8 mode, u8 humans);
 /* One frame of the current human's newly pressed buttons (PAD_* bits).
  * Up/Down rows, Left/Right values. B steps to the next row and confirms

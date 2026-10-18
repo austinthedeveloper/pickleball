@@ -130,24 +130,32 @@ s16 modifiers_lava_target(s16 x, u8 team)
 const char *modifiers_row_label(u8 row)
 {
     static const char *const labels[MODIFIERS_ROWS] = {
-        "BALL", "SPEED", "SCORING", "KITCHEN", "VISION", "RALLY", "FOOTING",
-        "LIGHTS", "COLORS"
+        "BALL", "SPEED", "KITCHEN", "VISION", "RALLY", "FOOTING", "LIGHTS",
+        "COLORS"
     };
     return labels[row < MODIFIERS_ROWS ? row : 0];
 }
 
+u8 modifiers_row_bit(u8 row)
+{
+    static const u8 bits[MODIFIERS_ROWS] = {
+        MODIFIER_BIG_BALL, MODIFIER_FAST_BALL, MODIFIER_LAVA,
+        MODIFIER_GHOST_BALL, MODIFIER_POPCORN, MODIFIER_ICE, MODIFIER_GLOW, 0
+    };
+    return bits[row < MODIFIERS_ROWS ? row : 0];
+}
+
 u8 modifiers_row_on(u8 row, u8 modifiers, u8 modifiers2)
 {
-    if (row >= MODIFIER_COUNT)
-        return (modifiers2 >> (row - MODIFIER_COUNT)) & 1;
-    return (modifiers >> row) & 1;
+    if (row == MODIFIERS_ROW_COLORS)
+        return modifiers2 & MODIFIER2_INVERSE;
+    return (modifiers & modifiers_row_bit(row)) != 0;
 }
 
 const char *modifiers_value_name(u8 row, u8 modifiers, u8 modifiers2)
 {
     static const char *const names[MODIFIERS_ROWS][2] = {
-        { "NORMAL", "BIG" }, { "NORMAL", "FAST" },
-        { "FIRST TO", "WIN BY 2" }, { "NORMAL", "LAVA" },
+        { "NORMAL", "BIG" }, { "NORMAL", "FAST" }, { "NORMAL", "LAVA" },
         { "NORMAL", "GHOST" }, { "NORMAL", "POPCORN" }, { "NORMAL", "ICE" },
         { "NORMAL", "GLOW" }, { "NORMAL", "INVERSE" }
     };
@@ -191,10 +199,10 @@ u8 modifiers_edit_input(u8 *modifiers, u8 *modifiers2, u16 pressed)
     else if (pressed & PAD_DOWN)
         g_modifiers_edit.row = row == MODIFIERS_ROWS - 1 ? 0 : row + 1;
     else if (pressed & (PAD_LEFT | PAD_RIGHT)) {
-        if (row >= MODIFIER_COUNT)
-            *modifiers2 ^= (u8)(1 << (row - MODIFIER_COUNT));
+        if (row == MODIFIERS_ROW_COLORS)
+            *modifiers2 ^= MODIFIER2_INVERSE;
         else
-            *modifiers ^= (u8)(1 << row);
+            *modifiers ^= modifiers_row_bit(row);
     }
     return MODIFIERS_EDIT_STAY;
 }
