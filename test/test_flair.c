@@ -130,6 +130,7 @@ static void test_quip_emotes(void)
     for (i = 0; i < 5; ++i) {
         game_set_phase(GAME_PHASE_POINT_RESULT);
         flair_tick();
+        flair_tick();                   /* a change waits a frame */
         g_game_state.last_fault = faults[i];
         flair_quip(1);
         assert(g_flair.emote[2] == emotes[i]);
@@ -138,6 +139,8 @@ static void test_quip_emotes(void)
             flair_tick();
         assert(g_flair.emote[2] == emotes[i]);          /* held */
         game_set_phase(GAME_PHASE_SERVE_SETUP);
+        flair_tick();
+        assert(g_flair.emote[2] == emotes[i]);  /* the change's own frame */
         flair_tick();
         assert(g_flair.emote[2] == FLAIR_EMOTE_NONE);   /* the next serve */
         /* A quip picked late, in the next serve's setup: no emote. */
@@ -206,6 +209,7 @@ static void test_waiting_zzz(void)
     assert(g_flair.emote[2] == FLAIR_EMOTE_ZZZ);
     assert(g_flair.emote[0] == FLAIR_EMOTE_NONE);       /* not the server */
     game_set_phase(GAME_PHASE_SERVE_TOSS);
+    flair_tick();                       /* a change waits a frame */
     flair_tick();
     assert(g_flair.emote[2] == FLAIR_EMOTE_NONE);
     /* A CPU server takes its time without them. */

@@ -1022,6 +1022,36 @@ static void render_flair(void)
     g_flair.repaint = 0;
 }
 
+/* Flair's frame, when anything is up: an event's own frame (a contact, a
+ * bounce) is skipped, as it is the rally's heaviest and the effect starts
+ * a frame later unseen; a phase change is drawn a frame later too. */
+static void render_flair_frame(void)
+{
+    if (g_flair.fresh) {
+        g_flair.fresh = 0;
+    } else if (g_game_state.phase != s_flair_phase) {
+        /* A phase change (a match's result: the trophy) is drawn on the
+         * next frame: the change's own frame is a heavy one too. */
+        s_flair_phase = g_game_state.phase;
+        s_flair_busy = 1;
+    } else if ((g_game_state.phase == GAME_PHASE_POINT_RESULT ||
+            g_game_state.phase == GAME_PHASE_MATCH_RESULT) &&
+            g_flair.result_frames < RENDER_FLAIR_QUIET) {
+        /* A result's first frames are the HUD's (its banner, the quip):
+         * flair waits, only the streak is put away. */
+        if (s_streak_shown) {
+            obj_park(RENDER_OAM_STREAK);
+            s_streak_shown = 0;
+        }
+    } else if (g_flair.active || g_flair.repaint || (s_flair_busy &&
+            (oam_cam_x != s_flair_cam_x || oam_cam_y != s_flair_cam_y ||
+             (g_game_state.frame_count & 7) == 0))) {
+        /* Idle objects (a held emote, the trophy) only when the camera
+         * moved or an emote's bob turns. */
+        render_flair();
+    }
+}
+
 /* The close call (ADR-041) shows during its point result only. */
 #define RENDER_REPLAY_WANTED() \
     (g_replay.active && !g_attract && \
@@ -1240,32 +1270,10 @@ void render_prepare(void)
     render_replay_ball();
     render_watcher();
     render_effects();
-    /* ADR-064: one test on most frames (the doubles budget); an event's
-     * own frame (a contact, a bounce) is skipped: it is the rally's
-     * heaviest, and the effect starts a frame later unseen. */
-    if (g_flair.fresh) {
-        g_flair.fresh = 0;
-    } else if (g_game_state.phase != s_flair_phase) {
-        /* A phase change (a match's result: the trophy) is drawn on the
-         * next frame: the change's own frame is a heavy one too. */
-        s_flair_phase = g_game_state.phase;
-        s_flair_busy = 1;
-    } else if ((g_game_state.phase == GAME_PHASE_POINT_RESULT ||
-            g_game_state.phase == GAME_PHASE_MATCH_RESULT) &&
-            g_flair.result_frames < RENDER_FLAIR_QUIET) {
-        /* A result's first frames are the HUD's (its banner, the quip):
-         * flair waits, only the streak is put away. */
-        if (s_streak_shown) {
-            obj_park(RENDER_OAM_STREAK);
-            s_streak_shown = 0;
-        }
-    } else if (g_flair.active || g_flair.repaint || (s_flair_busy &&
-            (oam_cam_x != s_flair_cam_x || oam_cam_y != s_flair_cam_y ||
-             (g_game_state.frame_count & 7) == 0))) {
-        /* Idle objects (a held emote, the trophy) only when the camera
-         * moved or an emote's bob turns. */
-        render_flair();
-    }
+    /* ADR-064: one test on an idle frame (the doubles budget). */
+    if (g_flair.fresh | g_flair.active | g_flair.repaint | s_flair_busy |
+            (g_game_state.phase ^ s_flair_phase))
+        render_flair_frame();
     if (s_critter_a)
         render_critter();
     /* The practice objects only in practice, and once more to hide them:

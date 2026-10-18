@@ -24,6 +24,7 @@ static u8 s_celebrate_next;
  * team's last hitter this rally (a star's winner): 0xff for none. */
 static u8 s_quip_slot;
 static u8 s_quip_team;
+static u8 s_change_waited;              /* a phase change waited its frame */
 static u8 s_last_hit[2];
 
 /* Constant stores, no memset or loops: it runs on a new match's frame,
@@ -63,6 +64,7 @@ void flair_initialize(void)
     s_quip_slot = 0xff;
     s_last_hit[0] = 0xff;
     s_last_hit[1] = 0xff;
+    s_change_waited = 0;
 }
 
 static void flair_emote(u8 slot, u8 emote, u8 frames)
@@ -252,10 +254,6 @@ static void flair_tick_active(u8 phase)
 
     s_phase = phase;
     g_flair.repaint = 1;
-    if (g_flair.quip_team != 0xff) {
-        flair_quip(g_flair.quip_team);
-        g_flair.quip_team = 0xff;
-    }
     if (g_flair.dust_timer)
         --g_flair.dust_timer;
     if (g_flair.cord_timer)
@@ -300,6 +298,11 @@ static void flair_tick_active(u8 phase)
      * ticks: the next phase change wakes flair (game_set_phase) to clear
      * them. A match result can sit for minutes, and the frame that leaves
      * it is the game's heaviest (make perf). */
+    /* A quip's emote, after the clearing above (it belongs to now). */
+    if (g_flair.quip_team != 0xff) {
+        flair_quip(g_flair.quip_team);
+        g_flair.quip_team = 0xff;
+    }
     g_flair.active = g_flair.dust_timer | g_flair.cord_timer |
         g_flair.squash_timer | s_emotes_counting |
         (g_flair.reacting && g_flair.result_frames < FLAIR_SCRAMBLE_END) |
@@ -320,6 +323,14 @@ void flair_tick(void)
     if (phase == GAME_PHASE_SERVE_SETUP &&
             g_game_state.phase_timer >= FLAIR_ZZZ_WAIT)
         flair_waiting();
+    /* A phase change's clearing (held emotes, reactions) waits a frame:
+     * the change's own frame (a result ending, the next serve's setup) is
+     * among the game's heaviest (make perf). wake stays set meanwhile. */
+    if (phase != s_phase && !s_change_waited) {
+        s_change_waited = 1;
+        return;
+    }
+    s_change_waited = 0;
     if (g_flair.active || phase != s_phase)
         flair_tick_active(phase);
     g_flair.wake = (s_celebrate_next < MAX_PLAYERS) |
