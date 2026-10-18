@@ -10,13 +10,24 @@ SelectState g_select;
 
 PlayerChoice *select_current(void)
 {
-    return g_select.current ? &g_select.choice[1] : &g_select.choice[0];
+    PlayerChoice *choice = g_select.choice;
+    u8 i;
+
+    /* Walking a pointer: 816-tcc multiplies for choice[current]. */
+    for (i = 0; i < g_select.current; ++i)
+        ++choice;
+    return choice;
 }
 
 u8 select_colour_taken(u8 palette_id)
 {
-    return g_select.current == 1 &&
-        g_select.choice[0].palette_id == palette_id;
+    const PlayerChoice *choice = g_select.choice;
+    u8 i;
+
+    for (i = 0; i < g_select.current; ++i, ++choice)
+        if (choice->palette_id == palette_id)
+            return 1;
+    return 0;
 }
 
 /* Next colour in direction step (+1/-1, wrapping) that is not taken. */
@@ -41,16 +52,32 @@ static u8 first_row(void)
         SELECT_ROW_VARIANT;
 }
 
-void select_begin(u8 mode, u8 humans)
+void select_begin(u8 mode, u8 joined)
 {
+    static const u8 colours[MAX_PLAYERS] = {
+        PAL_BLUE, PAL_RED, PAL_GREEN, PAL_GOLD
+    };
+    PlayerChoice *choice = g_select.choice;
+    u8 controller;
+    u8 i;
+
     g_select.mode = mode;
-    g_select.humans = humans == 2 ? 2 : 1;
+    g_select.humans = 0;
+    for (controller = 0; controller < MAX_PLAYERS; ++controller) {
+        /* 1P always; the others when joined and the mode has a slot. */
+        if (controller && (joined & (1 << controller)) == 0)
+            continue;
+        if (match_controller_slot(mode, controller) == MATCH_CPU)
+            continue;
+        g_select.controller[g_select.humans++] = controller;
+    }
+    for (i = 0; i < MAX_PLAYERS; ++i, ++choice) {
+        choice->palette_id = colours[i];
+        choice->variant = PLAYER_VARIANT_MALE;
+        choice->paddle_id = PADDLE_STANDARD;
+    }
     g_select.current = 0;
-    g_select.row = SELECT_ROW_VARIANT;
     g_select.reserved = 0;
-    g_select.choice[0].palette_id = PAL_BLUE;
-    g_select.choice[0].variant = PLAYER_VARIANT_MALE;
-    g_select.choice[0].paddle_id = PADDLE_STANDARD;
     /* ADR-047: 1P starts on the active career player's body, shirt, and
      * paddle; only the paddle changes, for this match (ADR-065). */
     if (career_active()) {
@@ -58,9 +85,6 @@ void select_begin(u8 mode, u8 humans)
         g_select.choice[0].variant = career_active()->variant;
         g_select.choice[0].paddle_id = career_active()->paddle;
     }
-    g_select.choice[1].palette_id = PAL_RED;
-    g_select.choice[1].variant = PLAYER_VARIANT_MALE;
-    g_select.choice[1].paddle_id = PADDLE_STANDARD;
     g_select.row = first_row();
     g_select.changed = 1;
 }
@@ -92,24 +116,26 @@ u8 select_input(u16 pressed)
         return SELECT_STAY;
     }
     if (pressed & (PAD_B | PAD_START)) {
-        if (g_select.current == 0 && g_select.humans == 2) {
-            g_select.current = 1;
+        /* The next human, on a colour nobody before has (M4-MP-01). */
+        if (g_select.current + 1 < g_select.humans) {
+            ++g_select.current;
             g_select.row = SELECT_ROW_VARIANT;
-            if (select_colour_taken(g_select.choice[1].palette_id))
-                g_select.choice[1].palette_id =
-                    step_colour(g_select.choice[1].palette_id, 1);
+            if (select_colour_taken(select_current()->palette_id))
+                select_current()->palette_id =
+                    step_colour(select_current()->palette_id, 1);
             return SELECT_STAY;
         }
         return SELECT_DONE;
     }
-    /* Y steps back up the rows, then to 1P, then out to the title. */
+    /* Y steps back up the rows, then to the human before, then (1P) out
+     * to the title. */
     if (pressed & PAD_Y) {
         if (g_select.row > first_row()) {
             --g_select.row;
             return SELECT_STAY;
         }
-        if (g_select.current == 1) {
-            g_select.current = 0;
+        if (g_select.current) {
+            --g_select.current;
             g_select.row = SELECT_ROW_PADDLE;
             return SELECT_STAY;
         }
@@ -128,12 +154,13 @@ u8 select_input(u16 pressed)
 
 void select_apply(void)
 {
-    match_config_select(g_select.mode, &g_select.choice[0],
-        g_select.humans == 2 ? &g_select.choice[1] : 0);
+    match_config_select(g_select.mode, g_select.choice, g_select.controller,
+        g_select.humans);
     /* ADR-047: 1P plays as the active career player (skin, hair, hat). */
     g_match_config.career_p1 = career_active() != 0;
-    /* ADR-023: against the CPU, the next opponent on the ladder. */
-    if (g_select.humans == 1)
+    /* ADR-023: against the CPU (no human on the right team), the next
+     * opponent on the ladder. */
+    if (match_vs_cpu())
         match_config_opponent(save_ladder(g_select.mode));
     /* ADR-025: the saved options. */
     g_match_config.points_to_win = options_points(g_save.settings.points);

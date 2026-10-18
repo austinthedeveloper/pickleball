@@ -21,7 +21,8 @@ typedef struct {
     u8 skin_id[MAX_PLAYERS];
     u8 paddle_id[MAX_PLAYERS];    /* PADDLE_* (ADR-020) */
     u8 variant[MAX_PLAYERS];      /* PLAYER_VARIANT_* */
-    u8 human[MAX_PLAYERS];        /* 1P on slot 0, 2P on slot 2 */
+    u8 human[MAX_PLAYERS];        /* a controller plays the slot: which
+                                     one is match_slot_controller */
     u8 opponent;                  /* ADR-023 personality on slots 2-3, or
                                      OPPONENT_NONE (the default CPU) */
     u8 points_to_win;             /* ADR-025: first to this many */
@@ -58,11 +59,17 @@ void match_config_career_p1(void);
 void match_config_defaults(void);
 /* Doubles defaults from the mockup: blue+gold (0, 1) vs red+green (2, 3). */
 void match_config_doubles(void);
-/* Config from Player Select: 1P on slot 0, optional 2P on slot 2; CPUs
- * take the unused colours in order, the standard paddle, and the fixed
- * variants (slots 1 and 3 female). */
-void match_config_select(u8 mode, const PlayerChoice *p1,
-    const PlayerChoice *p2);
+/* Config from Player Select (M4-MP-01): count humans, human i on
+ * controller controllers[i] (0 for 1P .. 3 for 4P) choosing choices[i],
+ * each on match_controller_slot's slot; CPUs take the unused colours in
+ * order, the standard paddle, and the fixed variants (slots 1 and 3
+ * female). */
+void match_config_select(u8 mode, const PlayerChoice *choices,
+    const u8 *controllers, u8 count);
+/* The slot a controller plays in a match from the title (M4-MP-01): 1P
+ * and 3P on the left (slots 0 and 1), 2P and 4P on the right (2 and 3);
+ * in singles 1P and 2P only (slots 0 and 2), else MATCH_CPU. */
+u8 match_controller_slot(u8 mode, u8 controller);
 /* The right team's CPUs become an opponent's captain (slot 2) and partner
  * (slot 3): look, body variant, and paddle (ADR-023). Only when no human
  * plays on that team; OPPONENT_NONE keeps the default CPU. */
@@ -87,10 +94,16 @@ u8 match_slot_celebrate(u8 slot);
 const u16 *match_team_hud_colors(u8 team);
 /* Nonzero when the slot plays in the configured mode. */
 u8 match_slot_active(u8 slot);
-/* Who plays the slot (ADR-066): 0 for 1P, 1 for 2P (3P and 4P with
- * M4-MP-01), or MATCH_CPU for a CPU. Its ring has that player's colour. */
+/* Who plays the slot (ADR-066, M4-MP-01): 0 for 1P .. 3 for 4P, or
+ * MATCH_CPU for a CPU. From the title, match_controller_slot's layout; in
+ * open play your side first: 2P partners you (slot 1), 3P and 4P take the
+ * other side (slots 2 and 3). Input reads that controller's pad, and the
+ * ring has its colour. */
 #define MATCH_CPU 0xff
 u8 match_slot_controller(u8 slot);
+/* Nonzero when no human plays the right team (slots 2 and 3): a match
+ * against the CPU, for the ladder, the records, and career stats. */
+u8 match_vs_cpu(void);
 /* Nonzero when every assigned palette is unique; asserted in debug builds. */
 u8 match_config_palettes_unique(void);
 /* Builds a slot's 16-colour OBJ palette from shared/team/skin/paddle parts. */

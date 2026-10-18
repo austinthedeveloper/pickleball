@@ -50,7 +50,7 @@ void story_begin_initials(void)
     /* Only at a game over (amended 2026-10-16): a loss to the CPU ends the
      * run, the last ladder opponent beaten ends the ladder, and a 2P match
      * has no run. A ladder or open play win keeps its records waiting. */
-    if (g_match_config.human[2] == 0 && g_game_state.match_winner == 0) {
+    if (match_vs_cpu() && g_game_state.match_winner == 0) {
         if (g_match_config.open_play)
             return;
         if (g_match_config.opponent != OPPONENT_COUNT - 1)
@@ -135,7 +135,7 @@ const char *story_quip(u8 loser, u16 roll)
         lines = g_side_quips[QUIPS_PLAYER];
     else if (g_match_config.opponent < OPPONENT_COUNT)
         lines = g_opponent_quips[g_match_config.opponent];
-    else if (g_match_config.human[2])
+    else if (match_vs_cpu() == 0)
         lines = g_side_quips[QUIPS_PLAYER];
     else
         lines = g_side_quips[QUIPS_CPU];

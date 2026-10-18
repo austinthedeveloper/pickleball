@@ -10,8 +10,9 @@ On the title screen, Up/Down chooses a way to play (**SINGLES**, **DOUBLES**,
 Start on another controller joins (`FRIENDS: PRESS START`); press it again
 to leave. The counter at the top shows who's in: `1P` to `4P`, a dot in the
 player's colour (1P red, 2P blue, 3P yellow, 4P green) or a grey x.
-Controllers 3 and 4 join only with a Super Multitap, and sit out until
-four-player matches arrive (`M4-MP-01`). In a match, a ring at each
+Controllers 3 and 4 join only with a Super Multitap. In doubles the teams
+go by controller: 1P and 3P on the left, 2P and 4P on the right, a CPU in
+any empty spot; singles is 1P and 2P only. In a match, a ring at each
 player's feet is in the same colours, grey for the CPU. Start or B on controller 1 opens Player Select (or the park, or that
 page).
 
@@ -36,6 +37,10 @@ its own level. On KID, every court is KID.
 - **Two players:** press Start on controller 2 (on the title or in the
   park) and 2P comes along as your partner in your games; press it again
   to leave.
+- **Three or four players** (Super Multitap): 3P and 4P who joined on the
+  title play the team you drew, across the net, in its colours. A game
+  with a friend across the net isn't rated (no park points), like any
+  match between players.
 - After the game, **B** takes you back to the park. Win and you stay on:
   the next team in line takes you on, with the same partner
   (`WINNERS STAY: VS SNOWBIRDS`). Win twice in a row and you come off
@@ -275,8 +280,10 @@ row, starts the match. Start confirms everything at once. Y steps back a
 row, and from the top row returns to the title.
 
 - **MALE / FEMALE**: the female player wears a ponytail.
-- **Colour**: BLUE, RED, GREEN, or GOLD. With two players, 1P chooses
-  first and 2P cannot take 1P's colour (it shows as a dark silhouette).
+- **Colour**: BLUE, RED, GREEN, or GOLD. Everyone who joined chooses in
+  turn on their own controller (1P, 2P, 3P, 4P; the tag shows whose turn
+  it is), and nobody can take a colour someone before them took (it shows
+  as a dark silhouette). Y on the top row goes back to the player before.
 - **Paddle**: each paddle has the same total of stat points.
 
 | Paddle | Power | Control | Speed | Plays like |

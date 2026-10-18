@@ -102,6 +102,7 @@ static void game_begin_serve(u8 serving_team)
 static void game_activate_players(void)
 {
     u8 active[MAX_PLAYERS];
+    u8 controllers[MAX_PLAYERS];
     u8 doubles = g_match_config.mode == MATCH_DOUBLES;
     Player *player = g_players;
     const AiStyle *style;
@@ -127,7 +128,9 @@ static void game_activate_players(void)
     big = (g_match_config.modifiers & MODIFIER_BIG_BALL) != 0;
     if (big != g_hit_box.big)
         collision_configure(big);
-    input_assign_match(active, g_match_config.human);
+    for (i = 0; i < MAX_PLAYERS; ++i)
+        controllers[i] = match_slot_controller(i);
+    input_assign_match(active, controllers);
     for (i = 0; i < MAX_PLAYERS; ++i, ++player) {
         player->active = active[i];
         player->cpu_controlled = g_input_owners[i] == INPUT_OWNER_CPU;
@@ -353,7 +356,7 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
     if (g_game_state.phase_timer == 1 && !g_attract) {
         save_record_rally((u8)(g_game_state.shot_serial - s_rally_start));
         /* ADR-047: the active career player's point (against the CPU). */
-        if (g_match_config.human[2] == 0)
+        if (match_vs_cpu())
             career_record_point(
                 (u8)(g_game_state.shot_serial - s_rally_start),
                 g_game_state.point_winner == 0,
@@ -378,13 +381,13 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
                 g_match_config.opponent != OPPONENT_NONE)
             save_advance_ladder(g_match_config.mode);
         /* ADR-047: before save_record_match, whose write keeps both. */
-        if (!g_attract && g_match_config.human[2] == 0)
+        if (!g_attract && match_vs_cpu())
             career_record_match(g_match_config.mode, winner == 0,
                 g_game_state.team_score[1], g_match_config.opponent,
                 g_match_config.open_play);
         if (!g_attract)
             save_record_match(g_match_config.mode,
-                !g_match_config.human[2], winner == 0,
+                match_vs_cpu(), winner == 0,
                 g_game_state.team_score[1]);
         return;
     }

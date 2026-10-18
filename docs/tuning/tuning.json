@@ -761,7 +761,7 @@
         },
         "MATCH_CPU": {
           "value": 255,
-          "note": "Who plays the slot (ADR-066): 0 for 1P, 1 for 2P (3P and 4P with M4-MP-01), or MATCH_CPU for a CPU. Its ring has that player's colour."
+          "note": "Who plays the slot (ADR-066, M4-MP-01): 0 for 1P .. 3 for 4P, or MATCH_CPU for a CPU. From the title, match_controller_slot's layout; in open play your side first: 2P partners you (slot 1), 3P and 4P take the other side (slots 2 and 3). Input reads that controller's pad, and the ring has its colour."
         },
         "MATCH_SINGLES": {
           "value": 0

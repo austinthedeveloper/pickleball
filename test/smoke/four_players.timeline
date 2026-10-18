@@ -1,0 +1,17 @@
+# Four players (M4-MP-01) on the debug ROM, with the pokes in ADR-073
+# standing in for a Multitap and controllers 2-4 (KNOWN_ISSUES #16):
+# all four join on the title, DOUBLES, Player Select in turns (1P, 2P,
+# 3P, 4P, each confirming on their own controller), and a match of four
+# humans: 2P, 3P, and 4P each hold Right in turn.
+70 71 down
+250 251 start
+shot 280
+290 291 start     # 1P confirms; 2P's turn (the pokes press 2P's Start)
+shot 300
+shot 320
+shot 340
+shot 380
+shot 430
+shot 470
+shot 510
+shot 560

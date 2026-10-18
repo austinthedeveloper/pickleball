@@ -5,10 +5,65 @@
 #include "input.h"
 #include "player.h"
 #include "select.h"
+#include "opponents.h"
+#include "save.h"
+#include "test_support.h"
+
+/* M4-MP-01: everyone who joined chooses in turn, no colour twice. */
+static void test_four_players(void)
+{
+    u8 i;
+
+    test_blank_save();
+    /* 1P, 2P, 3P, 4P joined (bit n: controller n). */
+    select_begin(MATCH_DOUBLES, 0x0f);
+    assert(g_select.humans == 4);
+    for (i = 0; i < 4; ++i)
+        assert(g_select.controller[i] == i);
+    /* 1P takes GOLD; 2P (RED) keeps theirs; 3P starts on GREEN. */
+    g_select.choice[0].palette_id = PAL_GOLD;
+    assert(select_input(PAD_START) == SELECT_STAY && g_select.current == 1);
+    assert(select_current()->palette_id == PAL_RED);
+    assert(select_input(PAD_START) == SELECT_STAY && g_select.current == 2);
+    assert(select_current()->palette_id == PAL_GREEN);
+    /* 3P can't take GOLD or RED: Right from GREEN skips GOLD to BLUE. */
+    g_select.row = SELECT_ROW_COLOUR;
+    select_input(PAD_RIGHT);
+    assert(select_current()->palette_id == PAL_BLUE);
+    assert(select_colour_taken(PAL_GOLD) && select_colour_taken(PAL_RED));
+    assert(select_input(PAD_START) == SELECT_STAY && g_select.current == 3);
+    /* 4P's default (GOLD) is 1P's: moved to the colour left, GREEN. */
+    assert(select_current()->palette_id == PAL_GREEN);
+    /* Y on the top row: back to 3P, on the paddle row. */
+    assert(select_input(PAD_Y) == SELECT_STAY && g_select.current == 2);
+    assert(g_select.row == SELECT_ROW_PADDLE);
+    assert(select_input(PAD_START) == SELECT_STAY);
+    assert(select_input(PAD_START) == SELECT_DONE);
+    select_apply();
+    assert(g_match_config.palette_id[0] == PAL_GOLD);   /* 1P */
+    assert(g_match_config.palette_id[2] == PAL_RED);    /* 2P */
+    assert(g_match_config.palette_id[1] == PAL_BLUE);   /* 3P */
+    assert(g_match_config.palette_id[3] == PAL_GREEN);  /* 4P */
+    assert(match_config_palettes_unique() && !match_vs_cpu());
+    assert(g_match_config.opponent == OPPONENT_NONE);
+
+    /* 1P and 3P: two turns, against the ladder's next team. */
+    select_begin(MATCH_DOUBLES, 0x05);
+    assert(g_select.humans == 2 && g_select.controller[1] == 2);
+    select_input(PAD_START);
+    assert(select_input(PAD_START) == SELECT_DONE);
+    select_apply();
+    assert(g_match_config.human[1] && match_vs_cpu());
+    assert(g_match_config.opponent == save_ladder(MATCH_DOUBLES));
+    /* Singles takes 1P and 2P only. */
+    select_begin(MATCH_SINGLES, 0x0f);
+    assert(g_select.humans == 2 && g_select.controller[1] == 1);
+}
 
 /* ADR-020 Player Select: rows, values, 2P colour exclusion, confirm/back. */
 int main(void)
 {
+    test_four_players();
     select_begin(MATCH_SINGLES, 1);
     assert(g_select.row == SELECT_ROW_VARIANT);
     assert(g_select.choice[0].palette_id == PAL_BLUE);

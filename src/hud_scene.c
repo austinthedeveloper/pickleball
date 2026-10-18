@@ -76,7 +76,21 @@ static u8 hud_doubles(void)
 
 static u8 hud_versus_2p(void)
 {
-    return g_match_config.human[2];
+    return match_vs_cpu() == 0;     /* a human on the right team */
+}
+
+static char s_right_text[12];       /* "P3 POINT", "P3 WINS" */
+
+/* The right team's human (M4-MP-01): "P2", or "P3"/"P4" when 3P or 4P
+ * plays there without 2P (open play). */
+static const char *hud_right_player(void)
+{
+    static const char *const names[MAX_PLAYERS] = { "P1", "P2", "P3", "P4" };
+    u8 controller = match_slot_controller(2);
+
+    if (controller == MATCH_CPU)
+        controller = match_slot_controller(3);
+    return names[controller < MAX_PLAYERS ? controller : 1];
 }
 
 static u8 hud_opponent_team(u8 team)
@@ -117,7 +131,7 @@ static const char *team_name(u8 team)
     if (hud_doubles() && !hud_opponent_team(team))
         return s_palette_names[match_team_palette(team)];
     if (team)
-        return hud_versus_2p() ? "P2" : "CPU";
+        return hud_versus_2p() ? hud_right_player() : "CPU";
     return "P1";
 }
 
@@ -329,7 +343,10 @@ static const char *hud_point_text(u8 winner)
         return doubles[match_team_palette(winner)];
     if (winner == 0)
         return "P1 POINT";
-    return hud_versus_2p() ? "P2 POINT" : "CPU POINT";
+    if (hud_versus_2p() == 0)
+        return "CPU POINT";
+    text_append(text_append(s_right_text, hud_right_player()), " POINT");
+    return s_right_text;
 }
 
 static const char *hud_match_winner_text(void)
@@ -339,8 +356,12 @@ static const char *hud_match_winner_text(void)
             !g_match_config.open_play &&
             g_match_config.opponent == OPPONENT_COUNT - 1)
         return "CHAMPION!";
-    if (hud_versus_2p())
-        return g_game_state.match_winner == 0 ? "P1 WINS" : "P2 WINS";
+    if (hud_versus_2p() && g_game_state.match_winner == 0)
+        return "P1 WINS";
+    if (hud_versus_2p()) {
+        text_append(text_append(s_right_text, hud_right_player()), " WINS");
+        return s_right_text;
+    }
     return g_game_state.match_winner == 0 ? "YOU WIN!" : "CPU WINS";
 }
 

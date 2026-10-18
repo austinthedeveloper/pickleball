@@ -249,6 +249,7 @@ static void test_two_players(void)
     input_configure(0);
     match_config_doubles();
     g_match_config.human[1] = 1;
+    g_match_config.open_play = 1;       /* the park's layout (M4-MP-01) */
     g_attract = 0;
     game_new_match();
     assert(g_input_owners[1] == INPUT_OWNER_HUMAN);

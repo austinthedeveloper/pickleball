@@ -34,23 +34,37 @@ void input_configure(u8 multitap_present)
     g_input_pad_for_player[3] = multitap_present ? 3 : INPUT_NO_PAD;
 }
 
-#define OWNER(i) (!active[i] ? INPUT_OWNER_NONE : \
-    human[i] ? INPUT_OWNER_HUMAN : INPUT_OWNER_CPU)
+/* A controller's pad position: 1P port 1, 2P port 2 (or the Multitap's
+ * first pad, the same position), 3P and 4P the Multitap's next two. */
+static u8 controller_pad(u8 controller)
+{
+    if (controller < 2)
+        return controller;
+    if (controller < MAX_HUMAN_PADS && g_multitap_present)
+        return controller;
+    return INPUT_NO_PAD;
+}
 
 void input_assign_match(const u8 active[MAX_PLAYERS],
-    const u8 human[MAX_PLAYERS])
+    const u8 controllers[MAX_PLAYERS])
 {
+    u8 i;
+
     g_input_owners[0] = INPUT_OWNER_HUMAN;
-    g_input_owners[1] = OWNER(1);
-    g_input_owners[2] = OWNER(2);
-    g_input_owners[3] = OWNER(3);
-    /* Co-op (ADR-034): 2P partners P1 on slot 1 with the port 2 pad, which
-     * otherwise belongs to slot 2 (versus). Slot 1 has a pad of its own only
-     * on a Multitap. */
-    if (human[1] && !human[2])
-        g_input_pad_for_player[1] = 1;
-    else if (g_input_pad_for_player[1] == 1)
-        g_input_pad_for_player[1] = g_multitap_present ? 2 : INPUT_NO_PAD;
+    g_input_pad_for_player[0] = 0;
+    for (i = 1; i < MAX_PLAYERS; ++i) {
+        if (active[i] == 0) {
+            g_input_owners[i] = INPUT_OWNER_NONE;
+            g_input_pad_for_player[i] = INPUT_NO_PAD;
+        } else if (controllers[i] == INPUT_CPU ||
+                controller_pad(controllers[i]) == INPUT_NO_PAD) {
+            g_input_owners[i] = INPUT_OWNER_CPU;
+            g_input_pad_for_player[i] = INPUT_NO_PAD;
+        } else {
+            g_input_owners[i] = INPUT_OWNER_HUMAN;
+            g_input_pad_for_player[i] = controller_pad(controllers[i]);
+        }
+    }
 }
 
 /* away: the aim_x that points away from this player's net (-1 on the

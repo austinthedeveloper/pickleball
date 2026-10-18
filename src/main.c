@@ -135,6 +135,13 @@ static void start_open_play_match(void)
         g_match_config.human[1] = 1;
     else
         match_config_partner(g_open_play.partner);
+    /* M4-MP-01: 3P and 4P (joined on the title, with a Multitap) play the
+     * team you drew, in its looks; then it isn't against the CPU, so it
+     * isn't rated or recorded. */
+    if (g_multitap_present && (g_title_joined & TITLE_JOIN_3P))
+        g_match_config.human[2] = 1;
+    if (g_multitap_present && (g_title_joined & TITLE_JOIN_4P))
+        g_match_config.human[3] = 1;
     g_match_config.points_to_win = options_points(g_save.settings.points);
     /* The court's level sets the difficulty (KID keeps its assist). */
     g_match_config.difficulty = open_court_difficulty(g_open_play.called,
@@ -421,7 +428,7 @@ static void update_title_practice(u16 pressed)
         return;
     if (practice_edit_changed(values))
         save_write();
-    select_begin(MATCH_SINGLES, 1);
+    select_begin(MATCH_SINGLES, TITLE_JOIN_1P);  /* practice: 1P alone */
     s_practice_pending = 1;
     s_open_select = 1;
 }
@@ -485,8 +492,10 @@ static void update_title(void)
                 s_venue_previewed = 0;
                 g_title_page = TITLE_PAGE_COURT;
             } else {
+                /* M4-MP-01: everyone who joined (TITLE_JOIN_* bit n is
+                 * controller n). */
                 select_begin(g_title_mode == TITLE_DOUBLES ? MATCH_DOUBLES :
-                    MATCH_SINGLES, (g_title_joined & TITLE_JOIN_2P) ? 2 : 1);
+                    MATCH_SINGLES, g_title_joined);
                 s_open_select = 1;
                 return;
             }
@@ -575,10 +584,12 @@ static void update_museum(void)
     enter_scene(SCENE_MATCH);
 }
 
-/* One Player Select frame: 1P reads port 1, 2P port 2. */
+/* One Player Select frame: the choosing human's own controller (1P port
+ * 1, 2P port 2, 3P and 4P the Multitap's next pads; M4-MP-01). */
 static void update_select(void)
 {
-    u16 pressed = g_pad_snapshots[g_select.current].pressed;
+    u16 pressed = g_pad_snapshots[g_select.controller[g_select.current]]
+        .pressed;
     u8 result = select_input(pressed);
 
     ui_sounds(pressed);

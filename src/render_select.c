@@ -61,6 +61,8 @@ static u8 s_variant_shown;
 static u8 s_anim;
 static u8 s_cel;
 
+/* Who is choosing (M4-MP-01): the controller's tag. */
+static const char *const s_tags[MAX_PLAYERS] = { "1P", "2P", "3P", "4P" };
 static const char *const s_paddle_names[PADDLE_COUNT] = {
     " CONTROL  ", " STANDARD ", "  POWER   ", "  SPEED   "
 };
@@ -160,7 +162,7 @@ static void draw_stats(const PlayerChoice *choice)
     hud_text(SEL_NAME_COL, SEL_NAME_ROW, HUD_PAL_WHITE,
         s_paddle_names[choice->paddle_id]);
     hud_text(SEL_TAG_COL, SEL_TAG_ROW, HUD_PAL_YELLOW,
-        g_select.current ? "2P" : "1P");
+        s_tags[g_select.controller[g_select.current] & 3]);
 }
 
 static void select_redraw(void)

@@ -2,8 +2,8 @@
 
 Draft text for a printed SNES instruction booklet. The working copy is a
 Claude Doc (https://claude.ai/code/artifact/2080a5f3-9ad7-4050-9eb5-d65d0d2f3988);
-this file is its snapshot of 2026-10-16. It describes four players on a Super
-Multitap as shipped, ahead of `M4-MP-01`. The rules and controls behind it are
+this file is its snapshot of 2026-10-16. Four players on a Super Multitap
+shipped with `M4-MP-01` (ADR-073). The rules and controls behind it are
 in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 
 ## Welcome to Pickleball '94!
@@ -366,4 +366,4 @@ Each manual section needs one or two screenshots; most come from existing smoke 
 
 - Is "Pickleball '94" the final title? The README calls it a placeholder.
 - Who goes in the credits, and is there a studio name or logo for the cover and spine?
-- Four players with a Super Multitap is written as done; it is planned as M4-MP-01. Revisit the team and Open Play wording once it ships.
+- Four players with a Super Multitap shipped (M4-MP-01): the team table matches. In Open Play, 3P and 4P play the drawn team; check the Open Play wording says so.

@@ -17,6 +17,7 @@ a CPU, look alike apart from shirts, and shirts are chosen per match.
   n + 1; 1P always). Start on controller 2 toggles 2P as before; with a
   Multitap, controllers 3 and 4 (pad positions 2 and 3) toggle 3P and 4P.
   Matches still take 1P and 2P only: 3P and 4P sit out until `M4-MP-01`.
+  *Amended 2026-10-18 (ADR-073):* they play now.
 - **The join counter** takes the demo scoreboard's place at the top of
   the title (ADR-065 cleared it): a panel reading `1P 2P 3P 4P`, each
   followed by a dot in that player's colour when joined, or a grey x. It

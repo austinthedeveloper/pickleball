@@ -193,19 +193,33 @@ static void apply_choice(u8 slot, const PlayerChoice *choice)
     g_match_config.human[slot] = 1;
 }
 
-void match_config_select(u8 mode, const PlayerChoice *p1,
-    const PlayerChoice *p2)
+u8 match_controller_slot(u8 mode, u8 controller)
+{
+    static const u8 doubles[MAX_PLAYERS] = { 0, 2, 1, 3 };
+
+    if (controller >= MAX_PLAYERS)
+        return MATCH_CPU;
+    if (mode == MATCH_SINGLES)
+        return controller == 0 ? 0 : controller == 1 ? 2 : MATCH_CPU;
+    return doubles[controller];
+}
+
+void match_config_select(u8 mode, const PlayerChoice *choices,
+    const u8 *controllers, u8 count)
 {
     u8 slot;
     u8 colour = 0;
+    u8 i;
 
     match_config_defaults();
     g_match_config.mode = mode;
     for (slot = 0; slot < MAX_PLAYERS; ++slot)
         g_match_config.palette_id[slot] = MATCH_NO_PALETTE;
-    apply_choice(0, p1);
-    if (p2)
-        apply_choice(2, p2);
+    for (i = 0; i < count && i < MAX_PLAYERS; ++i, ++choices) {
+        slot = match_controller_slot(mode, controllers[i]);
+        if (slot != MATCH_CPU)
+            apply_choice(slot, choices);
+    }
     for (slot = 1; slot < MAX_PLAYERS; ++slot) {
         if (g_match_config.human[slot])
             continue;
@@ -241,11 +255,24 @@ u8 match_slot_active(u8 slot)
 
 u8 match_slot_controller(u8 slot)
 {
+    /* From the title, slot n's controller: 1P, 3P, 2P, 4P. */
+    static const u8 title[MAX_PLAYERS] = { 0, 2, 1, 3 };
+
+    if (slot >= MAX_PLAYERS)
+        return MATCH_CPU;
     if (slot == 0)
         return 0;
-    /* 2P is the only other human until M4-MP-01: slot 2 in versus, or
-     * slot 1 partnering 1P (open play, ADR-034). */
-    return g_match_config.human[slot] ? 1 : MATCH_CPU;
+    if (g_match_config.human[slot] == 0)
+        return MATCH_CPU;
+    /* Open play (ADR-034): your side first, slot n is controller n. */
+    if (g_match_config.open_play)
+        return slot;
+    return title[slot];
+}
+
+u8 match_vs_cpu(void)
+{
+    return g_match_config.human[2] == 0 && g_match_config.human[3] == 0;
 }
 
 u8 match_slot_lane_top(u8 slot)

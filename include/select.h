@@ -23,26 +23,31 @@ enum {
 
 typedef struct {
     u8 mode;                    /* MATCH_SINGLES or MATCH_DOUBLES */
-    u8 humans;                  /* 1, or 2 when 2P joined on the title */
-    u8 current;                 /* 0 while 1P chooses, 1 for 2P */
+    u8 humans;                  /* 1 to 4 (M4-MP-01): who joined */
+    u8 current;                 /* the human choosing: 0 is 1P */
     u8 row;                     /* SELECT_ROW_* with the cursor */
     u8 changed;                 /* nonzero after any change; the renderer
                                    clears it */
     u8 reserved;
-    PlayerChoice choice[2];
+    u8 controller[MAX_PLAYERS]; /* each human's controller: 0 for 1P .. 3
+                                   for 4P, in that order */
+    PlayerChoice choice[MAX_PLAYERS];
 } SelectState;
 
 extern SelectState g_select;
 
-/* Opens the screen for 1P: blue, male, standard paddle; 2P defaults to the
- * first colour 1P has not taken. With a career player active, 1P is that
- * player and chooses only the paddle (ADR-065). */
-void select_begin(u8 mode, u8 humans);
+/* Opens the screen for 1P: blue, male, standard paddle. joined is a mask
+ * of controllers (bit n: controller n; 1P always): each joined human
+ * chooses in turn, 1P, 2P, 3P, 4P; singles takes 1P and 2P only (M4-MP-01).
+ * Each later human starts on the first colour nobody before has taken.
+ * With a career player active, 1P is that player and chooses only the
+ * paddle (ADR-065). */
+void select_begin(u8 mode, u8 joined);
 /* One frame of the current human's newly pressed buttons (PAD_* bits).
  * Up/Down rows, Left/Right values. B steps to the next row and confirms
  * on the paddle row; Start confirms at once; Y steps back. */
 u8 select_input(u16 pressed);
-/* Nonzero when the colour belongs to 1P while 2P is choosing. */
+/* Nonzero when a human before the current one has the colour. */
 u8 select_colour_taken(u8 palette_id);
 /* The current human's choice. */
 PlayerChoice *select_current(void);
