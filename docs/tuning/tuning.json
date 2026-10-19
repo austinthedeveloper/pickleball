@@ -759,6 +759,13 @@
         "MATCH_NO_PALETTE": {
           "value": 255
         },
+        "MATCH_PRACTICE_DRILL": {
+          "value": 1,
+          "note": "MatchConfig.practice (ADR-028): the ball machine's drill, or the tutorial (ADR-075)."
+        },
+        "MATCH_PRACTICE_LESSON": {
+          "value": 2
+        },
         "MATCH_CPU": {
           "value": 255,
           "note": "Who plays the slot (ADR-066, M4-MP-01): 0 for 1P .. 3 for 4P, or MATCH_CPU for a CPU. From the title, match_controller_slot's layout; in open play your side first: 2P partners you (slot 1), 3P and 4P take the other side (slots 2 and 3). Input reads that controller's pad, and the ring has its colour."
@@ -884,6 +891,40 @@
         "PRACTICE_ZONE_FLASH_FRAMES": {
           "value": 32,
           "note": "the zone's corners blink on a hit"
+        },
+        "LESSON_SWING": {
+          "value": 0,
+          "note": "B, anywhere in"
+        },
+        "LESSON_AIM": {
+          "value": 1,
+          "note": "any swing aimed Up or Down, into a sideline zone"
+        },
+        "LESSON_DRIVE": {
+          "value": 2,
+          "note": "A"
+        },
+        "LESSON_LOB": {
+          "value": 3,
+          "note": "Y, aimed deep or level: the DEEP zone"
+        },
+        "LESSON_DINK": {
+          "value": 4,
+          "note": "Y aimed away from the net (or L/R): the kitchen"
+        },
+        "LESSON_SLICE": {
+          "value": 5,
+          "note": "X"
+        },
+        "LESSON_DONE": {
+          "value": 6,
+          "note": "no more feeds; a swing button leaves"
+        },
+        "LESSON_STEPS": {
+          "value": 6
+        },
+        "LESSON_GOAL": {
+          "value": 3
         },
         "PRACTICE_POSE_UP": {
           "value": 0

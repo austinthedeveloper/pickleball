@@ -273,6 +273,96 @@ static void test_exit(void)
     match_config_defaults();
 }
 
+/* The tutorial (ADR-075): each step counts only its own shot, LESSON_GOAL
+ * returns move on, and the end leaves for the title on a swing button. A
+ * scripted P1 moves like the CPU, swings when the KID assist would, and
+ * picks each step's button and aim. */
+static void lesson_start(void)
+{
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    match_config_defaults();
+    match_config_lesson();
+    g_attract = 0;
+    game_new_match();
+}
+
+static void test_lesson(void)
+{
+    static const u8 shots[LESSON_STEPS] = {
+        SHOT_STANDARD, SHOT_STANDARD, SHOT_DRIVE, SHOT_SOFT, SHOT_SOFT,
+        SHOT_SLICE
+    };
+    u16 f;
+    u16 started[LESSON_STEPS + 1];
+    u8 step;
+    u8 last = LESSON_SWING;
+    u8 swings = 0;
+
+    lesson_start();
+    assert(g_practice.lesson && g_practice.step == LESSON_SWING);
+    assert(g_match_config.difficulty == DIFFICULTY_EASY);
+    assert(g_practice.rate == PRACTICE_RATE_SLOW);
+    assert(g_game_state.team_score[0] == 0 &&
+        g_game_state.team_score[1] == LESSON_GOAL);
+    assert(strcmp(practice_lesson_title(LESSON_DINK), "5 DINK") == 0);
+    for (step = 0; step <= LESSON_STEPS; ++step)
+        assert(strlen(practice_lesson_text(step)) <= 28 &&
+            strlen(practice_lesson_title(step)) <= 10);
+
+    /* A return that lands in without the step's shot does not count. */
+    return_to(200, 130);
+    assert(g_practice.step == LESSON_SWING && g_practice.streak == 0);
+
+    started[0] = 0;
+    for (f = 0; f < 20000 && g_practice.step != LESSON_DONE; ++f) {
+        step = g_practice.step;
+        test_bot_skill(9, 0);
+        memset(intents, 0, sizeof(intents));
+        ai_update(0, &intents[0]);
+        intents[0].hit_pressed = 0;
+        if (ai_assist_swing(0)) {
+            intents[0].hit_pressed = 1;
+            intents[0].shot = shots[step];
+            /* AIM alternates the sidelines; the dink is aimed away from
+             * the net, the rest level. */
+            intents[0].aim_x = step == LESSON_DINK ? -1 : 0;
+            intents[0].aim_y = step == LESSON_AIM ? ((swings & 1) ? 1 : -1) :
+                0;
+            ++swings;
+        }
+        game_update(intents);
+        if (g_practice.step != last) {
+            assert(g_practice.step == last + 1);
+            assert(g_practice.streak == 0);
+            last = g_practice.step;
+            started[last] = f;
+            assert(g_practice.zone == (last == LESSON_LOB ? PRACTICE_ZONE_DEEP :
+                last == LESSON_DINK ? PRACTICE_ZONE_KITCHEN :
+                PRACTICE_ZONE_ANY));
+        }
+    }
+    assert(g_practice.step == LESSON_DONE);
+    for (step = 1; step <= LESSON_STEPS; ++step)
+        printf("tutorial: step %d done at frame %u\n", step,
+            started[step]);
+    printf("tutorial: %u swings in %u frames\n", swings, f);
+
+    /* Done: no more feeds, nothing saved, and B leaves for the title. */
+    memset(intents, 0, sizeof(intents));
+    for (f = 0; f < 300; ++f)
+        game_update(intents);
+    assert(g_practice.state == PRACTICE_WAIT && !g_ball.active);
+    practice_finish();
+    save_initialize();
+    assert(g_save.records.practice_best == 0);
+    intents[0].hit_pressed = 1;
+    game_update(intents);
+    assert(g_attract && !g_match_config.practice);
+    g_attract = 0;
+    match_config_defaults();
+}
+
 int main(void)
 {
     test_settings();
@@ -281,6 +371,7 @@ int main(void)
     test_machine_aim();
     test_zones();
     test_exit();
+    test_lesson();
     printf("practice host checks passed\n");
     return 0;
 }

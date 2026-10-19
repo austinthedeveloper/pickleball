@@ -94,6 +94,42 @@ u8 practice_in_zone(u8 zone, s16 x, s16 y)
     return x >= rect[0] && y >= rect[1] && x <= rect[2] && y <= rect[3];
 }
 
+/* The tutorial's steps (ADR-075): the centre panel's title, at most ten
+ * characters, and the banner's line, at most 28. */
+const char *practice_lesson_title(u8 step)
+{
+    static const char *const titles[LESSON_STEPS + 1] = {
+        "1 SWING", "2 AIM", "3 DRIVE", "4 LOB", "5 DINK", "6 SLICE",
+        "TUTORIAL"
+    };
+    return titles[step < LESSON_STEPS ? step : LESSON_DONE];
+}
+
+const char *practice_lesson_text(u8 step)
+{
+    static const char *const texts[LESSON_STEPS + 1] = {
+        "PRESS @ AS THE BALL ARRIVES",
+        "HOLD UP OR DOWN TO AIM",
+        "A  DRIVE: FAST AND FLAT",
+        "Y  LOB: HIGH AND DEEP",
+        "HOLD LEFT + Y  DINK IT SHORT",
+        "X  SLICE: SLOW, BUYS TIME",
+        "PRESS @ TO FINISH"
+    };
+    return texts[step < LESSON_STEPS ? step : LESSON_DONE];
+}
+
+/* Where a step's returns must land: the lob deep, the dink in the kitchen
+ * (their corners show it); AIM takes either sideline, apart. */
+static u8 practice_lesson_zone(u8 step)
+{
+    if (step == LESSON_LOB)
+        return PRACTICE_ZONE_DEEP;
+    if (step == LESSON_DINK)
+        return PRACTICE_ZONE_KITCHEN;
+    return PRACTICE_ZONE_ANY;
+}
+
 u16 practice_rate_frames(u8 rate)
 {
     static const u16 frames[PRACTICE_RATES] = { 120, 75, 40 };
@@ -118,13 +154,17 @@ u16 practice_saved_best(u8 zone)
 
 void practice_begin(void)
 {
-    u8 zone = practice_zone(g_save.settings.practice[PRACTICE_ROW_ZONE]);
-    u16 best = practice_saved_best(zone);
+    u8 lesson = g_match_config.practice == MATCH_PRACTICE_LESSON;
+    u8 zone = lesson ? practice_lesson_zone(LESSON_SWING) :
+        practice_zone(g_save.settings.practice[PRACTICE_ROW_ZONE]);
+    /* The tutorial's right panel reads GOAL: the returns a step needs. */
+    u16 best = lesson ? LESSON_GOAL : practice_saved_best(zone);
 
     g_practice.shot = practice_shot(g_save.settings.practice[PRACTICE_ROW_SHOT]);
     g_practice.target =
         practice_target(g_save.settings.practice[PRACTICE_ROW_TARGET]);
-    g_practice.rate = practice_rate(g_save.settings.practice[PRACTICE_ROW_RATE]);
+    g_practice.rate = lesson ? PRACTICE_RATE_SLOW :
+        practice_rate(g_save.settings.practice[PRACTICE_ROW_RATE]);
     g_practice.zone = zone;
     g_practice.zone_flash = 0;
     g_practice.state = PRACTICE_WAIT;
@@ -138,6 +178,9 @@ void practice_begin(void)
     g_practice.pose = PRACTICE_POSE_CENTER;
     g_practice.turn_timer = 0;
     g_practice.kick = 0;
+    g_practice.lesson = lesson;
+    g_practice.step = LESSON_SWING;
+    g_practice.shot_ok = 0;
     g_ball.active = 0;
     g_ball.rally_state = BALL_RALLY_INACTIVE;
     game_set_phase(GAME_PHASE_LIVE);
@@ -224,6 +267,14 @@ static void practice_plan(void)
     u8 shot = g_practice.shot;
     u8 target = g_practice.target;
 
+    /* The tutorial: always an easy ball, straight at P1. */
+    if (g_practice.lesson) {
+        g_practice.next_dink = 0;
+        g_practice.next_shot = SHOT_STANDARD;
+        g_practice.next_target = PRACTICE_TARGET_AT_YOU;
+        practice_aim();
+        return;
+    }
     if (shot == PRACTICE_SHOT_MIX)
         shot = practice_next() & 3;     /* DRIVE, LOB, DINK, or standard */
     if (target == PRACTICE_TARGET_RANDOM)
@@ -285,20 +336,58 @@ static void practice_feed(void)
     g_practice.state = PRACTICE_FEED;
     g_practice.timer = 0;
     g_practice.kick = PRACTICE_KICK_FRAMES;
+    g_practice.shot_ok = 0;
     ++g_practice.feeds;
+}
+
+/* The tutorial: P1's return is the shot the step asks for. A dink is a Y
+ * aimed away from the net (or held short), as collision.c reads it. */
+static u8 practice_lesson_shot(const PlayerIntent *intent)
+{
+    u8 shot = g_players[0].shot_type;
+    u8 dink = court_aim_depth(0, intent->aim_x) < 0;
+
+    switch (g_practice.step) {
+    case LESSON_AIM:                    /* aimed, not a stretch's spray */
+        return intent->aim_y != 0;
+    case LESSON_DRIVE:
+        return shot == SHOT_DRIVE;
+    case LESSON_LOB:
+        return shot == SHOT_SOFT && dink == 0;
+    case LESSON_DINK:
+        return shot == SHOT_SOFT && dink;
+    case LESSON_SLICE:
+        return shot == SHOT_SLICE;
+    default:
+        return 1;                       /* SWING: any swing */
+    }
+}
+
+/* A tutorial feed is over: a return of the step's shot that landed in
+ * counts. Nothing resets the count; LESSON_GOAL moves to the next step. */
+static void practice_lesson_end_feed(u8 good)
+{
+    if (good && g_practice.shot_ok && ++g_practice.streak >= LESSON_GOAL) {
+        ++g_practice.step;
+        g_practice.streak = 0;
+        g_practice.zone = practice_lesson_zone(g_practice.step);
+        audio_crowd(g_practice.step == LESSON_DONE ? 13 : 9);
+    }
 }
 
 /* A feed is over: a return that landed in (good) adds to the streak. */
 static void practice_end_feed(u8 good)
 {
-    if (!good)
+    if (g_practice.lesson)
+        practice_lesson_end_feed(good);
+    else if (!good)
         g_practice.streak = 0;
     else if (g_practice.streak < PRACTICE_STREAK_MAX)
         ++g_practice.streak;
     if (g_practice.streak > g_practice.best)
         g_practice.best = g_practice.streak;
     /* The crowd notices every fifth return in a row (ADR-029). */
-    if (good && g_practice.streak % 5 == 0)
+    if (good && g_practice.lesson == 0 && g_practice.streak % 5 == 0)
         audio_crowd(g_practice.streak >= 20 ? 13 : 9);
     g_ball.active = 0;
     g_ball.rally_state = BALL_RALLY_INACTIVE;
@@ -315,6 +404,13 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
     u8 good;
 
     practice_turn();
+    /* The tutorial is over: the machine rests, and a swing button leaves
+     * for the title. */
+    if (g_practice.step == LESSON_DONE) {
+        if (intents[0].hit_pressed)
+            game_start_attract();
+        return;
+    }
     if (g_practice.state == PRACTICE_WAIT) {
         /* AT YOU follows P1 through the wait; then the machine finishes
          * turning before it feeds, so it always points where the ball goes. */
@@ -336,6 +432,8 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
     if (hit) {
         game_contact(hit - 1);
         g_practice.state = PRACTICE_RETURN;
+        if (g_practice.lesson)
+            g_practice.shot_ok = practice_lesson_shot(&intents[0]);
     }
     events = game_step_ball();
     if (events & BALL_EVENT_NET_FAULT) {
@@ -354,7 +452,14 @@ void practice_update(const PlayerIntent intents[MAX_PLAYERS])
             court_x_on_side(g_ball.x_fp, 1) &&
             practice_in_zone(g_practice.zone, FROM_FP(g_ball.x_fp),
                 FROM_FP(g_ball.y_fp));
-        if (good && g_practice.zone != PRACTICE_ZONE_ANY)
+        /* The tutorial's AIM: either sideline's zone. */
+        if (good && g_practice.lesson && g_practice.step == LESSON_AIM)
+            good = practice_in_zone(PRACTICE_ZONE_LEFT,
+                    FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp)) ||
+                practice_in_zone(PRACTICE_ZONE_RIGHT,
+                    FROM_FP(g_ball.x_fp), FROM_FP(g_ball.y_fp));
+        if (good && g_practice.zone != PRACTICE_ZONE_ANY &&
+                (g_practice.lesson == 0 || g_practice.shot_ok))
             g_practice.zone_flash = PRACTICE_ZONE_FLASH_FRAMES;
         practice_end_feed(good);
     } else if (g_ball.bounce_count >= 2) {
@@ -366,6 +471,8 @@ void practice_finish(void)
 {
     u8 zone = g_practice.zone;
 
+    if (g_practice.lesson)
+        return;                         /* the tutorial keeps no best */
     if (g_practice.best <= practice_saved_best(zone))
         return;
     if (zone == PRACTICE_ZONE_ANY)

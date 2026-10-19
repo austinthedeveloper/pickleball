@@ -1,4 +1,4 @@
-# The CAREER page (ADR-047): CAREER on the title (Down four times), up
+# The CAREER page (ADR-047): CAREER on the title (Down five times), up
 # from NO PLAYER to slot 1, a new player there named ACE on the keyboard (A, right twice C, right twice
 # E, Start), a new look (FEMALE, TAN, BLACK, RED) on the demo's P1 held at
 # the baseline, kept; the card, the slots, back to the title.
@@ -6,6 +6,7 @@
 75 76 down
 80 81 down
 85 86 down
+90 91 down     # past TUTORIAL (ADR-075)
 100 101 b
 shot 115
 120 121 up     # the page opens on NO PLAYER: up to slot 1

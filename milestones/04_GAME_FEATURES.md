@@ -181,6 +181,9 @@ each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 on, in
 - [x] `M4-PRACTICE-03` Return targets: a zone to aim returns at (for example, dink into the kitchen), with its own streak.
   - Verified: ADR-028 (amended: return zones), `test_practice.c: test_zones`, `test_save.c: test_migrate_v8, test_migrate_v9` (save layout 10 after the initials' 9; layout 9 at the time, also on the ROM from a hand-built v8 `.srm`), `zones.timeline` (zero overruns; MesenCE frames of the page and the kitchen's corners). The page, feeds, rate, speed, and saved best were already ADR-028's; this adds RETURN TO and a best per zone.
   - Accept: a PRACTICE title entry; the machine feeds the chosen shot to the chosen target at the chosen rate and speed; the HUD shows the return streak, and the best streak is saved; no points are scored; host tests cover feeds and streaks.
+- [x] `M4-PRACTICE-05` A short tutorial on how to hit: a TUTORIAL title entry where the ball machine walks you through the swing, the aim, and each shot (drive, lob, dink, slice), three good returns each.
+  - Accept: each step counts only its own shot; a miss never sets you back; WELL DONE! at the end and back to the title; nothing saved; golden trace and lockstep identical; zero overruns in every `make perf` timeline.
+  - Verified: [ADR-075](../docs/decisions/ADR-075-tutorial.md), `test_practice.c: test_lesson`, `tutorial.timeline` (MesenCE frames of the menu, steps 1 and 5, and WELL DONE!).
 
 ## Sound
 

@@ -6,6 +6,7 @@
 75 76 down
 80 81 down
 85 86 down
+90 91 down     # past TUTORIAL (ADR-075)
 100 101 b
 120 121 up     # the page opens on NO PLAYER: up to slot 1
 125 126 up

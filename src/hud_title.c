@@ -149,7 +149,7 @@ static void hud_title_item(u8 item, u8 choice)
 {
     static const char *const items[TITLE_ENTRIES] = {
         "  SINGLES  ", "  DOUBLES  ", "  OPEN PLAY", "  PRACTICE ",
-        "  CAREER   ", "  RECORDS  ", "  COURT    ", "  OPTIONS  ",
+        "  TUTORIAL ", "  CAREER   ", "  RECORDS  ", "  COURT    ", "  OPTIONS  ",
         "  MODIFIERS"
     };
 

@@ -93,6 +93,16 @@ straight for the middle), and on AT YOU it follows you. Ball speed and the KID s
 OPTIONS difficulty, and a BIG or FAST ball from MODIFIERS works here too.
 Start pauses; choose MAIN MENU to leave.
 
+**TUTORIAL**, the next title entry, is a short lesson on the same ball
+machine (ADR-075). After Player Select it walks you through six steps:
+**SWING** (B), **AIM** (hold Up or Down as you hit, into a sideline
+zone), **DRIVE** (A), **LOB** (Y, into the deep zone), **DINK** (Left or
+L with Y, into the kitchen), and **SLICE** (X). Three returns of the
+step's shot that land in move you on; a miss or another shot costs
+nothing. The balls come slowly, straight at you, whatever the OPTIONS
+difficulty. At the end, WELL DONE! and B returns to the title. Nothing is
+saved.
+
 ## Pause
 
 Start pauses a match or practice. Up/Down picks **RESUME**, **RESTART**

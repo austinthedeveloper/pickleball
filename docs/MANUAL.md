@@ -65,7 +65,7 @@ A quick press always serves safely. For a faster serve, hold the button and watc
 
 ## Game Modes
 
-The title screen offers nine choices, top to bottom: the ways to play, then your players and records, then the settings.
+The title screen offers ten choices, top to bottom: the ways to play, then your players and records, then the settings.
 
 | Mode | What it does |
 | --- | --- |
@@ -73,6 +73,7 @@ The title screen offers nine choices, top to bottom: the ways to play, then your
 | DOUBLES | You and a CPU partner against a CPU team. |
 | OPEN PLAY | Walk around a park with three courts and wait your turn for a game. |
 | PRACTICE | Hit against a ball machine. |
+| TUTORIAL | A short lesson: how to swing, aim, and hit every shot. |
 | CAREER | Make up to three players, track their stats, and earn unlocks. |
 | RECORDS | The best streaks, rallies, and ladder clears on this Game Pak. |
 | COURT | Choose the venue, time of day, and court colours. |
@@ -136,6 +137,21 @@ Practice sets up a ball machine on the far side of the court. Choose your settin
 | RETURN TO | ANY, KITCHEN, DEEP, LEFT LINE, RIGHT LINE |
 
 Every return that lands in your RETURN TO zone adds to your streak. Yellow corners mark the zone and blink when you hit it; a return anywhere else ends the streak. Each zone keeps its own best streak. Watch the nozzle: before each ball, it turns toward the side the ball will go. Press START and choose MAIN MENU to leave.
+
+### Tutorial
+
+New to the game? Start here. Choose your player and paddle, and the ball machine walks you through six short steps, sending you easy balls to hit. Each step asks for one shot, and three good returns of it take you to the next. The step's name is at the top, what to do is at the bottom, and your count is on the left (**GOAL 3** on the right).
+
+| Step | What to do |
+| --- | --- |
+| 1 SWING | Press B as the ball arrives. |
+| 2 AIM | Hold Up or Down as you hit, to send the ball toward a sideline. |
+| 3 DRIVE | Hit with A: fast and flat. |
+| 4 LOB | Hit with Y: high and deep. The yellow corners show where it should land. |
+| 5 DINK | Hold Left (away from the net) and press Y to drop it into the kitchen. |
+| 6 SLICE | Hit with X: slow, so you have time to get back. |
+
+A miss never costs you anything, so take your time. When you finish, **WELL DONE!** appears: press B to return to the title. Press START and choose RESTART to begin again, or MAIN MENU to leave.
 
 ### Court
 
@@ -348,6 +364,7 @@ Each manual section needs one or two screenshots; most come from existing smoke 
 | Singles and Doubles | Player Select, paddle row | `select` |
 | Open Play | The park with three courts; the clubhouse; winners staying on; picking a partner | `open_play`, `clubhouse`, `winners_stay`, `pick_partner` |
 | Practice | Ball machine with return-zone corners lit | `practice`, `zones` |
+| Tutorial | A step's banner, and WELL DONE! | `tutorial` |
 | Court | COURT page over a non-default venue | `court`, `venue`, `venue_preview` |
 | Career | Name keyboard; a player card | `career` |
 | Modifiers | LAVA kitchen glowing behind the page | `modifiers` |

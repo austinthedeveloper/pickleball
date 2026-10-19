@@ -30,9 +30,9 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... MODIFIERS (rows 12-20) */
+#define TITLE_MENU_ROW 12           /* SINGLES ... MODIFIERS (rows 12-21) */
 #define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
-#define TITLE_JOIN_ROW 21          /* the join prompt under the menu */
+#define TITLE_JOIN_ROW 22          /* the join prompt under the menu */
 #define TITLE_JOIN_TEXT "FRIENDS: PRESS START"
 #define TITLE_JOIN_COL ((32 - (sizeof(TITLE_JOIN_TEXT) - 1)) / 2)
 /* The join counter (ADR-066): "1P. 2P. 3Px 4Px" in a panel where the

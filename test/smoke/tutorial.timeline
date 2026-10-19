@@ -1,0 +1,64 @@
+# The tutorial (ADR-075): Down four times to TUTORIAL, B to Player Select,
+# Start to play. The machine feeds a slow ball at P1: 1 SWING, GOAL 3, and
+# the banner's line. P1 presses B every 12 frames and has 2 of 3 by frame
+# 760; Start pauses and MAIN MENU (Down twice, B) leaves.
+70 71 down     # past DOUBLES, OPEN PLAY, and PRACTICE to TUTORIAL
+75 76 down
+80 81 down
+85 86 down
+shot 100
+110 111 b
+170 171 start   # confirm Player Select (after its fade-in)
+shot 260
+200 201 b
+212 213 b
+224 225 b
+236 237 b
+248 249 b
+260 261 b
+272 273 b
+284 285 b
+296 297 b
+308 309 b
+320 321 b
+332 333 b
+344 345 b
+356 357 b
+368 369 b
+380 381 b
+392 393 b
+404 405 b
+416 417 b
+428 429 b
+440 441 b
+452 453 b
+464 465 b
+476 477 b
+488 489 b
+500 501 b
+512 513 b
+524 525 b
+536 537 b
+548 549 b
+560 561 b
+572 573 b
+584 585 b
+596 597 b
+608 609 b
+620 621 b
+632 633 b
+644 645 b
+656 657 b
+668 669 b
+680 681 b
+692 693 b
+704 705 b
+716 717 b
+728 729 b
+740 741 b
+shot 760
+800 801 start
+810 811 down
+820 821 down
+830 831 b
+shot 880

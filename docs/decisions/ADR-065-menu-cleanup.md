@@ -31,8 +31,9 @@ they were built. A review of every menu screen found:
 
 - **Title menu**, top to bottom: SINGLES, DOUBLES, OPEN PLAY, PRACTICE;
   CAREER, RECORDS; COURT, OPTIONS, MODIFIERS. Nine entries, rows 12-20;
-  the 2P line moves to row 21. The HUD's title view keeps the choice in
-  bits 0-3 (it was 0-2) and 2P in bit 4.
+  the 2P line moves to row 21. (*Amended by ADR-075*: TUTORIAL after
+  PRACTICE, ten entries, rows 12-21, the join line on row 22.) The HUD's
+  title view keeps the choice in bits 0-3 (it was 0-2) and 2P in bit 4.
 - **The title's demo has no scoreboard** (ADR-066 puts the join counter
   there): while `g_attract` the score
   panels' rows stay clear and score changes draw nothing. A match redraws

@@ -1,13 +1,14 @@
 # Title menu and records (ADR-021): RECORDS is the title's own entry
-# (ADR-065): Down five times past PRACTICE and CAREER, open the table, back
-# to the menu with B, reopen, erase with L+R+X, back with Start, and Up to
-# CAREER.
+# (ADR-065): Down six times past PRACTICE, TUTORIAL, and CAREER, open the
+# table, back to the menu with B, reopen, erase with L+R+X, back with
+# Start, and Up to CAREER.
 70 71 down
 75 76 down
 shot 80
 85 86 down
 90 91 down
 95 96 down
+98 99 down     # past TUTORIAL (ADR-075)
 shot 100
 110 111 start
 shot 120

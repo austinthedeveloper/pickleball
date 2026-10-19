@@ -35,7 +35,8 @@ static u8 s_open_museum;
 static u8 s_open_park;
 /* s_open_park leaving practice: the title demo is set up first. */
 #define S_OPEN_PARK_FROM_PRACTICE 2
-/* Player Select is open on the way to practice (ADR-028). */
+/* Player Select is open on the way to practice (ADR-028): its
+ * MATCH_PRACTICE_*, the tutorial's included (ADR-075). */
 static u8 s_practice_pending;
 /* This frame set up a new match (a scene switch for the overrun latch). */
 static u8 s_switched;
@@ -439,7 +440,7 @@ static void update_title_practice(u16 pressed)
     if (practice_edit_changed(values))
         save_write();
     select_begin(MATCH_SINGLES, TITLE_JOIN_1P);  /* practice: 1P alone */
-    s_practice_pending = 1;
+    s_practice_pending = MATCH_PRACTICE_DRILL;
     s_open_select = 1;
 }
 
@@ -478,6 +479,12 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
+            } else if (g_title_mode == TITLE_TUTORIAL) {
+                /* ADR-075: Player Select, then the lesson. */
+                select_begin(MATCH_SINGLES, TITLE_JOIN_1P);
+                s_practice_pending = MATCH_PRACTICE_LESSON;
+                s_open_select = 1;
+                return;
             } else if (g_title_mode == TITLE_OPEN_PLAY) {
                 open_play_begin(g_game_state.frame_count,
                     (g_title_joined & TITLE_JOIN_2P) != 0);
@@ -613,7 +620,9 @@ static void update_select(void)
     }
     if (result == SELECT_DONE) {
         select_apply();
-        if (s_practice_pending)
+        if (s_practice_pending == MATCH_PRACTICE_LESSON)
+            match_config_lesson();
+        else if (s_practice_pending)
             match_config_practice();
         game_start_match();
         /* ADR-026: a ladder match opens with the opponent's intro card. */

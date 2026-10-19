@@ -8,6 +8,10 @@
 #include "palette_parts.h"
 
 #define MATCH_NO_PALETTE 0xff
+/* MatchConfig.practice (ADR-028): the ball machine's drill, or the
+ * tutorial (ADR-075). */
+#define MATCH_PRACTICE_DRILL 1
+#define MATCH_PRACTICE_LESSON 2
 
 typedef enum {
     MATCH_SINGLES = 0,
@@ -27,7 +31,8 @@ typedef struct {
                                      OPPONENT_NONE (the default CPU) */
     u8 points_to_win;             /* ADR-025: first to this many */
     u8 difficulty;                /* ADR-025: Difficulty */
-    u8 practice;                  /* ADR-028: P1 alone vs the ball machine */
+    u8 practice;                  /* ADR-028: P1 alone vs the ball machine:
+                                     MATCH_PRACTICE_*, or 0 */
     u8 modifiers;                 /* ADR-033: MODIFIER_* bits */
     u8 modifiers2;                /* ADR-054: MODIFIER2_* bits */
     u8 open_play;                 /* ADR-034: a game from the park's stack:
@@ -80,6 +85,8 @@ void match_config_opponent(u8 opponent);
 void match_config_partner(u8 team);
 /* Practice (ADR-028): singles with P1 only; the far side is the machine. */
 void match_config_practice(void);
+/* The tutorial (ADR-075): practice on the lesson, at EASY's slow ball. */
+void match_config_lesson(void);
 /* The opponent member (0 captain, 1 partner) playing the slot, or 0xff. */
 u8 match_slot_member(u8 slot);
 /* Play style of a CPU slot: its opponent member's, or the default. */

@@ -73,7 +73,14 @@ void match_config_practice(void)
         g_match_config.palette_id[slot] = MATCH_NO_PALETTE;
         g_match_config.human[slot] = 0;
     }
-    g_match_config.practice = 1;
+    g_match_config.practice = MATCH_PRACTICE_DRILL;
+}
+
+void match_config_lesson(void)
+{
+    match_config_practice();
+    g_match_config.practice = MATCH_PRACTICE_LESSON;
+    g_match_config.difficulty = DIFFICULTY_EASY;
 }
 
 void match_config_opponent(u8 opponent)

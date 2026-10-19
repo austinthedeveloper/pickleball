@@ -124,7 +124,7 @@ static const char *team_name(u8 team)
 {
     /* Practice (ADR-028): P1's streak and the best streak. */
     if (hud_practice())
-        return team ? "BEST" : "P1";
+        return team ? (g_practice.lesson ? "GOAL" : "BEST") : "P1";
     /* ADR-047: the career player's name, its first four letters. */
     if (team == 0 && g_match_config.career_p1 && career_active())
         return hud_career_short_name();
@@ -218,13 +218,16 @@ static void hud_versus(u8 row)
     hud_text(col + 3, row, HUD_PAL_TEAM_RIGHT, name);
 }
 
-/* Practice: PRACTICE, or the return zone the streak counts (centred). */
+/* Practice: PRACTICE, or the return zone the streak counts (centred); the
+ * tutorial's step (ADR-075). */
 static void hud_practice_title(void)
 {
-    const char *name = practice_zone_name(g_practice.zone);
+    const char *name = g_practice.lesson ?
+        practice_lesson_title(g_practice.step) :
+        practice_zone_name(g_practice.zone);
     u8 length = 0;
 
-    if (g_practice.zone == PRACTICE_ZONE_ANY) {
+    if (g_practice.zone == PRACTICE_ZONE_ANY && g_practice.lesson == 0) {
         hud_text(CENTER_PANEL_COL + 1, SCORE_TEXT_ROW, HUD_PAL_YELLOW,
             "  PRACTICE");
         return;
@@ -279,6 +282,9 @@ static void hud_draw_scores(void)
 #define HUD_KEY_TITLE_BLINK 0x101
 #define HUD_KEY_INTRO 0x200         /* the story intro card (ADR-026) */
 #define HUD_KEY_PRACTICE 0x400      /* a practice session (ADR-028); not bit 8 */
+/* | the tutorial's step (ADR-075): bits 0-3, so each step redraws. */
+#define HUD_KEY_LESSON 8
+#define HUD_IS_PRACTICE(k) (((k) & ~15u) == HUD_KEY_PRACTICE)
 #define HUD_KEY_INITIALS 0x800      /* the initials card (ADR-040) */
 #define HUD_KEY_UNLOCK 0x1000       /* the career unlock card (ADR-047) */
 /* The initials card: three big letters on rows 16-17, four columns apart
@@ -393,7 +399,8 @@ static u16 hud_scene_key(void)
     if (g_game_state.paused && !g_attract)
         return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
-        return HUD_KEY_PRACTICE;
+        return HUD_KEY_PRACTICE | (g_practice.lesson ?
+            HUD_KEY_LESSON + g_practice.step : 0);
 
     if (g_attract)
         return ((g_game_state.frame_count & 32) ? HUD_KEY_TITLE_BLINK :
@@ -882,9 +889,19 @@ static void hud_scene_step(u16 key, u8 step)
         hud_unlock_step(step);
         return;
     }
-    if (key == HUD_KEY_PRACTICE) {
-        if (step == HUD_STEP_PROMPT)
-            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "START  PAUSE");
+    if (HUD_IS_PRACTICE(key)) {
+        /* The tutorial: the step's title in the centre panel (it was drawn
+         * with the scores for the first), WELL DONE! at the end, and the
+         * step's line on the banner. */
+        if (step == HUD_STEP_BIG && g_practice.lesson) {
+            hud_panel(CENTER_PANEL_COL, SCORE_PANEL_ROW, CENTER_PANEL_WIDTH);
+            hud_practice_title();
+            if (g_practice.step == LESSON_DONE)
+                hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, "WELL DONE!");
+        } else if (step == HUD_STEP_PROMPT) {
+            hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, g_practice.lesson ?
+                practice_lesson_text(g_practice.step) : "START  PAUSE");
+        }
         return;
     }
     if (HUD_IS_PAUSED(key)) {

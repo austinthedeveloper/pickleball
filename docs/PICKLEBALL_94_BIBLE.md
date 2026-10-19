@@ -108,7 +108,7 @@ Source: instruction manual (A-02), checked against the ROM on `main` at `c228774
 
 ### 5.2 Modes
 
-Nine title-screen entries, top to bottom (ADR-065): **SINGLES, DOUBLES, OPEN PLAY, PRACTICE, CAREER, RECORDS, COURT, OPTIONS, MODIFIERS.** [CANON]
+Ten title-screen entries, top to bottom (ADR-065, ADR-075): **SINGLES, DOUBLES, OPEN PLAY, PRACTICE, TUTORIAL, CAREER, RECORDS, COURT, OPTIONS, MODIFIERS.** [CANON]
 
 | Mode | What the ROM does | Status |
 |---|---|---|
@@ -118,6 +118,7 @@ Nine title-screen entries, top to bottom (ADR-065): **SINGLES, DOUBLES, OPEN PLA
 | — Park points | Career players start with 10; +2 for a win at your level, −1 for a loss. CLUB opens at 15, CHAMP at 25, and stays open (ADR-070). | [CANON] |
 | — Pick your partner | A career player can press Y at the rack to choose any captain they've beaten on the ladder (ADR-072). | [CANON] (unreleased, see above) |
 | Practice | A ball machine (with a pickle mascot behind it) feeds DRIVE / LOB / DINK / MIX to six targets at three rates; you chase a streak of returns into a chosen zone. Best streak per zone is saved (ADR-028). | [CANON] |
+| Tutorial | The ball machine teaches six steps (SWING, AIM, DRIVE, LOB, DINK, SLICE), three good returns each, then WELL DONE! Nothing is saved (ADR-075). | [CANON] (unreleased, see above) |
 | Career | Three save slots. Name (8 letters), body, skin, hair, shirt, hat, paddle. Lifetime stats, unlocks, park points. NO PLAYER plays without recording (ADR-047). | [CANON] |
 | — Hat Museum | X on a player's card: twelve display cases, 4 × 3; locked hats are silhouettes with a hint (ADR-061). | [CANON] |
 | Records | Win/loss in singles and doubles, current and best streak, shutouts, longest rally, ladder places, ladder clears, with arcade-style three-letter initials (ADR-040). | [CANON] |

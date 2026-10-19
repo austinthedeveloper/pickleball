@@ -59,6 +59,21 @@ enum {
     PRACTICE_ZONE_FLASH_FRAMES = 32     /* the zone's corners blink on a hit */
 };
 
+/* The tutorial (ADR-075): g_match_config.practice is MATCH_PRACTICE_LESSON.
+ * The machine feeds a slow ball at P1, and each step asks for one shot;
+ * LESSON_GOAL returns of it that land in move on to the next. */
+enum {
+    LESSON_SWING = 0,   /* B, anywhere in */
+    LESSON_AIM = 1,     /* any swing aimed Up or Down, into a sideline zone */
+    LESSON_DRIVE = 2,   /* A */
+    LESSON_LOB = 3,     /* Y, aimed deep or level: the DEEP zone */
+    LESSON_DINK = 4,    /* Y aimed away from the net (or L/R): the kitchen */
+    LESSON_SLICE = 5,   /* X */
+    LESSON_DONE = 6,    /* no more feeds; a swing button leaves */
+    LESSON_STEPS = 6,
+    LESSON_GOAL = 3
+};
+
 /* Nozzle poses, as seen on screen: toward the far sideline (up), the
  * centre, or the near sideline (down). */
 enum { PRACTICE_POSE_UP = 0, PRACTICE_POSE_CENTER = 1, PRACTICE_POSE_DOWN = 2 };
@@ -88,6 +103,9 @@ typedef struct {
     u8 pose;            /* the nozzle on screen, turning toward aim */
     u8 turn_timer;
     u8 kick;            /* frames left of the feed's kick */
+    u8 lesson;          /* the tutorial (ADR-075): 1, or 0 for a drill */
+    u8 step;            /* LESSON_*: the tutorial's step */
+    u8 shot_ok;         /* the return was the step's shot */
 } PracticeState;
 
 extern PracticeState g_practice;
@@ -105,6 +123,9 @@ const char *practice_zone_name(u8 zone);
 u16 practice_saved_best(u8 zone);
 /* A ground point (whole pixels) in a zone's rectangle. */
 u8 practice_in_zone(u8 zone, s16 x, s16 y);
+/* The tutorial step's title (centre panel) and instruction (banner). */
+const char *practice_lesson_title(u8 step);
+const char *practice_lesson_text(u8 step);
 /* Frames between one feed ending and the next. */
 u16 practice_rate_frames(u8 rate);
 
@@ -113,7 +134,8 @@ u16 practice_rate_frames(u8 rate);
 void practice_begin(void);
 /* One frame of the session, after the players moved (game_update). */
 void practice_update(const PlayerIntent intents[MAX_PLAYERS]);
-/* Leaving practice: a new best streak (for the session's zone) is saved. */
+/* Leaving practice: a new best streak (for the session's zone) is saved
+ * (not from the tutorial). */
 void practice_finish(void);
 
 /* Practice page editor (like OPTIONS, ADR-025). */
