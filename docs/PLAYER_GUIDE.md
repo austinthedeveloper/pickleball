@@ -333,7 +333,7 @@ the bar, the faster the serve. Wait too long and let go as it drains to the
 first (white) block or below, and the serve dumps into the net. On KID the
 serve works as before: one press, or it goes by itself.
 
-**Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep. Away from the net (Left), or L or R held, hits short, a drop shot near the kitchen.
+**Aiming at contact:** Up/Down sends the ball toward that sideline. Toward the net (Right) hits deep, and the longer you hold it, the deeper: a tap lands mid-court, about half a second near the baseline, and about a second or more sails out (ADR-076). Lobs always land deep. Away from the net (Left), or L or R held, hits short, a drop shot near the kitchen.
 
 **Timing:** a swing hits on its first frame with the ball in reach. Meet the ball with it close to your body and the shot goes where you aimed. Reach for it at the edge and it sprays wide and long, often out. Press B a moment before the ball arrives, not when it is far away.
 

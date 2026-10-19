@@ -58,7 +58,13 @@ typedef struct {
     u8 shot;            /* ShotType of that swing */
     u8 pause_pressed;
     u8 hit_held;        /* a swing button is down (the charged serve) */
+    /* Frames the D-pad has been held toward the net, to INPUT_PUSH_MAX
+     * (ADR-076): the longer, the deeper a standard shot or drive goes. */
+    u8 push;
+    u8 reserved;        /* keeps the size even on host and SNES */
 } PlayerIntent;
+
+#define INPUT_PUSH_MAX 255
 
 extern PadSnapshot g_pad_snapshots[MAX_PADS];
 extern PlayerIntent g_player_intents[MAX_PLAYERS];

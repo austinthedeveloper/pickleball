@@ -105,12 +105,47 @@ static void test_poc_ownership_without_multitap(void)
     assert(g_pad_snapshots[1].held == (PAD_RIGHT | PAD_B));
 }
 
+/* ADR-076: the push counts frames held toward the player's own net
+ * (Right on the left team, Left on the right), and anything else resets
+ * it: away, nothing, or L/R's short aim. It saturates. */
+static void test_push(void)
+{
+    u16 f;
+
+    input_configure(1);
+    all_human();
+    memset(raw, 0, sizeof(raw));
+    assert(g_player_intents[0].push == 0 && g_player_intents[2].push == 0);
+    raw[0] = PAD_RIGHT;                 /* P1, left team: toward the net */
+    raw[1] = PAD_RIGHT;                 /* slot 2, right team: away */
+    for (f = 0; f < 10; ++f)
+        input_map_frame(raw);
+    assert(g_player_intents[0].push == 10 && g_player_intents[2].push == 0);
+    raw[0] = PAD_RIGHT | PAD_UP;        /* aiming at a sideline still counts */
+    raw[1] = PAD_LEFT;
+    input_map_frame(raw);
+    assert(g_player_intents[0].push == 11 && g_player_intents[2].push == 1);
+    raw[0] = PAD_RIGHT | PAD_L;         /* the short hold aims away */
+    input_map_frame(raw);
+    assert(g_player_intents[0].push == 0);
+    raw[0] = PAD_RIGHT;
+    input_map_frame(raw);
+    raw[0] = 0;
+    input_map_frame(raw);
+    assert(g_player_intents[0].push == 0);
+    raw[0] = PAD_RIGHT;
+    for (f = 0; f < 300; ++f)
+        input_map_frame(raw);
+    assert(g_player_intents[0].push == INPUT_PUSH_MAX);
+}
+
 int main(void)
 {
     test_four_independent_slots();
     test_pause_only_from_p1();
     test_slice_and_short_hold();
     test_poc_ownership_without_multitap();
+    test_push();
     puts("input host checks passed");
     return 0;
 }

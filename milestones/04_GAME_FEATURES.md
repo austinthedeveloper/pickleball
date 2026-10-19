@@ -109,6 +109,9 @@ each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 on, in
 - [x] `M4-SHOT-03` CPUs slice: a per-style choice in `opponents.json` (a soft-game team resets with it), tuned against the ladder order.
   - Accept: a `slice` knob (a slice every Nth rally shot, 0 never), the default and partner styles 0; GOTH CLUB and CHAMPS slice; every ladder table in order; zero overruns.
   - Verified: [ADR-057](../docs/decisions/ADR-057-cpu-slice.md), `test_ai.c: test_slice`, `make stats` in all three modes (ladder order: yes), MesenCE (RAVEN slices on the ROM); golden trace identical; `make perf` zero overruns.
+- [x] `M4-SHOT-04` The push: hold the D-pad toward the net longer to hit a standard shot or drive deeper, until it goes out.
+  - Accept: a tap lands mid-deep, about half a second the old deep spot, about a second on the baseline, longer out; Up or Down still aims; lobs, dinks, slices, short shots and serves unchanged; CPUs unchanged (`make stats` identical); lockstep identical; zero overruns.
+  - Verified: [ADR-076](../docs/decisions/ADR-076-push-depth.md), `test_input.c: test_push`, `test_collision.c: test_push_depth`, `make stats` identical in all three modes, `make lockstep` with `push.timeline`, a ROM probe of the push.
 
 ## Rules
 

@@ -24,6 +24,11 @@ void input_configure(u8 multitap_present)
         g_pad_snapshots[i].pressed = 0;
         g_pad_snapshots[i].released = 0;
     }
+    /* WRAM is not cleared at power-on: the push counts from 0. */
+    for (i = 0; i < MAX_PLAYERS; ++i) {
+        g_player_intents[i].push = 0;
+        g_player_intents[i].reserved = 0;
+    }
     g_input_owners[0] = INPUT_OWNER_HUMAN;
     g_input_owners[1] = INPUT_OWNER_NONE;
     g_input_owners[2] = INPUT_OWNER_CPU;
@@ -69,7 +74,9 @@ void input_assign_match(const u8 active[MAX_PLAYERS],
 
 /* away: the aim_x that points away from this player's net (-1 on the
  * left team): a held L or R aims there, a short shot (ADR-056), and the
- * D-pad still moves and aims at a sideline. */
+ * D-pad still moves and aims at a sideline. The push (ADR-076) counts
+ * the frames the D-pad has stayed toward the net; anything else resets
+ * it. */
 static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
     u8 may_pause, s16 away)
 {
@@ -87,6 +94,10 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
         intent->move_y = 1;
     intent->aim_x = (held & PAD_SHORT) ? away : intent->move_x;
     intent->aim_y = intent->move_y;
+    if (intent->aim_x != -away)
+        intent->push = 0;
+    else if (intent->push < INPUT_PUSH_MAX)
+        ++intent->push;
     intent->hit_pressed = (pad->pressed & PAD_SWING) != 0;
     intent->hit_held = (held & PAD_SWING) != 0;
     if (pad->pressed & PAD_A)
@@ -128,6 +139,7 @@ static void build_intent(PlayerIntent *intent, const PadSnapshot *pad,
             g_player_intents[i].hit_held = 0; \
             g_player_intents[i].shot = SHOT_STANDARD; \
             g_player_intents[i].pause_pressed = 0; \
+            g_player_intents[i].push = 0; \
         } \
     } while (0)
 

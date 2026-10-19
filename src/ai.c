@@ -420,6 +420,9 @@ static void ai_choose_aim(const Player *player, PlayerIntent *intent)
             intent->aim_y = -intent->aim_y;
     }
     intent->aim_x = player->team ? -g_ai.planned_depth : g_ai.planned_depth;
+    /* A deep shot pushes just long enough for the old deep target
+     * (ADR-076): the CPU never pushes it out. */
+    intent->push = g_ai.planned_depth > 0 ? HIT_PUSH_DEEP : 0;
     intent->shot = g_ai.planned_shot;
 }
 
@@ -1041,6 +1044,7 @@ static void ai_think(u8 player_index, PlayerIntent *intent)
     intent->aim_y = 0;
     intent->hit_pressed = 0;
     intent->pause_pressed = 0;
+    intent->push = 0;
 
     if (!player->active || g_game_state.paused)
         return;

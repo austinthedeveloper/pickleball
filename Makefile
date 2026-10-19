@@ -178,7 +178,7 @@ golden-compare: release
 # doubles match replayed on the host from the ROM's intents, every
 # simulation field compared on every frame. Catches the asm twins
 # (player_step, ai_probe) drifting from the C, and 816-tcc miscompiles.
-LOCKSTEP_RUNS := golden:4260 doubles_ladder:2400 modifiers_fun:2400
+LOCKSTEP_RUNS := golden:4260 doubles_ladder:2400 modifiers_fun:2400 push:2400
 lockstep: release
 	@mkdir -p build/host build/lockstep
 	@$(CC_HOST) -std=c99 -Wall -Wextra -Werror -DHOST_TEST -Iinclude \

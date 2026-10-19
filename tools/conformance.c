@@ -88,9 +88,9 @@ static void print_frame(FILE *out, u16 frame)
 
         if (!p->active)
             continue;
-        fprintf(out, " I%u %d %d %d %d %u %u %u P%u %d %d %d %d %u %u %u",
+        fprintf(out, " I%u %d %d %d %d %u %u %u %u P%u %d %d %d %d %u %u %u",
             slot, i->move_x, i->move_y, i->aim_x, i->aim_y, i->hit_pressed,
-            i->shot, i->hit_held,
+            i->shot, i->hit_held, i->push,
             slot, p->x_fp, p->y_fp, p->vx_fp, p->vy_fp, p->state,
             p->state_frames_remaining, p->shot_type);
     }
@@ -108,7 +108,7 @@ static void run(const Scenario *s, FILE *out)
     fprintf(out, "# frame G phase phase_timer score0 score1 serving_team "
         "server hit_stop\n#   B active x y z vx vy vz bounces last_hitter "
         "(12.4)\n#   per active slot: I<slot> move_x move_y aim_x aim_y "
-        "hit_pressed shot hit_held\n#   P<slot> x y vx vy state "
+        "hit_pressed shot hit_held push\n#   P<slot> x y vx vy state "
         "state_frames shot_type (12.4)\n");
     start(s);
     for (frame = 0; frame < FRAMES; ++frame) {

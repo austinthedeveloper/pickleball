@@ -80,7 +80,11 @@ static void collision_apply_targeted_shot(Ball *ball, const Player *player,
         longer = HIT_SLICE_STRETCH_LONG;
     } else {
         if (depth > 0) {
-            target_x = HIT_TARGET_DEEP_RIGHT;
+            /* The push (ADR-076): held longer, deeper, then out. */
+            target_x = HIT_PUSH_START_X +
+                (intent->push >> HIT_PUSH_SHIFT);
+            if (target_x > HIT_PUSH_MAX_X)
+                target_x = HIT_PUSH_MAX_X;
             pace = HIT_PACE_DEEP_FP;
         } else if (depth < 0) {
             target_x = HIT_TARGET_SHORT_RIGHT;

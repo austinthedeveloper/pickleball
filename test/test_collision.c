@@ -160,6 +160,7 @@ static void test_directional_target_lanes(void)
     reset_fixture();
     players[0].state = PLAYER_STATE_ACTIVE;
     intents[0].aim_x = 1;
+    intents[0].push = HIT_PUSH_DEEP;
     collision_resolve_player_hits(&ball, players, intents, MAX_PLAYERS);
     assert_lands_near(HIT_TARGET_DEEP_RIGHT, HIT_TARGET_LANE_CENTER);
 
@@ -174,6 +175,7 @@ static void test_directional_target_lanes(void)
  * the first bounce and the highest z reached. */
 static u8 s_paddle = PADDLE_STANDARD;
 static s16 s_offset_y;
+static u8 s_push = HIT_PUSH_DEEP;   /* the CPU's push (ADR-076) */
 
 static u8 fly_shot(u8 team, u8 shot, s16 aim_x, fx *apex)
 {
@@ -189,6 +191,7 @@ static u8 fly_shot(u8 team, u8 shot, s16 aim_x, fx *apex)
     players[0].shot_type = shot;
     players[0].state = PLAYER_STATE_ACTIVE;
     intents[0].aim_x = aim_x;
+    intents[0].push = s_push;
     assert(collision_resolve_player_hits(&ball, players, intents,
         MAX_PLAYERS) == 1);
     *apex = 0;
@@ -199,6 +202,54 @@ static u8 fly_shot(u8 team, u8 shot, s16 aim_x, fx *apex)
         assert(frames < 80);
     }
     return frames;
+}
+
+/* ADR-076: aimed toward the net, a standard shot or drive lands deeper
+ * the longer the push, the old deep target at HIT_PUSH_DEEP, past the
+ * baseline from HIT_PUSH_OUT_FRAMES, never past HIT_PUSH_MAX_X; the
+ * right team mirrors. A lob ignores it. */
+static void test_push_depth(void)
+{
+    static const u8 pushes[] = {
+        1, 20, HIT_PUSH_DEEP, HIT_PUSH_OUT_FRAMES - 1, HIT_PUSH_OUT_FRAMES,
+        200, 255
+    };
+    fx apex;
+    fx last = 0;
+    u8 i;
+    u8 shot;
+    s16 x;
+
+    assert(HIT_PUSH_START_X + (HIT_PUSH_DEEP >> HIT_PUSH_SHIFT) ==
+        HIT_TARGET_DEEP_RIGHT);
+    for (shot = SHOT_STANDARD; shot <= SHOT_DRIVE; ++shot) {
+        last = 0;
+        for (i = 0; i < sizeof(pushes); ++i) {
+            s_push = pushes[i];
+            fly_shot(0, shot, 1, &apex);
+            x = FROM_FP(ball.x_fp);
+            assert(ball.x_fp >= last);
+            last = ball.x_fp;
+            assert(x <= HIT_PUSH_MAX_X + 2);
+            if (pushes[i] < HIT_PUSH_OUT_FRAMES)
+                assert(x <= COURT_BASELINE_RIGHT);
+            else
+                assert(x > COURT_BASELINE_RIGHT);
+            if (pushes[i] == HIT_PUSH_DEEP)
+                assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) <
+                    TO_FP(3));
+            printf("push %3u: %s lands at x %d\n", pushes[i],
+                shot == SHOT_DRIVE ? "drive" : "standard", x);
+        }
+    }
+    /* The right team: held long, out past its own baseline (x < 16). */
+    s_push = 255;
+    fly_shot(1, SHOT_STANDARD, -1, &apex);
+    assert(ball.x_fp < TO_FP(COURT_BASELINE_LEFT));
+    /* A lob stays deep and in, however long the push. */
+    fly_shot(0, SHOT_SOFT, 1, &apex);
+    assert(absolute_fp(ball.x_fp - TO_FP(HIT_TARGET_DEEP_RIGHT)) < TO_FP(3));
+    s_push = HIT_PUSH_DEEP;
 }
 
 /* ADR-019 shot types from a sweet-spot contact. */
@@ -336,6 +387,7 @@ int main(void)
     test_team_hits_once();
     test_directional_target_lanes();
     test_shot_types();
+    test_push_depth();
     test_paddle_stats();
     test_slice_and_fast_drop();
     test_new_swing_restores_contact();

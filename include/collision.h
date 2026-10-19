@@ -25,6 +25,19 @@ enum {
     HIT_TARGET_SHORT_LEFT = COURT_MIRROR_X(HIT_TARGET_SHORT_RIGHT),
     HIT_TARGET_NEUTRAL_LEFT = COURT_MIRROR_X(HIT_TARGET_NEUTRAL_RIGHT),
     HIT_TARGET_DEEP_LEFT = COURT_MIRROR_X(HIT_TARGET_DEEP_RIGHT),
+    /* The push (ADR-076): a standard shot or drive aimed toward the net
+     * lands HIT_PUSH_START_X plus one pixel per HIT_PUSH_FRAMES_PER_PX
+     * frames the D-pad was held there, to HIT_PUSH_MAX_X. HIT_PUSH_DEEP
+     * frames reach the old deep target (the CPU's push); held more than
+     * HIT_PUSH_OUT_FRAMES, it lands past the baseline: out. */
+    HIT_PUSH_START_X = HIT_TARGET_NEUTRAL_RIGHT + 8,
+    HIT_PUSH_SHIFT = 1,                     /* two frames a pixel */
+    HIT_PUSH_FRAMES_PER_PX = 1 << HIT_PUSH_SHIFT,
+    HIT_PUSH_MAX_X = COURT_BASELINE_RIGHT + 12,
+    HIT_PUSH_DEEP = (HIT_TARGET_DEEP_RIGHT - HIT_PUSH_START_X) *
+        HIT_PUSH_FRAMES_PER_PX,
+    HIT_PUSH_OUT_FRAMES = (COURT_BASELINE_RIGHT - HIT_PUSH_START_X) *
+        HIT_PUSH_FRAMES_PER_PX + HIT_PUSH_FRAMES_PER_PX,
     /* Horizontal pace in 12.4 units: 3.0 / 2.75 / 2.5 px per frame. Flight
      * time is distance / pace, clamped so lobs stay below the HUD (apex
      * ~50 px) and inside the AI's 60-step prediction horizon. */

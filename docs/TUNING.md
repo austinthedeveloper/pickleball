@@ -116,7 +116,12 @@ The feel depends on each of them.
    serve is a dud when `frame_count % serve_dud == 0` as it serves.
    `frame_count` restarts at 0 with each match. The only real RNG is Open
    Play's park (xorshift16, `src/open_play.c`), outside matches.
-9. **Use the tables as given.** `player_diagonal_limit` (x 181/256),
+9. **The push counts every pad read** (ADR-076). A human's
+   `PlayerIntent.push` adds 1 (to 255) on each frame the D-pad aims
+   toward that player's net and resets to 0 on any other frame, short
+   hold included, paused or hit-stop frames too. A CPU's is
+   `HIT_PUSH_DEEP` on a deep shot, else 0.
+10. **Use the tables as given.** `player_diagonal_limit` (x 181/256),
    `ai_ice_coast`, and the paddle multipliers are tables because a
    multiply is costly on the SNES, but their rounded values *are* the
    tuning. Copy them; don't recompute them in floats.
@@ -161,3 +166,4 @@ current one.
 | 2 | next | The doubles ladder's upper rungs spaced out (KNOWN_ISSUES #38, ADR-062 amended): VLAD reaction 0 (was 4), LANI late every 4th (was 3rd), MIA every 7th (was 5th); DAD late every 2nd (was 3rd), easier than MARGE in singles. |
 | 3 | next | Singles spaced out (KNOWN_ISSUES #40, ADR-062 amended): RAVEN and VLAD speed 16 (were 18), MAX speed 19 (was 20), KAI recover 88 (was 92), LANI late every 3rd again (was 4th). |
 | 4 | next | The doubles CPUs' think stagger counts the match's frames, not the main loop since power-on (KNOWN_ISSUES #37): a port's lane covers think on match frames `n` with `n % 4 == slot`, from 0 at each new match. Retuned for it: LANI late every 4th (was 3rd), MIA every 6th (was 7th), JADE every 10th (was 12th). |
+| 5 | next | The push (ADR-076): a standard shot or drive aimed toward the net lands at `HIT_PUSH_START_X` (212) plus a pixel per 2 frames the D-pad was held there (`PlayerIntent.push`, counted by the input layer), to `HIT_PUSH_MAX_X` (252); 32 frames is the old deep target (228), and from 58 it lands out. The CPU pushes 32 frames, so its shots are unchanged. Lobs, dinks, slices and serves are unchanged. |

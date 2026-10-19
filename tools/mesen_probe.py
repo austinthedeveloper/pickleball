@@ -60,7 +60,7 @@ LOCKSTEP_STATE = [
     ("cfg", "g_match_config", 31),
     ("attract", "g_attract", 1),
     ("owners", "g_input_owners", 4),
-    ("intents", "g_player_intents", 48),
+    ("intents", "g_player_intents", 56),  # 4 x sizeof(PlayerIntent)
     ("charge", "g_serve_charge", 5),
 ] + GOLDEN_STATE
 # Frames before initialization hold MesenCE's randomized power-on RAM. Boot

@@ -9,6 +9,6 @@
  * changed values under the old version, and `make check` fails while the
  * export is stale.
  */
-#define TUNING_VERSION 4
+#define TUNING_VERSION 5
 
 #endif

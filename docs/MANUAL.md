@@ -2,8 +2,8 @@
 
 Draft text for a printed SNES instruction booklet. The working copy is a
 Claude Doc (https://claude.ai/code/artifact/2080a5f3-9ad7-4050-9eb5-d65d0d2f3988);
-this file is its snapshot of 2026-10-18 (release 0.26.0, with the
-tutorial, ADR-075), and the two match word for word. The rules and
+this file is its snapshot of 2026-10-19 (release 0.26.0 and the push,
+ADR-076), and the two match word for word. The rules and
 controls behind it are in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 
 ## Welcome to Pickleball '94!
@@ -52,7 +52,7 @@ You move with the Control Pad and hit with B, A, and Y. The Control Pad also aim
 ### Aiming Your Shots
 
 - **Up or Down** sends the ball toward that sideline.
-- **Toward the net** hits deep.
+- **Toward the net** hits deep, and the longer you hold it, the deeper the shot goes. Hold it too long and the ball sails out. (Lobs always land deep.)
 - **Away from the net** hits short: a drop shot near the kitchen. Holding L or R does the same.
 
 ### Timing Your Swing
@@ -342,6 +342,7 @@ To erase every record, hold L and R on the RECORDS page and press X. **There is 
 
 ## Tips from the Pros
 
+- **Push with care.** A tap toward the net lands mid-court; about half a second pins them on the baseline; a second or more, and it's long.
 - **Swing early, hit close.** Press the button a moment before the ball arrives. A ball met close to your body goes where you aim; a stretch sprays it out.
 - **Mind the bounces.** Let the serve and the return bounce. Volley too soon and you'll see **VOLLEY!** Volley from your kitchen and you'll see **KITCHEN!** Stay behind the line to volley.
 - **Buy some time.** Pulled out of position? Slice it (X) and get back while it floats over.

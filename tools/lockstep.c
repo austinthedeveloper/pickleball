@@ -84,7 +84,7 @@ static const Field s_intent_fields[] = {
     F(PlayerIntent, move_x), F(PlayerIntent, move_y), F(PlayerIntent, aim_x),
     F(PlayerIntent, aim_y), F(PlayerIntent, hit_pressed),
     F(PlayerIntent, shot), F(PlayerIntent, pause_pressed),
-    F(PlayerIntent, hit_held), END
+    F(PlayerIntent, hit_held), F(PlayerIntent, push), END
 };
 
 enum { PROBES = 10, MAX_BYTES = 128 };
@@ -93,9 +93,13 @@ static const char *const s_probe_names[PROBES] = {
     "game", "players", "ball", "serve", "ai"
 };
 
+enum { P_CFG, P_ATTRACT, P_OWNERS, P_INTENTS, P_CHARGE, P_GAME, P_PLAYERS,
+       P_BALL, P_SERVE, P_AI };
+
 typedef struct {
     unsigned frame;
     unsigned char bytes[PROBES][MAX_BYTES];
+    unsigned length[PROBES];    /* bytes recorded */
 } Row;
 
 static Row *s_rows;
@@ -145,13 +149,23 @@ static void load(const char *path)
             for (i = 0; eq[1 + 2 * i] && eq[2 + 2 * i] && i < MAX_BYTES; ++i)
                 row->bytes[p][i] = (unsigned char)(hex(eq[1 + 2 * i]) << 4 |
                     hex(eq[2 + 2 * i]));
+            row->length[p] = i;
+        }
+        /* The recorder's sizes are typed in tools/mesen_probe.py: a struct
+         * that grew there reads short, and the slots after the first
+         * misalign (ADR-076 grew PlayerIntent). */
+        if (row->length[P_INTENTS] &&
+                row->length[P_INTENTS] != sizeof(PlayerIntent) * MAX_PLAYERS) {
+            fprintf(stderr, "lockstep: %s records %u intent bytes, the host's "
+                "are %u: fix LOCKSTEP_STATE in tools/mesen_probe.py\n",
+                path, row->length[P_INTENTS],
+                (unsigned)(sizeof(PlayerIntent) * MAX_PLAYERS));
+            exit(2);
         }
     }
     fclose(in);
 }
 
-enum { P_CFG, P_ATTRACT, P_OWNERS, P_INTENTS, P_CHARGE, P_GAME, P_PLAYERS,
-       P_BALL, P_SERVE, P_AI };
 
 static unsigned u16_at(const unsigned char *b, unsigned offset)
 {
