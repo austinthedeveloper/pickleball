@@ -2,9 +2,9 @@
 
 Draft text for a printed SNES instruction booklet. The working copy is a
 Claude Doc (https://claude.ai/code/artifact/2080a5f3-9ad7-4050-9eb5-d65d0d2f3988);
-this file is its snapshot of 2026-10-16. Four players on a Super Multitap
-shipped with `M4-MP-01` (ADR-073). The rules and controls behind it are
-in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
+this file is its snapshot of 2026-10-18 (release 0.26.0, with the
+tutorial, ADR-075), and the two match word for word. The rules and
+controls behind it are in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 
 ## Welcome to Pickleball '94!
 
