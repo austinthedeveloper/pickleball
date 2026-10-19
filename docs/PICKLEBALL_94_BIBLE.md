@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3.1** (2026-10-18)
+Status: **Draft canon v0.3.2** (2026-10-18)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.2: release 0.26.0 is out, with four players, pick your partner, the hitting poses, and the new tutorial (ADR-075); everything in §5 is in a tagged release.
 v0.3.1: the hitting poses are in the game (ADR-074): §5.3 gains them, and §5.7's unused-frames legend becomes "the smash that isn't".
 v0.3: §5 rewritten against the ROM on `main` (release 0.25.0 plus four players and pick-your-partner, merged after it). Everything the cartridge does is listed, with the ADR behind it. Answers added to §8 where the repo settles the question; the rest stay for the project lead.
 v0.2: game facts now come from the instruction manual (A-02), which supersedes the early POC docs. The v0.1 "cut content" story was retired because the ROM already ships most of it.
@@ -92,9 +93,7 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 
 ## 5. The game (in-universe facts tied to the real ROM)
 
-Source: instruction manual (A-02), checked against the ROM on `main` at `c228774` (2026-10-18). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
-
-**Not yet in a tagged release:** four players on a Super Multitap (ADR-073) and pick your partner (ADR-072) are merged to `main` after release 0.25.0. Treat them as canon; artifacts can show them once the next release is tagged.
+Source: instruction manual (A-02), checked against the ROM on `main` at `40b8e75` (release 0.26.0, 2026-10-18). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
 
 ### 5.1 The cartridge
 
@@ -116,9 +115,9 @@ Ten title-screen entries, top to bottom (ADR-065, ADR-075): **SINGLES, DOUBLES, 
 | Doubles | You and a CPU partner against a CPU team. Up to four humans: 1P and 3P on the left, 2P and 4P on the right, CPUs fill empty spots (ADR-018, ADR-073). | [CANON] |
 | Open Play | A park with three courts, each a CPU skill level: **ROOKIE** (teal, Easy), **CLUB** (gold, Medium), **CHAMP** (red, Hard). Walk up, put your paddle in the rack, wait your turn. Winners stay on, up to two wins in a row (ADR-034, ADR-071). A **clubhouse** off the path holds the records board and a ball machine. | [CANON] |
 | — Park points | Career players start with 10; +2 for a win at your level, −1 for a loss. CLUB opens at 15, CHAMP at 25, and stays open (ADR-070). | [CANON] |
-| — Pick your partner | A career player can press Y at the rack to choose any captain they've beaten on the ladder (ADR-072). | [CANON] (unreleased, see above) |
+| — Pick your partner | A career player can press Y at the rack to choose any captain they've beaten on the ladder (ADR-072). | [CANON] |
 | Practice | A ball machine (with a pickle mascot behind it) feeds DRIVE / LOB / DINK / MIX to six targets at three rates; you chase a streak of returns into a chosen zone. Best streak per zone is saved (ADR-028). | [CANON] |
-| Tutorial | The ball machine teaches six steps (SWING, AIM, DRIVE, LOB, DINK, SLICE), three good returns each, then WELL DONE! Nothing is saved (ADR-075). | [CANON] (unreleased, see above) |
+| Tutorial | The ball machine teaches six steps (SWING, AIM, DRIVE, LOB, DINK, SLICE), three good returns each, then WELL DONE! Nothing is saved (ADR-075). | [CANON] |
 | Career | Three save slots. Name (8 letters), body, skin, hair, shirt, hat, paddle. Lifetime stats, unlocks, park points. NO PLAYER plays without recording (ADR-047). | [CANON] |
 | — Hat Museum | X on a player's card: twelve display cases, 4 × 3; locked hats are silhouettes with a hint (ADR-061). | [CANON] |
 | Records | Win/loss in singles and doubles, current and best streak, shutouts, longest rally, ladder places, ladder clears, with arcade-style three-letter initials (ADR-040). | [CANON] |
