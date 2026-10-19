@@ -6,6 +6,7 @@
 #include "ball.h"
 #include "court.h"
 #include "court_projection.h"
+#include "flair.h"
 #include "hud.h"
 #include "player.h"
 #include "render.h"
@@ -17,6 +18,9 @@ int main(void)
     assert(offsetof(Ball, active) == ASM_BALL_ACTIVE);
     assert(offsetof(Ball, x_fp) == ASM_BALL_X);
     assert(offsetof(Ball, y_fp) == ASM_BALL_Y);
+    /* src/asm/render_bodies.asm's hitting poses (ADR-074). */
+    assert(offsetof(Ball, z_fp) == ASM_BALL_Z);
+    assert(TO_FP(FLAIR_OVERHEAD_Z) == ASM_FLAIR_OVERHEAD_Z_FP);
     assert(TO_FP(COURT_NET_X) == ASM_CAM_CENTER_X_FP);
     assert(TO_FP(COURT_CENTERLINE_Y) == ASM_CAM_CENTER_Y_FP);
     /* src/asm/hud_commit.asm: one bit per band in a byte. */

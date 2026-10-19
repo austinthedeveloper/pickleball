@@ -200,7 +200,7 @@
     "gold"
   ],
   "palette_contract": "v2 (docs/10_MOCKUP_DECISIONS.md ADR-013); parts in assets/source/palettes",
-  "accessory_doc": "ADR-014: per-frame top-left of the 8x8 ponytail in frame pixels (facing right); mirrored as 24 - x when flipped. Bodies are bareheaded (ADR-059); slots 12-15 are the hitting poses, not yet drawn in play.",
+  "accessory_doc": "ADR-014: per-frame top-left of the 8x8 ponytail in frame pixels (facing right); mirrored as 24 - x when flipped. Bodies are bareheaded (ADR-059); slots 12-15 are the hitting poses, chosen by the swing's contact (ADR-074).",
   "hats": {
     "cap": 26,
     "visor": 12,

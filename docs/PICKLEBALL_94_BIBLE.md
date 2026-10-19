@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3** (2026-10-18)
+Status: **Draft canon v0.3.1** (2026-10-18)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.1: the hitting poses are in the game (ADR-074): §5.3 gains them, and §5.7's unused-frames legend becomes "the smash that isn't".
 v0.3: §5 rewritten against the ROM on `main` (release 0.25.0 plus four players and pick-your-partner, merged after it). Everything the cartridge does is listed, with the ADR behind it. Answers added to §8 where the repo settles the question; the rest stay for the project lead.
 v0.2: game facts now come from the instruction manual (A-02), which supersedes the early POC docs. The v0.1 "cut content" story was retired because the ROM already ships most of it.
 
@@ -84,7 +85,7 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 | Summer 1994 | "Riverdale Park Open" mall tournament; flyer survives | [PROPOSED] |
 | Early 1995 | *Pickleball '95* preview in Game Front Monthly: one screenshot teasing features the original didn't have (see §5) | [PROPOSED] |
 | Mid 1995 | Sunvale folds; '95 cancelled | [PROPOSED] |
-| 2000s | Emulation-era rediscovery; fans fixate on the '95 screenshot, and dataminers find player poses on the cart that the game never draws (§5, "Left on the cartridge") | [PROPOSED] |
+| 2000s | Emulation-era rediscovery; fans fixate on the '95 screenshot, and notice the '94 overhead swing does nothing special (§5.7) | [PROPOSED] |
 | 2026 | *Pickleball '94* remaster announced: "faithfully recreated," with the '95 features finally delivered | [PROPOSED] |
 
 ---
@@ -138,6 +139,7 @@ Nine title-screen entries, top to bottom (ADR-065): **SINGLES, DOUBLES, OPEN PLA
 | Close-call replay: after a long rally, a ball that lands just out gets a line close-up showing it past the paint, and by how many inches (ADR-041). | [CANON] |
 | Doubles: each player covers a lane; partners never swap sides; the serving side alternates who serves as its score changes (ADR-018). | [CANON] |
 | KID difficulty swings and serves for you; you just run into the ball's path. | [CANON] |
+| The swing shows the contact: a ball over the head gets an overhead wind-up and swing, a stretched contact (the one that sprays) a lunge, a ball near the ground a scoop. Looks only: the shot itself is the same (ADR-074). | [CANON] |
 
 ### 5.4 The ladder and its teams
 
@@ -201,8 +203,10 @@ Unlocks, earned against the CPU (the card shows the next one as **NEXT:**): [CAN
 | The ROM never names the park. The venue is just PARK, and Open Play's park has no name on screen. | [CANON] (see Riverdale row) |
 | "Riverdale Park" | [OPEN] — not in the ROM. It may name the park in non-cartridge artifacts (the A-07 flyer, the mall), but no box, manual, or review may say the game calls it that. Adding the name to the ROM is a separate decision (§8, Q10). |
 
-### 5.7 Left on the cartridge [PROPOSED]
-Real, verifiable, and perfect for the 2000s rediscovery: the player sprite sheet holds four hitting poses (**overhead wind-up, overhead contact, reach, scoop**) that nothing in the game draws (ADR-059). In lore they are Ferry Dock's unfinished overhead smash, cut for time and meant for '95. Fans who dump the ROM find them. This is a fact about the real ROM, so it stays true only while those frames go unused; if the hitting work (IDEAS.md, "Hitting: reach, height, and overheads") ships, drop this entry or move the story to whatever is still unused.
+### 5.7 The smash that isn't [PROPOSED]
+True of the real ROM and good for the rediscovery story: a player under a high ball winds up and swings overhead, paddle straight up (ADR-074), but the ball comes off exactly as a normal swing would. There is no smash shot. In lore, Ferry Dock drew the overhead for a smash they cut for time and kept the animation because it looked too good to lose; '95 was going to make it real. Stays true until the overhead becomes its own shot (IDEAS.md, "Hitting: reach, height, and overheads").
+
+v0.3 had an "unused frames on the cartridge" legend here; the game draws those frames now, so it is retired.
 
 ### 5.8 Pickleball '95 promised features [OPEN]
 Must be things the ROM does **not** do, so the remaster can "deliver" them. Every candidate below was checked against `main` on 2026-10-18; if the ROM later adds one, it leaves this list. Retired since v0.2: Super Multitap four-player (shipped, ADR-073) and kitchen faults as a standard rule (the kitchen-volley fault is standard, ADR-052).
@@ -210,7 +214,7 @@ Must be things the ROM does **not** do, so the remaster can "deliver" them. Ever
 Strongest candidates:
 - **Traditional side-out scoring.** The ROM is rally scoring only (OPTIONS has FIRST TO and WIN BY 2).
 - **Dale Dawson as a playable opponent** (§3).
-- **The overhead smash** (§5.7): the '95 screenshot shows a player leaping for an overhead, using the very frames left on the '94 cart.
+- **The overhead smash** (§5.7): the '95 screenshot shows a smash landing at an opponent's feet, the payoff for the '94 overhead swing that never hit any harder.
 - **The momentum rule:** a volley that carries you into the kitchen is a fault. The ROM only calls the kitchen at contact (IDEAS.md).
 
 Also usable (all unbuilt ideas in IDEAS.md / GOOFY_IDEAS.md):
@@ -264,7 +268,7 @@ Questions the repo can settle have an answer; the project lead still decides any
 4. Did a Japanese version exist? — *Possible later lore. The ROM is an NTSC cart with all-English text, so a "lost" Super Famicom release would be a separate, never-released build.*
 5. How did the remaster "recover" the source: an attic box of floppies, or reverse-engineered from a cart? — *Open. Note the real code is C and 65816 assembly, which a 1993 team could have written; the attic-floppies story fits that.*
 6. Does Dale Dawson have a real-sounding backstory, or stay a cardboard cutout? — *Open. Either way he stays out of the SNES ROM (§3).*
-7. What did the *Pickleball '95* screenshot show? — *Recommend the overhead smash (§5.7, §5.8): it ties the '95 tease to frames fans can really find on the '94 cart.*
+7. What did the *Pickleball '95* screenshot show? — *Recommend the overhead smash (§5.7, §5.8): it ties the '95 tease to an animation every '94 player has seen do nothing.*
 8. **Snowbirds line conflict:** "WE'VE PLAYED SINCE 1962" predates pickleball's 1965 invention. — *The ROM commits to it twice: the intro card, and a Snowbirds quip, "IN 1962 THAT WAS IN." Recommend keeping it as a deliberate joke (they're fibbing, or claim to have invented it), and having the A-06 review or a fan wiki "catch" it.*
 9. *(new)* Cart size on the box. — *8 Mbit today, and close to full. The project is happy to grow the cart; if it goes to 12 or 16 Mbit before the box is final, the box says that instead. Decide at A-01.*
 10. *(new)* Should the ROM name its park "Riverdale Park"? — *Today it doesn't (§5.6). Adding it is a small text change but must follow the period-true rule and the BG3 HUD limits. Until then, Riverdale stays off the box and manual.*

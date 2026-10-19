@@ -38,7 +38,8 @@ sheet didn't have.
 - **Four hitting poses** in OBJ name table 2 (R17), slots 12-15:
   `overhead_windup`, `overhead_contact`, `reach`, `scoop`, with ponytail
   offsets. Nothing draws them yet; the reach and overhead mechanics will
-  add their selection rules in `render_bodies.asm`.
+  add their selection rules in `render_bodies.asm`. *Amended 2026-10-18:*
+  shown since [ADR-074](ADR-074-hitting-poses.md), chosen by the contact.
 
 ## Costs
 

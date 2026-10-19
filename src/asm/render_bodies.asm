@@ -12,7 +12,8 @@
 ;   * screen x = 128 + d + ((d * (s(y) - 256) + 128) >> 8), d = x - 128,
 ;     using the hardware 8x8 multiplier (ADR-011, src/projection.c);
 ;   * frame from rb_react[slot] (a point's reaction, ADR-064; $FFFF none),
-;     else pose/state/animation; palette from flash or the player;
+;     else pose/state/animation, a swing's from its contact (ADR-074);
+;     palette from flash or the player;
 ;   * a hat (rb_hat[slot], 0 for none) sits at the frame's accessory
 ;     offset plus HAT_DX, HAT_RAISE above it, in front of its body; flipped,
 ;     it mirrors as 16 - x with its halves swapped (tile ^ 1), written by
@@ -238,18 +239,10 @@ _rb_no_react:
 +   lda.l g_players + ASM_PLAYER_STATE,x
     and.w #$00FF
     cmp.w #ASM_STATE_WINDUP
-    bne +
-    lda.w #FRAME_WINDUP_INDEX
-    bra _rb_have_tile
-+   cmp.w #ASM_STATE_ACTIVE
-    bne +
-    lda.w #FRAME_SWING_INDEX
-    bra _rb_have_tile
-+   cmp.w #ASM_STATE_RECOVERY
-    bne +
-    lda.w #FRAME_FOLLOW_INDEX
-    bra _rb_have_tile
-+   cmp.w #ASM_STATE_MOVE
+    bcc _rb_ground
+    brl _rb_swing           ; out of line, after the body (ADR-074)
+_rb_ground:
+    cmp.w #ASM_STATE_MOVE
     bne _rb_idle_frame
     lda.l g_players + ASM_PLAYER_ANIM_FRAME,x
     and.w #ANIM_RUN_CELS - 1
@@ -522,5 +515,53 @@ _rb_done:
     sta.l rb_count
     plp
     rtl
+
+; A swing's frame (ADR-074), entered with A = the state (WINDUP, ACTIVE, or
+; RECOVERY) and X the slot's offset; back to _rb_have_tile with the frame.
+_rb_swing:
+    ; --- a swing (ADR-074): once it has met the ball, the contact's pose
+    ; (g_flair_hit: overhead, reach, scoop, or $FFFF for the usual); before,
+    ; the overhead's windup and swing while the ball is high. A serve's
+    ; swing is marked met from its windup, and its slot's pose is clear. ---
+    sta.l rb_frame          ; the state, until the frame replaces it
+    lda.l g_players + ASM_PLAYER_CONTACT,x
+    and.w #$00FF
+    beq _rb_unmet
+    phx
+    lda.l rb_slot
+    asl a
+    tax
+    lda.l g_flair_hit,x
+    plx
+    cmp.w #$FFFF
+    bne _rb_swing_tile
+    bra _rb_plain_swing
+_rb_unmet:
+    lda.l rb_frame
+    cmp.w #ASM_STATE_RECOVERY
+    beq _rb_plain_swing     ; a miss follows through as usual
+    lda.l g_ball + ASM_BALL_Z
+    cmp.w #ASM_FLAIR_OVERHEAD_Z_FP
+    bcc _rb_plain_swing     ; z >= 0: unsigned
+    lda.l rb_frame
+    cmp.w #ASM_STATE_WINDUP
+    bne +
+    lda.w #FRAME_OVERHEAD_WINDUP_INDEX
+    bra _rb_swing_tile
++   lda.w #FRAME_OVERHEAD_CONTACT_INDEX
+    bra _rb_swing_tile
+_rb_plain_swing:
+    lda.l rb_frame
+    cmp.w #ASM_STATE_WINDUP
+    bne +
+    lda.w #FRAME_WINDUP_INDEX
+    bra _rb_swing_tile
++   cmp.w #ASM_STATE_ACTIVE
+    bne +
+    lda.w #FRAME_SWING_INDEX
+    bra _rb_swing_tile
++   lda.w #FRAME_FOLLOW_INDEX
+_rb_swing_tile:
+    brl _rb_have_tile
 
 .ENDS

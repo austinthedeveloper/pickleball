@@ -1,8 +1,10 @@
 #ifndef FLAIR_H
 #define FLAIR_H
 
+#include "ball.h"
 #include "game_types.h"
 #include "input.h"
+#include "player.h"
 
 /*
  * ADR-064: the sprite wish list in play. Presentation only, like fx (R9):
@@ -25,7 +27,13 @@ enum {
     FLAIR_RESULT_EMOTE_FRAMES = 255,    /* until the next serve */
     /* Celebrations are looked up from this far into the first phase on:
      * a match's first frames are its heaviest. No point ends this soon. */
-    FLAIR_LOOKUP_DELAY = 8
+    FLAIR_LOOKUP_DELAY = 8,
+    /* ADR-074: a rally contact's pose by the ball's height in pixels. At
+     * or above OVERHEAD, the overhead; below it a stretched contact (off
+     * the sweet spot: the shot sprays) lunges, and below SCOOP_Z a centred
+     * one scoops. */
+    FLAIR_OVERHEAD_Z = 18,
+    FLAIR_SCOOP_Z = 4
 };
 
 /* Reactions at a point's end, by slot. */
@@ -106,5 +114,14 @@ void flair_quip(u8 losing_team);
     } while (0)
 /* A slot's body frame index for its point reaction, or FLAIR_NONE. */
 u8 flair_body_frame(u8 slot);
+
+/* ADR-074: each slot's last rally contact's pose (a frame index), or
+ * 0xffff for the usual swing and follow-through. render_bodies shows it
+ * while that swing has met the ball; a point's end clears them all, so a
+ * serve's swing (marked met from its windup) never shows one. Words, for
+ * src/asm/render_bodies.asm. */
+extern u16 g_flair_hit[MAX_PLAYERS];
+/* The pose a contact of this player on this ball earns, or 0xffff. */
+u16 flair_hit_frame(const Player *player, const Ball *ball);
 
 #endif

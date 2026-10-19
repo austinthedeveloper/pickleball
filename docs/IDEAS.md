@@ -517,7 +517,11 @@ from the work so far:
 
 ## Hitting: reach, height, and overheads
 
-**Waiting on the character models**, which must include the poses below
+**The poses are in play** ([ADR-074](decisions/ADR-074-hitting-poses.md)):
+a high contact shows the overhead, a stretched one the reach, a low one
+the scoop, with play unchanged. The mechanics below are still to do; with
+them the poses' rules follow the new bands. Originally waiting on the
+character models, which must include the poses below
 (they'd be redrawn anyway). The mechanics don't depend on art; build them
 right after the models, or before with placeholder poses (TOSS has the arm
 up).

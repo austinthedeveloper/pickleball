@@ -225,7 +225,7 @@ touching the simulation.
 
 - [x] `M4-ART-01` Character models: the port kit's bareheaded player set, the cap as hat 0, and the four hitting poses in name table 2 (ADR-059; fixes KNOWN_ISSUES #32).
   - Accept: same frame size, palette contract, and slot order; HAIR shows real hair; zero overruns on `make perf`; golden trace identical.
-  - Verified: ADR-059. The hitting poses wait on the reach and overhead mechanics (IDEAS.md).
+  - Verified: ADR-059. The hitting poses wait on the reach and overhead mechanics (IDEAS.md); shown since `M4-ART-04`.
 
 - [x] `M4-ART-02` More hats: beanie, bucket, backwards cap, propeller beanie, viking helmet, chef's toque, and a crown, as career unlocks (ADR-060).
   - Accept: every hat reads on all four teams, both facings, with a ponytail; old saves keep their hats; looks only (paddle stats unchanged).
@@ -233,6 +233,9 @@ touching the simulation.
 - [x] `M4-ART-03` The sprite wish list in play: point celebrations by team, the slump, the dive, emotes, bounce dust, the net shiver, the ball's squash, stretch, and spin streak, venue critters, the CHAMPION! trophy, and practice's pickle.
   - Accept: presentation only (play unchanged); each object hidden once when it stops; zero overruns in every `make perf` timeline.
   - Verified: [ADR-064](../docs/decisions/ADR-064-sprite-wishlist-in-play.md), `test_flair.c`, MesenCE screenshots of each; `make perf` zero overruns; golden trace identical from Player Select on (the title starts a frame later, the larger ROM).
+- [x] `M4-ART-04` The hitting poses in play: the overhead windup and contact for a high ball, the reach for a stretched contact, and the scoop for a low one.
+  - Accept: presentation only (golden trace and lockstep identical); a serve never shows one; zero overruns in every `make perf` timeline.
+  - Verified: [ADR-074](../docs/decisions/ADR-074-hitting-poses.md), `test_flair.c`, MesenCE screenshots of each pose.
 
 - [x] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
   - Progress: 4-12 overruns over the demo (was 160), by power-on state and build: the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 16, `menu.timeline` 10.

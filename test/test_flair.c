@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "asset_frames.h"
+#include "collision.h"
 #include "events.h"
 #include "flair.h"
 #include "input.h"
@@ -265,6 +266,103 @@ static void test_doubles_emotes(void)
     match_config_defaults();
 }
 
+/* ADR-074: a contact's pose by the ball's height and the hitter's reach. */
+static void test_hit_frame(void)
+{
+    Player player;
+    Ball ball;
+
+    match_config_defaults();
+    g_attract = 0;
+    game_new_match();               /* the match's hit box */
+    memset(&player, 0, sizeof(player));
+    memset(&ball, 0, sizeof(ball));
+    player.active = 1;
+    player.x_fp = TO_FP(60);
+    player.y_fp = TO_FP(100);
+    ball.x_fp = TO_FP(64);
+    ball.y_fp = TO_FP(100);
+    ball.z_fp = TO_FP(FLAIR_OVERHEAD_Z);
+    assert(flair_hit_frame(&player, &ball) == FRAME_OVERHEAD_CONTACT_INDEX);
+    ball.z_fp = TO_FP(FLAIR_OVERHEAD_Z) - 1;
+    assert(flair_hit_frame(&player, &ball) == 0xffff);
+    ball.z_fp = TO_FP(FLAIR_SCOOP_Z);
+    assert(flair_hit_frame(&player, &ball) == 0xffff);
+    ball.z_fp = TO_FP(FLAIR_SCOOP_Z) - 1;
+    assert(flair_hit_frame(&player, &ball) == FRAME_SCOOP_INDEX);
+    /* Stretched: past the sweet spot across or along the court. */
+    ball.y_fp = TO_FP(100 + HIT_SWEET_Y + 2);
+    assert(flair_hit_frame(&player, &ball) == FRAME_REACH_INDEX);
+    ball.z_fp = TO_FP(FLAIR_OVERHEAD_Z) - 1;
+    assert(flair_hit_frame(&player, &ball) == FRAME_REACH_INDEX);
+    ball.y_fp = TO_FP(100);
+    ball.x_fp = TO_FP(60 - HIT_SWEET_X - 2);
+    ball.z_fp = 0;
+    assert(flair_hit_frame(&player, &ball) == FRAME_REACH_INDEX);
+    ball.z_fp = TO_FP(FLAIR_OVERHEAD_Z + 4);
+    assert(flair_hit_frame(&player, &ball) == FRAME_OVERHEAD_CONTACT_INDEX);
+}
+
+/* ADR-074 in bot play: every pose shows; a hitter's pose is the one its
+ * contact earned; nothing is left over for a serve (its swing is marked
+ * met from the windup, so a stale pose would show). */
+static void test_hit_poses(u8 doubles)
+{
+    PlayerIntent in[MAX_PLAYERS];
+    unsigned long f;
+    u8 slot;
+    u16 serial = 0;
+    int poses[3] = { 0, 0, 0 };
+    int hits = 0;
+
+    if (doubles)
+        match_config_doubles();
+    else
+        match_config_defaults();
+    g_attract = 0;
+    game_new_match();
+    for (f = 0; f < 60UL * 60 * 10; ++f) {
+        memset(in, 0, sizeof(in));
+        for (slot = 0; slot < MAX_PLAYERS; ++slot)
+            if (g_players[slot].active)
+                ai_update(slot, &in[slot]);
+        if (doubles == 0)
+            test_bot_serve(&in[0], f);
+        if (g_game_state.phase == GAME_PHASE_MATCH_RESULT)
+            game_new_match();
+        test_step(in);
+        if (g_game_state.phase == GAME_PHASE_SERVE_SETUP ||
+                g_game_state.phase == GAME_PHASE_SERVE_TOSS) {
+            for (slot = 0; slot < MAX_PLAYERS; ++slot)
+                assert(g_flair_hit[slot] == 0xffff);
+            continue;
+        }
+        if (g_game_state.shot_serial == serial ||
+                g_ball.last_hitter >= MAX_PLAYERS)
+            continue;
+        serial = g_game_state.shot_serial;
+        slot = g_ball.last_hitter;
+        if (g_game_state.phase != GAME_PHASE_LIVE ||
+                g_ball.rally_state != BALL_RALLY_LIVE)
+            continue;
+        ++hits;
+        if (g_flair_hit[slot] == FRAME_OVERHEAD_CONTACT_INDEX)
+            ++poses[0];
+        else if (g_flair_hit[slot] == FRAME_REACH_INDEX)
+            ++poses[1];
+        else if (g_flair_hit[slot] == FRAME_SCOOP_INDEX)
+            ++poses[2];
+        else
+            assert(g_flair_hit[slot] == 0xffff);
+    }
+    printf("flair: %s, %d contacts: %d overheads, %d reaches, %d scoops\n",
+        doubles ? "doubles" : "singles", hits, poses[0], poses[1], poses[2]);
+    assert(hits > 500 && poses[1] > 0 && poses[2] > 0);
+    /* The default CPU stays back in singles: overheads come at the net. */
+    assert(doubles == 0 || poses[0] > 0);
+    match_config_defaults();
+}
+
 int main(void)
 {
     test_point_reactions();
@@ -273,6 +371,9 @@ int main(void)
     test_dink_note();
     test_waiting_zzz();
     test_doubles_emotes();
+    test_hit_frame();
+    test_hit_poses(0);
+    test_hit_poses(1);
     printf("flair host checks passed\n");
     return 0;
 }

@@ -32,6 +32,10 @@
 #define ASM_BALL_ACTIVE 0
 #define ASM_BALL_X 2
 #define ASM_BALL_Y 4
+/* The hitting poses (ADR-074, src/asm/render_bodies.asm): the ball's
+ * height, and the overhead's band in 1/16 px (include/flair.h). */
+#define ASM_BALL_Z 6
+#define ASM_FLAIR_OVERHEAD_Z_FP 288
 #define ASM_CAM_CENTER_X_FP 2048
 #define ASM_CAM_CENTER_Y_FP 2080
 #define ASM_CAM_REACH_X_FP 2048

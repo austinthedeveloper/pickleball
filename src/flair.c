@@ -1,4 +1,5 @@
 #include "asset_frames.h"
+#include "collision.h"
 #include "events.h"
 #include "flair.h"
 #include "game.h"
@@ -8,6 +9,7 @@
 #include "serve.h"
 
 Flair g_flair;
+u16 g_flair_hit[MAX_PLAYERS];
 
 static const u8 s_celebration_frames[CELEBRATION_COUNT] = CELEBRATION_FRAMES;
 /* The phase flair_tick saw last: emotes held for a phase end with it. */
@@ -65,6 +67,44 @@ void flair_initialize(void)
     s_last_hit[0] = 0xff;
     s_last_hit[1] = 0xff;
     s_change_waited = 0;
+    g_flair_hit[0] = 0xffff;
+    g_flair_hit[1] = 0xffff;
+    g_flair_hit[2] = 0xffff;
+    g_flair_hit[3] = 0xffff;
+}
+
+/* ADR-074: an overhead above the band, else a stretched contact's lunge,
+ * else a low one's scoop. */
+u16 flair_hit_frame(const Player *player, const Ball *ball)
+{
+    fx z = ball->z_fp;
+
+    if (z >= TO_FP(FLAIR_OVERHEAD_Z))
+        return FRAME_OVERHEAD_CONTACT_INDEX;
+    if (collision_ball_in_sweet_spot(player, ball) == 0)
+        return FRAME_REACH_INDEX;
+    if (z < TO_FP(FLAIR_SCOOP_Z))
+        return FRAME_SCOOP_INDEX;
+    return 0xffff;
+}
+
+/* A rally contact's pose (ADR-074). Constant slots: &g_players[slot] is a
+ * multiply on 816-tcc. The ball machine's feeds (practice) come from slot
+ * 2, which is empty there. */
+static void flair_note_hit(u8 slot)
+{
+    const Player *player;
+
+    if (slot == 0)
+        player = &g_players[0];
+    else if (slot == 1)
+        player = &g_players[1];
+    else if (slot == 2)
+        player = &g_players[2];
+    else
+        player = &g_players[3];
+    if (player->active)
+        g_flair_hit[slot] = flair_hit_frame(player, &g_ball);
 }
 
 static void flair_emote(u8 slot, u8 emote, u8 frames)
@@ -161,6 +201,7 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
         s_last_hit[0] = 0xff;
         s_last_hit[1] = 0xff;
         s_last_hit[detail >= 2] = detail;
+        g_flair_hit[detail & 3] = 0xffff;
         g_flair.rally_shots = 1;
         g_flair.soft_run = 0;
         g_flair.shot = 0xff;
@@ -171,6 +212,7 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
         g_flair.shot = detail >> 4;
         slot = detail & 3;
         s_last_hit[slot >= 2] = slot;
+        flair_note_hit(slot);
         if (g_flair.shot == SHOT_DRIVE)
             g_flair.squash_timer = FLAIR_SQUASH_FRAMES;
         if (g_flair.shot != SHOT_SOFT) {
@@ -193,6 +235,10 @@ void flair_on_event(u8 kind, s16 x, s16 y, u8 detail)
         break;
     case EVENT_POINT:
         g_flair.shot = 0xff;
+        g_flair_hit[0] = 0xffff;
+        g_flair_hit[1] = 0xffff;
+        g_flair_hit[2] = 0xffff;
+        g_flair_hit[3] = 0xffff;
         flair_point(detail, x, y);
         break;
     default:

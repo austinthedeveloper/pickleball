@@ -57,7 +57,7 @@ You move with the Control Pad and hit with B, A, and Y. The Control Pad also aim
 
 ### Timing Your Swing
 
-Your swing hits the ball on its first frame with the ball in reach. Meet the ball close to your body and it goes where you aimed. Reach for it at the edge of your swing and it sprays wide and long, often out. Press the button just before the ball arrives, not while it is still far away.
+Your swing hits the ball on its first frame with the ball in reach. Meet the ball close to your body and it goes where you aimed. Reach for it at the edge of your swing and it sprays wide and long, often out: you'll see your player lunge for it. A ball over your head gets an overhead swing, and one near the ground a scoop. Press the button just before the ball arrives, not while it is still far away.
 
 ### Serving
 
