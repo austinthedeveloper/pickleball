@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3.3** (2026-10-19)
+Status: **Draft canon v0.3.4** (2026-10-19)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.4: release 0.27.0 is out with the push; everything in §5 is in a tagged release.
 v0.3.3: the push (ADR-076), on `main` after 0.26.0, is in §5.3.
 v0.3.2: release 0.26.0 is out, with four players, pick your partner, the hitting poses, and the new tutorial (ADR-075); everything in §5 is in a tagged release.
 v0.3.1: the hitting poses are in the game (ADR-074): §5.3 gains them, and §5.7's unused-frames legend becomes "the smash that isn't".
@@ -94,9 +95,7 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 
 ## 5. The game (in-universe facts tied to the real ROM)
 
-Source: instruction manual (A-02), checked against the ROM on `main` at `40b8e75` (release 0.26.0, 2026-10-18). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
-
-**Not yet in a tagged release:** the push (ADR-076) comes after release 0.26.0. Treat it as canon; artifacts can show it once the next release is tagged.
+Source: instruction manual (A-02), checked against the ROM on `main` at `b978a51` (release 0.27.0, 2026-10-19). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
 
 ### 5.1 The cartridge
 
@@ -134,7 +133,7 @@ Ten title-screen entries, top to bottom (ADR-065, ADR-075): **SINGLES, DOUBLES, 
 |---|---|
 | Side-on court view; you always play the left side. A ring at each player's feet: 1P red, 2P blue, 3P yellow, 4P green, CPU grey (ADR-066). | [CANON] |
 | Moves: **B** standard swing (hold to charge a serve), **A** drive, **Y** lob, **Y + away from net** dink, **X** slice, **hold L or R** to hit short (L+A fast drop, L+Y dink). The D-pad aims at contact. | [CANON] |
-| **The push:** hold toward the net longer and a standard shot or drive goes deeper; hold it about a second and it sails out. Lobs always land deep (ADR-076). | [CANON] (unreleased, see above) |
+| **The push:** hold toward the net longer and a standard shot or drive goes deeper; hold it about a second and it sails out. Lobs always land deep (ADR-076). | [CANON] |
 | Charged serve: a power bar fills and drains; let go on the last white block and it dumps into the net (ADR-044). | [CANON] |
 | **ARCADE RULES** on the scoreboard. Rally scoring only; first to 5 by default (3–21 in OPTIONS), optional win by 2. | [CANON] |
 | Serve diagonally into the service box; two-bounce rule enforced; lines are in. | [CANON] |
