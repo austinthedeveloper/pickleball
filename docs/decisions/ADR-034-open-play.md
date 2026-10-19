@@ -31,7 +31,10 @@ scene of its own, like Player Select:
   2026-10-18 (ADR-071, `M4-OPEN-07`):* winners stay on: only the losers
   come off and the next entry challenges the winners, until they have won
   two in a row (`OPEN_STAY_MAX`); you, winning, are called again with the
-  same partner. A team only
+  same partner. *Amended 2026-10-18 (ADR-072, `M4-OPEN-08`):* a career
+  player may pick their partner (Y at their rack) from the captains of
+  the ladder teams they have beaten; that team is passed over when the
+  court draws who comes on against you. A team only
   goes to another court's stack if its own is full, and a short stack
   borrows the front team of the longest other one (never your paddle).
 - **You** walk the park with the D-pad. You can't walk into the courts:

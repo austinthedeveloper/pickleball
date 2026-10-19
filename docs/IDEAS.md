@@ -219,7 +219,9 @@ A park rating opens the higher courts (ADR-070). More, from the same pass:
   a cap of two wins): the real parks' "two off, two on", instead of
   everyone coming off after each game.
 - **Ladder teams at the park:** a team you have beaten on the ladder joins
-  the stacks at its level, to play against or partner.
+  the stacks at its level, to play against or partner. (Partly done:
+  [ADR-072](decisions/ADR-072-pick-partner.md) lets you pick a beaten
+  team's captain as your partner.)
 
 ## Play modifiers
 

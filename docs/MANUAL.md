@@ -118,6 +118,8 @@ Open Play takes you to a park with three courts, a game going on each, just like
 3. When a game ends, the winners stay on and the next paddle goes on against them; after two wins in a row, the winners come off too. When it's your turn the screen shows **YOUR GAME!** The captain of the next team in line partners you, and you play doubles against the team you were drawn with.
 4. After the game, B takes you back to the park. Win, and you stay on for another game with the same partner: the screen shows **WINNERS STAY**. Win twice in a row and you come off to give someone else a turn. START in the park returns to the title.
 
+**Pick your partner.** Playing as a Career player, you can choose who partners you from the captains of the teams you've beaten on the ladder. Stand at the rack holding your paddle and press Y: the message at the top changes from **Y PARTNER: NEXT UP** (the captain next in line) to each captain you've beaten, then back again. Your pick plays every game with you, and their team never plays against you. When 2P is along, 2P is your partner.
+
 **Park points.** Every career player starts with 10 park points. Win a game at your level and you earn 2; lose and you drop 1. At 15 points the CLUB court opens, and at 25 the CHAMP court, and once a court is open it stays open. (Beating the ROOKIE court once you've moved up earns nothing.) Without a career player, or on KID, every court is open.
 
 Walk right along the path to reach the **clubhouse**. Inside, press B at the board on the back wall to read your records, or B at the ball machine to practise. You'll still be called for your game while you're inside. Friends can come along too: 2P partners you in every game, and with a Super Multitap, 3P and 4P take the other side of the net.
@@ -344,7 +346,7 @@ Each manual section needs one or two screenshots; most come from existing smoke 
 | Title Screen | Title menu with the demo behind it | `title`, `menu` |
 | Controls | SNES controller line art (drawn, not captured) | — |
 | Singles and Doubles | Player Select, paddle row | `select` |
-| Open Play | The park with three courts; the clubhouse; winners staying on | `open_play`, `clubhouse`, `winners_stay` |
+| Open Play | The park with three courts; the clubhouse; winners staying on; picking a partner | `open_play`, `clubhouse`, `winners_stay`, `pick_partner` |
 | Practice | Ball machine with return-zone corners lit | `practice`, `zones` |
 | Court | COURT page over a non-default venue | `court`, `venue`, `venue_preview` |
 | Career | Name keyboard; a player card | `career` |

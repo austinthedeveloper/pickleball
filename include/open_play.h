@@ -143,8 +143,9 @@ typedef struct {
     u8 called;                  /* the court calling you, or OPEN_NONE */
     u8 call_timer;
     u8 opponent;                /* your opponents' team, when called */
-    u8 partner;                 /* the team next in line: its captain
-                                   partners you; OPEN_NONE: the regular */
+    u8 partner;                 /* your pick (ADR-072), else the team next
+                                   in line: its captain partners you;
+                                   OPEN_NONE: the regular */
     u16 seed;
     u8 lineup;                  /* changes when anyone comes on or off */
     u8 stacks;                  /* changes when any stack changes */
@@ -157,6 +158,11 @@ typedef struct {
     u8 stay_court;              /* you won and stay on this court (until
                                    your next game there), or OPEN_NONE */
     u8 last_streak;             /* your last game: wins in a row there */
+    /* Pick your partner (ADR-072): the team whose captain partners you in
+     * a fresh game, or OPEN_NONE (next in line); bit n of pickable: team
+     * n may be picked (main.c: the ladder teams the career player beat). */
+    u8 pick;
+    u8 pickable;
 } OpenPlay;
 
 extern OpenPlay g_open_play;
@@ -197,6 +203,17 @@ u8 open_rating_after(u8 rating, u8 court, u8 won);
 u8 open_rating_points(u8 rating);
 /* Nonzero when you may stack at a court. */
 u8 open_court_open(u8 court);
+
+/* Pick your partner (ADR-072). The teams you may pick (bit n: ladder team
+ * n; main.c sets them from the career player's beaten[] with the rating);
+ * a pick no longer among them goes back to next in line. */
+void open_play_partners(u8 teams);
+/* Nonzero when Y picks: you stand at the rack holding your paddle, with
+ * teams to pick and no 2P. */
+u8 open_pick_ready(void);
+/* Y: next in line, then each team you may pick in ladder order, then next
+ * in line again. Returns nonzero when the pick changed. */
+u8 open_play_pick_next(void);
 
 /* Court geometry and lookups (render_park.c and the HUD). */
 s16 open_court_left(u8 court);

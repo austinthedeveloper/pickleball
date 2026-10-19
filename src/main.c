@@ -173,7 +173,14 @@ static void start_park_practice(void)
 static void park_rate(void)
 {
     const CareerPlayer *player = career_active();
+    u8 teams = 0;
+    u8 t;
 
+    /* Pick your partner (ADR-072): the captains of the teams beaten. */
+    for (t = 0; player && t < CAREER_TEAMS; ++t)
+        if (player->beaten[t])
+            teams |= (u8)(1 << t);
+    open_play_partners(teams);
     if (player == 0 ||
             options_difficulty(g_save.settings.difficulty) == DIFFICULTY_KID)
         open_play_rate(OPEN_RATING_NONE, 0);
@@ -205,6 +212,9 @@ static void update_park(void)
         enter_scene(SCENE_MATCH);
         return;
     }
+    /* Y at your rack picks your partner (ADR-072). */
+    if ((pressed & PAD_Y) && open_play_pick_next())
+        audio_ui(SFX_BLIP);
     event = open_play_update(move_x, move_y, (pressed & PAD_B) != 0);
     if (event == OPEN_EVENT_STACKED || event == OPEN_EVENT_CALLED)
         audio_ui(SFX_CONFIRM);

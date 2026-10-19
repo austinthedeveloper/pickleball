@@ -657,6 +657,188 @@ static void test_stay_soak(void)
     assert(games >= 20 && stays >= 3 && caps >= 1 && team_caps >= 10);
 }
 
+/* Pick your partner (ADR-072): Y at your rack cycles next in line, then
+ * each team you may pick in ladder order, then next in line. */
+static void test_pick_cycle(void)
+{
+    open_play_begin(77, 0);
+    assert(g_open_play.pick == OPEN_NONE && g_open_play.pickable == 0);
+    place_you(open_rack_x(1), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    /* No teams to pick: Y does nothing. */
+    assert(!open_pick_ready() && !open_play_pick_next());
+    assert(g_open_play.pick == OPEN_NONE);
+    open_play_partners(0x29);           /* teams 0, 3, 5 */
+    assert(open_pick_ready());
+    assert(open_play_pick_next() && g_open_play.pick == 0);
+    assert(open_play_pick_next() && g_open_play.pick == 3);
+    assert(open_play_pick_next() && g_open_play.pick == 5);
+    assert(open_play_pick_next() && g_open_play.pick == OPEN_NONE);
+    assert(open_play_pick_next() && g_open_play.pick == 0);
+    /* Only at your own rack: another rack, or away from racks. */
+    place_you(open_rack_x(0), OPEN_RACK_Y);
+    assert(!open_pick_ready() && !open_play_pick_next());
+    place_you(128, 200);
+    assert(!open_play_pick_next());
+    assert(g_open_play.pick == 0);
+    /* Not holding your paddle there (taken back): nothing. */
+    place_you(open_rack_x(1), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_UNSTACKED);
+    assert(!open_play_pick_next());
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    assert(open_play_pick_next() && g_open_play.pick == 3);
+    /* A pick no longer available goes back to next in line. */
+    open_play_partners(0x01);
+    assert(g_open_play.pick == OPEN_NONE);
+    open_play_partners(0x80);
+    assert(open_play_pick_next() && g_open_play.pick == 7);
+    assert(open_play_pick_next() && g_open_play.pick == OPEN_NONE);
+    /* 2P along: 2P is your partner, Y does nothing. */
+    open_play_begin(77, 1);
+    open_play_partners(0xff);
+    place_you(open_rack_x(1), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    assert(!open_pick_ready() && !open_play_pick_next());
+    assert(g_open_play.pick == OPEN_NONE);
+    check_population();
+}
+
+/* Stack at court c with a pick, and play up to your call. */
+static void pick_and_wait(u16 seed, u8 c, u8 pick)
+{
+    unsigned long frames = 0;
+
+    open_play_begin(seed, 0);
+    open_play_partners(0xff);
+    place_you(open_rack_x(c), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    while (g_open_play.pick != pick)
+        assert(open_play_pick_next());
+    place_you(128, 200);
+    while (g_open_play.called == OPEN_NONE && ++frames < 60UL * 60 * 5)
+        open_play_update(0, 0, 0);
+    assert(g_open_play.called == c);
+}
+
+/* Called with a pick: the picked captain partners you, and their team is
+ * never your opponent; winning, you stay on with them. */
+static void test_pick_called(void)
+{
+    u8 c;
+    u8 pick;
+    u8 side;
+    u16 seed;
+    u16 games = 0;
+
+    for (seed = 1; seed <= 6; ++seed)
+        for (c = 0; c < OPEN_COURTS; ++c)
+            for (pick = 0; pick < OPPONENT_COUNT; ++pick) {
+                pick_and_wait(seed, c, pick);
+                assert(g_open_play.partner == pick);
+                assert(g_open_play.opponent < OPPONENT_COUNT);
+                assert(g_open_play.opponent != pick);
+                check_population();
+                ++games;
+            }
+    printf("open play: %u calls with a picked partner\n", games);
+    /* The picked team first in line at that court: passed over. */
+    open_play_begin(99, 0);
+    pick = g_open_play.court[0].stack[0];
+    pick_and_wait(99, 0, pick);
+    assert(g_open_play.partner == pick && g_open_play.opponent != pick);
+    /* Winners stay keeps the picked partner. */
+    open_play_return(1, 11, 3);
+    assert(g_open_play.stay_court == 0);
+    side = g_open_play.court[0].playing[0] == OPEN_YOU ? 0 : 1;
+    assert(run_changeover(0) == OPEN_EVENT_CALLED);
+    assert(g_open_play.stay_court == 0);
+    assert(g_open_play.court[0].playing[side] == OPEN_YOU);
+    assert(g_open_play.partner == pick && g_open_play.opponent != pick);
+    check_population();
+}
+
+/* You come on against winners who are your picked partner's team: a
+ * fresh game instead, so they are not your opponents. */
+static void test_pick_vs_winners(void)
+{
+    OpenCourt *court = &g_open_play.court[0];
+    u8 winners;
+
+    open_play_begin(321, 0);
+    open_play_partners(0xff);
+    winners = court->playing[1];
+    /* You first in line at court 0, picking the team about to win. */
+    place_you(open_rack_x(0), OPEN_RACK_Y);
+    assert(open_play_update(0, 0, 1) == OPEN_EVENT_STACKED);
+    while (g_open_play.pick != winners)
+        assert(open_play_pick_next());
+    while (court->stack[0] != OPEN_YOU) {
+        /* Move you to the front: the others go behind. */
+        u8 e = court->stack[0];
+        u8 i;
+        for (i = 1; i < court->stack_count; ++i)
+            court->stack[i - 1] = court->stack[i];
+        court->stack[court->stack_count - 1] = e;
+    }
+    finish_game(0, 1);
+    assert(court->stay == 1);
+    assert(run_changeover(0) == OPEN_EVENT_CALLED);
+    assert(g_open_play.partner == winners);
+    assert(g_open_play.opponent != winners);
+    assert(court->streak == 0);
+    check_population();
+}
+
+/* A soak with you picking partners as you go: nobody lost or doubled,
+ * and a picked partner's team is never your opponent. */
+static void test_pick_soak(void)
+{
+    unsigned long f;
+    u16 rng = 0x4321;
+    u16 games = 0;
+    u16 picked = 0;
+    u8 event;
+    u8 rack = 0;
+    u8 n;
+
+    open_play_begin(2025, 0);
+    open_play_partners(0xb5);
+    for (f = 0; f < 60UL * 60 * 30; ++f) {
+        if (g_open_play.called == OPEN_NONE &&
+                g_open_play.your_court == OPEN_NONE &&
+                g_open_play.stay_court == OPEN_NONE) {
+            rack = rack >= OPEN_COURTS - 1 ? 0 : rack + 1;
+            place_you(open_rack_x(rack), OPEN_RACK_Y);
+            open_play_update(0, 0, 1);
+            rng ^= rng << 7;
+            rng ^= rng >> 9;
+            rng ^= rng << 8;
+            for (n = (u8)(rng & 7); n; --n)
+                open_play_pick_next();
+            place_you(128, 200);
+        }
+        event = open_play_update(0, 0, 0);
+        if (event == OPEN_EVENT_CALLED) {
+            assert(g_open_play.opponent != g_open_play.partner);
+            if (g_open_play.pick != OPEN_NONE) {
+                assert(g_open_play.partner == g_open_play.pick);
+                ++picked;
+            }
+        }
+        if (event == OPEN_EVENT_PLAY) {
+            rng ^= rng << 7;
+            rng ^= rng >> 9;
+            rng ^= rng << 8;
+            open_play_return(rng & 1, 11, 5);
+            ++games;
+        }
+        check_population();
+    }
+    printf("open play: 30 minutes picking partners, %u games, %u picked\n",
+        games, picked);
+    assert(games >= 20 && picked >= 10);
+}
+
 int main(void)
 {
     test_levels();
@@ -673,6 +855,10 @@ int main(void)
     test_you_lose();
     test_stay_nobody_waiting();
     test_stay_soak();
+    test_pick_cycle();
+    test_pick_called();
+    test_pick_vs_winners();
+    test_pick_soak();
     printf("open play host checks passed\n");
     return 0;
 }

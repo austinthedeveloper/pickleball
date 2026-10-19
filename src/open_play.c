@@ -405,10 +405,18 @@ static u8 court_start_game(u8 c)
     u8 off1 = court->playing[1];
     u8 stay = court->stay;
     u8 skip = OPEN_NONE;
+    /* Your picked partner (ADR-072); with 2P there is none. */
+    u8 pick = g_open_play.two_players ? OPEN_NONE : g_open_play.pick;
     u8 side;
 
     if (stay >= 2 || court->streak >= OPEN_STAY_MAX ||
             court->playing[stay] == OPEN_NONE)
+        stay = OPEN_NONE;
+    /* You would challenge winners who are your picked partner's team: a
+     * fresh game instead, so they are never your opponents (ADR-072). */
+    if (stay != OPEN_NONE && pick != OPEN_NONE &&
+            court->playing[stay] == pick && court->stack_count &&
+            court->stack[0] == OPEN_YOU)
         stay = OPEN_NONE;
     /* Those off go to the back of their stacks first, so a court whose
      * stack is short keeps its own level playing (the CHAMP court has two
@@ -428,8 +436,14 @@ static u8 court_start_game(u8 c)
         court->playing[1] = OPEN_NONE;
         stack_join(off0);
         stack_join(off1);
-        court->playing[0] = next_entry(c, OPEN_NONE);
-        court->playing[1] = next_entry(c, OPEN_NONE);
+        /* You come on (first or second in line) with a picked partner:
+         * their team is passed over (ADR-072). */
+        if (pick != OPEN_NONE && court->stack_count &&
+                (court->stack[0] == OPEN_YOU ||
+                    (court->stack_count > 1 && court->stack[1] == OPEN_YOU)))
+            skip = pick;
+        court->playing[0] = next_entry(c, skip);
+        court->playing[1] = next_entry(c, skip);
     }
     court->score[0] = 0;
     court->score[1] = 0;
@@ -466,10 +480,14 @@ static u8 court_start_game(u8 c)
         } else {
             g_open_play.stay_court = OPEN_NONE;
         }
-        /* Your partner: the captain of the team waiting next at this
-         * court (they stay in line); none waiting, the regular. */
-        g_open_play.partner = court->stack_count &&
-            court->stack[0] != OPEN_YOU ? court->stack[0] : OPEN_NONE;
+        /* Your partner: the captain you picked (ADR-072), else the
+         * captain of the team waiting next at this court (they stay in
+         * line); none waiting, the regular. */
+        if (pick != OPEN_NONE)
+            g_open_play.partner = pick;
+        else
+            g_open_play.partner = court->stack_count &&
+                court->stack[0] != OPEN_YOU ? court->stack[0] : OPEN_NONE;
         return OPEN_EVENT_CALLED;
     }
     court->state = OPEN_COURT_PLAYING;
@@ -555,7 +573,40 @@ void open_play_begin(u16 seed, u8 two_players)
     g_open_play.board_page = OPEN_NONE;
     g_open_play.stay_court = OPEN_NONE;
     g_open_play.last_streak = 0;
+    g_open_play.pick = OPEN_NONE;
+    g_open_play.pickable = 0;
     open_play_rate(OPEN_RATING_NONE, 0);
+}
+
+void open_play_partners(u8 teams)
+{
+    g_open_play.pickable = teams;
+    if (g_open_play.pick >= OPPONENT_COUNT ||
+            (teams & (u8)(1 << g_open_play.pick)) == 0)
+        g_open_play.pick = OPEN_NONE;
+}
+
+u8 open_pick_ready(void)
+{
+    return g_open_play.called == OPEN_NONE &&
+        g_open_play.two_players == 0 && g_open_play.pickable &&
+        g_open_play.your_court != OPEN_NONE &&
+        open_rack_near() == g_open_play.your_court;
+}
+
+u8 open_play_pick_next(void)
+{
+    u8 team;
+
+    if (open_pick_ready() == 0)
+        return 0;
+    team = g_open_play.pick >= OPPONENT_COUNT ? 0 :
+        (u8)(g_open_play.pick + 1);
+    while (team < OPPONENT_COUNT &&
+            (g_open_play.pickable & (u8)(1 << team)) == 0)
+        ++team;
+    g_open_play.pick = team < OPPONENT_COUNT ? team : OPEN_NONE;
+    return 1;
 }
 
 static u8 open_press_rack(u8 rack)
