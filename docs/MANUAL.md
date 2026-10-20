@@ -2,8 +2,8 @@
 
 Draft text for a printed SNES instruction booklet. The working copy is a
 Claude Doc (https://claude.ai/code/artifact/2080a5f3-9ad7-4050-9eb5-d65d0d2f3988);
-this file is its snapshot of 2026-10-19 (release 0.27.0 and story mode,
-ADR-077), and the two match word for word. The rules and
+this file is its snapshot of 2026-10-19 (release 0.28.0, with story
+mode, ADR-077), and the two match word for word. The rules and
 controls behind it are in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 
 ## Welcome to Pickleball '94!

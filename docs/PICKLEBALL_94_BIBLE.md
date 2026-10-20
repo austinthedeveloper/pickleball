@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3.5** (2026-10-19)
+Status: **Draft canon v0.3.6** (2026-10-19)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.6: release 0.28.0 is out with story mode; everything in §5 is in a tagged release.
 v0.3.5: story mode (ADR-077) is in §5.2, with its two new names, Pepper and Grimsby (§8, Q12).
 v0.3.4: release 0.27.0 is out with the push; everything in §5 is in a tagged release.
 v0.3.3: the push (ADR-076), on `main` after 0.26.0, is in §5.3.
@@ -96,9 +97,7 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 
 ## 5. The game (in-universe facts tied to the real ROM)
 
-Source: instruction manual (A-02), checked against the ROM on `main` at `b978a51` (release 0.27.0, 2026-10-19). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
-
-**Not yet in a tagged release:** story mode (ADR-077) comes after release 0.27.0. Treat it as canon; artifacts can show it once the next release is tagged.
+Source: instruction manual (A-02), checked against the ROM on `main` at `41f12f5` (release 0.28.0, 2026-10-19). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
 
 ### 5.1 The cartridge
 
@@ -116,7 +115,7 @@ Eleven title-screen entries, top to bottom (ADR-065, ADR-075, ADR-077): **STORY,
 
 | Mode | What the ROM does | Status |
 |---|---|---|
-| Story | **Save the park.** Mr. Grimsby of Grimsby Parking Co. will pave the park for a 400-space lot unless someone beats the Champs. You and your partner **Pepper** (a park regular: backwards cap, red hair, lime shirt) beat the other seven teams first, and each signs the petition. The Gym Bros are on Grimsby's payroll; the Twins are his niece and nephew; the Champs play with the park as the bet. Doubles, one chapter per ladder team, a scene before each match, an ending, progress saved (ADR-077). Grimsby is only ever text, never a sprite. | [CANON] (unreleased, see above) |
+| Story | **Save the park.** Mr. Grimsby of Grimsby Parking Co. will pave the park for a 400-space lot unless someone beats the Champs. You and your partner **Pepper** (a park regular: backwards cap, red hair, lime shirt) beat the other seven teams first, and each signs the petition. The Gym Bros are on Grimsby's payroll; the Twins are his niece and nephew; the Champs play with the park as the bet. Doubles, one chapter per ladder team, a scene before each match, an ending, progress saved (ADR-077). Grimsby is only ever text, never a sprite. | [CANON] |
 | Singles | You against a CPU captain, climbing the ladder; or 1P vs 2P. | [CANON] |
 | Doubles | You and a CPU partner against a CPU team. Up to four humans: 1P and 3P on the left, 2P and 4P on the right, CPUs fill empty spots (ADR-018, ADR-073). | [CANON] |
 | Open Play | A park with three courts, each a CPU skill level: **ROOKIE** (teal, Easy), **CLUB** (gold, Medium), **CHAMP** (red, Hard). Walk up, put your paddle in the rack, wait your turn. Winners stay on, up to two wins in a row (ADR-034, ADR-071). A **clubhouse** off the path holds the records board and a ball machine. | [CANON] |
