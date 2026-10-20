@@ -6,6 +6,7 @@
 70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
 75 76 up
 80 81 up
+85 86 up       # past STORY (ADR-077)
 shot 90
 100 101 start
 108 109 down   # TIME

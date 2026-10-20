@@ -24,6 +24,7 @@
 #include "practice.h"
 #include "save.h"
 #include "story.h"
+#include "story_data.h"
 #include "text.h"
 #include "replay.h"
 
@@ -287,6 +288,8 @@ static void hud_draw_scores(void)
 #define HUD_IS_PRACTICE(k) (((k) & ~15u) == HUD_KEY_PRACTICE)
 #define HUD_KEY_INITIALS 0x800      /* the initials card (ADR-040) */
 #define HUD_KEY_UNLOCK 0x1000       /* the career unlock card (ADR-047) */
+#define HUD_KEY_SCENE 0x2000        /* | the page: a story scene (ADR-077) */
+#define HUD_IS_SCENE(k) (((k) & 0xff00u) == HUD_KEY_SCENE)
 /* The initials card: three big letters on rows 16-17, four columns apart
  * and centred, the chosen one underlined on row 18. */
 #define INITIALS_ROW 16
@@ -396,6 +399,8 @@ static u16 hud_scene_key(void)
         return HUD_KEY_INITIALS;
     if (g_story.card == STORY_CARD_UNLOCK)
         return HUD_KEY_UNLOCK;
+    if (g_story.card == STORY_CARD_SCENE)
+        return HUD_KEY_SCENE | g_story.page;
     if (g_game_state.paused && !g_attract)
         return HUD_KEY_PAUSED | g_pause_choice;
     if (hud_practice())
@@ -588,9 +593,49 @@ static void hud_replay_step(u8 step)
 
 /* Intro card (ADR-026): the opponent's name, their line, the prompt, and
  * the rung, one per frame. */
+/* A story scene's page (ADR-077), a panel a step: the speaker's name in
+ * big letters (CHAPTER n, or THE END), each line in its own panel, then
+ * the prompt. The narrator has no name. */
+static void hud_scene_page_step(u8 step)
+{
+    static char chapter[] = "CHAPTER 0";
+    u8 page = g_story.page;
+    u8 who = g_story_who[page];
+    const char *name;
+    const char *line;
+
+    if (step == HUD_STEP_BIG) {
+        if (who == STORY_WHO_CHAPTER) {
+            chapter[8] = (char)('1' + g_story.scene);
+            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, chapter);
+        } else if (who == STORY_WHO_END) {
+            hud_center_big(CENTER_BIG_ROW, HUD_PAL_YELLOW, "THE END");
+        } else {
+            name = story_speaker(page);
+            if (name)
+                hud_center_big(CENTER_BIG_ROW, who == STORY_WHO_PARTNER ?
+                    team_hud_palette(0) : who == STORY_WHO_VILLAIN ?
+                    HUD_PAL_WHITE : HUD_PAL_TEAM_RIGHT, name);
+        }
+    } else if (step == HUD_STEP_PROMPT) {
+        line = g_story_line1[page];
+        if (line[0])
+            hud_center_prompt(CENTER_PANEL_ROW, HUD_PAL_WHITE, line);
+    } else if (step == HUD_STEP_EXTRA) {
+        line = g_story_line2[page];
+        if (line[0])
+            hud_center_prompt(CENTER_PANEL_ROW + 3, HUD_PAL_WHITE, line);
+    } else if (step == HUD_STEP_EXTRA2) {
+        hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE,
+            page + 1 < g_story.end ? "@ NEXT   START SKIP" :
+            g_story.scene == STORY_ENDING ? "@ FINISH" : "@ NEXT");
+    }
+}
+
 static void hud_intro_step(u8 step)
 {
     static char rung[] = "LADDER 0 OF 0";
+    static char chapter[] = "CHAPTER 0 OF 0";
 
     if (step == HUD_STEP_BIG) {
         hud_center_big(CENTER_BIG_ROW, HUD_PAL_TEAM_RIGHT, hud_opponent_name());
@@ -599,6 +644,11 @@ static void hud_intro_step(u8 step)
             g_opponent_lines[g_match_config.opponent][OPPONENT_LINE_INTRO]);
     } else if (step == HUD_STEP_EXTRA) {
         hud_center_prompt(BANNER_ROW, HUD_PAL_WHITE, "@ PLAY");
+    } else if (step == HUD_STEP_EXTRA2 && g_match_config.story) {
+        /* ADR-077: the story's chapter, not the ladder's rung. */
+        chapter[8] = (char)('1' + g_match_config.opponent);
+        chapter[13] = (char)('0' + OPPONENT_COUNT);
+        hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW, chapter);
     } else if (step == HUD_STEP_EXTRA2) {
         rung[7] = (char)('1' + g_match_config.opponent);
         rung[12] = (char)('0' + OPPONENT_COUNT);
@@ -724,10 +774,12 @@ static void hud_result_story(u8 step)
         return;
     if (g_match_config.opponent == OPPONENT_COUNT - 1) {
         hud_center_text(CENTER_PANEL_ROW + 3, HUD_PAL_YELLOW,
-            "LADDER CLEARED!");
+            g_match_config.story ? "PARK SAVED!" : "LADDER CLEARED!");
         return;
     }
-    team = g_opponent_team[save_ladder(g_match_config.mode)];
+    /* ADR-077: a story's next team is the next chapter's. */
+    team = g_opponent_team[g_match_config.story ? save_story_chapter() :
+        save_ladder(g_match_config.mode)];
     for (i = 0; team[i]; ++i)
         next[9 + i] = team[i];
     next[9 + i] = 0;
@@ -863,7 +915,11 @@ static void hud_scene_step(u16 key, u8 step)
     if (step == HUD_STEP_CLEAR) {
         /* The initials card also uses rows 15-18 (ADR-040). */
         hud_clear_rows(from_title ? CENTER_BIG_ROW - 2 : CENTER_BIG_ROW,
-            from_title ? 6 + TITLE_AREA_ROWS : s_replay_drawn ?
+            from_title ? 6 + TITLE_AREA_ROWS :
+            /* A scene's two lines, and the match result it can open over
+             * (ADR-077): down to the banner. */
+            (HUD_IS_SCENE(key) || HUD_IS_SCENE(s_prev_scene)) ?
+                BANNER_ROW - 1 - CENTER_BIG_ROW : s_replay_drawn ?
                 REPLAY_ROW + REPLAY_ROWS + 1 - CENTER_BIG_ROW :
             (key == HUD_KEY_INITIALS || s_prev_scene == HUD_KEY_INITIALS) ?
                 INITIALS_LAST_ROW + 1 - CENTER_BIG_ROW :
@@ -879,6 +935,10 @@ static void hud_scene_step(u16 key, u8 step)
     }
     if (key == HUD_KEY_INTRO) {
         hud_intro_step(step);
+        return;
+    }
+    if (HUD_IS_SCENE(key)) {
+        hud_scene_page_step(step);
         return;
     }
     if (key == HUD_KEY_INITIALS) {

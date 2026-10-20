@@ -2,14 +2,16 @@
 # A doubles match against DAD and MOM in a photo negative; the HUD and the
 # shadows keep their colours. Then back to the title (Start, MAIN MENU),
 # which must show its own colours again.
-70 71 up       # wraps to MODIFIERS (ADR-065)
+70 71 up       # STORY (ADR-077), then wraps to MODIFIERS (ADR-065)
+80 81 up
 90 91 start
 110 111 up     # COLORS
 120 121 right  # INVERSE
 shot 135
 140 141 b
-160 161 down   # MODIFIERS -> SINGLES -> DOUBLES
+160 161 down   # MODIFIERS -> STORY -> SINGLES -> DOUBLES
 166 167 down
+172 173 down
 180 181 start
 220 221 start  # confirm Player Select
 300 301 b      # close the intro card

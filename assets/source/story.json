@@ -1,0 +1,106 @@
+{
+  "comment": "Story mode (ADR-077): the partner who plays slot 1, and a scene before each chapter's match, plus the ending. A scene opens with an automatic CHAPTER n page (its title on the line), then its pages; the ending closes with THE END. A page is who speaks ('narrator', 'partner', 'captain' or 'mate' of the chapter's team, 'villain') and one or two lines of 1-28 HUD characters: capitals, digits, spaces, and .,!?'-:. Chapters follow the ladder's eight teams in order.",
+  "villain": "GRIMSBY",
+  "partner": {
+    "name": "PEPPER",
+    "variant": "female",
+    "paddle": "gold",
+    "hat": "backcap",
+    "celebrate": "cheer",
+    "skin": "light",
+    "hair": [28, 12, 4],
+    "shirt": [[6, 16, 2], [12, 24, 4], [20, 30, 10]],
+    "shorts": [[4, 6, 14], [8, 10, 20]],
+    "shoe": [31, 31, 31]
+  },
+  "chapters": [
+    {
+      "title": "THE NOTICE",
+      "pages": [
+        {"who": "narrator", "lines": ["A NOTICE ON THE COURT FENCE:", "THIS PARK WILL BE PAVED."]},
+        {"who": "villain", "lines": ["A PARKING LOT! 400 SPACES!", "UNLESS..."]},
+        {"who": "villain", "lines": ["BEAT THE CHAMPS, KID, AND", "I'LL LEAVE YOUR COURTS BE."]},
+        {"who": "partner", "lines": ["THE CHAMPS ONLY PLAY THE", "BEST. SO WE BEAT THE REST."]},
+        {"who": "partner", "lines": ["I'M PEPPER. YOU'RE WITH ME.", "FIRST UP: THE HENDERSONS!"]},
+        {"who": "captain", "lines": ["SAVE THE PARK? SURE, SPORT.", "RIGHT AFTER YOU BEAT US!"]}
+      ]
+    },
+    {
+      "title": "THE SNOWBIRDS",
+      "pages": [
+        {"who": "partner", "lines": ["THE HENDERSONS SIGNED OUR", "PETITION. ONE TEAM DOWN!"]},
+        {"who": "narrator", "lines": ["BY THE LAKE, TWO VISORS", "WAIT IN THE SHADE."]},
+        {"who": "captain", "lines": ["A PARKING LOT? WHERE WOULD", "WE PARK OUR LAWN CHAIRS?"]},
+        {"who": "mate", "lines": ["LOSE, AND YOU CARRY THEM", "BACK TO THE CAR, YOUNGSTER."]},
+        {"who": "partner", "lines": ["DEAL. BUT IF WE WIN, YOU", "SIGN THE PETITION!"]}
+      ]
+    },
+    {
+      "title": "MUSCLE FOR HIRE",
+      "pages": [
+        {"who": "partner", "lines": ["TWO SIGNATURES! AND THE", "SNOWBIRDS KEPT THEIR CHAIRS."]},
+        {"who": "narrator", "lines": ["A LIMO PULLS UP. THE GYM", "BROS STEP OUT. FLEXING."]},
+        {"who": "captain", "lines": ["GRIMSBY PAYS US IN PROTEIN", "SHAKES TO STOP YOU, BRO."]},
+        {"who": "mate", "lines": ["HE PROMISED US A GYM ON", "LEVEL 2 OF THE PARKING LOT."]},
+        {"who": "partner", "lines": ["THEY RUSH THE NET. LOB", "RIGHT OVER THEIR HEADS!"]}
+      ]
+    },
+    {
+      "title": "STORM ON THE LAKE",
+      "pages": [
+        {"who": "partner", "lines": ["THE GYM BROS QUIT GRIMSBY.", "THE SHAKES WERE CHALK."]},
+        {"who": "narrator", "lines": ["A SHIP DROPS ANCHOR AT THE", "LAKESIDE COURTS."]},
+        {"who": "captain", "lines": ["A PARKING LOT? WHERE WOULD", "WE MOOR THE SHIP, MATEY?"]},
+        {"who": "mate", "lines": ["BEAT US FAIR, AND WE'LL", "FIGHT GRIMSBY AT YER SIDE!"]},
+        {"who": "partner", "lines": ["THEY DROP IT SHORT AND", "DINK. STAY UP AT THE LINE!"]}
+      ]
+    },
+    {
+      "title": "LIGHTS OUT",
+      "pages": [
+        {"who": "partner", "lines": ["THE PIRATES ARE IN! NEXT,", "THE GOTH CLUB. GULP."]},
+        {"who": "narrator", "lines": ["THE STARS COME OUT. TWO", "PALE FACES IN THE DARK."]},
+        {"who": "captain", "lines": ["WE LIKE GRAY PAVEMENT.", "IT MATCHES OUR SOULS."]},
+        {"who": "mate", "lines": ["BUT A PARKING LOT HAS SUCH", "BRIGHT LIGHTS. UGH."]},
+        {"who": "partner", "lines": ["THEY SLICE AND DINK ALL", "DAY. BE PATIENT!"]}
+      ]
+    },
+    {
+      "title": "UNDER THE SEA",
+      "pages": [
+        {"who": "partner", "lines": ["THE GOTH CLUB SIGNED IN", "PURPLE INK. SPOOKY."]},
+        {"who": "narrator", "lines": ["DOWN UNDER THE WAVES, THE", "SURF CREW IS WAITING."]},
+        {"who": "captain", "lines": ["NO PARK, NO HANGING OUT,", "DUDE. BUT YOU GOTTA EARN IT."]},
+        {"who": "mate", "lines": ["WIN, AND THE WHOLE BEACH", "COMES TO THE FINAL!"]}
+      ]
+    },
+    {
+      "title": "DOUBLE TROUBLE",
+      "pages": [
+        {"who": "partner", "lines": ["THE SURF CREW IS STOKED.", "TWO MORE TEAMS TO GO!"]},
+        {"who": "narrator", "lines": ["AT SUNSET, TWO KIDS IN", "MATCHING CAPS STEP UP."]},
+        {"who": "captain", "lines": ["UNCLE GRIMSBY SAYS HI."]},
+        {"who": "mate", "lines": ["HE SAYS YOU'LL NEVER GET", "PAST US. READY?"]},
+        {"who": "partner", "lines": ["HIS NIECE AND NEPHEW?!", "NOW IT'S PERSONAL."]}
+      ]
+    },
+    {
+      "title": "THE CHAMPS",
+      "pages": [
+        {"who": "partner", "lines": ["THE TWINS SIGNED. UNCLE", "GRIMSBY IS NOT HAPPY."]},
+        {"who": "villain", "lines": ["SO YOU REACHED THE CHAMPS.", "THEY HAVEN'T LOST IN YEARS."]},
+        {"who": "captain", "lines": ["GRIMSBY BET THE PARK ON US.", "WE DON'T LOSE BETS."]},
+        {"who": "mate", "lines": ["NOTHING PERSONAL. WE JUST", "LIKE WINNING."]},
+        {"who": "partner", "lines": ["EVERY TEAM CAME TO WATCH.", "LET'S SAVE OUR PARK!"]}
+      ]
+    }
+  ],
+  "ending": {
+    "pages": [
+      {"who": "narrator", "lines": ["THE CHAMPS ARE BEATEN!", "THE WHOLE PARK CHEERS."]},
+      {"who": "villain", "lines": ["FINE! A DEAL IS A DEAL.", "THE PARK STAYS."]},
+      {"who": "captain", "lines": ["GOOD GAME. SAME TIME NEXT", "SUMMER? WE WANT A REMATCH."]},
+      {"who": "partner", "lines": ["WE DID IT, PARTNER!", "SEE YOU ON THE COURTS."]}
+    ]
+  }
+}

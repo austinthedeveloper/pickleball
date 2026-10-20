@@ -15,7 +15,8 @@ enum {
     STORY_CARD_NONE = 0,
     STORY_CARD_INTRO = 1,
     STORY_CARD_INITIALS = 2,
-    STORY_CARD_UNLOCK = 3       /* ADR-047: the career unlocks just earned */
+    STORY_CARD_UNLOCK = 3,      /* ADR-047: the career unlocks just earned */
+    STORY_CARD_SCENE = 4        /* ADR-077: a story mode scene */
 };
 enum {
     STORY_INTRO_MIN_FRAMES = 30,    /* a held button cannot skip it */
@@ -25,6 +26,7 @@ enum {
     STORY_INITIALS_FRAMES = 1800,   /* then the letters shown are kept */
     STORY_UNLOCK_MIN_FRAMES = 30,   /* the unlock card, like the intro */
     STORY_UNLOCK_FRAMES = 300,
+    STORY_PAGE_MIN_FRAMES = 20,     /* a scene page: mashing B can't skip */
     STORY_REPEAT_DELAY = 16,        /* a held Up/Down repeats after this, */
     STORY_REPEAT_FRAMES = 4         /* then every this many frames */
 };
@@ -44,6 +46,12 @@ typedef struct {
     u8 letters[3];
     u8 cursor;
     u8 held_frames;
+    /* A scene (ADR-077): its index (a chapter, or STORY_ENDING), the page
+     * shown, and the page past its last. */
+    u8 scene;
+    u8 page;
+    u8 end;
+    u8 cleared;     /* the last story win saved the park: the ending next */
 } StoryState;
 
 extern StoryState g_story;
@@ -51,8 +59,14 @@ extern StoryState g_story;
 /* No card. Call at boot: RAM is not cleared at power-on, and a stray card
  * value would freeze the attract demo under an invisible card. */
 void story_initialize(void);
-/* Shows the intro card when the match has a ladder opponent. */
+/* Shows the intro card when the match has a ladder opponent; in story
+ * mode the chapter's scene first, then the intro card (ADR-077). */
 void story_begin_intro(void);
+/* Story mode's ending, over the last chapter's match result; it returns
+ * to the title when it closes. */
+void story_begin_ending(void);
+/* The name over a scene page, or 0 for none (the narrator). */
+const char *story_speaker(u8 page);
 /* Shows the initials card at a game over (a loss to the CPU, the ladder
  * cleared, or a 2P match's end) when records were beaten
  * (g_save_new_records) outside the attract demo, starting from the last
@@ -69,8 +83,10 @@ void story_begin_unlock(void);
  * shuffles each side's sixteen: all are said before any again, never the
  * same line twice in a row (ADR-063). */
 const char *story_quip(u8 loser, u16 roll);
-/* One frame of 1P's newly pressed and held buttons. Intro: B, A, or Start
- * ends it after STORY_INTRO_MIN_FRAMES. Initials: Up and Down change the
+/* One frame of 1P's newly pressed and held buttons. Scene: after
+ * STORY_PAGE_MIN_FRAMES, B or A turns the page and Start skips the rest;
+ * past the last page the intro card opens (the ending: the title). Intro:
+ * B, A, or Start ends it after STORY_INTRO_MIN_FRAMES. Initials: Up and Down change the
  * letter (held, they repeat), B, A, or Right moves to the next and past the
  * third saves them, Y or Left goes back, Start saves them; after
  * STORY_INITIALS_MIN_FRAMES. Nonzero while a card stays up. The caller

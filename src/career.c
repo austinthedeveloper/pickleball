@@ -190,8 +190,10 @@ void career_record_match(u8 mode, u8 won, u8 points_against, u8 opponent,
         if (opponent < OPPONENT_COUNT) {
             if (player->beaten[opponent] < 255)
                 ++player->beaten[opponent];
-            /* The ladder's last team, on the ladder (not at the park). */
-            if (opponent == OPPONENT_COUNT - 1 && open_play == 0)
+            /* The ladder's last team, on the ladder (not at the park or
+             * in story mode, ADR-077). */
+            if (opponent == OPPONENT_COUNT - 1 && open_play == 0 &&
+                    g_match_config.story == 0)
                 career_bump(&player->ladder_clears);
         }
     } else {

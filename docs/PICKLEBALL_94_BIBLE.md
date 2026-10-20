@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3.4** (2026-10-19)
+Status: **Draft canon v0.3.5** (2026-10-19)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.5: story mode (ADR-077) is in §5.2, with its two new names, Pepper and Grimsby (§8, Q12).
 v0.3.4: release 0.27.0 is out with the push; everything in §5 is in a tagged release.
 v0.3.3: the push (ADR-076), on `main` after 0.26.0, is in §5.3.
 v0.3.2: release 0.26.0 is out, with four players, pick your partner, the hitting poses, and the new tutorial (ADR-075); everything in §5 is in a tagged release.
@@ -97,6 +98,8 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 
 Source: instruction manual (A-02), checked against the ROM on `main` at `b978a51` (release 0.27.0, 2026-10-19). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
 
+**Not yet in a tagged release:** story mode (ADR-077) comes after release 0.27.0. Treat it as canon; artifacts can show it once the next release is tagged.
+
 ### 5.1 The cartridge
 
 | Fact | Status |
@@ -109,10 +112,11 @@ Source: instruction manual (A-02), checked against the ROM on `main` at `b978a51
 
 ### 5.2 Modes
 
-Ten title-screen entries, top to bottom (ADR-065, ADR-075): **SINGLES, DOUBLES, OPEN PLAY, PRACTICE, TUTORIAL, CAREER, RECORDS, COURT, OPTIONS, MODIFIERS.** [CANON]
+Eleven title-screen entries, top to bottom (ADR-065, ADR-075, ADR-077): **STORY, SINGLES, DOUBLES, OPEN PLAY, PRACTICE, TUTORIAL, CAREER, RECORDS, COURT, OPTIONS, MODIFIERS.** [CANON]
 
 | Mode | What the ROM does | Status |
 |---|---|---|
+| Story | **Save the park.** Mr. Grimsby of Grimsby Parking Co. will pave the park for a 400-space lot unless someone beats the Champs. You and your partner **Pepper** (a park regular: backwards cap, red hair, lime shirt) beat the other seven teams first, and each signs the petition. The Gym Bros are on Grimsby's payroll; the Twins are his niece and nephew; the Champs play with the park as the bet. Doubles, one chapter per ladder team, a scene before each match, an ending, progress saved (ADR-077). Grimsby is only ever text, never a sprite. | [CANON] (unreleased, see above) |
 | Singles | You against a CPU captain, climbing the ladder; or 1P vs 2P. | [CANON] |
 | Doubles | You and a CPU partner against a CPU team. Up to four humans: 1P and 3P on the left, 2P and 4P on the right, CPUs fill empty spots (ADR-018, ADR-073). | [CANON] |
 | Open Play | A park with three courts, each a CPU skill level: **ROOKIE** (teal, Easy), **CLUB** (gold, Medium), **CHAMP** (red, Hard). Walk up, put your paddle in the rack, wait your turn. Winners stay on, up to two wins in a row (ADR-034, ADR-071). A **clubhouse** off the path holds the records board and a ball machine. | [CANON] |
@@ -276,6 +280,7 @@ Questions the repo can settle have an answer; the project lead still decides any
 9. *(new)* Cart size on the box. — *8 Mbit today, and close to full. The project is happy to grow the cart; if it goes to 12 or 16 Mbit before the box is final, the box says that instead. Decide at A-01.*
 10. *(new)* Should the ROM name its park "Riverdale Park"? — *Today it doesn't (§5.6). Adding it is a small text change but must follow the period-true rule and the BG3 HUD limits. Until then, Riverdale stays off the box and manual.*
 11. *(new)* The working title. — *The README still calls "Pickleball '94" a working title. The whole bible assumes it's final; confirm.*
+12. *(new)* **Pepper** and **Mr. Grimsby / Grimsby Parking Co.** are story mode's names (ADR-077), already in the ROM. — *Run the name search (§0, rule 3) before they go public; renaming them is a one-line change in `assets/source/story.json`.*
 
 ---
 

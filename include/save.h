@@ -13,7 +13,7 @@
 enum {
     SAVE_SRAM_BYTES = 2048,
     SAVE_COPY_STRIDE = 1024,    /* copy 0 at offset 0, copy 1 at 1024 */
-    SAVE_VERSION = 14,          /* 2: settings (ADR-022); 3: venue; 4: options;
+    SAVE_VERSION = 15,          /* 2: settings (ADR-022); 3: venue; 4: options;
                                    5: ladder clears (ADR-026); 6: kitchen;
                                    7: practice (ADR-028); 8: modifiers
                                    (ADR-033); 9: record initials (ADR-040);
@@ -21,7 +21,8 @@ enum {
                                    11: the court's time (ADR-045);
                                    12: career players (ADR-047);
                                    13: more modifiers (ADR-054);
-                                   14: a doubles ladder (ADR-055).
+                                   14: a doubles ladder (ADR-055);
+                                   15: story mode (ADR-077).
                                    Shipped: 4 in v0.4.0, 7 in v0.5.0, 8 in
                                    v0.6.0 to v0.12.0, 9 in v0.13.0
                                    (ADR-032). */
@@ -124,6 +125,8 @@ typedef struct {
     u8 modifiers2;              /* MODIFIER2_* bits (ADR-054): the
                                    modifiers past settings.modifiers' 8 */
     u8 ladder_doubles;          /* next doubles opponent (ADR-055) */
+    u8 story_chapter;           /* story mode's next chapter (ADR-077) */
+    u8 reserved;                /* keeps the size even */
     u16 checksum;               /* over every byte before it */
 } SaveData;
 
@@ -142,7 +145,7 @@ extern u8 g_save_new_records;
  */
 enum {
     SAVE_V4 = 4, SAVE_V7 = 7, SAVE_V8 = 8, SAVE_V9 = 9, SAVE_V10 = 10,
-    SAVE_V11 = 11, SAVE_V12 = 12, SAVE_V13 = 13
+    SAVE_V11 = 11, SAVE_V12 = 12, SAVE_V13 = 13, SAVE_V14 = 14
 };
 /* v0.4.0, v0.5.0, v0.6.0 to v0.12.0, v0.13.0, v0.14.0, v0.15.0,
  * v0.16.0 to v0.18.1, v0.19.0 */
@@ -296,6 +299,22 @@ typedef struct {
     u16 checksum;
 } SaveV13;
 
+/* v0.20.0 to v0.27.0: SaveData before story mode (ADR-077). */
+typedef struct {
+    u8 magic[4];
+    u8 version;                 /* 14 */
+    u8 sequence;
+    SaveRecords records;
+    SaveSettings settings;
+    SaveInitials initials;
+    CareerPlayer career[CAREER_SLOTS];
+    u8 career_active;
+    u8 camera;
+    u8 modifiers2;
+    u8 ladder_doubles;
+    u16 checksum;
+} SaveV14;
+
 /* Loads the newer valid copy, or formats SRAM with defaults when neither
  * copy is valid (blank cart, corruption, older layout). */
 void save_initialize(void);
@@ -324,6 +343,11 @@ void save_advance_ladder(u8 mode);
 /* A ladder match quit from the pause menu (ADR-055): the mode's ladder
  * starts over at the first opponent. Writes when it moved. */
 void save_quit_ladder(u8 mode);
+/* Story mode (ADR-077): the next chapter (a ladder team), and past a
+ * story win. Past the last it starts over and returns 1: the park is
+ * saved. Quitting keeps the chapter. */
+u8 save_story_chapter(void);
+u8 save_advance_story(void);
 /* A finished point with this many shots; written with the match. */
 void save_record_rally(u8 shots);
 

@@ -1,0 +1,25 @@
+# Story mode (ADR-077): Up to STORY, B to Player Select (doubles, 1P),
+# Start to play. Chapter 1's scene: CHAPTER 1, then each page with B
+# (a page waits 20 frames), then the intro card (CHAPTER 1 OF 8 under the
+# captain's bust) and B into the match with PEPPER as the partner.
+70 71 up       # STORY, above SINGLES
+shot 85
+90 91 b
+150 151 start  # confirm Player Select (after its fade-in)
+shot 260
+270 271 b
+shot 300
+310 311 b
+shot 340
+350 351 b
+shot 380
+390 391 b
+shot 420
+430 431 b
+shot 460
+470 471 b
+shot 500
+510 511 b
+shot 540
+580 581 b
+shot 660

@@ -38,6 +38,8 @@ static u8 s_open_park;
 /* Player Select is open on the way to practice (ADR-028): its
  * MATCH_PRACTICE_*, the tutorial's included (ADR-075). */
 static u8 s_practice_pending;
+/* Player Select is open on the way to story mode (ADR-077). */
+static u8 s_story_pending;
 /* This frame set up a new match (a scene switch for the overrun latch). */
 static u8 s_switched;
 
@@ -246,7 +248,16 @@ static void update_park(void)
 static void start_next_opponent(void)
 {
     g_next_opponent = 0;
-    match_config_opponent(save_ladder(g_match_config.mode));
+    /* ADR-077: the park saved, the ending over the result; else the next
+     * chapter, which opens on its scene. */
+    if (g_match_config.story && g_story.cleared) {
+        story_begin_ending();
+        return;
+    }
+    if (g_match_config.story)
+        match_config_story(save_story_chapter());
+    else
+        match_config_opponent(save_ladder(g_match_config.mode));
     game_start_match();
     story_begin_intro();
     /* render_open_match applies the new config itself. */
@@ -479,6 +490,12 @@ static void update_title(void)
             } else if (g_title_mode == TITLE_PRACTICE) {
                 practice_edit_begin(g_save.settings.practice);
                 g_title_page = TITLE_PAGE_PRACTICE;
+            } else if (g_title_mode == TITLE_STORY) {
+                /* ADR-077: doubles with the story partner, 1P alone. */
+                select_begin(MATCH_DOUBLES, TITLE_JOIN_1P);
+                s_story_pending = 1;
+                s_open_select = 1;
+                return;
             } else if (g_title_mode == TITLE_TUTORIAL) {
                 /* ADR-075: Player Select, then the lesson. */
                 select_begin(MATCH_SINGLES, TITLE_JOIN_1P);
@@ -624,6 +641,8 @@ static void update_select(void)
             match_config_lesson();
         else if (s_practice_pending)
             match_config_practice();
+        else if (s_story_pending)
+            match_config_story(save_story_chapter());
         game_start_match();
         /* ADR-026: a ladder match opens with the opponent's intro card. */
         story_begin_intro();
@@ -631,6 +650,7 @@ static void update_select(void)
         game_start_attract();
     }
     s_practice_pending = 0;
+    s_story_pending = 0;
     enter_scene(SCENE_MATCH);
 }
 
@@ -660,6 +680,7 @@ int main(void)
     s_open_park = 0;
     g_pause_park = 0;
     s_practice_pending = 0;
+    s_story_pending = 0;
     s_switched = 0;
     s_career_frozen = 0;
     g_match_config_changed = 0;

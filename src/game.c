@@ -13,6 +13,7 @@
 #include "options.h"
 #include "paddle_stats.h"
 #include "practice.h"
+#include "story.h"
 #include "game.h"
 #include "player.h"
 #include "profile.h"
@@ -216,8 +217,9 @@ void game_start_match(void)
 
 void game_quit_match(void)
 {
+    /* A story keeps its chapter (ADR-077). */
     if (g_attract == 0 && g_match_config.open_play == 0 &&
-            g_match_config.practice == 0 &&
+            g_match_config.practice == 0 && g_match_config.story == 0 &&
             g_match_config.opponent != OPPONENT_NONE)
         save_quit_ladder(g_match_config.mode);
 }
@@ -378,8 +380,13 @@ static void game_update_point_result(const PlayerIntent intents[MAX_PLAYERS])
         /* ADR-021: 1P is on team 0; 2P (slot 2) makes it a versus match.
          * ADR-023: beating the ladder opponent brings on the next. */
         if (!g_attract && winner == 0 && !g_match_config.open_play &&
-                g_match_config.opponent != OPPONENT_NONE)
-            save_advance_ladder(g_match_config.mode);
+                g_match_config.opponent != OPPONENT_NONE) {
+            /* ADR-077: a story win moves the story on, not the ladder. */
+            if (g_match_config.story)
+                g_story.cleared = save_advance_story();
+            else
+                save_advance_ladder(g_match_config.mode);
+        }
         /* ADR-047: before save_record_match, whose write keeps both. */
         if (!g_attract && match_vs_cpu())
             career_record_match(g_match_config.mode, winner == 0,

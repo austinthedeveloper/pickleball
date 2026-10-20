@@ -30,6 +30,7 @@
 #include "palette_parts.h"
 #include "venues.h"
 #include "story.h"
+#include "story_data.h"
 #include "replay.h"
 
 
@@ -54,6 +55,8 @@ extern char closeup_map, closeup_map_end;
 #define RENDER_BUST_BACKDROP 13
 static u16 s_bust_palette[16];
 static u8 s_bust_shown;
+/* Loaded under a story scene, shown when its intro card opens (ADR-077). */
+static u8 s_bust_waiting;
 /* The close call's close-up is on BG2 (ADR-041); its ball's OAM is used. */
 static u8 s_replay_shown;
 static u8 s_replay_ball;
@@ -1312,6 +1315,11 @@ void render_commit(void)
         bgSetDisable(1);
         s_bust_shown = 0;
     }
+    if (s_bust_waiting && g_story.card == STORY_CARD_INTRO) {
+        bgSetEnable(1);
+        s_bust_waiting = 0;
+        s_bust_shown = 1;
+    }
     render_commit_replay();
     hud_commit();
 }
@@ -1390,9 +1398,12 @@ static void render_load_bust(void)
     s_replay_shown = 0;
     s_replay_ball = 1;          /* parked on the first frame */
     s_watcher_shown = 1;
+    /* A story chapter opens on its scene, the intro card after it. */
+    s_bust_waiting = g_story.card == STORY_CARD_SCENE &&
+        g_story.scene < STORY_ENDING && opponent < OPPONENT_COUNT;
     s_bust_shown = g_story.card == STORY_CARD_INTRO &&
         opponent < OPPONENT_COUNT;
-    if (!s_bust_shown) {
+    if (!s_bust_shown && !s_bust_waiting) {
         bgSetDisable(1);
         return;
     }
@@ -1410,7 +1421,10 @@ static void render_load_bust(void)
     bgSetGfxPtr(1, RENDER_BG2_BASE_ADDR);
     bgSetMapPtr(1, RENDER_BG2_MAP_ADDR, SC_32x32);
     bgSetScroll(1, 0, 0);
-    bgSetEnable(1);
+    if (s_bust_waiting)
+        bgSetDisable(1);
+    else
+        bgSetEnable(1);
 }
 
 /* Court scene into VRAM/CGRAM and the match HUD; forced blank only. Also
@@ -1422,8 +1436,10 @@ static void render_load_court(void)
     u16 ground = (u16)(&court_tiles_end - &court_tiles);
     const VenueData *venue;
 
-    /* Open play (ADR-034) is at the park: AUTO gives the first venue. */
-    s_venue = court_style_venue(g_save.settings.venue,
+    /* Open play (ADR-034) is at the park: AUTO gives the first venue. A
+     * story chapter is always on its team's home court (ADR-077). */
+    s_venue = court_style_venue(g_match_config.story && !g_attract ?
+        COURT_VENUE_AUTO : g_save.settings.venue,
         (g_attract || g_match_config.open_play) ? OPPONENT_NONE :
             g_match_config.opponent);
     /* The venue's ambience (ADR-031); loads only when the venue changed. */

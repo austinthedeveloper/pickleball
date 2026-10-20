@@ -3,15 +3,17 @@
 70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
 75 76 up
 80 81 up
+85 86 up       # past STORY (ADR-077)
 100 101 start
 120 121 left
 shot 130
 140 141 b
 shot 170
 shot 200
-220 221 down   # COURT -> OPTIONS -> MODIFIERS -> SINGLES
+220 221 down   # COURT -> OPTIONS -> MODIFIERS -> STORY -> SINGLES
 230 231 down
 240 241 down
+245 246 down
 250 251 start
 290 291 start  # confirm Player Select
 shot 360

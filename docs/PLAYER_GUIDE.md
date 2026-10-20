@@ -70,6 +70,24 @@ its own level. On KID, every court is KID.
   - The teams waiting for a court sit on the bench.
   - You're still called for your game while you're inside.
 
+## Story
+
+**STORY**, the first title entry, is the ladder with a plot (ADR-077).
+Mr. Grimsby of Grimsby Parking Co. will pave the park unless someone beats
+the Champs, so you and your partner **PEPPER** climb past the other seven
+teams first.
+
+- Player Select opens for 1P in doubles: your colour and paddle. PEPPER, a
+  CPU in a backwards cap, plays beside you.
+- Each chapter is the next ladder team, on its home court. It opens on a
+  scene: B or A turns a page (after a moment), Start skips the rest. Then
+  the team's intro card, `CHAPTER n OF 8`, and the match.
+- Win: `NEXT UP` and B to the next chapter. Lose: B is a rematch. The
+  chapter is saved; quitting from the pause menu keeps it.
+- Beat the Champs: `PARK SAVED!`, then the ending, then the title. The
+  story starts over. Story wins count as doubles wins (and toward picking
+  a partner at the park), but not as ladder clears.
+
 ## Practice
 
 **PRACTICE** sets up a ball machine on the far side of the court, with

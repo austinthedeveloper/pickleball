@@ -18,6 +18,7 @@
     {"timeline": "machine.timeline", "frames": 520},
     {"timeline": "zones.timeline", "frames": 600},
     {"timeline": "tutorial.timeline", "frames": 900},
+    {"timeline": "story_mode.timeline", "frames": 720},
     {"timeline": "pause.timeline", "frames": 390},
     {"timeline": "modifiers.timeline", "frames": 1500},
     {"timeline": "doubles_ladder.timeline", "frames": 2400},

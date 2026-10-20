@@ -57,7 +57,7 @@ GOLDEN_STATE = [
 # The ROM-versus-host lockstep (tools/lockstep.c, ADR-069): what it needs to
 # replay a match on the host, then the state it compares.
 LOCKSTEP_STATE = [
-    ("cfg", "g_match_config", 31),
+    ("cfg", "g_match_config", 32),       # sizeof(MatchConfig)
     ("attract", "g_attract", 1),
     ("owners", "g_input_owners", 4),
     ("intents", "g_player_intents", 56),  # 4 x sizeof(PlayerIntent)

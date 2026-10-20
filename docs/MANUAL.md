@@ -2,8 +2,8 @@
 
 Draft text for a printed SNES instruction booklet. The working copy is a
 Claude Doc (https://claude.ai/code/artifact/2080a5f3-9ad7-4050-9eb5-d65d0d2f3988);
-this file is its snapshot of 2026-10-19 (release 0.26.0 and the push,
-ADR-076), and the two match word for word. The rules and
+this file is its snapshot of 2026-10-19 (release 0.27.0 and story mode,
+ADR-077), and the two match word for word. The rules and
 controls behind it are in [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 
 ## Welcome to Pickleball '94!
@@ -65,10 +65,11 @@ A quick press always serves safely. For a faster serve, hold the button and watc
 
 ## Game Modes
 
-The title screen offers ten choices, top to bottom: the ways to play, then your players and records, then the settings.
+The title screen offers eleven choices, top to bottom: the ways to play, then your players and records, then the settings.
 
 | Mode | What it does |
 | --- | --- |
+| STORY | Save the park! Eight chapters, one team each, with your partner Pepper. |
 | SINGLES | You against one CPU opponent, climbing the ladder. |
 | DOUBLES | You and a CPU partner against a CPU team. |
 | OPEN PLAY | Walk around a park with three courts and wait your turn for a game. |
@@ -79,6 +80,12 @@ The title screen offers ten choices, top to bottom: the ways to play, then your 
 | COURT | Choose the venue, time of day, and court colours. |
 | OPTIONS | Points to win, scoring, difficulty, sound, and camera. |
 | MODIFIERS | Change the rules: big ball, fast ball, lava kitchen, ghost ball, popcorn, ice, glow, inverse. |
+
+### Story
+
+A notice on the court fence says it all: the park is going to be paved into a parking lot. Mr. Grimsby of Grimsby Parking Co. makes you a deal. Beat the Champs, and he'll leave the courts alone. But the Champs only play the best, so you and your new partner, **Pepper**, will have to beat every other team first.
+
+Choose your colour and paddle. Then each chapter opens with a scene: press B to turn the page, or START to skip it. You play doubles against that chapter's team on their home court, with Pepper beside you. Win and you go on to the next chapter; lose and B gives you a rematch. Your place in the story is saved, so you can stop at any time and pick up where you left off. Beat the Champs to save the park!
 
 ### Singles and Doubles
 
@@ -329,6 +336,7 @@ The Pickleball '94 Game Pak has a battery-backed memory that saves automatically
 - Up to three CAREER players, with their looks, stats, and unlocks.
 - Your RECORDS against the CPU.
 - Your best PRACTICE streak for each RETURN TO zone.
+- Your place in the STORY.
 
 Do not turn the power off while a match is ending or while you are leaving a menu.
 
@@ -364,6 +372,7 @@ Each manual section needs one or two screenshots; most come from existing smoke 
 | Controls | SNES controller line art (drawn, not captured) | — |
 | Singles and Doubles | Player Select, paddle row | `select` |
 | Open Play | The park with three courts; the clubhouse; winners staying on; picking a partner | `open_play`, `clubhouse`, `winners_stay`, `pick_partner` |
+| Story | A scene page with Pepper; the chapter's intro card | `story_mode` |
 | Practice | Ball machine with return-zone corners lit | `practice`, `zones` |
 | Tutorial | A step's banner, and WELL DONE! | `tutorial` |
 | Court | COURT page over a non-default venue | `court`, `venue`, `venue_preview` |

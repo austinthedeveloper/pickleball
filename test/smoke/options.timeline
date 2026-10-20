@@ -5,6 +5,7 @@
 # swings.
 70 71 up
 80 81 up
+85 86 up       # past STORY (ADR-077)
 shot 85
 90 91 start
 110 111 right
@@ -15,8 +16,9 @@ shot 85
 shot 150
 160 161 b
 shot 175
-180 181 down   # OPTIONS -> MODIFIERS -> SINGLES
+180 181 down   # OPTIONS -> MODIFIERS -> STORY -> SINGLES
 186 187 down
+192 193 down
 200 201 start
 240 241 start  # confirm Player Select
 shot 300

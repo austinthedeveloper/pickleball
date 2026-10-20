@@ -12,6 +12,8 @@
  * tutorial (ADR-075). */
 #define MATCH_PRACTICE_DRILL 1
 #define MATCH_PRACTICE_LESSON 2
+/* MatchConfig.partner: story mode's partner (ADR-077), not a ladder team. */
+#define MATCH_PARTNER_STORY 0xfe
 
 typedef enum {
     MATCH_SINGLES = 0,
@@ -43,6 +45,8 @@ typedef struct {
     u8 career_p1;                 /* ADR-047: slot 0 wears the active career
                                      player's look (hat, hair, skin) */
     u8 ball_speed;                /* ADR-049: BALL SPEED, percent */
+    u8 story;                     /* ADR-077: a story mode chapter (the
+                                     opponent is its team), or 0 */
 } MatchConfig;
 
 /* One human's Player Select result (ADR-020). */
@@ -87,6 +91,9 @@ void match_config_partner(u8 team);
 void match_config_practice(void);
 /* The tutorial (ADR-075): practice on the lesson, at EASY's slow ball. */
 void match_config_lesson(void);
+/* Story mode (ADR-077), after Player Select's doubles config: the
+ * chapter's team on the right and the story partner in slot 1. */
+void match_config_story(u8 chapter);
 /* The opponent member (0 captain, 1 partner) playing the slot, or 0xff. */
 u8 match_slot_member(u8 slot);
 /* Play style of a CPU slot: its opponent member's, or the default. */

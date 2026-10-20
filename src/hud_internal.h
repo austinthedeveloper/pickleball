@@ -30,7 +30,7 @@
 #define CENTER_PANEL_ROW 11         /* "P1 POINT", "PAUSED" */
 #define BANNER_ROW 24               /* serve / rematch / title prompt */
 #define SUB_PANEL_ROW 4             /* ARCADE RULES / MATCH POINT */
-#define TITLE_MENU_ROW 12           /* SINGLES ... MODIFIERS (rows 12-21) */
+#define TITLE_MENU_ROW 11           /* STORY ... MODIFIERS (rows 11-21) */
 #define TITLE_MENU_COL 11           /* cursor + 10: columns 11-21, centred */
 #define TITLE_JOIN_ROW 22          /* the join prompt under the menu */
 #define TITLE_JOIN_TEXT "FRIENDS: PRESS START"
@@ -40,7 +40,7 @@
 #define JOIN_PANEL_COL 7
 #define JOIN_PANEL_INNER 15
 #define JOIN_FIRST_COL (JOIN_PANEL_COL + 1)
-#define TITLE_AREA_ROWS 11          /* menu or a page: rows 12-22 */
+#define TITLE_AREA_ROWS 12          /* menu or a page: rows 11-22 */
 #define RECORDS_COL 4               /* the records box: columns 4-27 */
 #define RECORDS_WIDTH 24
 #define RECORDS_ROWS 11

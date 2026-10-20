@@ -110,6 +110,17 @@ static int hex(char c)
     return c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10;
 }
 
+static void size_check(const char *path, const char *what,
+    unsigned recorded, unsigned host)
+{
+    if (recorded == 0 || recorded == host)
+        return;
+    fprintf(stderr, "lockstep: %s records %u %s bytes, the host's are %u: "
+        "fix LOCKSTEP_STATE in tools/mesen_probe.py\n", path, recorded,
+        what, host);
+    exit(2);
+}
+
 static void load(const char *path)
 {
     FILE *in = fopen(path, "r");
@@ -154,14 +165,10 @@ static void load(const char *path)
         /* The recorder's sizes are typed in tools/mesen_probe.py: a struct
          * that grew there reads short, and the slots after the first
          * misalign (ADR-076 grew PlayerIntent). */
-        if (row->length[P_INTENTS] &&
-                row->length[P_INTENTS] != sizeof(PlayerIntent) * MAX_PLAYERS) {
-            fprintf(stderr, "lockstep: %s records %u intent bytes, the host's "
-                "are %u: fix LOCKSTEP_STATE in tools/mesen_probe.py\n",
-                path, row->length[P_INTENTS],
-                (unsigned)(sizeof(PlayerIntent) * MAX_PLAYERS));
-            exit(2);
-        }
+        size_check(path, "intent", row->length[P_INTENTS],
+            sizeof(PlayerIntent) * MAX_PLAYERS);
+        size_check(path, "match config", row->length[P_CFG],
+            sizeof(MatchConfig));
     }
     fclose(in);
 }

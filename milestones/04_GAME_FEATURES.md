@@ -78,6 +78,9 @@ each idea are in [IDEAS.md](../docs/IDEAS.md); decisions are ADR-021 on, in
 - [x] `M4-STORY-03` Opponent portraits on the intro card (BG2, like Player Select's).
   - Accept: one portrait per team in palette roles; fits the BG2 portrait budget (ADR-020) and VRAM alongside the court.
   - Verified: [ADR-026](../docs/decisions/ADR-026-story-cards.md) (amended), the captain's bust in palette roles through BG palette 1 (51 tiles at `0x4800`, past BG1's reservation; docs/09); `story.timeline` shows DAD's bust and none after B; the asset build rejects off-role busts (`test_asset_validation.py`); zero overruns in `make perf`, golden trace identical.
+- [x] `M4-STORY-04` Story mode, first version: the ladder's eight teams as chapters of a plot (save the park from a parking lot), in doubles with a story partner, a scene before each match and an ending.
+  - Accept: a STORY title entry; a scene of pages before each chapter's intro card (B turns, Start skips); home courts; a win moves the story and not the ladders, quitting keeps the chapter; beating the Champs plays the ending and returns to the title; the chapter is saved (layout 15, old saves migrate); text checked by the asset build; golden trace and lockstep identical; zero overruns.
+  - Verified: [ADR-077](../docs/decisions/ADR-077-story-mode.md), `test_story.c: test_story_mode`, `test_save.c: test_migrate_v14`, `story_mode.timeline` (MesenCE frames of the scene and intro card), the ending on the ROM from a poked last chapter.
 
 ## Options
 

@@ -158,6 +158,8 @@ food-truck chef.
 
 ### Story wrapper
 
+**Done, a first version:** story mode, [ADR-077](decisions/ADR-077-story-mode.md): the ladder's teams as chapters of a plot, with scenes, a partner, and an ending.
+
 - Intro card per opponent (portrait, name, one line of trash talk), then the
   match, then a win/lose card.
 - Progress (which rung you've reached) needs saving: battery save (below),

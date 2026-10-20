@@ -492,6 +492,49 @@ static void test_migrate_v10(void)
 
 /* ADR-054: a v12 save (v0.16.0 to v0.18.1) keeps everything, and the
  * second modifiers byte starts off. */
+/* ADR-077: a v14 save (v0.20.0 to v0.27.0) keeps everything, its doubles
+ * ladder included (older layouts copy the singles rung there), and the
+ * story starts at chapter 1. */
+static void test_migrate_v14(void)
+{
+    SaveV14 old;
+    SaveData a;
+
+    memset(g_host_sram, 0xff, sizeof(g_host_sram));
+    memset(&old, 0, sizeof(old));
+    memcpy(old.magic, "PB94", 4);
+    old.version = SAVE_V14;
+    old.sequence = 4;
+    old.records.wins[MATCH_DOUBLES] = 17;
+    old.settings.ladder = 2;
+    old.ladder_doubles = 5;
+    old.camera = 7;
+    old.modifiers2 = 3;
+    old.career[0].used = 1;
+    memcpy(old.career[0].name, "PEPPERMT", CAREER_NAME);
+    old.career_active = 0;
+    old.checksum = save_checksum_bytes((const u8 *)&old,
+        sizeof(old) - sizeof(u16));
+    memcpy(g_host_sram, &old, sizeof(old));
+    g_save.story_chapter = 0xaa;            /* stale WRAM */
+    save_initialize();
+    assert(g_save.version == SAVE_VERSION);
+    assert(g_save.records.wins[MATCH_DOUBLES] == 17);
+    assert(g_save.settings.ladder == 2 && g_save.ladder_doubles == 5);
+    assert(g_save.camera == 7 && g_save.modifiers2 == 3);
+    assert(memcmp(g_save.career[0].name, "PEPPERMT", CAREER_NAME) == 0);
+    assert(g_save.career_active == 0);
+    assert(g_save.story_chapter == 0 && g_save.reserved == 0);
+    memcpy(&a, g_host_sram + SAVE_COPY_STRIDE, sizeof(a));
+    assert(save_valid(&a) && a.version == SAVE_VERSION);
+    /* The chapter is kept from here on. */
+    g_save.story_chapter = 3;
+    save_write();
+    memset(&g_save, 0, sizeof(g_save));
+    save_initialize();
+    assert(g_save.story_chapter == 3);
+}
+
 static void test_migrate_v12(void)
 {
     SaveV12 old;
@@ -657,6 +700,7 @@ int main(void)
     test_migrate_v9();
     test_migrate_v10();
     test_migrate_v12();
+    test_migrate_v14();
     test_migrate_v13();
     test_initials();
     test_game_hooks();

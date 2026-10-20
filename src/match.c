@@ -6,6 +6,7 @@
 #include "options.h"
 #include "player.h"
 #include "save.h"
+#include "story_data.h"
 
 #ifdef HOST_TEST
 /* Host tests start from the singles defaults without calling them; on the
@@ -27,7 +28,8 @@ MatchConfig g_match_config = {
     0,
     OPPONENT_NONE,
     0,
-    100
+    100,
+    0
 };
 #else
 MatchConfig g_match_config;
@@ -61,6 +63,7 @@ void match_config_defaults(void)
     g_match_config.career_p1 = 0;
     /* ADR-049: the ball's speed (ADR-065: no longer a setting). */
     g_match_config.ball_speed = OPTIONS_BALL_SPEED;
+    g_match_config.story = 0;
 }
 
 void match_config_practice(void)
@@ -113,6 +116,25 @@ static u8 match_slot_partner(u8 slot)
     return slot == 1 && g_match_config.partner < OPPONENT_COUNT;
 }
 
+/* Slot 1 as story mode's partner (ADR-077); a human there plays as
+ * themselves. Its style is the human's CPU partner's (match_slot_style). */
+static u8 match_slot_story_partner(u8 slot)
+{
+    return slot == 1 && g_match_config.partner == MATCH_PARTNER_STORY &&
+        g_match_config.human[1] == 0;
+}
+
+void match_config_story(u8 chapter)
+{
+    g_match_config.story = 1;
+    match_config_opponent(chapter < OPPONENT_COUNT ? chapter : 0);
+    if (g_match_config.human[1])
+        return;
+    g_match_config.partner = MATCH_PARTNER_STORY;
+    g_match_config.variant[1] = g_story_partner_variant;
+    g_match_config.paddle_id[1] = g_story_partner_paddle;
+}
+
 void match_config_partner(u8 team)
 {
     g_match_config.partner = team < OPPONENT_COUNT ? team : OPPONENT_NONE;
@@ -132,6 +154,8 @@ u8 match_slot_hat(u8 slot)
         return 0;
     if (match_slot_partner(slot))
         return g_opponent_hat[g_match_config.partner][0];
+    if (match_slot_story_partner(slot))
+        return g_story_partner_hat;
     if (member == 0xff)
         return 0;
     return g_opponent_hat[g_match_config.opponent][member];
@@ -147,6 +171,8 @@ u8 match_slot_celebrate(u8 slot)
         return 0;
     if (match_slot_partner(slot))
         return g_opponent_celebrate[g_match_config.partner][0];
+    if (match_slot_story_partner(slot))
+        return g_story_partner_celebrate;
     if (member == 0xff)
         return 0;
     return g_opponent_celebrate[g_match_config.opponent][member];
@@ -321,6 +347,11 @@ void match_compose_palette(u8 slot, u16 out[16])
 
         for (i = 0; i < 16; ++i)
             out[i] = look[i];
+        return;
+    }
+    if (match_slot_story_partner(slot)) {
+        for (i = 0; i < 16; ++i)
+            out[i] = g_story_partner_palette[i];
         return;
     }
     if (member != 0xff) {

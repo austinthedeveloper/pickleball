@@ -18,7 +18,7 @@ Inputs (authored, committed):
 Outputs (disposable, assets/generated/): court.pic/.pal (shared ground),
 venue_N.pic/.map/.pal, venues.h, venues.inc, hud.pic/.pal,
 obj.pic, objects.pal, asset_frames.h, hud_tiles.h, palette_parts.h,
-paddle_stats.h, court_colors.h, opponents.h, select.pic/.map/.pal, portrait.pic, portrait_m/_f.map,
+paddle_stats.h, court_colors.h, opponents.h, story_data.h, select.pic/.map/.pal, portrait.pic, portrait_m/_f.map,
 court_projection.h, sizes.json.
 
 Validation (fails the build): tile budgets, frame anchors and palette roles,
@@ -43,6 +43,7 @@ from assetgen.hud import (HUD_TILE_BALL_ICON, HUD_TILE_BAR_OFF,  # noqa: E402
 from assetgen.obj import obj_assets, palette_parts_header  # noqa: E402
 from assetgen.court_colors import court_colors_header  # noqa: E402
 from assetgen.opponents import opponents_header  # noqa: E402
+from assetgen.story import story_header  # noqa: E402
 from assetgen.career import career_header  # noqa: E402
 from assetgen.paddles import paddle_stats_header  # noqa: E402
 from assetgen.scene import court_assets  # noqa: E402
@@ -107,6 +108,7 @@ def generated_files():
         "paddle_stats.h": paddle_header.encode(),
         "court_colors.h": court_colors_header().encode(),
         "opponents.h": opponents_header().encode(),
+        "story_data.h": story_header().encode(),
         "career_data.h": career_header().encode(),
         "court_projection.h": projection.encode(),
         "asm_shared.inc": asm_include(header).encode(),

@@ -9,6 +9,8 @@
 #include "rules.h"
 #include "save.h"
 #include "story.h"
+#include "story_data.h"
+#include "ai.h"
 
 /* ADR-026 story cards: the intro card and the ladder clear record. */
 
@@ -305,6 +307,116 @@ static void test_quips(void)
     assert(found);
 }
 
+/* A match won 5-0 from 4-0: the point, then the frames to the result. */
+static void win_match(void)
+{
+    static PlayerIntent none[MAX_PLAYERS];
+    u16 n;
+
+    g_game_state.team_score[0] = 4;
+    g_game_state.phase = GAME_PHASE_LIVE;
+    g_ball.rally_state = BALL_RALLY_LIVE;
+    rules_resolve_point(1, GAME_FAULT_OUT);
+    for (n = 0; n < GAME_POINT_RESULT_FRAMES + 2 &&
+            g_game_state.phase != GAME_PHASE_MATCH_RESULT; ++n)
+        game_update(none);
+    assert(g_game_state.phase == GAME_PHASE_MATCH_RESULT);
+    assert(g_game_state.match_winner == 0);
+}
+
+/* Turns every page of the scene up with B; returns how many there were. */
+static u8 read_scene(void)
+{
+    u8 pages = 0;
+    u16 f;
+
+    while (g_story.card == STORY_CARD_SCENE) {
+        /* B is ignored for the page's first frames. */
+        assert(story_update(PAD_B, 0));
+        for (f = 1; f < STORY_PAGE_MIN_FRAMES; ++f)
+            story_update(0, 0);
+        story_update(PAD_B, 0);
+        ++pages;
+        assert(pages < 40);
+    }
+    return pages;
+}
+
+/* ADR-077: story mode. Doubles with the story partner against the
+ * chapter's team; each chapter opens on its scene, then the intro card; a
+ * win moves the story on (not the ladders), quitting keeps it, and beating
+ * the Champs saves the park: the ending, then the title. */
+static void test_story_mode(void)
+{
+    u16 palette[16];
+    u8 i;
+    u16 f;
+
+    memset(g_host_sram, 0, sizeof(g_host_sram));
+    save_initialize();
+    g_attract = 0;
+    assert(save_story_chapter() == 0);
+    match_config_doubles();
+    match_config_story(save_story_chapter());
+    assert(g_match_config.story && g_match_config.opponent == 0);
+    assert(g_match_config.partner == MATCH_PARTNER_STORY);
+    assert(match_slot_hat(1) == g_story_partner_hat);
+    assert(match_slot_style(1) == &g_ai_partner_style);
+    match_compose_palette(1, palette);
+    for (i = 0; i < 16; ++i)
+        assert(palette[i] == g_story_partner_palette[i]);
+    assert(g_match_config.paddle_id[1] == g_story_partner_paddle);
+
+    /* Every chapter opens on CHAPTER n, the ending closes on THE END, and
+     * every page but the narrator's has a speaker. */
+    for (i = 0; i <= STORY_CHAPTERS; ++i)
+        assert(g_story_first[i] < g_story_first[i + 1]);
+    for (i = 0; i < STORY_CHAPTERS; ++i)
+        assert(g_story_who[g_story_first[i]] == STORY_WHO_CHAPTER);
+    assert(g_story_who[STORY_PAGES - 1] == STORY_WHO_END);
+    for (i = 0; i < STORY_PAGES; ++i)
+        if (g_story_who[i] >= STORY_WHO_PARTNER &&
+                g_story_who[i] <= STORY_WHO_VILLAIN)
+            assert(story_speaker(i) && story_speaker(i)[0]);
+    assert(strcmp(story_speaker(g_story_first[1] - 1), "DAD") == 0);
+
+    game_start_match();
+    story_begin_intro();
+    assert(g_story.card == STORY_CARD_SCENE && g_story.scene == 0);
+    assert(read_scene() == g_story_first[1] - g_story_first[0]);
+    assert(g_story.card == STORY_CARD_INTRO);
+    /* Start skips the rest of a scene. */
+    story_begin_intro();
+    for (f = 0; f < STORY_PAGE_MIN_FRAMES; ++f)
+        story_update(0, 0);
+    story_update(PAD_START, 0);
+    assert(g_story.card == STORY_CARD_INTRO);
+    g_story.card = STORY_CARD_NONE;
+
+    win_match();
+    assert(save_story_chapter() == 1 && !g_story.cleared);
+    assert(g_save.settings.ladder == 0 && g_save.ladder_doubles == 0);
+    /* Quitting a chapter keeps the story where it is. */
+    game_quit_match();
+    assert(save_story_chapter() == 1);
+
+    /* The last chapter: the park is saved, the story starts over, and no
+     * ladder clear is recorded. */
+    g_save.story_chapter = STORY_CHAPTERS - 1;
+    match_config_doubles();
+    match_config_story(save_story_chapter());
+    game_start_match();
+    win_match();
+    assert(g_story.cleared && save_story_chapter() == 0);
+    assert(g_save.records.ladder_clears == 0);
+    story_begin_ending();
+    assert(g_story.card == STORY_CARD_SCENE && g_story.scene == STORY_ENDING);
+    assert(read_scene() == STORY_PAGES - g_story_first[STORY_ENDING]);
+    assert(g_story.card == STORY_CARD_NONE && g_attract);
+    g_attract = 0;
+    match_config_defaults();
+}
+
 int main(void)
 {
     test_intro_card();
@@ -314,6 +426,7 @@ int main(void)
     test_initials_wait_for_game_over();
     test_unlock_card();
     test_quips();
+    test_story_mode();
     printf("story host checks passed\n");
     return 0;
 }

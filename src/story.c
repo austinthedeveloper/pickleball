@@ -5,6 +5,8 @@
 #include "opponents.h"
 #include "save.h"
 #include "story.h"
+#define STORY_DATA_DEFINE
+#include "story_data.h"
 
 StoryState g_story;
 /* The initials entered last this session: the next card starts there. */
@@ -21,6 +23,10 @@ void story_initialize(void)
 {
     g_story.card = STORY_CARD_NONE;
     g_story.timer = 0;
+    g_story.scene = 0;
+    g_story.page = 0;
+    g_story.end = 0;
+    g_story.cleared = 0;
     s_last_quip = 0;
     s_quip_left[0] = 0;
     s_quip_left[1] = 0;
@@ -171,11 +177,68 @@ void story_begin_unlock(void)
     g_story.timer = 0;
 }
 
+static void story_begin_scene(u8 scene)
+{
+    g_story.card = STORY_CARD_SCENE;
+    g_story.timer = 0;
+    g_story.scene = scene;
+    g_story.page = g_story_first[scene];
+    g_story.end = g_story_first[scene + 1];
+}
+
 void story_begin_intro(void)
 {
     g_story.timer = 0;
+    g_story.cleared = 0;
     g_story.card = (!g_attract && g_match_config.opponent != OPPONENT_NONE) ?
         STORY_CARD_INTRO : STORY_CARD_NONE;
+    if (g_story.card == STORY_CARD_INTRO && g_match_config.story)
+        story_begin_scene(g_match_config.opponent);
+}
+
+void story_begin_ending(void)
+{
+    g_story.cleared = 0;
+    story_begin_scene(STORY_ENDING);
+}
+
+const char *story_speaker(u8 page)
+{
+    u8 who = g_story_who[page];
+
+    if (who == STORY_WHO_PARTNER)
+        return g_story_partner_name;
+    if (who == STORY_WHO_VILLAIN)
+        return g_story_villain;
+    if (who == STORY_WHO_CAPTAIN)
+        return g_opponent_captain[g_match_config.opponent];
+    if (who == STORY_WHO_MATE)
+        return g_story_mate[g_match_config.opponent];
+    return 0;
+}
+
+/* A scene's frame: a page turns on B or A, Start skips to its end. Past
+ * the last page a chapter opens its intro card; the ending, the title. */
+static u8 story_update_scene(u16 pressed)
+{
+    if (++g_story.timer < STORY_PAGE_MIN_FRAMES)
+        return 1;
+    if (pressed & PAD_START)
+        g_story.page = g_story.end;
+    else if (pressed & (PAD_B | PAD_A))
+        ++g_story.page;
+    else
+        return 1;
+    g_story.timer = 0;
+    if (g_story.page < g_story.end)
+        return 1;
+    if (g_story.scene == STORY_ENDING) {
+        g_story.card = STORY_CARD_NONE;
+        game_start_attract();
+        return 0;
+    }
+    g_story.card = STORY_CARD_INTRO;
+    return 1;
 }
 
 u8 story_update(u16 pressed, u16 held)
@@ -184,6 +247,8 @@ u8 story_update(u16 pressed, u16 held)
         return 0;
     if (g_story.card == STORY_CARD_INITIALS)
         return story_update_initials(pressed, held);
+    if (g_story.card == STORY_CARD_SCENE)
+        return story_update_scene(pressed);
     ++g_story.timer;
     if (g_story.card == STORY_CARD_UNLOCK) {
         if (g_story.timer >= STORY_UNLOCK_FRAMES ||

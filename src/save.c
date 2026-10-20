@@ -26,10 +26,11 @@ typedef char save_v11_is_54_bytes[sizeof(SaveV11) == 54 ? 1 : -1];
 typedef char career_player_is_52_bytes[sizeof(CareerPlayer) == 52 ? 1 : -1];
 typedef char save_v12_is_212_bytes[sizeof(SaveV12) == 212 ? 1 : -1];
 typedef char save_v13_is_214_bytes[sizeof(SaveV13) == 214 ? 1 : -1];
-typedef char save_v14_is_214_bytes[sizeof(SaveData) == 214 ? 1 : -1];
+typedef char save_v14_is_214_bytes[sizeof(SaveV14) == 214 ? 1 : -1];
+typedef char save_v15_is_216_bytes[sizeof(SaveData) == 216 ? 1 : -1];
 
 /* The largest known layout: each copy is read whole, whatever it holds. */
-#define SAVE_RAW_BYTES 214
+#define SAVE_RAW_BYTES 216
 
 #ifdef HOST_TEST
 u8 g_host_sram[SAVE_SRAM_BYTES];
@@ -176,6 +177,8 @@ static u16 save_layout_size(u8 version)
 {
     if (version == SAVE_VERSION)
         return sizeof(SaveData);
+    if (version == SAVE_V14)
+        return sizeof(SaveV14);
     if (version == SAVE_V13)
         return sizeof(SaveV13);
     if (version == SAVE_V12)
@@ -342,6 +345,15 @@ static void save_migrate_v12(const u8 *raw)
 
 /* v0.19.0: the same layout; the reserved byte is now the doubles ladder,
  * set in save_initialize. */
+/* v14 (ADR-077): everything as it was; the story starts at chapter 1. */
+static void save_migrate_v14(const u8 *raw)
+{
+    memcpy(&g_save, raw, sizeof(SaveV14) - sizeof(u16));
+    g_save.version = SAVE_VERSION;
+    g_save.story_chapter = 0;
+    g_save.reserved = 0;
+}
+
 static void save_migrate_v13(const u8 *raw)
 {
     memcpy(&g_save, raw, sizeof(SaveV13) - sizeof(u16));
@@ -390,7 +402,9 @@ void save_initialize(void)
     }
     /* An older layout (ADR-032): migrate, then store it as current in both
      * copies so the old one is never read again. */
-    if (raw[pick][4] == SAVE_V13)
+    if (raw[pick][4] == SAVE_V14)
+        save_migrate_v14(raw[pick]);
+    else if (raw[pick][4] == SAVE_V13)
         save_migrate_v13(raw[pick]);
     else if (raw[pick][4] == SAVE_V12)
         save_migrate_v12(raw[pick]);
@@ -409,8 +423,13 @@ void save_initialize(void)
     if (raw[pick][4] < SAVE_V11)
         save_remap_kitchen_v10();
     /* One ladder for both modes before ADR-055: doubles starts where it
-     * was. */
-    g_save.ladder_doubles = g_save.settings.ladder;
+     * was. Layout 14 has its own. Nor was there a story (ADR-077); an
+     * older migration's memcpy can leave its bytes anything. */
+    if (raw[pick][4] < SAVE_V14) {
+        g_save.ladder_doubles = g_save.settings.ladder;
+        g_save.story_chapter = 0;
+        g_save.reserved = 0;
+    }
     save_write();
     save_write();
 }
@@ -435,6 +454,19 @@ void save_advance_ladder(u8 mode)
         g_save.ladder_doubles = next;
     else
         g_save.settings.ladder = next;
+}
+
+u8 save_story_chapter(void)
+{
+    return g_save.story_chapter < OPPONENT_COUNT ? g_save.story_chapter : 0;
+}
+
+u8 save_advance_story(void)
+{
+    u8 next = save_story_chapter() + 1;
+
+    g_save.story_chapter = next < OPPONENT_COUNT ? next : 0;
+    return next >= OPPONENT_COUNT;
 }
 
 void save_quit_ladder(u8 mode)

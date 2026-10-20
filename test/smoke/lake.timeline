@@ -2,6 +2,7 @@
 70 71 up       # wraps past MODIFIERS and OPTIONS (ADR-065)
 75 76 up
 80 81 up
+85 86 up       # past STORY (ADR-077)
 100 101 start
 120 121 right
 130 131 right
