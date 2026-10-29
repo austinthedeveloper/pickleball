@@ -245,6 +245,8 @@ touching the simulation.
 - [x] `M4-ART-04` The hitting poses in play: the overhead windup and contact for a high ball, the reach for a stretched contact, and the scoop for a low one.
   - Accept: presentation only (golden trace and lockstep identical); a serve never shows one; zero overruns in every `make perf` timeline.
   - Verified: [ADR-074](../docs/decisions/ADR-074-hitting-poses.md), `test_flair.c`, MesenCE screenshots of each pose.
+- [ ] `M4-ART-05` Athletic player models: every body frame redrawn at about four heads tall, with the hats and ponytail resized to the new head (ADR-078).
+  - Accept: same frame size, palette contract, slot order, and object count; golden trace identical; zero overruns on `make perf`.
 
 - [x] `M4-UI-03` Doubles attract demo frame budget: about 1 dropped frame in 40 (since the doubles demo, ADR-018; found in ADR-028). It averages about 197 of 225 scanlines: four AIs, four player updates (about 49), and the title. `make perf` holds it to its budget; see `docs/REFACTOR_PLAN.md` R15.
   - Progress: 4-12 overruns over the demo (was 160), by power-on state and build: the CPU schedule (ADR-018, amended), a shared and blocked landing prediction, and the title prompt and logo drawn in cheaper steps. `demo.timeline` budget 16, `menu.timeline` 10.

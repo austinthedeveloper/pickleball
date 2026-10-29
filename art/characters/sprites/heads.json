@@ -1,0 +1,89 @@
+{
+ "_doc": "Head box per frame: [top, left] of the 7-wide head (its top outline row and left outline column), facing right. The importer derives the ponytail offset (left - 5, top + 1) and the hat's place (left - 4, top - 4) from it.",
+ "heads": {
+  "idle0": [
+   3,
+   13
+  ],
+  "idle1": [
+   5,
+   13
+  ],
+  "run0": [
+   3,
+   14
+  ],
+  "run1": [
+   3,
+   14
+  ],
+  "run2": [
+   3,
+   13
+  ],
+  "run3": [
+   3,
+   14
+  ],
+  "windup": [
+   4,
+   14
+  ],
+  "swing": [
+   6,
+   14
+  ],
+  "follow": [
+   5,
+   14
+  ],
+  "toss": [
+   3,
+   13
+  ],
+  "cheer": [
+   3,
+   13
+  ],
+  "overhead_windup": [
+   3,
+   13
+  ],
+  "overhead_contact": [
+   4,
+   13
+  ],
+  "reach": [
+   5,
+   15
+  ],
+  "scoop": [
+   7,
+   13
+  ],
+  "slump": [
+   4,
+   13
+  ],
+  "dive": [
+   18,
+   17
+  ],
+  "scramble": [
+   7,
+   14
+  ],
+  "thumbs_up": [
+   3,
+   13
+  ],
+  "flex": [
+   3,
+   13
+  ],
+  "en_garde": [
+   3,
+   13
+  ]
+ }
+}

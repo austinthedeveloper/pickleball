@@ -28,8 +28,9 @@ from assetgen.common import read_png  # noqa: E402
 from import_kit_sprites import write_png  # noqa: E402
 
 WISH = ROOT / "assets" / "source" / "wishlist"
-WISHLIST_FRAMES = ["slump", "dive", "scramble", "thumbs_up", "flex",
-                   "en_garde"]
+# The body frames come from art/characters since ADR-078
+# (tools/art/import_character_art.py).
+WISHLIST_FRAMES = []
 WISHLIST_LARGE = ["pickle"]
 # Sheet object -> (strip, square), squares of the object's own size.
 WISHLIST_CELLS = {
