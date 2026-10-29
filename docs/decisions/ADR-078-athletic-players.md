@@ -31,6 +31,13 @@ four heads tall; the sprites should match them.
   `player_sprites.png` and `objects.png` and derives each frame's
   accessory offset (head left − 5, head top + 1) and `hat_offset` (1, −5)
   from it.
+- **Bodies from a rig** (amended 2026-10-29, after a look in game: the
+  converted frames leaked colours and their arms pointed oddly).
+  `tools/art/character_rig.py` draws every frame but the dive from one set
+  of parts (head, torso, shorts, 2-pixel arms, 3-pixel legs, shoes,
+  paddle) placed by joints, back limbs in the darker skin, outlined last.
+  A pose is edited by moving a joint; run the rig, then the importer.
+  The generator renders stay only as reference.
 - **Hats and ponytail redrawn** for the smaller head: same twelve hats,
   same ids, cells, and colour roles.
 - **Retired importers.** `import_kit_sprites.py` and the body frames of
