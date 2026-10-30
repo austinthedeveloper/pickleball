@@ -1,9 +1,10 @@
 # Pickleball '94 — Canon Bible
 
-Status: **Draft canon v0.3.6** (2026-10-19)
+Status: **Draft canon v0.3.7** (2026-10-29)
 Owner: project lead
 Change rule: no artifact (ad, photo, manual page, review, site copy) may state a fact that contradicts this file. To change canon, edit this file first, then the artifact. The same rule the court geometry follows: one source of truth.
 
+v0.3.7: release 0.29.0 is out with the athletic player models (ADR-078), art only; §5 is unchanged.
 v0.3.6: release 0.28.0 is out with story mode; everything in §5 is in a tagged release.
 v0.3.5: story mode (ADR-077) is in §5.2, with its two new names, Pepper and Grimsby (§8, Q12).
 v0.3.4: release 0.27.0 is out with the push; everything in §5 is in a tagged release.
@@ -97,7 +98,7 @@ Lore hooks are tied to things the ROM really does, so a credits page or intervie
 
 ## 5. The game (in-universe facts tied to the real ROM)
 
-Source: instruction manual (A-02), checked against the ROM on `main` at `41f12f5` (release 0.28.0, 2026-10-19). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
+Source: instruction manual (A-02), checked against the ROM on `main` at `48c970a` (release 0.29.0, 2026-10-29). If the ROM changes, update the manual, then this section. ADR numbers point at the design record behind each fact.
 
 ### 5.1 The cartridge
 
