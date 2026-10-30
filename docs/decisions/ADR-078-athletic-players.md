@@ -1,6 +1,6 @@
 # ADR-078 — Athletic Player Models
 
-Status: **Proposed 2026-10-29**
+Status: **Accepted 2026-10-30**
 Milestone: `M4-ART-05`. Amends: ADR-059 (character models), ADR-060 (hats),
 ADR-064 (the wish list's body frames).
 
