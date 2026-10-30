@@ -16,7 +16,7 @@
       "slot": 1,
       "accessory": [
         8,
-        5
+        6
       ]
     },
     "run0": {
@@ -30,13 +30,13 @@
       "slot": 3,
       "accessory": [
         9,
-        3
+        4
       ]
     },
     "run2": {
       "slot": 4,
       "accessory": [
-        9,
+        8,
         4
       ]
     },
@@ -44,7 +44,7 @@
       "slot": 5,
       "accessory": [
         9,
-        3
+        4
       ]
     },
     "windup": {
@@ -58,14 +58,14 @@
       "slot": 7,
       "accessory": [
         9,
-        6
+        7
       ]
     },
     "follow": {
       "slot": 8,
       "accessory": [
         9,
-        5
+        6
       ]
     },
     "toss": {
@@ -100,7 +100,7 @@
       "slot": 14,
       "accessory": [
         10,
-        7
+        6
       ]
     },
     "scoop": {
@@ -128,7 +128,7 @@
       "slot": 19,
       "accessory": [
         9,
-        9
+        8
       ]
     },
     "thumbs_up": {
