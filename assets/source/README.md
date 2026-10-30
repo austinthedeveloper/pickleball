@@ -9,8 +9,9 @@ library.
 The PNGs are edited by hand or written by the authoring tools in
 `tools/art/`, which are run by hand, never by the build:
 
-- `import_kit_sprites.py`: the player bodies, poses, and hats from the port
-  kit (ADR-059).
+- `import_character_art.py`: the player bodies, poses, hats, and ponytail
+  from the text grids in `art/characters/sprites/` (ADR-078). It replaces
+  `import_kit_sprites.py` (ADR-059), which now needs `--force`.
 - `import_wishlist.py`, `wishlist_all.sh`, `wishlist*.lua`: the sprite wish
   list in `wishlist/` (ADR-064; the `.lua` scripts run in Aseprite).
 - `prep_court_scene.py`, `prep_select_scene.py`, `prep_opponent_busts.py`:

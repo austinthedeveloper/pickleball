@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Authoring tool: the player models from the port kit's bareheaded set.
 
+RETIRED by ADR-078: the bodies, hats, and ponytail come from art/characters
+(tools/art/import_character_art.py). Running this puts the old art back,
+so it needs --force. write_png is still used by the other tools.
+
 NOT part of the normal build; run by hand when the kit's art changes.
 Standard library only. Reads the kit's indexed strips (palette contract v2,
 ADR-013; every team's strip has the same indices, so the blue one is read)
@@ -53,6 +57,9 @@ def write_png(path, rows, palette):
 
 
 def main():
+    if "--force" not in sys.argv:
+        raise SystemExit("retired by ADR-078; see import_character_art.py")
+    sys.argv.remove("--force")
     kit = Path(sys.argv[1]) if len(sys.argv) > 1 else \
         ROOT.parent / "pickleball-port-kit"
     bare = kit / "art" / "sprites" / "bare"
